@@ -1,5 +1,20 @@
 export type UserRole = 'Chief Editor' | 'Editor' | 'Writer' | 'Visitor';
 
+export interface VectorStroke {
+  x: number;
+  y: number;
+  pressure?: number;
+}
+
+export interface DigitalSignature {
+  id: string;
+  label: string; 
+  status: 'Archived' | 'Default';
+  strokes: VectorStroke[][]; 
+  createdAt: string;
+}
+
+
 export interface RolePermissions {
   viewIndex: boolean;
   viewDirectory: boolean;
@@ -28,6 +43,50 @@ export type EntryType = 'Note' | 'Essay' | 'Article';
 export type EntryStatus = 'Draft' | 'Published' | 'Archived';
 export type EntryVisibility = 'Public' | 'Private';
 
+export interface Citation {
+  id: string;
+  author: string;
+  title: string;
+  year: number;
+  publisher: string;
+  url?: string;
+  doi?: string;
+  isbn?: string;
+}
+
+export interface Footnote {
+  id: string;
+  content: string;
+}
+
+export interface EditorBlock {
+  id: string;
+  type: string;
+  data: any;
+}
+
+export interface Revision {
+  id: string;
+  timestamp: string; // ISO String
+  title: string;
+  content: string;
+  excerpt?: string;
+  featuredImage?: string;
+  footnotes?: string[];
+  footnotesData?: Footnote[];
+  marginNotes?: { [key: number]: string };
+  marginNotesData?: Record<string, string>;
+  status: EntryStatus;
+  visibility: EntryVisibility;
+  tags: string[];
+  slug: string;
+  citations?: Citation[];
+  citationIds?: string[];
+  referenceSortOrder?: 'alphabetical' | 'appearance';
+  referenceStyle?: string;
+  signatureVersionId?: string;
+}
+
 export interface Entry {
   id: string;
   authorId: string;
@@ -43,7 +102,17 @@ export interface Entry {
   canonicalUrl: string;
   content: string; // Rich text / markdown or custom structured format
   footnotes?: string[]; // Used for Essay
+  footnotesData?: Footnote[];
   marginNotes?: { [key: number]: string }; // Map of paragraph index to margin note text for Article
+  marginNotesData?: Record<string, string>; // Map of block ID to margin note text
+  excerpt?: string;
+  featuredImage?: string;
+  revisions?: Revision[];
+  citations?: Citation[];
+  citationIds?: string[];
+  referenceSortOrder?: 'alphabetical' | 'appearance';
+  referenceStyle?: string;
+  signatureVersionId?: string;
 }
 
 export interface BiographyItem {
@@ -56,11 +125,20 @@ export interface BiographyItem {
 
 export interface WriterProfile {
   authorId: string;
-  bioText: string;
-  lifeTimeline: BiographyItem[];
   heroTitle: string;
   heroSubtitle: string;
-  heroSignatureText: string;
+}
+
+export interface IdentityProfile {
+  identityId: string;
+  accountId: string;
+  username: string;
+  displayName: string;
+  penName: string;
+  biography: string;
+  lifeTimeline: BiographyItem[];
+  signatures: DigitalSignature[];
+  publicVisibility: 'Public' | 'Private';
 }
 
 export interface SystemSettings {

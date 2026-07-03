@@ -51,6 +51,108 @@ export function TimelineEntryCollapseRenderer({
   }, [item.content, maxHeight, contentBlocks.length]);
 
   const renderSingleBlock = (block: any, pIdx: number) => {
+    if (block.type === 'heading') {
+      const isAr = isArabicText(block.text);
+      const textNode = parseInlineFormatting(block.text);
+      if (block.level === 1) {
+        return (
+          <h3 
+            key={pIdx} 
+            dir={isAr ? 'rtl' : 'ltr'} 
+            className={`font-serif text-stone-900 font-semibold my-2.5 ${
+              isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
+            }`}
+          >
+            {textNode}
+          </h3>
+        );
+      } else {
+        return (
+          <h4 
+            key={pIdx} 
+            dir={isAr ? 'rtl' : 'ltr'} 
+            className={`font-serif text-stone-850 font-medium my-2 ${
+              isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
+            }`}
+          >
+            {textNode}
+          </h4>
+        );
+      }
+    }
+
+    if (block.type === 'list') {
+      const listItems = block.items.slice(0, 3).map((item: any, itemIdx: number) => {
+        const isAr = isArabicText(item.text);
+        const isChecklist = item.checked !== undefined;
+        const textNode = parseInlineFormatting(item.text);
+        if (isChecklist) {
+          return (
+            <li 
+              key={itemIdx} 
+              className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
+            >
+              <input type="checkbox" checked={item.checked} disabled className="h-3 w-3 rounded text-adjung-maroon cursor-default" />
+              <span className={`text-[12px] ${item.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-serif'}`}>
+                {textNode}
+              </span>
+            </li>
+          );
+        }
+        return (
+          <li key={itemIdx} className={`text-[12px] text-stone-600 ${isAr ? 'font-arabic text-right' : 'font-serif text-left'}`}>
+            {textNode}
+          </li>
+        );
+      });
+
+      const isChecklist = block.items.some((i: any) => i.checked !== undefined);
+      const remainingCount = block.items.length - 3;
+
+      return (
+        <div key={pIdx} className="my-2 text-left">
+          <ul className={`space-y-1 ${isChecklist ? 'list-none pl-0' : 'list-disc pl-4'}`}>
+            {listItems}
+          </ul>
+          {remainingCount > 0 && (
+            <span className="text-[10px] text-stone-400 italic block mt-1">
+              ... and {remainingCount} more item{remainingCount > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    if (block.type === 'table') {
+      return (
+        <div key={pIdx} className="my-3 overflow-x-auto border border-stone-200/50 rounded p-1 bg-stone-50/20 text-left">
+          <span className="font-mono text-[9px] text-stone-400 uppercase">Table: {block.headers.join(' | ')}</span>
+        </div>
+      );
+    }
+
+    if (block.type === 'image') {
+      return (
+        <figure key={pIdx} className="my-3 text-center bg-transparent">
+          <span className="inline-block text-[11px] text-stone-400 italic border border-stone-200/55 p-1 rounded font-serif bg-stone-50/10">
+            📷 [Image: {block.alt || 'Untitled'}]
+          </span>
+        </figure>
+      );
+    }
+
+    if (block.type === 'divider') {
+      return <hr key={pIdx} className="my-4 border-t border-stone-200/40" />;
+    }
+
+    if (block.type === 'code-block') {
+      return (
+        <pre key={pIdx} className="p-2.5 bg-stone-50 border border-stone-200/60 rounded font-mono text-[10px] text-left overflow-x-auto text-stone-700 max-h-32">
+          <code>{block.code}</code>
+        </pre>
+      );
+    }
+
     if (block.type === 'latin-quote') {
       return (
         <blockquote key={pIdx} className="my-4 pl-4 border-l border-adjung-maroon/20 text-left bg-transparent">
@@ -60,6 +162,7 @@ export function TimelineEntryCollapseRenderer({
         </blockquote>
       );
     }
+
     if (block.type === 'arabic-quote') {
       return (
         <blockquote key={pIdx} className="my-4 pr-4 border-r border-adjung-maroon/20 text-right bg-transparent">
@@ -76,6 +179,7 @@ export function TimelineEntryCollapseRenderer({
         </blockquote>
       );
     }
+
     const isParaAr = isArabicText(block.text);
     return (
       <p 

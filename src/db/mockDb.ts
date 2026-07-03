@@ -1,4 +1,4 @@
-import { User, UserRole, Entry, WriterProfile, SystemSettings, BiographyItem, SystemLog } from '../types';
+import { User, UserRole, Entry, WriterProfile, IdentityProfile, DigitalSignature, Citation, SystemSettings, BiographyItem, SystemLog } from '../types';
 
 export const INITIAL_LOGS: SystemLog[] = [
   {
@@ -85,16 +85,17 @@ export const INITIAL_USERS: User[] = [
   }
 ];
 
-// Pre-seeded Biographies and Profiles
-export const INITIAL_PROFILES: WriterProfile[] = [
+export const INITIAL_IDENTITIES: IdentityProfile[] = [
   {
-    authorId: 'user-zayd-ghazali',
-    heroTitle: 'On the Geometry of Reason',
-    heroSubtitle: 'A collection of thoughts, essays, and notes examining classical rationalism, Andalusian aesthetics, and contemporary typography.',
-    heroSignatureText: 'Z. Al-Ghazali',
-    bioText: `Zayd Al-Ghazali is a reader and scribe of classical Islamic texts, currently investigating the formal connections between medieval Andalusian manuscript structures and Swiss typographic systems. His work frequently bridges Arabic and Jawi calligraphic disciplines with strict modular layout design. 
+    identityId: 'id-user-zayd-ghazali',
+    accountId: 'user-zayd-ghazali',
+    username: 'zayd.ghazali',
+    displayName: 'Zayd Al-Ghazali',
+    penName: 'Al-Ghazali',
+    biography: `Zayd Al-Ghazali is a reader and scribe of classical Islamic texts, currently investigating the formal connections between medieval Andalusian manuscript structures and Swiss typographic systems. His work frequently bridges Arabic and Jawi calligraphic disciplines with strict modular layout design. 
 
 He holds a doctorate in Comparative Semiotics and splits his academic research between Cairo and Cordoba. Adjung serves as his central repository of unfiltered research notes, complete essays, and formal articles.`,
+    publicVisibility: 'Public',
     lifeTimeline: [
       {
         id: 'bio-zayd-1',
@@ -131,16 +132,19 @@ He holds a doctorate in Comparative Semiotics and splits his academic research b
         description: 'Joined the Adjung scholarly board as a founding writer to establish a classical editorial folio.',
         category: 'Personal'
       }
-    ]
+    ],
+    signatures: []
   },
   {
-    authorId: 'user-amina-masri',
-    heroTitle: 'Maritime Pathways & Levantine Shores',
-    heroSubtitle: 'Exploring the rich, forgotten commerce networks, port cities, and material cultures of the pre-modern Red Sea.',
-    heroSignatureText: 'A. Al-Masri',
-    bioText: `Amina Al-Masri is a maritime historian and field archaeologist. For over a decade, her research has focused on the maritime trade routes of the Indian Ocean and the Red Sea during late antiquity and the early Islamic period. 
+    identityId: 'id-user-amina-masri',
+    accountId: 'user-amina-masri',
+    username: 'amina.masri',
+    displayName: 'Amina Al-Masri',
+    penName: 'Al-Masri',
+    biography: `Amina Al-Masri is a maritime historian and field archaeologist. For over a decade, her research has focused on the maritime trade routes of the Indian Ocean and the Red Sea during late antiquity and the early Islamic period. 
 
 She acts as a consultant for maritime heritage preservation and teaches Economic History. Through her Adjung Folio, she hosts extensive articles complete with historical margin annotations, mapping trade registries onto modern geographic records.`,
+    publicVisibility: 'Public',
     lifeTimeline: [
       {
         id: 'bio-amina-1',
@@ -170,16 +174,19 @@ She acts as a consultant for maritime heritage preservation and teaches Economic
         description: 'Appointed Senior Lecturer in Maritime Archaeology and Levantine History.',
         category: 'Career'
       }
-    ]
+    ],
+    signatures: []
   },
   {
-    authorId: 'user-sarah-henderson',
-    heroTitle: 'Form Follows Friction',
-    heroSubtitle: 'Essays on Swiss functionalism, high-contrast typography, and the preservation of tactile editorial hierarchies in digital spaces.',
-    heroSignatureText: 'S. Henderson',
-    bioText: `Sarah Henderson is an independent typographer, editorial designer, and visual scholar based in Zurich. Her work critiques the seamlessness of modern software UI, proposing instead an "architecturally honest" and tactile approach to reading online. 
+    identityId: 'id-user-sarah-henderson',
+    accountId: 'user-sarah-henderson',
+    username: 'sarah.henderson',
+    displayName: 'Sarah Henderson',
+    penName: 'Henderson',
+    biography: `Sarah Henderson is an independent typographer, editorial designer, and visual scholar based in Zurich. Her work critiques the seamlessness of modern software UI, proposing instead an "architecturally honest" and tactile approach to reading online. 
 
 Her Adjung Folio features highly structured layout reflections and critical articles analyzing type design history and bookbinding philosophy.`,
+    publicVisibility: 'Public',
     lifeTimeline: [
       {
         id: 'bio-sarah-1',
@@ -202,7 +209,38 @@ Her Adjung Folio features highly structured layout reflections and critical arti
         description: 'Curated a widely reviewed typographic exhibition at the Zurich Museum of Design, exploring margin aesthetics.',
         category: 'Publication'
       }
-    ]
+    ],
+    signatures: []
+  }
+];
+
+export const INITIAL_CITATIONS: Citation[] = [
+  {
+    id: 'cit-tufte',
+    author: 'Tufte, E. R.',
+    title: 'The Visual Display of Quantitative Information',
+    year: 2001,
+    publisher: 'Graphics Press',
+    url: 'https://edwardtufte.com'
+  }
+];
+
+// Pre-seeded Biographies and Profiles
+export const INITIAL_PROFILES: WriterProfile[] = [
+  {
+    authorId: 'user-zayd-ghazali',
+    heroTitle: 'On the Geometry of Reason',
+    heroSubtitle: 'A collection of thoughts, essays, and notes examining classical rationalism, Andalusian aesthetics, and contemporary typography.'
+  },
+  {
+    authorId: 'user-amina-masri',
+    heroTitle: 'Maritime Pathways & Levantine Shores',
+    heroSubtitle: 'Exploring the rich, forgotten commerce networks, port cities, and material cultures of the pre-modern Red Sea.'
+  },
+  {
+    authorId: 'user-sarah-henderson',
+    heroTitle: 'Form Follows Friction',
+    heroSubtitle: 'Essays on Swiss functionalism, high-contrast typography, and the preservation of tactile editorial hierarchies in digital spaces.'
   }
 ];
 
@@ -418,6 +456,8 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
 class AdjungDb {
   private users: User[] = [];
   private profiles: WriterProfile[] = [];
+  private identities: IdentityProfile[] = [];
+  private citations: Citation[] = [];
   private entries: Entry[] = [];
   private systemSettings: SystemSettings = INITIAL_SYSTEM_SETTINGS;
   private logs: SystemLog[] = [];
@@ -430,6 +470,8 @@ class AdjungDb {
     try {
       const storedUsers = localStorage.getItem('adjung_users');
       const storedProfiles = localStorage.getItem('adjung_profiles');
+      const storedIdentities = localStorage.getItem('adjung_identities');
+      const storedCitations = localStorage.getItem('adjung_citations');
       const storedEntries = localStorage.getItem('adjung_entries');
       const storedSettings = localStorage.getItem('adjung_settings');
 
@@ -456,8 +498,34 @@ class AdjungDb {
         this.saveProfilesToStorage();
       }
 
+      if (storedIdentities) {
+        this.identities = JSON.parse(storedIdentities);
+      } else {
+        this.identities = INITIAL_IDENTITIES;
+        this.saveIdentitiesToStorage();
+      }
+
+      if (storedCitations) {
+        this.citations = JSON.parse(storedCitations);
+      } else {
+        this.citations = INITIAL_CITATIONS;
+        this.saveCitationsToStorage();
+      }
+
       if (storedEntries) {
         this.entries = JSON.parse(storedEntries);
+        // Normalize entries for new metadata compatibility
+        this.entries.forEach(e => {
+          if (e.excerpt === undefined) e.excerpt = '';
+          if (e.featuredImage === undefined) e.featuredImage = '';
+          if (e.revisions === undefined) e.revisions = [];
+          if (e.citations === undefined) e.citations = [];
+          if (e.referenceSortOrder === undefined) e.referenceSortOrder = 'alphabetical';
+          e.revisions.forEach(r => {
+            if (r.citations === undefined) r.citations = [];
+            if (r.referenceSortOrder === undefined) r.referenceSortOrder = 'alphabetical';
+          });
+        });
       } else {
         this.entries = INITIAL_ENTRIES;
         this.saveEntriesToStorage();
@@ -503,6 +571,8 @@ class AdjungDb {
       console.error('Error loading Adjung DB, fallback to initial data', e);
       this.users = INITIAL_USERS;
       this.profiles = INITIAL_PROFILES;
+      this.identities = INITIAL_IDENTITIES;
+      this.citations = INITIAL_CITATIONS;
       this.entries = INITIAL_ENTRIES;
       this.systemSettings = INITIAL_SYSTEM_SETTINGS;
       this.logs = INITIAL_LOGS;
@@ -510,11 +580,17 @@ class AdjungDb {
   }
 
   // Save methods
-  private saveUsersToStorage() {
+  public saveUsersToStorage() {
     localStorage.setItem('adjung_users', JSON.stringify(this.users));
   }
   private saveProfilesToStorage() {
     localStorage.setItem('adjung_profiles', JSON.stringify(this.profiles));
+  }
+  private saveIdentitiesToStorage() {
+    localStorage.setItem('adjung_identities', JSON.stringify(this.identities));
+  }
+  private saveCitationsToStorage() {
+    localStorage.setItem('adjung_citations', JSON.stringify(this.citations));
   }
   private saveEntriesToStorage() {
     localStorage.setItem('adjung_entries', JSON.stringify(this.entries));
@@ -552,29 +628,35 @@ class AdjungDb {
     const newProfile: WriterProfile = {
       authorId: user.id,
       heroTitle: `${user.penName}’s Folio`,
-      heroSubtitle: 'A collection of writings and academic journals.',
-      heroSignatureText: user.penName,
-      bioText: `Biography for ${user.penName}. Academic scholar on Adjung.`,
-      lifeTimeline: [
-        {
-          id: `bio-${user.id}-birth`,
-          year: '2000',
-          title: 'Scholarly Inception',
-          description: 'Began historical research and literary documentation.',
-          category: 'Personal'
-        }
-      ]
+      heroSubtitle: 'A collection of writings and academic journals.'
     };
     this.profiles.push(newProfile);
     this.saveProfilesToStorage();
+    
+    // Create associated identity
+    const newIdentity: IdentityProfile = {
+      identityId: `id-${user.id}`,
+      accountId: user.id,
+      username: user.username,
+      displayName: user.penName,
+      penName: user.penName,
+      biography: `Biography for ${user.penName}. Academic scholar on Adjung.`,
+      publicVisibility: 'Public',
+      lifeTimeline: [],
+      signatures: []
+    };
+    this.identities.push(newIdentity);
+    this.saveIdentitiesToStorage();
   }
 
   deleteUser(id: string) {
     this.users = this.users.filter(u => u.id !== id);
     this.profiles = this.profiles.filter(p => p.authorId !== id);
+    this.identities = this.identities.filter(i => i.accountId !== id);
     this.entries = this.entries.filter(e => e.authorId !== id);
     this.saveUsersToStorage();
     this.saveProfilesToStorage();
+    this.saveIdentitiesToStorage();
     this.saveEntriesToStorage();
   }
 
@@ -591,10 +673,7 @@ class AdjungDb {
     const newProfile: WriterProfile = {
       authorId,
       heroTitle: user ? `${user.penName}’s Folio` : 'Academic Folio',
-      heroSubtitle: 'A collection of writings and scholarly notes.',
-      heroSignatureText: user ? user.penName : 'Scholar',
-      bioText: user ? `Biography of ${user.penName}.` : 'Academic scholar biography.',
-      lifeTimeline: []
+      heroSubtitle: 'A collection of writings and scholarly notes.'
     };
     this.profiles.push(newProfile);
     this.saveProfilesToStorage();
@@ -604,6 +683,73 @@ class AdjungDb {
   updateProfile(profile: WriterProfile) {
     this.profiles = this.profiles.map(p => p.authorId === profile.authorId ? profile : p);
     this.saveProfilesToStorage();
+  }
+
+  // --- IDENTITY STUDIO API ---
+  getIdentities(): IdentityProfile[] {
+    return this.identities;
+  }
+  
+  getIdentityById(id: string): IdentityProfile | undefined {
+    return this.identities.find(i => i.identityId === id);
+  }
+  
+  getIdentityByAccountId(accountId: string): IdentityProfile | undefined {
+    return this.identities.find(i => i.accountId === accountId);
+  }
+  
+  updateIdentity(identity: IdentityProfile) {
+    this.identities = this.identities.map(i => i.identityId === identity.identityId ? identity : i);
+    this.saveIdentitiesToStorage();
+  }
+  
+  saveSignature(accountId: string, signature: DigitalSignature) {
+    const identity = this.getIdentityByAccountId(accountId);
+    if (!identity) return;
+    
+    // Set all other signatures to non-default if this is default
+    let updatedSignatures = identity.signatures || [];
+    if (signature.status === 'Default') {
+      updatedSignatures = updatedSignatures.map(s => ({ ...s, status: s.status === 'Default' ? 'Archived' : s.status }));
+    }
+    
+    const existingIndex = updatedSignatures.findIndex(s => s.id === signature.id);
+    if (existingIndex >= 0) {
+      updatedSignatures[existingIndex] = signature;
+    } else {
+      updatedSignatures.push(signature);
+    }
+    
+    this.updateIdentity({ ...identity, signatures: updatedSignatures });
+  }
+
+  // --- CITATION LIBRARY API ---
+  getCitations(): Citation[] {
+    return this.citations;
+  }
+  
+  getCitationById(id: string): Citation | undefined {
+    return this.citations.find(c => c.id === id);
+  }
+  
+  checkDuplicateCitation(citation: Omit<Citation, 'id'>): Citation | undefined {
+    return this.citations.find(c => 
+      c.title.toLowerCase() === citation.title.toLowerCase() && 
+      c.author.toLowerCase() === citation.author.toLowerCase() && 
+      c.year === citation.year
+    );
+  }
+  
+  createCitation(citation: Omit<Citation, 'id'>): Citation {
+    const newCitation = { ...citation, id: `cit-${Date.now()}` };
+    this.citations.push(newCitation);
+    this.saveCitationsToStorage();
+    return newCitation;
+  }
+  
+  updateCitation(id: string, updates: Partial<Citation>) {
+    this.citations = this.citations.map(c => c.id === id ? { ...c, ...updates } : c);
+    this.saveCitationsToStorage();
   }
 
   getEntries(): Entry[] {
@@ -667,11 +813,15 @@ class AdjungDb {
   resetToDefaults() {
     this.users = INITIAL_USERS;
     this.profiles = INITIAL_PROFILES;
+    this.identities = INITIAL_IDENTITIES;
+    this.citations = INITIAL_CITATIONS;
     this.entries = INITIAL_ENTRIES;
     this.systemSettings = INITIAL_SYSTEM_SETTINGS;
     this.logs = INITIAL_LOGS;
     this.saveUsersToStorage();
     this.saveProfilesToStorage();
+    this.saveIdentitiesToStorage();
+    this.saveCitationsToStorage();
     this.saveEntriesToStorage();
     this.saveSettingsToStorage();
     this.saveLogsToStorage();

@@ -1,4 +1,9 @@
 import React from 'react';
+import { Citation, EditorBlock } from './types';
+import { citationStyleRegistry, HarvardStylePlugin } from './services/citationStyles';
+
+const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+const LATIN_REGEX = /[a-zA-Z]/g;
 
 /**
  * Detects if a given text block's dominant script is Arabic/Jawi.
@@ -6,12 +11,9 @@ import React from 'react';
  */
 export function isArabicText(text: string): boolean {
   if (!text) return false;
-  // Regex pattern matching Arabic and Jawi characters
-  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
-  const latinRegex = /[a-zA-Z]/g;
-
-  const arabicMatches = text.match(arabicRegex) || [];
-  const latinMatches = text.match(latinRegex) || [];
+  
+  const arabicMatches = text.match(ARABIC_REGEX) || [];
+  const latinMatches = text.match(LATIN_REGEX) || [];
 
   if (arabicMatches.length === 0) return false;
   if (latinMatches.length === 0) return true;
@@ -20,7 +22,7 @@ export function isArabicText(text: string): boolean {
   return arabicMatches.length > latinMatches.length;
 }
 
-type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'TEXT';
+type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT';
 
 interface Token {
   type: TokenType;
@@ -65,6 +67,10 @@ function tokenize(text: string): Token[] {
       flushText();
       tokens.push({ type: 'SINGLE_UND', text: '_' });
       i += 1;
+    } else if (text.startsWith('`', i)) {
+      flushText();
+      tokens.push({ type: 'BACKTICK', text: '`' });
+      i += 1;
     } else {
       currentText += text[i];
       i += 1;
@@ -88,7 +94,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
       continue;
     }
 
-    // It's a formatting marker: TRIPLE_AST, TRIPLE_UND, DOUBLE_AST, DOUBLE_UND, SINGLE_AST, SINGLE_UND
+    // It's a formatting marker: TRIPLE_AST, TRIPLE_UND, DOUBLE_AST, DOUBLE_UND, SINGLE_AST, SINGLE_UND, BACKTICK
     // Let's search for a matching closing marker of the same type.
     let matchIdx = -1;
     for (let j = i + 1; j < tokens.length; j++) {
@@ -123,6 +129,12 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
             {innerParsed}
           </em>
         );
+      } else if (token.type === 'BACKTICK') {
+        result.push(
+          <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-[#802334] px-1 py-0.5 rounded-sm border border-stone-200/50">
+            {innerParsed}
+          </code>
+        );
       }
       i = matchIdx + 1;
     } else {
@@ -135,31 +147,54 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
   return result;
 }
 
+const UNIFIED_REGEX = /(\[\^(fn-[a-zA-Z0-9-]+)\]|\[\^?(\d+)\]|\[cite:([^\]]+)\]|\[@(fig|tbl|sec|fn):([a-zA-Z0-9-]+)\])/g;
+
 /**
  * Semantic Inline Markdown Parser:
  * Replaces Markdown styles with clean inline HTML/React elements without leakage.
- * Processes footers and inline elements recursively and safely.
+ * Processes footers, citations and inline elements recursively and safely.
  */
-export function parseInlineFormatting(text: string): React.ReactNode {
+export function parseInlineFormatting(
+  text: string,
+  citations: Citation[] = [],
+  sortOrder: 'alphabetical' | 'appearance' = 'alphabetical',
+  citationsMap: { [id: string]: number } = {},
+  footnotesMap: Record<string, number> = {},
+  crossRefMap: Record<string, string> = {},
+  citationStyle: string = 'harvard'
+): React.ReactNode {
   if (!text) return '';
 
-  // First split by standard footnote syntax: [^1]
-  const fnRegex = /\[\^(\d+)\]/g;
-  const parts: { type: 'text' | 'fn'; content: string; key: string }[] = [];
+  const parts: { type: 'text' | 'fn-stable' | 'fn-legacy' | 'cite' | 'cross-ref'; content: string; key: string }[] = [];
   let lastIndex = 0;
   let match;
   let keyIdx = 0;
 
-  while ((match = fnRegex.exec(text)) !== null) {
+  // reset regex state
+  UNIFIED_REGEX.lastIndex = 0;
+  while ((match = UNIFIED_REGEX.exec(text)) !== null) {
     const index = match.index;
-    const num = match[1];
+    const matchedText = match[0];
 
     if (index > lastIndex) {
       parts.push({ type: 'text', content: text.substring(lastIndex, index), key: `txt-${keyIdx++}` });
     }
 
-    parts.push({ type: 'fn', content: num, key: `fn-${num}-${keyIdx++}` });
-    lastIndex = fnRegex.lastIndex;
+    if (match[2]) {
+      const fnId = match[2];
+      parts.push({ type: 'fn-stable', content: fnId, key: `fn-stable-${fnId}-${keyIdx++}` });
+    } else if (match[3]) {
+      const fnNum = match[3];
+      parts.push({ type: 'fn-legacy', content: fnNum, key: `fn-legacy-${fnNum}-${keyIdx++}` });
+    } else if (match[4]) {
+      const citeId = match[4];
+      parts.push({ type: 'cite', content: citeId, key: `cite-${citeId}-${keyIdx++}` });
+    } else if (match[5] && match[6]) {
+      const refType = match[5];
+      const refId = match[6];
+      parts.push({ type: 'cross-ref', content: `${refType}:${refId}`, key: `cross-${refType}-${refId}-${keyIdx++}` });
+    }
+    lastIndex = UNIFIED_REGEX.lastIndex;
   }
 
   if (lastIndex < text.length) {
@@ -171,15 +206,72 @@ export function parseInlineFormatting(text: string): React.ReactNode {
   }
 
   return parts.map((part) => {
-    if (part.type === 'fn') {
+    if (part.type === 'fn-stable') {
+      const num = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`] || '?';
       return (
         <a
           key={part.key}
           href={`#footnote-dest-${part.content}`}
           className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5"
+          id={`fnref-${part.content}`}
+          title={`Jump to footnote ${num}`}
+        >
+          [{num}]
+        </a>
+      );
+    }
+
+    if (part.type === 'fn-legacy') {
+      return (
+        <a
+          key={part.key}
+          href={`#footnote-dest-legacy-${part.content}`}
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5"
           title={`Jump to footnote ${part.content}`}
         >
           [{part.content}]
+        </a>
+      );
+    }
+
+    if (part.type === 'cite') {
+      const citation = citations.find(c => c.id === part.content);
+      if (!citation) {
+        return <span key={part.key} className="text-red-500 font-mono text-xs">[cite-error]</span>;
+      }
+      
+      const stylePlugin = citationStyleRegistry.get(citationStyle) || HarvardStylePlugin;
+      const index = citationsMap[citation.id] || 1;
+      const label = stylePlugin.formatCitation(citation, index, sortOrder);
+      
+      return (
+        <a
+          key={part.key}
+          href={`#reference-${citation.id}`}
+          className="citation-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 select-none"
+          title={`${citation.author} (${citation.year}) - ${citation.title}`}
+        >
+          {label}
+        </a>
+      );
+    }
+
+    if (part.type === 'cross-ref') {
+      const [refType, refId] = part.content.split(':');
+      let label = '';
+      if (refType === 'fn') {
+        const num = footnotesMap[refId] || footnotesMap[`fn-${refId}`] || '?';
+        label = `Footnote ${num}`;
+      } else {
+        label = crossRefMap[refId] || `${refType.charAt(0).toUpperCase() + refType.slice(1)} ?`;
+      }
+      return (
+        <a
+          key={part.key}
+          href={`#ref-${refId}`}
+          className="cross-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5"
+        >
+          {label}
         </a>
       );
     }
@@ -203,18 +295,72 @@ export interface ParagraphBlock {
   text: string;
 }
 
+export interface HeadingBlock {
+  type: 'heading';
+  level: 1 | 2 | 3;
+  text: string;
+}
+
+export interface ListBlock {
+  type: 'list';
+  ordered: boolean;
+  items: Array<{ text: string; checked?: boolean }>;
+}
+
+export interface TableBlock {
+  type: 'table';
+  headers: string[];
+  rows: string[][];
+  alignments?: Array<'left' | 'center' | 'right'>;
+}
+
+export interface ImageBlock {
+  type: 'image';
+  alt: string;
+  url: string;
+}
+
+export interface DividerBlock {
+  type: 'divider';
+}
+
+export interface CodeBlock {
+  type: 'code-block';
+  language?: string;
+  code: string;
+}
+
 export interface LatinQuoteBlock {
   type: 'latin-quote';
   text: string;
+  attribution?: string;
 }
 
 export interface ArabicQuoteBlock {
   type: 'arabic-quote';
   arabic: string;
   translation?: string;
+  attribution?: string;
 }
 
-export type ContentBlock = ParagraphBlock | LatinQuoteBlock | ArabicQuoteBlock;
+export interface CalloutBlock {
+  type: 'callout';
+  calloutType: 'note' | 'warning' | 'tip' | 'important' | 'definition';
+  title?: string;
+  text: string;
+}
+
+export type ContentBlock = 
+  | ParagraphBlock 
+  | HeadingBlock 
+  | ListBlock 
+  | TableBlock 
+  | ImageBlock 
+  | DividerBlock 
+  | CodeBlock 
+  | LatinQuoteBlock 
+  | ArabicQuoteBlock
+  | CalloutBlock;
 
 /**
  * Parses raw text content into an array of structured ContentBlocks.
@@ -224,116 +370,185 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
   const blocks: ContentBlock[] = [];
   if (!content) return [];
 
-  // If the content contains explicit quote tags, parse them using a structured tag scanner
-  if (content.includes('<quote')) {
-    let remaining = content;
-    while (remaining.length > 0) {
-      const quoteStartIdx = remaining.indexOf('<quote');
-      if (quoteStartIdx === -1) {
-        // No more quotes, parse remaining text as standard paragraphs
-        const paras = remaining.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-        for (const p of paras) {
-          blocks.push({ type: 'paragraph', text: p });
-        }
-        break;
-      }
+  // Parse a single block segment
+  const parseSingleSegment = (segment: string): ContentBlock => {
+    const trimmed = segment.trim();
 
-      // Process any paragraphs preceding the quote
-      if (quoteStartIdx > 0) {
-        const preceding = remaining.substring(0, quoteStartIdx);
-        const paras = preceding.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-        for (const p of paras) {
-          blocks.push({ type: 'paragraph', text: p });
-        }
-      }
+    // 1. Callout Block
+    if (trimmed.startsWith('<callout')) {
+      const typeMatch = trimmed.match(/type="([^"]+)"/);
+      const titleMatch = trimmed.match(/title="([^"]+)"/);
+      const cType = (typeMatch ? typeMatch[1] : 'note') as 'note' | 'warning' | 'tip' | 'important' | 'definition';
+      const titleVal = titleMatch ? titleMatch[1] : undefined;
+      const textStart = segment.indexOf('>') + 1;
+      const textEnd = segment.lastIndexOf('</callout>');
+      const textVal = textEnd !== -1 ? segment.substring(textStart, textEnd).trim() : segment.substring(textStart).trim();
+      return {
+        type: 'callout',
+        calloutType: cType,
+        title: titleVal,
+        text: textVal
+      };
+    }
 
-      // Process the quote block
-      const tagEndIdx = remaining.indexOf('>', quoteStartIdx);
-      if (tagEndIdx === -1) {
-        // Malformed, treat remaining as standard paragraphs
-        const paras = remaining.substring(quoteStartIdx).split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-        for (const p of paras) {
-          blocks.push({ type: 'paragraph', text: p });
-        }
-        break;
-      }
+    // 2. XML Quote Block
+    if (trimmed.startsWith('<quote')) {
+      const typeMatch = trimmed.match(/type="([^"]+)"/);
+      const attribMatch = trimmed.match(/attribution="([^"]+)"/);
+      const qType = typeMatch ? typeMatch[1] : 'latin';
+      const quoteAttrib = attribMatch ? attribMatch[1] : undefined;
 
-      const tagText = remaining.substring(quoteStartIdx, tagEndIdx + 1);
-      const quoteEndIdx = remaining.indexOf('</quote>', tagEndIdx);
-      if (quoteEndIdx === -1) {
-        // Malformed, treat remaining as standard paragraphs
-        const paras = remaining.substring(quoteStartIdx).split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-        for (const p of paras) {
-          blocks.push({ type: 'paragraph', text: p });
-        }
-        break;
-      }
+      const tagEnd = segment.indexOf('>');
+      const quoteEnd = segment.lastIndexOf('</quote>');
+      const inner = quoteEnd !== -1 ? segment.substring(tagEnd + 1, quoteEnd).trim() : segment.substring(tagEnd + 1).trim();
 
-      const quoteInner = remaining.substring(tagEndIdx + 1, quoteEndIdx).trim();
-      const typeMatch = tagText.match(/type="([^"]+)"/);
-      const quoteType = typeMatch ? typeMatch[1] : 'latin';
-
-      if (quoteType === 'arabic') {
-        const arStart = quoteInner.indexOf('<arabic>');
-        const arEnd = quoteInner.indexOf('</arabic>');
+      if (qType === 'arabic') {
+        const arStart = inner.indexOf('<arabic>');
+        const arEnd = inner.indexOf('</arabic>');
         let arabicVal = '';
         if (arStart !== -1 && arEnd !== -1) {
-          arabicVal = quoteInner.substring(arStart + 8, arEnd).trim();
+          arabicVal = inner.substring(arStart + 8, arEnd).trim();
         } else {
-          arabicVal = quoteInner;
+          arabicVal = inner;
         }
 
-        const transStart = quoteInner.indexOf('<translation>');
-        const transEnd = quoteInner.indexOf('</translation>');
+        const transStart = inner.indexOf('<translation>');
+        const transEnd = inner.indexOf('</translation>');
         let translationVal: string | undefined = undefined;
         if (transStart !== -1 && transEnd !== -1) {
-          translationVal = quoteInner.substring(transStart + 13, transEnd).trim();
+          translationVal = inner.substring(transStart + 13, transEnd).trim();
         }
 
-        blocks.push({
+        return {
           type: 'arabic-quote',
           arabic: arabicVal,
-          translation: translationVal
-        });
+          translation: translationVal,
+          attribution: quoteAttrib
+        };
       } else {
-        // Latin Quote
-        const textStart = quoteInner.indexOf('<text>');
-        const textEnd = quoteInner.indexOf('</text>');
+        const textStart = inner.indexOf('<text>');
+        const textEnd = inner.indexOf('</text>');
         let textVal = '';
         if (textStart !== -1 && textEnd !== -1) {
-          textVal = quoteInner.substring(textStart + 6, textEnd).trim();
+          textVal = inner.substring(textStart + 6, textEnd).trim();
         } else {
-          textVal = quoteInner;
+          textVal = inner;
         }
 
-        blocks.push({
+        return {
           type: 'latin-quote',
-          text: textVal
+          text: textVal,
+          attribution: quoteAttrib
+        };
+      }
+    }
+
+    // 3. Code Block
+    if (trimmed.startsWith('```')) {
+      const lines = segment.split('\n');
+      const firstLine = lines[0];
+      const lang = firstLine.substring(3).trim();
+      const codeLines = lines.slice(1);
+      if (codeLines.length > 0 && codeLines[codeLines.length - 1].trim().startsWith('```')) {
+        codeLines.pop();
+      }
+      return { type: 'code-block', language: lang || undefined, code: codeLines.join('\n') };
+    }
+
+    // 4. Divider
+    if (/^(---|___|\*\*\*)$/.test(trimmed)) {
+      return { type: 'divider' };
+    }
+
+    // 5. Headings
+    if (trimmed.startsWith('# ')) {
+      return { type: 'heading', level: 1, text: trimmed.substring(2).trim() };
+    }
+    if (trimmed.startsWith('## ')) {
+      return { type: 'heading', level: 2, text: trimmed.substring(3).trim() };
+    }
+    if (trimmed.startsWith('### ')) {
+      return { type: 'heading', level: 3, text: trimmed.substring(4).trim() };
+    }
+
+    // 6. Image
+    const imgRegex = /^!\[([^\]]*)\]\(([^)]+)\)$/;
+    const imgMatch = trimmed.match(imgRegex);
+    if (imgMatch) {
+      return { type: 'image', alt: imgMatch[1], url: imgMatch[2] };
+    }
+
+    // 7. Table
+    const lines = segment.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length >= 2 && lines[0].startsWith('|') && lines[0].endsWith('|')) {
+      const headers = lines[0].split('|').slice(1, -1).map(h => h.trim());
+      let startRowIdx = 1;
+      let alignments: Array<'left' | 'center' | 'right'> = [];
+      if (lines[1] && lines[1].includes('-')) {
+        startRowIdx = 2;
+        alignments = lines[1].split('|').slice(1, -1).map(col => {
+          const c = col.trim();
+          if (c.startsWith(':') && c.endsWith(':')) return 'center';
+          if (c.endsWith(':')) return 'right';
+          return 'left';
         });
       }
-
-      remaining = remaining.substring(quoteEndIdx + 8);
+      const rows = lines.slice(startRowIdx).map(line => {
+        return line.split('|').slice(1, -1).map(c => c.trim());
+      });
+      return { type: 'table', headers, rows, alignments };
     }
-    return blocks;
-  }
 
-  // Legacy parser: split content by paragraphs and parse > markers
-  const paragraphs = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-  for (const p of paragraphs) {
-    if (p.startsWith('>')) {
-      const lines = p.split('\n').map(line => {
+    // 8. Lists & Checklists
+    const isNumbered = /^\d+\.\s+/.test(lines[0] || '');
+    const isBullet = /^([-\*•])\s+/.test(lines[0] || '') || /^([-\*])\s+\[([ x])\]\s+/i.test(lines[0] || '');
+    if ((isNumbered || isBullet) && lines.length > 0) {
+      const items = lines.map(line => {
+        // Checklist check
+        const checkMatch = line.match(/^([-\*•])\s+\[([ x])\]\s+(.*)$/i);
+        if (checkMatch) {
+          return {
+            text: checkMatch[3],
+            checked: checkMatch[2].toLowerCase() === 'x'
+          };
+        }
+        
+        // Bullet check
+        const bulletMatch = line.match(/^([-\*•])\s+(.*)$/);
+        if (bulletMatch) {
+          return { text: bulletMatch[2] };
+        }
+        
+        // Numbered check
+        const numMatch = line.match(/^\d+\.\s+(.*)$/);
+        if (numMatch) {
+          return { text: numMatch[1] };
+        }
+        
+        return { text: line };
+      });
+      
+      return {
+        type: 'list',
+        ordered: isNumbered,
+        items
+      };
+    }
+
+    // 9. Legacy Blockquote
+    if (trimmed.startsWith('>')) {
+      const quoteLines = segment.split('\n').map(line => {
         const l = line.trim();
         return l.startsWith('>') ? l.substring(1).trim() : l;
       }).filter(Boolean);
 
-      const hasArabic = lines.some(line => isArabicText(line));
+      const hasArabic = quoteLines.some(line => isArabicText(line));
       if (hasArabic) {
-        // Separate Arabic from non-Arabic (translation)
         const arLines: string[] = [];
         const transLines: string[] = [];
         let readingArabic = true;
 
-        for (const line of lines) {
+        for (const line of quoteLines) {
           if (readingArabic) {
             if (isArabicText(line)) {
               arLines.push(line);
@@ -346,23 +561,177 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
           }
         }
 
-        blocks.push({
+        return {
           type: 'arabic-quote',
           arabic: arLines.join('\n'),
           translation: transLines.length > 0 ? transLines.join('\n') : undefined
-        });
+        };
       } else {
-        blocks.push({
+        return {
           type: 'latin-quote',
-          text: lines.join('\n')
-        });
+          text: quoteLines.join('\n')
+        };
       }
-    } else {
-      blocks.push({
-        type: 'paragraph',
-        text: p
-      });
     }
+
+    // 10. Default Paragraph
+    return { type: 'paragraph', text: segment };
+  };
+
+  // If the content contains explicit XML quote tags or callout tags, parse them using a structured tag scanner
+  if (content.includes('<quote') || content.includes('<callout')) {
+    let remaining = content;
+    while (remaining.length > 0) {
+      const quoteStartIdx = remaining.indexOf('<quote');
+      const calloutStartIdx = remaining.indexOf('<callout');
+      
+      // Determine which starts first
+      let firstIdx = -1;
+      let tagType: 'quote' | 'callout' = 'quote';
+      if (quoteStartIdx !== -1 && calloutStartIdx !== -1) {
+        if (quoteStartIdx < calloutStartIdx) {
+          firstIdx = quoteStartIdx;
+          tagType = 'quote';
+        } else {
+          firstIdx = calloutStartIdx;
+          tagType = 'callout';
+        }
+      } else if (quoteStartIdx !== -1) {
+        firstIdx = quoteStartIdx;
+        tagType = 'quote';
+      } else if (calloutStartIdx !== -1) {
+        firstIdx = calloutStartIdx;
+        tagType = 'callout';
+      }
+
+      if (firstIdx === -1) {
+        const paras = remaining.split(/\n\n+/).filter(Boolean);
+        for (const p of paras) {
+          blocks.push(parseSingleSegment(p));
+        }
+        break;
+      }
+
+      if (firstIdx > 0) {
+        const preceding = remaining.substring(0, firstIdx);
+        const paras = preceding.split(/\n\n+/).filter(Boolean);
+        for (const p of paras) {
+          blocks.push(parseSingleSegment(p));
+        }
+      }
+
+      if (tagType === 'quote') {
+        const tagEndIdx = remaining.indexOf('>', firstIdx);
+        if (tagEndIdx === -1) {
+          const paras = remaining.substring(firstIdx).split(/\n\n+/).filter(Boolean);
+          for (const p of paras) {
+            blocks.push(parseSingleSegment(p));
+          }
+          break;
+        }
+
+        const tagText = remaining.substring(firstIdx, tagEndIdx + 1);
+        const quoteEndIdx = remaining.indexOf('</quote>', tagEndIdx);
+        if (quoteEndIdx === -1) {
+          const paras = remaining.substring(firstIdx).split(/\n\n+/).filter(Boolean);
+          for (const p of paras) {
+            blocks.push(parseSingleSegment(p));
+          }
+          break;
+        }
+
+        const quoteInner = remaining.substring(tagEndIdx + 1, quoteEndIdx).trim();
+        const typeMatch = tagText.match(/type="([^"]+)"/);
+        const quoteType = typeMatch ? typeMatch[1] : 'latin';
+        const attribMatch = tagText.match(/attribution="([^"]+)"/);
+        const quoteAttrib = attribMatch ? attribMatch[1] : undefined;
+
+        if (quoteType === 'arabic') {
+          const arStart = quoteInner.indexOf('<arabic>');
+          const arEnd = quoteInner.indexOf('</arabic>');
+          let arabicVal = '';
+          if (arStart !== -1 && arEnd !== -1) {
+            arabicVal = quoteInner.substring(arStart + 8, arEnd).trim();
+          } else {
+            arabicVal = quoteInner;
+          }
+
+          const transStart = quoteInner.indexOf('<translation>');
+          const transEnd = quoteInner.indexOf('</translation>');
+          let translationVal: string | undefined = undefined;
+          if (transStart !== -1 && transEnd !== -1) {
+            translationVal = quoteInner.substring(transStart + 13, transEnd).trim();
+          }
+
+          blocks.push({
+            type: 'arabic-quote',
+            arabic: arabicVal,
+            translation: translationVal,
+            attribution: quoteAttrib
+          });
+        } else {
+          // Latin Quote
+          const textStart = quoteInner.indexOf('<text>');
+          const textEnd = quoteInner.indexOf('</text>');
+          let textVal = '';
+          if (textStart !== -1 && textEnd !== -1) {
+            textVal = quoteInner.substring(textStart + 6, textEnd).trim();
+          } else {
+            textVal = quoteInner;
+          }
+
+          blocks.push({
+            type: 'latin-quote',
+            text: textVal,
+            attribution: quoteAttrib
+          });
+        }
+
+        remaining = remaining.substring(quoteEndIdx + 8);
+      } else {
+        // Callout Block
+        const tagEndIdx = remaining.indexOf('>', firstIdx);
+        if (tagEndIdx === -1) {
+          const paras = remaining.substring(firstIdx).split(/\n\n+/).filter(Boolean);
+          for (const p of paras) {
+            blocks.push(parseSingleSegment(p));
+          }
+          break;
+        }
+
+        const tagText = remaining.substring(firstIdx, tagEndIdx + 1);
+        const calloutEndIdx = remaining.indexOf('</callout>', tagEndIdx);
+        if (calloutEndIdx === -1) {
+          const paras = remaining.substring(firstIdx).split(/\n\n+/).filter(Boolean);
+          for (const p of paras) {
+            blocks.push(parseSingleSegment(p));
+          }
+          break;
+        }
+
+        const calloutInner = remaining.substring(tagEndIdx + 1, calloutEndIdx).trim();
+        const typeMatch = tagText.match(/type="([^"]+)"/);
+        const titleMatch = tagText.match(/title="([^"]+)"/);
+        const cType = (typeMatch ? typeMatch[1] : 'note') as 'note' | 'warning' | 'tip' | 'important' | 'definition';
+        const titleVal = titleMatch ? titleMatch[1] : undefined;
+
+        blocks.push({
+          type: 'callout',
+          calloutType: cType,
+          title: titleVal,
+          text: calloutInner
+        });
+
+        remaining = remaining.substring(calloutEndIdx + 10);
+      }
+    }
+    return blocks;
+  }
+
+  // Legacy parser: split content by paragraphs and parse each segment
+  const paragraphs = content.split(/\n\n+/).filter(Boolean);
+  for (const p of paragraphs) {
+    blocks.push(parseSingleSegment(p));
   }
 
   return blocks;
@@ -376,12 +745,50 @@ export function serializeBlocks(blocks: ContentBlock[]): string {
     if (block.type === 'paragraph') {
       return block.text;
     }
+    if (block.type === 'heading') {
+      return '#'.repeat(block.level) + ' ' + block.text;
+    }
+    if (block.type === 'list') {
+      return block.items.map((item, idx) => {
+        const prefix = block.ordered 
+          ? `${idx + 1}. ` 
+          : (item.checked !== undefined ? `- [${item.checked ? 'x' : ' '}] ` : '- ');
+        return prefix + item.text;
+      }).join('\n');
+    }
+    if (block.type === 'table') {
+      const headerLine = '| ' + block.headers.join(' | ') + ' |';
+      const alignments = block.alignments || block.headers.map(() => 'left');
+      const sepLine = '| ' + alignments.map(align => {
+        if (align === 'center') return ':---:';
+        if (align === 'right') return '---:';
+        return '---';
+      }).join(' | ') + ' |';
+      const rowLines = block.rows.map(row => '| ' + row.join(' | ') + ' |');
+      return [headerLine, sepLine, ...rowLines].join('\n');
+    }
+    if (block.type === 'image') {
+      return `![${block.alt}](${block.url})`;
+    }
+    if (block.type === 'divider') {
+      return '---';
+    }
+    if (block.type === 'code-block') {
+      const lang = block.language || '';
+      return '```' + lang + '\n' + block.code + '\n```';
+    }
     if (block.type === 'latin-quote') {
-      return `<quote type="latin"><text>${block.text}</text></quote>`;
+      const attr = block.attribution ? ` attribution="${block.attribution}"` : '';
+      return `<quote type="latin"${attr}><text>${block.text}</text></quote>`;
     }
     if (block.type === 'arabic-quote') {
+      const attr = block.attribution ? ` attribution="${block.attribution}"` : '';
       const trans = block.translation ? `\n  <translation>${block.translation}</translation>` : '';
-      return `<quote type="arabic">\n  <arabic>${block.arabic}</arabic>${trans}\n</quote>`;
+      return `<quote type="arabic"${attr}>\n  <arabic>${block.arabic}</arabic>${trans}\n</quote>`;
+    }
+    if (block.type === 'callout') {
+      const titleAttr = block.title ? ` title="${block.title}"` : '';
+      return `<callout type="${block.calloutType}"${titleAttr}>\n  ${block.text}\n</callout>`;
     }
     return '';
   }).join('\n\n');
@@ -396,4 +803,367 @@ export function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+export class DocumentExporter {
+  // HTML Export
+  static exportToHtml(entry: { title: string; contentType: string; content: string; excerpt?: string }): string {
+    const blocks = parseContentToBlocks(entry.content);
+    let html = `<article class="adjung-publication" data-type="${entry.contentType}">\n`;
+    html += `  <header class="publication-header">\n`;
+    if (entry.contentType !== 'Note') {
+      html += `    <h1>${entry.title}</h1>\n`;
+    }
+    if (entry.excerpt) {
+      html += `    <p class="publication-abstract"><em>${entry.excerpt}</em></p>\n`;
+    }
+    html += `  </header>\n`;
+    html += `  <section class="publication-body">\n`;
+    
+    blocks.forEach(block => {
+      if (block.type === 'paragraph') {
+        html += `    <p>${block.text}</p>\n`;
+      } else if (block.type === 'heading') {
+        html += `    <h${block.level + 1}>${block.text}</h${block.level + 1}>\n`;
+      } else if (block.type === 'divider') {
+        html += `    <hr />\n`;
+      } else if (block.type === 'image') {
+        html += `    <figure><img src="${block.url}" alt="${block.alt}" /><figcaption>${block.alt}</figcaption></figure>\n`;
+      } else if (block.type === 'code-block') {
+        html += `    <pre><code class="language-${block.language || 'none'}">${block.code}</code></pre>\n`;
+      } else if (block.type === 'latin-quote') {
+        const attr = block.attribution ? `<cite>${block.attribution}</cite>` : '';
+        html += `    <blockquote><p>${block.text}</p>${attr}</blockquote>\n`;
+      } else if (block.type === 'arabic-quote') {
+        const trans = block.translation ? `<p class="translation">${block.translation}</p>` : '';
+        const attr = block.attribution ? `<cite>${block.attribution}</cite>` : '';
+        html += `    <blockquote class="arabic" dir="rtl"><p>${block.arabic}</p>${trans}${attr}</blockquote>\n`;
+      } else if (block.type === 'callout') {
+        const title = block.title ? `<h5>${block.title}</h5>` : '';
+        html += `    <div class="callout callout-${block.calloutType}">${title}<p>${block.text}</p></div>\n`;
+      } else if (block.type === 'list') {
+        const tag = block.ordered ? 'ol' : 'ul';
+        html += `    <${tag}>\n`;
+        block.items.forEach(item => {
+          html += `      <li>${item.text}</li>\n`;
+        });
+        html += `    </${tag}>\n`;
+      } else if (block.type === 'table') {
+        html += `    <table>\n      <thead>\n        <tr>\n`;
+        block.headers.forEach(h => {
+          html += `          <th>${h}</th>\n`;
+        });
+        html += `        </tr>\n      </thead>\n      <tbody>\n`;
+        block.rows.forEach(row => {
+          html += `        <tr>\n`;
+          row.forEach(cell => {
+            html += `          <td>${cell}</td>\n`;
+          });
+          html += `        </tr>\n`;
+        });
+        html += `      </tbody>\n    </table>\n`;
+      }
+    });
+    
+    html += `  </section>\n`;
+    html += `</article>`;
+    return html;
+  }
+
+  // Markdown Export
+  static exportToMarkdown(entry: { title: string; contentType: string; content: string; excerpt?: string }): string {
+    let md = '';
+    if (entry.contentType !== 'Note') {
+      md += `# ${entry.title}\n\n`;
+    }
+    if (entry.excerpt) {
+      md += `> *${entry.excerpt}*\n\n`;
+    }
+    md += entry.content;
+    return md;
+  }
+
+  // XML Export
+  static exportToXml(entry: { id: string; title: string; contentType: string; content: string; excerpt?: string; authorId: string; createdDate: string; updatedDate: string; publishedDate: string | null; slug: string; tags: string[]; revisions?: any[]; citations?: any[]; referenceSortOrder?: string }, authorName: string): string {
+    const escapeXml = (str: string) => {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const blocks = parseContentToBlocks(entry.content);
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<publication type="${entry.contentType}">\n`;
+    
+    xml += `  <metadata>\n`;
+    xml += `    <id>${escapeXml(entry.id)}</id>\n`;
+    if (entry.contentType !== 'Note') {
+      xml += `    <title>${escapeXml(entry.title)}</title>\n`;
+    }
+    if (entry.excerpt) {
+      xml += `    <excerpt>${escapeXml(entry.excerpt)}</excerpt>\n`;
+    }
+    xml += `    <author>${escapeXml(authorName)}</author>\n`;
+    xml += `    <slug>${escapeXml(entry.slug)}</slug>\n`;
+    xml += `    <createdDate>${escapeXml(entry.createdDate)}</createdDate>\n`;
+    xml += `    <updatedDate>${escapeXml(entry.updatedDate)}</updatedDate>\n`;
+    if (entry.publishedDate) {
+      xml += `    <publishedDate>${escapeXml(entry.publishedDate)}</publishedDate>\n`;
+    }
+    if (entry.tags && entry.tags.length > 0) {
+      xml += `    <tags>\n`;
+      entry.tags.forEach(tag => {
+        xml += `      <tag>${escapeXml(tag)}</tag>\n`;
+      });
+      xml += `    </tags>\n`;
+    }
+    xml += `  </metadata>\n`;
+
+    xml += `  <body>\n`;
+    blocks.forEach((block, idx) => {
+      if (block.type === 'paragraph') {
+        xml += `    <paragraph>${escapeXml(block.text)}</paragraph>\n`;
+      } else if (block.type === 'heading') {
+        xml += `    <heading level="${block.level}">${escapeXml(block.text)}</heading>\n`;
+      } else if (block.type === 'divider') {
+        xml += `    <divider />\n`;
+      } else if (block.type === 'image') {
+        xml += `    <figure url="${escapeXml(block.url)}">\n`;
+        if (block.alt) {
+          xml += `      <caption>${escapeXml(block.alt)}</caption>\n`;
+        }
+        xml += `    </figure>\n`;
+      } else if (block.type === 'code-block') {
+        xml += `    <codeBlock${block.language ? ` language="${escapeXml(block.language)}"` : ''}>${escapeXml(block.code)}</codeBlock>\n`;
+      } else if (block.type === 'latin-quote') {
+        const attrAttr = block.attribution ? ` attribution="${escapeXml(block.attribution)}"` : '';
+        xml += `    <blockquote type="latin"${attrAttr}>\n`;
+        xml += `      <text>${escapeXml(block.text)}</text>\n`;
+        xml += `    </blockquote>\n`;
+      } else if (block.type === 'arabic-quote') {
+        const attrAttr = block.attribution ? ` attribution="${escapeXml(block.attribution)}"` : '';
+        xml += `    <blockquote type="arabic"${attrAttr}>\n`;
+        xml += `      <arabic>${escapeXml(block.arabic)}</arabic>\n`;
+        if (block.translation) {
+          xml += `      <translation>${escapeXml(block.translation)}</translation>\n`;
+        }
+        xml += `    </blockquote>\n`;
+      } else if (block.type === 'callout') {
+        const titleAttr = block.title ? ` title="${escapeXml(block.title)}"` : '';
+        xml += `    <callout type="${block.calloutType}"${titleAttr}>${escapeXml(block.text)}</callout>\n`;
+      } else if (block.type === 'list') {
+        xml += `    <list ordered="${block.ordered}">\n`;
+        block.items.forEach(item => {
+          xml += `      <listItem>${escapeXml(item.text)}</listItem>\n`;
+        });
+        xml += `    </list>\n`;
+      } else if (block.type === 'table') {
+        xml += `    <table>\n`;
+        xml += `      <thead>\n`;
+        xml += `        <tr>\n`;
+        block.headers.forEach(h => {
+          xml += `          <th>${escapeXml(h)}</th>\n`;
+        });
+        xml += `        </tr>\n`;
+        xml += `      </thead>\n`;
+        xml += `      <tbody>\n`;
+        block.rows.forEach(row => {
+          xml += `        <tr>\n`;
+          row.forEach(cell => {
+            xml += `          <td>${escapeXml(cell)}</td>\n`;
+          });
+          xml += `        </tr>\n`;
+        });
+        xml += `      </tbody>\n`;
+        xml += `    </table>\n`;
+      }
+    });
+    xml += `  </body>\n`;
+    xml += `</publication>\n`;
+    return xml;
+  }
+
+  // PDF Schema mapping output (prepared structure)
+  static exportToPdfData(entry: { title: string; contentType: string; content: string }) {
+    const blocks = parseContentToBlocks(entry.content);
+    return {
+      metadata: {
+        title: entry.title,
+        type: entry.contentType,
+        generatedAt: new Date().toISOString()
+      },
+      pageConfig: {
+        fontFamily: 'Crimson Text',
+        fontSize: 11,
+        lineHeight: 1.6,
+        margins: { top: 54, bottom: 54, left: 72, right: 72 }
+      },
+      renderOutline: blocks.map(block => {
+        return {
+          type: block.type,
+          data: { ...block },
+          estimatedHeight: block.type === 'heading' ? 24 : 16 * (block.type === 'paragraph' ? Math.ceil(block.text.length / 80) : 2)
+        };
+      })
+    };
+  }
+}
+
+const arabicRegex = /[\u0600-\u06FF]/;
+const latinRegex = /[a-zA-Z]/;
+const unifiedRegex = new RegExp(`(${arabicRegex.source})|(${latinRegex.source})`, 'gu');
+
+/**
+ * Converts a content string into AST EditorBlock objects.
+ */
+export function parseTextToAST(content: string): EditorBlock[] {
+  const contentBlocks = parseContentToBlocks(content);
+  return contentBlocks.map(block => {
+    let data: Record<string, unknown> = {};
+    if (block.type === 'paragraph') {
+      data = { text: block.text };
+    } else if (block.type === 'heading') {
+      data = { level: block.level, text: block.text };
+    } else if (block.type === 'list') {
+      data = { ordered: block.ordered, items: block.items };
+    } else if (block.type === 'table') {
+      data = { headers: block.headers, rows: block.rows, alignments: block.alignments };
+    } else if (block.type === 'image') {
+      data = { url: block.url, alt: block.alt, caption: block.alt };
+    } else if (block.type === 'divider') {
+      data = {};
+    } else if (block.type === 'code-block') {
+      data = { language: block.language, code: block.code };
+    } else if (block.type === 'latin-quote') {
+      data = { text: block.text, attribution: block.attribution };
+    } else if (block.type === 'arabic-quote') {
+      data = { arabic: block.arabic, translation: block.translation, attribution: block.attribution };
+    } else if (block.type === 'callout') {
+      data = { calloutType: block.calloutType, title: block.title, text: block.text };
+    }
+    return {
+      id: generateUUID(),
+      type: block.type === 'image' ? 'figure' : block.type,
+      data
+    };
+  });
+}
+
+/**
+ * Serializes AST EditorBlock objects back to a markdown/XML content string.
+ */
+export function serializeASTToText(blocks: EditorBlock[]): string {
+  const contentBlocks = blocks.map(block => {
+    let type = block.type;
+    if (type === 'figure') type = 'image';
+    const cb = { type, data: block.data } as any;
+    if (type === 'paragraph') {
+      cb.text = block.data.text || '';
+    } else if (type === 'heading') {
+      cb.level = block.data.level || 1;
+      cb.text = block.data.text || '';
+    } else if (type === 'list') {
+      cb.ordered = block.data.ordered || false;
+      cb.items = block.data.items || [];
+    } else if (type === 'table') {
+      cb.headers = block.data.headers || [];
+      cb.rows = block.data.rows || [];
+      cb.alignments = block.data.alignments;
+    } else if (type === 'image' || type === 'figure') {
+      cb.type = 'image';
+      cb.url = block.data.url || '';
+      cb.alt = block.data.caption || block.data.alt || '';
+    } else if (type === 'divider') {
+      // empty
+    } else if (type === 'code-block') {
+      cb.language = block.data.language;
+      cb.code = block.data.code || '';
+    } else if (type === 'latin-quote' || type === 'quote') {
+      cb.type = 'latin-quote';
+      cb.text = block.data.text || '';
+      cb.attribution = block.data.attribution;
+    } else if (type === 'arabic-quote') {
+      cb.arabic = block.data.arabic || '';
+      cb.translation = block.data.translation;
+      cb.attribution = block.data.attribution;
+    } else if (type === 'callout') {
+      cb.calloutType = block.data.calloutType || 'note';
+      cb.title = block.data.title;
+      cb.text = block.data.text || '';
+    }
+    return cb;
+  });
+  return serializeBlocks(contentBlocks);
+}
+
+/**
+ * Scans AST blocks for inline stable footnotes [^fn-xxx] and builds occurrence map.
+ */
+export function buildFootnotesMap(blocks: EditorBlock[]): { map: Record<string, number>; order: string[] } {
+  const map: Record<string, number> = {};
+  const order: string[] = [];
+  let currentNumber = 1;
+  const fnRegex = /\[\^(fn-[a-zA-Z0-9-]+)\]/g;
+
+  blocks.forEach(b => {
+    let text = '';
+    if (b.type === 'paragraph') {
+      text = b.data.text || '';
+    } else if (b.type === 'heading') {
+      text = b.data.text || '';
+    } else if (b.type === 'callout') {
+      text = b.data.text || '';
+    } else if (b.type === 'latin-quote' || b.type === 'quote') {
+      text = b.data.text || '';
+    } else if (b.type === 'arabic-quote') {
+      text = (b.data.arabic || '') + ' ' + (b.data.translation || '');
+    } else if (b.type === 'list') {
+      const items = b.data.items || [];
+      text = items.map((it: {text: string, checked?: boolean}) => it.text).join(' ');
+    }
+    if (b.type === 'table') {
+      const headers = b.data.headers || [];
+      const rows = b.data.rows || [];
+      text = headers.join(' ') + ' ' + rows.map((r: string[]) => r.join(' ')).join(' ');
+    }
+
+    let match;
+    fnRegex.lastIndex = 0;
+    while ((match = fnRegex.exec(text)) !== null) {
+      const fnId = match[1];
+      if (map[fnId] === undefined) {
+        map[fnId] = currentNumber++;
+        order.push(fnId);
+      }
+    }
+  });
+
+  return { map, order };
+}
+
+/**
+ * Scans AST blocks and returns cross-reference labels mapped by target block ID.
+ */
+export function buildCrossReferencesMap(blocks: EditorBlock[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  let figCount = 1;
+  let tblCount = 1;
+  let secCount = 1;
+
+  blocks.forEach(block => {
+    if (block.type === 'figure' || block.type === 'image') {
+      map[block.id] = `Figure ${figCount++}`;
+    } else if (block.type === 'table') {
+      map[block.id] = `Table ${tblCount++}`;
+    } else if (block.type === 'heading') {
+      map[block.id] = `Section ${secCount++}`;
+    }
+  });
+
+  return map;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, BiographyItem, SystemSettings, EntryType, RolePermissions } from './types';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke } from './types';
 import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { EntryRenderer } from './components/EntryRenderer';
@@ -30,14 +30,29 @@ import {
 } from 'lucide-react';
 
 import { FolioTimeline } from './components/FolioTimeline';
-import { BiographyView } from './components/BiographyView';
+
 import { WritingDesk } from './components/WritingDesk';
 import { EditorialIndex } from './components/EditorialIndex';
 import { Editorium } from './components/Editorium';
 import { Directory } from './components/Directory';
+import { IdentityStudio } from './components/IdentityStudio';
 import { LoadingScreen } from './components/LoadingScreen';
 import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
+
+function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorStroke[][] | undefined {
+  const identity = db.getIdentityByAccountId(authorId);
+  if (!identity) return undefined;
+  
+  if (entry?.signatureVersionId) {
+    const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
+    if (sig) return sig.strokes;
+  }
+  
+  const defaultSig = identity.signatures.find(s => s.status === 'Default');
+  return defaultSig ? defaultSig.strokes : undefined;
+}
+
 
 
 export default function App() {
@@ -262,6 +277,124 @@ export default function App() {
     }
   }, [currentUser, activeTab, systemSettings, selectedAuthorId]);
 
+  // Two-way URL Hash Router Synchronization
+  useEffect(() => {
+    if (initializing) return;
+
+    let newHash = '#/';
+    if (editingEntry) {
+      newHash = `#/desk/edit/${editingEntry.id}`;
+    } else if (selectedEntry) {
+      newHash = `#/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.authorId}/${selectedEntry.slug}`;
+    } else {
+      if (activeTab === 'landing') newHash = '#/landing';
+      else if (activeTab === 'frontpage') newHash = '#/frontpage';
+      else if (activeTab === 'directory') newHash = '#/directory';
+      else if (activeTab === 'index') newHash = '#/index';
+      else if (activeTab === 'editorium') newHash = '#/editorium';
+      else if (activeTab === 'desk') newHash = '#/desk';
+      else if (activeTab === 'folio') newHash = `#/folio/${selectedAuthorId || ''}`;
+      else if (activeTab === 'bio') newHash = `#/bio/${selectedAuthorId || ''}`;
+    }
+
+    if (window.location.hash !== newHash) {
+      window.location.hash = newHash;
+    }
+  }, [activeTab, selectedAuthorId, selectedEntry, editingEntry, initializing]);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash || '#/';
+      const parts = hash.substring(1).split('/').filter(Boolean);
+
+      if (parts.length === 0 || parts[0] === 'landing') {
+        if (currentUser) {
+          window.location.hash = '#/frontpage';
+        } else {
+          setActiveTab('landing');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+        }
+        return;
+      }
+
+      const route = parts[0];
+      if (route === 'frontpage') {
+        setActiveTab('frontpage');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'directory') {
+        setActiveTab('directory');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'index') {
+        setActiveTab('index');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'editorium') {
+        setActiveTab('editorium');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'desk') {
+        setActiveTab('desk');
+        setSelectedEntry(null);
+        if (parts[1] === 'edit' && parts[2]) {
+          const entryId = parts[2];
+          const entry = db.getEntryById(entryId);
+          if (entry) {
+            setEditingEntry(entry);
+          } else {
+            setEditingEntry(null);
+          }
+        } else {
+          setEditingEntry(null);
+        }
+      } else if (route === 'folio' && parts[1]) {
+        setSelectedAuthorId(parts[1]);
+        setActiveTab('folio');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'bio' && parts[1]) {
+        setSelectedAuthorId(parts[1]);
+        setActiveTab('bio');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
+        const authorId = parts[1];
+        const slug = parts[2];
+        const entry = db.getEntries().find(e => e.authorId === authorId && e.slug === slug);
+        if (entry) {
+          if (entry.contentType === 'Note') {
+            setSelectedAuthorId(authorId);
+            setActiveTab('folio');
+            setSelectedEntry(null);
+            setEditingEntry(null);
+            const noteId = entry.id;
+            setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
+            setTimeout(() => {
+              const element = document.getElementById(`note-card-${noteId}`);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 150);
+          } else {
+            setSelectedAuthorId(authorId);
+            setSelectedEntry(entry);
+            setActiveTab('folio');
+            setEditingEntry(null);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    if (!initializing) {
+      handleHashChange();
+    }
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [initializing, currentUser]);
+
   // Initialize selected writer edit fields when selection changes
   useEffect(() => {
     if (editoriumSelectedWriterId) {
@@ -274,7 +407,8 @@ export default function App() {
         setEditWriterBioSummary(writer.bioSummary || '');
         setEditWriterHeroTitle(p?.heroTitle || '');
         setEditWriterHeroSubtitle(p?.heroSubtitle || '');
-        setEditWriterBioText(p?.bioText || '');
+        const ident = db.getIdentityByAccountId(writer.id);
+        setEditWriterBioText(ident?.biography || '');
       }
     }
   }, [editoriumSelectedWriterId, users, profiles]);
@@ -301,10 +435,16 @@ export default function App() {
       ...profile,
       heroTitle: editWriterHeroTitle,
       heroSubtitle: editWriterHeroSubtitle,
-      bioText: editWriterBioText,
-      heroSignatureText: editWriterSignature,
     };
     db.updateProfile(updatedProfile);
+    
+    const identity = db.getIdentityByAccountId(writer.id);
+    if (identity) {
+      db.updateIdentity({
+        ...identity,
+        biography: editWriterBioText,
+      });
+    }
 
     refreshDbState();
     showToast('Settings updated', 'success');
@@ -530,13 +670,14 @@ export default function App() {
   useEffect(() => {
     if (currentUser && activeTab === 'desk') {
       const userProfile = db.getProfileByAuthorId(currentUser.id);
+      const identity = db.getIdentityByAccountId(currentUser.id);
       setDeskUsername(currentUser.username);
       setDeskPenName(currentUser.penName);
       setDeskSignature(currentUser.signature);
-      setDeskBioText(userProfile.bioText);
+      setDeskBioText(identity ? identity.biography : '');
       setDeskHeroTitle(userProfile.heroTitle);
       setDeskHeroSubtitle(userProfile.heroSubtitle);
-      setDeskHeroSignatureText(userProfile.heroSignatureText);
+      setDeskHeroSignatureText(currentUser.signature);
     }
   }, [currentUser, activeTab]);
 
@@ -671,12 +812,18 @@ export default function App() {
     const profile = db.getProfileByAuthorId(currentUser.id);
     const updatedProfile: WriterProfile = {
       ...profile,
-      bioText: deskBioText,
       heroTitle: deskHeroTitle,
       heroSubtitle: deskHeroSubtitle,
-      heroSignatureText: deskSignature
     };
     db.updateProfile(updatedProfile);
+
+    const identity = db.getIdentityByAccountId(currentUser.id);
+    if (identity) {
+      db.updateIdentity({
+        ...identity,
+        biography: deskBioText
+      });
+    }
     
     refreshDbState();
     showToast('Writing profile updated successfully', 'success');
@@ -756,12 +903,14 @@ export default function App() {
       category: newBioCategory
     };
 
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      lifeTimeline: [...profile.lifeTimeline, newItem].sort((a, b) => parseInt(a.year) - parseInt(b.year))
-    };
-
-    db.updateProfile(updatedProfile);
+    const identity = db.getIdentityByAccountId(currentUser.id);
+    if (identity) {
+      const updatedIdentity: IdentityProfile = {
+        ...identity,
+        lifeTimeline: [...identity.lifeTimeline, newItem].sort((a, b) => parseInt(a.year) - parseInt(b.year))
+      };
+      db.updateIdentity(updatedIdentity);
+    }
     refreshDbState();
     showToast('Biography updated', 'success');
     
@@ -775,12 +924,14 @@ export default function App() {
   // Remove Biography Timeline Item
   const handleRemoveBioItem = (itemId: string) => {
     if (!currentUser) return;
-    const profile = db.getProfileByAuthorId(currentUser.id);
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      lifeTimeline: profile.lifeTimeline.filter(item => item.id !== itemId)
-    };
-    db.updateProfile(updatedProfile);
+    const identity = db.getIdentityByAccountId(currentUser.id);
+    if (identity) {
+      const updatedIdentity = {
+        ...identity,
+        lifeTimeline: identity.lifeTimeline.filter(item => item.id !== itemId)
+      };
+      db.updateIdentity(updatedIdentity);
+    }
     refreshDbState();
     showToast('Biography updated', 'success');
   };
@@ -862,11 +1013,17 @@ Editorial Board of Adjung`;
     const updatedProfile: WriterProfile = {
       ...profile,
       heroTitle: heroTitle.trim() || `${penName.trim()}’s Folio`,
-      heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.',
-      bioText: bioText.trim() || `Biography of ${penName.trim()}.`,
-      heroSignatureText: signature.trim()
+      heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.'
     };
     db.updateProfile(updatedProfile);
+    
+    const identity = db.getIdentityByAccountId(newUserId);
+    if (identity) {
+      db.updateIdentity({
+        ...identity,
+        biography: bioText.trim() || `Biography of ${penName.trim()}.`
+      });
+    }
 
     // Sync state
     refreshDbState();
@@ -895,6 +1052,7 @@ Editorial Board of Adjung`;
   // Active Author profile and records (no silent seeded fallbacks!)
   const currentAuthor = selectedAuthorId ? users.find(u => u.id === selectedAuthorId) : undefined;
   const authorProfile = selectedAuthorId ? (profiles.find(p => p.authorId === selectedAuthorId) || db.getProfileByAuthorId(selectedAuthorId)) : undefined;
+  const authorIdentity = selectedAuthorId ? db.getIdentityByAccountId(selectedAuthorId) : undefined;
   const authorPublishedEntries = selectedAuthorId ? entries.filter(e => e.authorId === selectedAuthorId && e.status === 'Published' && e.visibility === 'Public') : [];
 
   // Filter timeline entries by selected category/tag
@@ -1287,6 +1445,7 @@ Editorial Board of Adjung`;
               mode="view" 
               authorName={users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer'}
               authorSignature={users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer'}
+              authorSignatureStrokes={resolveSignatureStrokes(selectedEntry, selectedEntry.authorId)}
             />
           </div>
         )}
@@ -1557,7 +1716,7 @@ Editorial Board of Adjung`;
                 
                 {/* Clean paragraph representation of life */}
                 <div className="font-serif text-[15px] md:text-base text-stone-700 leading-loose space-y-4 whitespace-pre-line text-justify pr-2">
-                  {authorProfile.bioText}
+                  {authorIdentity?.biography}
                 </div>
               </div>
 
@@ -1595,11 +1754,11 @@ Editorial Board of Adjung`;
                 )}
               </div>
 
-              {authorProfile.lifeTimeline.length === 0 ? (
+              {(authorIdentity?.lifeTimeline || []).length === 0 ? (
                 <p className="text-xs text-stone-400 italic">No timeline milestones cataloged yet.</p>
               ) : (
                 <div className="relative border-l-2 border-stone-200/80 ml-4 md:ml-32 pl-6 space-y-10 py-2">
-                  {authorProfile.lifeTimeline.map(item => (
+                  {(authorIdentity?.lifeTimeline || []).map(item => (
                     <div key={item.id} className="relative group">
                       
                       {/* Left float year for desktop layout */}
@@ -1727,6 +1886,7 @@ Editorial Board of Adjung`;
                   onDelete={handleDeleteEntry}
                   authorName={currentUser.penName}
                   authorSignature={currentUser.signature}
+                  authorSignatureStrokes={resolveSignatureStrokes(editingEntry, currentUser.id)}
                 />
               </div>
             ) : (
@@ -1856,78 +2016,23 @@ Editorial Board of Adjung`;
 
                 </div>
 
+                
                 {/* Right side: Folio Customizer & Pen Name controls */}
-                <div className="lg:col-span-4 bg-white border border-stone-200 rounded p-6 shadow-sm">
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-[#802334] border-b pb-3 mb-4 flex items-center gap-1.5">
-                    <Settings className="w-4 h-4" /> Folio Settings
+                <div className="lg:col-span-4 bg-white border border-stone-200 rounded p-6 shadow-sm text-center space-y-4">
+                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-[#802334] border-b pb-3 mb-4 flex items-center justify-center gap-1.5">
+                    Identity Studio
                   </h3>
-                  
-                  <form onSubmit={handleSaveFolioSettings} className="space-y-4 text-xs font-sans">
-
-                    {/* Pen Name */}
-                    <div>
-                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Pen Name</label>
-                      <input
-                        type="text"
-                        value={deskPenName}
-                        onChange={(e) => setDeskPenName(e.target.value)}
-                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon"
-                        required
-                      />
-                    </div>
-
-                    {/* Handwritten Signature Stamp */}
-                    <div>
-                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Signature</label>
-                      <input
-                        type="text"
-                        value={deskSignature}
-                        onChange={(e) => setDeskSignature(e.target.value)}
-                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-signature text-xl text-adjung-maroon"
-                        required
-                      />
-                      <span className="text-[10px] text-stone-400 block mt-1">Replaces the profile photograph. Scribed live.</span>
-                    </div>
-
-                    {/* Hero Title */}
-                    <div>
-                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Title</label>
-                      <input
-                        type="text"
-                        value={deskHeroTitle}
-                        onChange={(e) => setDeskHeroTitle(e.target.value)}
-                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon"
-                      />
-                    </div>
-
-                    {/* Hero Subtitle */}
-                    <div>
-                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Subtitle</label>
-                      <textarea
-                        value={deskHeroSubtitle}
-                        onChange={(e) => setDeskHeroSubtitle(e.target.value)}
-                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[50px]"
-                      />
-                    </div>
-
-                    {/* Biography text block */}
-                    <div>
-                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Biography</label>
-                      <textarea
-                        value={deskBioText}
-                        onChange={(e) => setDeskBioText(e.target.value)}
-                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[120px] font-serif leading-relaxed"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm mt-2"
-                    >
-                      Save
-                    </button>
-                  </form>
+                  <p className="font-sans text-xs text-stone-500">
+                    Author identity, biography, and signatures are now securely managed in the decoupled Identity Studio.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('identity')}
+                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition"
+                  >
+                    Open Identity Studio
+                  </button>
                 </div>
+
 
               </div>
             )}
@@ -2051,6 +2156,18 @@ Editorial Board of Adjung`;
             setSelectedEntry={setSelectedEntry}
             setEditingEntry={setEditingEntry}
           />
+        )}
+
+        
+        {/* ACTIVE MODULE: IDENTITY STUDIO */}
+        {activeTab === 'identity' && currentUser && (
+          <div className="py-8">
+            <IdentityStudio 
+              currentUser={currentUser} 
+              onClose={() => setActiveTab('desk')}
+              refreshGlobalState={refreshDbState}
+            />
+          </div>
         )}
 
         {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
