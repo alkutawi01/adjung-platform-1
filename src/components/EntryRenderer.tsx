@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke } from '../types';
 import { SignatureRenderer } from './SignatureRenderer';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock } from '../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown } from '../utils';
 import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 
@@ -17,6 +17,42 @@ interface EntryRendererProps {
   authorSignatureStrokes?: VectorStroke[][];
 }
 
+function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir }: any) {
+  const editorRef = useRef<HTMLElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (editorRef.current && !isFocused && html !== editorRef.current.innerHTML) {
+      editorRef.current.innerHTML = html;
+    }
+  }, [html, isFocused]);
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const Tag = tagName as any;
+  return (
+    <Tag
+      ref={editorRef}
+      contentEditable
+      suppressContentEditableWarning
+      className={className}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => {
+        setIsFocused(false);
+        handleInput();
+      }}
+      onInput={handleInput}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      dir={dir}
+    />
+  );
+}
+
 export function EntryRenderer({
   entry,
   mode,
@@ -27,7 +63,7 @@ export function EntryRenderer({
   authorSignature,
   authorSignatureStrokes
 }: EntryRendererProps) {
-  const [title, setTitle] = useState(entry.title);
+  const [title, setTitle] = useState(entry.title || '');
   const [contentType, setContentType] = useState<EntryType>(entry.contentType);
   const [status, setStatus] = useState<EntryStatus>(entry.status);
   const [visibility, setVisibility] = useState<EntryVisibility>(entry.visibility);
@@ -77,6 +113,12 @@ export function EntryRenderer({
   const [prevEntryId, setPrevEntryId] = useState(entry.id);
   const [isMobile, setIsMobile] = useState(false);
 
+  const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
+  const [marginOffsets, setMarginOffsets] = useState<Record<string, number>>({});
+  const [selectionRange, setSelectionRange] = useState<Range | null>(null);
+  const [toolbarCoords, setToolbarCoords] = useState<{ x: number; y: number } | null>(null);
+  const [contextCoords, setContextCoords] = useState<{ x: number; y: number } | null>(null);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1280);
@@ -91,7 +133,7 @@ export function EntryRenderer({
   const getFootnotesReadingOrderMap = () => {
     const map: Record<string, number> = {};
     const occurrences: string[] = [];
-    const fnRegex = /\[\^(\d+)\]/g;
+    const fnRegex = /\[\^(fn-[a-zA-Z0-9-]+)\]|\[\^(\d+)\]/g;
     
     const blocks = parseContentToBlocks(content);
     blocks.forEach(b => {
@@ -113,42 +155,62 @@ export function EntryRenderer({
       let match;
       fnRegex.lastIndex = 0;
       while ((match = fnRegex.exec(text)) !== null) {
-        const fnNum = match[1];
-        if (!occurrences.includes(fnNum)) {
-          occurrences.push(fnNum);
+        const fnId = match[1] || match[2];
+        if (fnId && !occurrences.includes(fnId)) {
+          occurrences.push(fnId);
         }
       }
     });
 
-    occurrences.forEach((fnNum, idx) => {
-      map[fnNum] = idx + 1;
+    occurrences.forEach((fnId, idx) => {
+      map[fnId] = idx + 1;
     });
 
     return { map, occurrences };
   };
 
+  const getMarginNotesReadingOrderMap = () => {
+    const map: Record<string, number> = {};
+    const occurrences: string[] = [];
+    const mnRegex = /\[\^(mn-[a-zA-Z0-9-]+)\]/g;
+    
+    let match;
+    mnRegex.lastIndex = 0;
+    while ((match = mnRegex.exec(content)) !== null) {
+      const mnId = match[1];
+      if (!occurrences.includes(mnId)) {
+        occurrences.push(mnId);
+      }
+    }
+    
+    occurrences.forEach((mnId, idx) => {
+      map[mnId] = idx + 1;
+    });
+    
+    return { map, occurrences };
+  };
+
   const getOrderedFootnotesToRender = () => {
     const { map, occurrences } = getFootnotesReadingOrderMap();
-    const renderedList: { displayNum: number; originalNum: string; text: string }[] = [];
+    const renderedList: { displayNum: number; originalId: string; text: string }[] = [];
     
-    occurrences.forEach((fnNumStr) => {
-      const originalIdx = parseInt(fnNumStr, 10) - 1;
-      if (originalIdx >= 0 && originalIdx < footnotes.length) {
-        renderedList.push({
-          displayNum: map[fnNumStr],
-          originalNum: fnNumStr,
-          text: footnotes[originalIdx],
-        });
-      }
+    occurrences.forEach((id, index) => {
+      const isLegacy = !isNaN(Number(id));
+      const text = isLegacy ? (footnotes[parseInt(id, 10) - 1] || '') : (footnotes[index] || '');
+      renderedList.push({
+        displayNum: index + 1,
+        originalId: id,
+        text
+      });
     });
     
     footnotes.forEach((fnText, originalIdx) => {
-      const fnNumStr = (originalIdx + 1).toString();
-      if (!occurrences.includes(fnNumStr)) {
+      const id = (originalIdx + 1).toString();
+      if (!occurrences.includes(id)) {
         const displayNum = renderedList.length + 1;
         renderedList.push({
           displayNum,
-          originalNum: fnNumStr,
+          originalId: id,
           text: fnText,
         });
       }
@@ -179,11 +241,195 @@ export function EntryRenderer({
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder });
+  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData });
 
   useEffect(() => {
-    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder };
-  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder]);
+    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData };
+  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData]);
+
+  // Unified editor helpers
+  const updateCanvasBadges = (el: HTMLElement) => {
+    const fnBadges = el.querySelectorAll('.footnote-badge');
+    fnBadges.forEach((badge, idx) => {
+      badge.textContent = String(idx + 1);
+    });
+    const mnBadges = el.querySelectorAll('.margin-note-badge');
+    mnBadges.forEach((badge, idx) => {
+      badge.textContent = toRoman(idx + 1);
+    });
+  };
+
+  const triggerEditorChange = () => {
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (editorEl) {
+      updateCanvasBadges(editorEl);
+      const html = editorEl.innerHTML;
+      const md = htmlToMarkdown(html);
+      setContent(md);
+      triggerSave(md, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData);
+    }
+  };
+
+  const applyFormat = (format: string) => {
+    document.execCommand(format, false);
+    triggerEditorChange();
+  };
+
+  const applyBlockFormat = (tag: string) => {
+    document.execCommand('formatBlock', false, tag);
+    triggerEditorChange();
+  };
+
+  const insertNote = (type: 'footnote' | 'margin-note') => {
+    const id = `${type === 'footnote' ? 'fn' : 'mn'}-${generateUUID()}`;
+    const span = document.createElement('span');
+    span.className = type === 'footnote' ? 'footnote-badge' : 'margin-note-badge';
+    span.setAttribute('data-id', id);
+    span.setAttribute('contenteditable', 'false');
+    span.textContent = '*';
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(span);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    if (type === 'footnote') {
+      const updated = [...footnotes, 'New footnote description text.'];
+      setFootnotes(updated);
+    } else {
+      const updated = { ...marginNotesData, [id]: 'New margin note content.' };
+      setMarginNotesData(updated);
+    }
+
+    // Force React to render and update canvas badges
+    setTimeout(triggerEditorChange, 50);
+  };
+
+  const deleteNote = (id: string, type: 'footnote' | 'margin-note') => {
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (editorEl) {
+      const badge = editorEl.querySelector(`[data-id="${id}"]`);
+      if (badge) {
+        badge.remove();
+      }
+      
+      if (type === 'footnote') {
+        const { occurrences } = getFootnotesReadingOrderMap();
+        const orderIdx = occurrences.indexOf(id);
+        if (orderIdx !== -1) {
+          const updated = footnotes.filter((_, i) => i !== orderIdx);
+          setFootnotes(updated);
+        }
+      } else {
+        const updated = { ...marginNotesData };
+        delete updated[id];
+        setMarginNotesData(updated);
+      }
+      
+      triggerEditorChange();
+    }
+  };
+
+  const handleSelectionChange = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      setToolbarCoords(null);
+      setSelectionRange(null);
+      return;
+    }
+    
+    try {
+      const range = sel.getRangeAt(0);
+      const editorEl = document.getElementById('editorial-canvas-editor');
+      if (editorEl && editorEl.contains(range.commonAncestorContainer)) {
+        const rect = range.getBoundingClientRect();
+        const parentRect = editorEl.getBoundingClientRect();
+        
+        setToolbarCoords({
+          x: rect.left + rect.width / 2 - parentRect.left,
+          y: rect.top - parentRect.top - 45
+        });
+        setSelectionRange(range);
+      } else {
+        setToolbarCoords(null);
+        setSelectionRange(null);
+      }
+    } catch (e) {
+      setToolbarCoords(null);
+      setSelectionRange(null);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (editorEl && editorEl.contains(e.target as Node)) {
+      e.preventDefault();
+      const parentRect = editorEl.getBoundingClientRect();
+      setContextCoords({
+        x: e.clientX - parentRect.left,
+        y: e.clientY - parentRect.top
+      });
+    }
+  };
+
+  // Sync selection events
+  useEffect(() => {
+    if (mode === 'edit') {
+      const handler = () => handleSelectionChange();
+      document.addEventListener('selectionchange', handler);
+      return () => document.removeEventListener('selectionchange', handler);
+    }
+  }, [mode]);
+
+  // Close context menu on any global click
+  useEffect(() => {
+    const closeContext = () => setContextCoords(null);
+    document.addEventListener('click', closeContext);
+    return () => document.removeEventListener('click', closeContext);
+  }, []);
+
+  // Update visual badge contents whenever content loads
+  useEffect(() => {
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (editorEl) {
+      updateCanvasBadges(editorEl);
+    }
+  }, [content, mode]);
+
+  // Update margin offsets dynamically
+  useEffect(() => {
+    const updateOffsets = () => {
+      const { occurrences } = getMarginNotesReadingOrderMap();
+      const offsets: Record<string, number> = {};
+      const containerEl = document.getElementById('article-container-grid');
+      if (!containerEl) return;
+      const containerRect = containerEl.getBoundingClientRect();
+      
+      occurrences.forEach((id) => {
+        const markerEl = document.getElementById(`mn-marker-${id}`) || document.querySelector(`.margin-note-badge[data-id="${id}"]`);
+        if (markerEl) {
+          const markerRect = markerEl.getBoundingClientRect();
+          offsets[id] = markerRect.top - containerRect.top;
+        }
+      });
+      setMarginOffsets(offsets);
+    };
+
+    updateOffsets();
+    const timeout = setTimeout(updateOffsets, 100);
+    const timeout2 = setTimeout(updateOffsets, 600);
+    window.addEventListener('resize', updateOffsets);
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(timeout2);
+      window.removeEventListener('resize', updateOffsets);
+    };
+  }, [content, marginNotesData, mode]);
 
   // Floating selection-formatting toolbar states
   const [selectionState, setSelectionState] = useState<{
@@ -529,7 +775,7 @@ export function EntryRenderer({
 
   // Update states when entry changes
   useEffect(() => {
-    setTitle(entry.title);
+    setTitle(entry.title || '');
     setContentType(entry.contentType);
     setStatus(entry.status);
     setVisibility(entry.visibility);
@@ -543,6 +789,7 @@ export function EntryRenderer({
     setRevisions(entry.revisions || []);
     setCitations(entry.citations || []);
     setReferenceSortOrder(entry.referenceSortOrder || 'alphabetical');
+    setMarginNotesData(entry.marginNotesData || {});
 
     // Only re-split content if a completely different entry was loaded!
     if (entry.id !== prevEntryId) {
@@ -552,13 +799,11 @@ export function EntryRenderer({
     }
   }, [entry, prevEntryId]);
 
-  // Synchronize paragraphs array from content string (only for Note and Essay)
+  // Synchronize paragraphs array from content string for all modes
   useEffect(() => {
-    if (contentType !== 'Article') {
-      const parts = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-      setParagraphs(parts.length > 0 ? parts : [content]);
-    }
-  }, [content, contentType]);
+    const parts = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+    setParagraphs(parts.length > 0 ? parts : [content]);
+  }, [content]);
 
   // Document Stats Helpers
   const getWordCount = (text: string) => {
@@ -1412,7 +1657,22 @@ export function EntryRenderer({
   const handleRemoveFootnote = (index: number) => {
     const updated = footnotes.filter((_, i) => i !== index);
     setFootnotes(updated);
-    triggerSave(content, updated, marginNotes);
+    
+    // Automatically re-number the markdown text to match the new array indices
+    const targetRegex = new RegExp(`\\[\\^${index + 1}\\]`, 'g');
+    let newContent = content.replace(targetRegex, '');
+    newContent = newContent.replace(/\[\^(\d+)\]/g, (match, fnNumStr) => {
+      const num = parseInt(fnNumStr, 10);
+      if (num > index + 1) {
+        return `[^${num - 1}]`;
+      }
+      return match;
+    });
+
+    setContent(newContent);
+    const parts = newContent.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+    setParagraphs(parts.length > 0 ? parts : [newContent]);
+    triggerSave(newContent, updated, marginNotes);
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
@@ -1472,20 +1732,35 @@ export function EntryRenderer({
     return figCount;
   };
 
+  const toRoman = (num: number): string => {
+    const val = [10, 9, 5, 4, 1];
+    const syb = ["x", "ix", "v", "iv", "i"];
+    let roman = "";
+    let n = num;
+    for (let i = 0; i < val.length; i++) {
+      while (n >= val[i]) {
+        roman += syb[i];
+        n -= val[i];
+      }
+    }
+    return roman;
+  };
+
   const renderBlock = (block: ContentBlock, idx: number, marginNoteNum?: number, marginNoteText?: string) => {
     const citeMap = getCitationsMap();
     const fMap = getFootnotesReadingOrderMap().map;
 
     const renderSuperscriptWithNote = (num: number, text?: string) => {
+      const roman = toRoman(num);
       return (
-        <span className="inline select-none ml-1">
-          <sup className="text-xs font-mono font-bold text-adjung-maroon cursor-pointer hover:underline animate-fade-in" title={`Margin Note ${num}`}>
-            [{num}]
-          </sup>
+        <span className="inline select-none ml-1 relative">
+          <span className="inline-flex items-center justify-center rounded-full border border-adjung-maroon min-w-[18px] h-[18px] px-1 text-[9px] font-sans font-bold text-adjung-maroon bg-white hover:bg-adjung-maroon/10 select-none mx-0.5 align-middle transition-colors cursor-pointer" title={`Margin Note ${roman}`}>
+            {roman}
+          </span>
           {text && (
-            <span className="absolute left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-650 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
+            <span className="absolute top-0 left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-650 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
               <span className="block">
-                <sup className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{num}]</sup>
+                <span className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{roman}]</span>
                 {parseInlineFormatting(text, citations, referenceSortOrder, citeMap, fMap)}
               </span>
             </span>
@@ -1668,7 +1943,7 @@ export function EntryRenderer({
       return (
         <blockquote 
           key={idx} 
-          className="my-8 pl-6 border-l border-adjung-maroon/20 text-left bg-transparent relative overflow-visible"
+          className="my-8 pl-6 border-l-2 border-adjung-maroon/20 text-left bg-transparent relative overflow-visible mx-auto max-w-[90%]"
         >
           <p className="font-serif italic text-[14.5px] md:text-[15.5px] text-stone-600 leading-relaxed my-1 relative overflow-visible">
             {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap)}
@@ -1687,7 +1962,7 @@ export function EntryRenderer({
       return (
         <blockquote 
           key={idx} 
-          className="my-8 pr-6 border-r border-adjung-maroon/20 text-right bg-transparent relative overflow-visible"
+          className="my-8 pr-6 border-r-2 border-adjung-maroon/20 text-right bg-transparent relative overflow-visible mx-auto max-w-[90%]"
         >
           <div dir="rtl">
             <p className="font-arabic text-[18.5px] md:text-[20px] text-stone-900 leading-loose relative overflow-visible">
@@ -1792,7 +2067,7 @@ export function EntryRenderer({
                 <li key={`toc-${hIdx}`} className={`${levelIndent} text-stone-600 hover:text-adjung-maroon font-serif`}>
                   <a href={`#heading-${hIdx}`} className="flex items-baseline gap-1.5 transition-colors">
                     <span className="font-mono text-[9px] text-adjung-maroon/60 select-none">{levelMarker}</span>
-                    <span className="text-xs">{h.text}</span>
+                    <span className="text-xs">{parseInlineFormatting(h.text)}</span>
                   </a>
                 </li>
               );
@@ -2005,19 +2280,36 @@ export function EntryRenderer({
           <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
-                {block.type === 'heading' ? `Heading H${block.level}` : 'Paragraph'} Block
+                {block.type === 'heading' ? `Heading H${block.level}` : block.type.replace('-', ' ')} Block
               </span>
               <select
-                value={block.type === 'heading' ? `heading-${block.level}` : 'paragraph'}
+                value={block.type === 'heading' ? `heading-${block.level}` : block.type}
                 onChange={(e) => {
                   const val = e.target.value;
+                  const currentText = 'text' in block ? block.text : 'arabic' in block ? block.arabic : 'code' in block ? block.code : '';
                   let newBlock: ContentBlock;
+                  
                   if (val.startsWith('heading-')) {
                     const level = parseInt(val.split('-')[1]) as 1 | 2 | 3;
-                    newBlock = { type: 'heading', text: block.text || '', level };
+                    newBlock = { type: 'heading', text: currentText || '', level };
+                  } else if (val === 'latin-quote') {
+                    newBlock = { type: 'latin-quote', text: currentText || '', translation: '' };
+                  } else if (val === 'arabic-quote') {
+                    newBlock = { type: 'arabic-quote', arabic: currentText || '', translation: '' };
+                  } else if (val === 'callout') {
+                    newBlock = { type: 'callout', calloutType: 'note', text: currentText || '', title: '' };
+                  } else if (val === 'image') {
+                    newBlock = { type: 'image', url: '', alt: '' };
+                  } else if (val === 'list') {
+                    newBlock = { type: 'list', ordered: false, items: [{ text: currentText || '' }] };
+                  } else if (val === 'code-block') {
+                    newBlock = { type: 'code-block', code: currentText || '', language: '' };
+                  } else if (val === 'divider') {
+                    newBlock = { type: 'divider' };
                   } else {
-                    newBlock = { type: 'paragraph', text: block.text || '' };
+                    newBlock = { type: 'paragraph', text: currentText || '' };
                   }
+                  
                   handleVisualBlockChange(idx, newBlock);
                 }}
                 className="border border-stone-200 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-white focus:outline-none focus:border-adjung-maroon text-stone-600"
@@ -2026,6 +2318,13 @@ export function EntryRenderer({
                 <option value="heading-1">Heading 1</option>
                 <option value="heading-2">Heading 2</option>
                 <option value="heading-3">Heading 3</option>
+                <option value="latin-quote">Latin Quote</option>
+                <option value="arabic-quote">Arabic Quote</option>
+                <option value="callout">Callout</option>
+                <option value="image">Image</option>
+                <option value="list">List</option>
+                <option value="code-block">Code Block</option>
+                <option value="divider">Divider</option>
               </select>
             </div>
             
@@ -2039,31 +2338,20 @@ export function EntryRenderer({
           </div>
 
           <div className="relative">
-            <textarea
-              id={`editorial-content-textarea-visual-${idx}`}
-              autoFocus
-              value={block.text || ''}
+            <RichTextEditable
+              tagName="div"
+              html={markdownToHtml(block.text || '')}
               dir={isAr ? 'rtl' : 'ltr'}
-              onChange={(e) => {
-                const val = e.target.value;
+              onChange={(newHtml: string) => {
+                const val = htmlToMarkdown(newHtml);
                 handleVisualBlockChange(idx, { ...block, text: val });
               }}
-              onBlur={() => {
-                setTimeout(() => setEditingBlockIndex(null), 150);
-              }}
               placeholder={block.type === 'heading' ? "Enter Heading text..." : "Begin writing your manuscript here..."}
-              className={`w-full bg-transparent border-none focus:outline-none resize-none p-0 overflow-hidden ${
+              className={`w-full bg-transparent border-none focus:outline-none outline-none resize-none p-0 overflow-hidden ${
                 block.type === 'heading' 
                   ? `font-serif text-stone-900 ${hClass}` 
                   : 'font-serif text-[15px] md:text-base text-stone-900 leading-relaxed'
               } ${isAr ? 'text-right font-arabic leading-loose text-lg font-medium' : 'text-left'}`}
-              style={{ height: 'auto' }}
-              ref={(el) => {
-                if (el) {
-                  el.style.height = 'auto';
-                  el.style.height = el.scrollHeight + 'px';
-                }
-              }}
             />
           </div>
           
@@ -2562,11 +2850,7 @@ export function EntryRenderer({
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          const updated = footnotes.filter((_, i) => i !== index);
-                          setFootnotes(updated);
-                          triggerSave(content, updated, marginNotes);
-                        }}
+                        onClick={() => handleRemoveFootnote(index)}
                         className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded text-stone-400 transition"
                         title="Remove footnote"
                       >
@@ -2740,12 +3024,19 @@ export function EntryRenderer({
           {/* Title Area */}
           {contentType !== 'Note' && (
             isEditingWorkspace ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, e.target.value);
+              <RichTextEditable
+                tagName="h1"
+                html={markdownToHtml(title)}
+                onChange={(newHtml: string) => {
+                  const val = htmlToMarkdown(newHtml);
+                  setTitle(val);
+                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
+                }}
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    (e.currentTarget as HTMLElement).blur();
+                  }
                 }}
                 placeholder="Enter Title..."
                 className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none mb-3 py-1 text-left"
@@ -2753,7 +3044,7 @@ export function EntryRenderer({
             ) : (
               title && (
                 <h1 className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight mb-3 text-left">
-                  {title}
+                  {parseInlineFormatting(title)}
                 </h1>
               )
             )
@@ -2783,120 +3074,158 @@ export function EntryRenderer({
         {renderTableOfContents()}
 
         {/* Content Area Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative">
+        <div id="article-container-grid" className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative">
           
-          {/* Main content body - spans full width or leaves room for margin notes */}
-          <div className="xl:col-span-12 space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif">
+          {/* Main content body */}
+          <div className={`${contentType === 'Article' ? 'xl:col-span-8' : 'xl:col-span-12'} space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif relative`}>
             
-            {/* Note & Essay rendering */}
-            {(contentType === 'Note' || contentType === 'Essay') && (
+            {/* Custom context menu trigger in edit mode */}
+            {mode === 'edit' && contextCoords && (
+              <div 
+                style={{ position: 'absolute', top: `${contextCoords.y}px`, left: `${contextCoords.x}px` }}
+                className="bg-white border border-stone-200 shadow-xl rounded py-1 w-44 z-50 text-left font-sans text-xs"
+              >
+                <button 
+                  onClick={() => {
+                    insertNote('footnote');
+                    setContextCoords(null);
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon font-medium cursor-pointer transition-colors"
+                >
+                  Insert Footnote
+                </button>
+                <button 
+                  onClick={() => {
+                    insertNote('margin-note');
+                    setContextCoords(null);
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon font-medium cursor-pointer transition-colors"
+                >
+                  Insert Margin Note
+                </button>
+              </div>
+            )}
+
+            {/* Custom floating formatting toolbar */}
+            {mode === 'edit' && toolbarCoords && (
+              <div 
+                style={{ 
+                  position: 'absolute', 
+                  top: `${toolbarCoords.y}px`, 
+                  left: `${toolbarCoords.x}px`, 
+                  transform: 'translateX(-50%)' 
+                }}
+                className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-850 animate-fade-in"
+              >
+                <button type="button" onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-800 rounded font-bold transition">B</button>
+                <button type="button" onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-800 rounded italic transition">I</button>
+                <button type="button" onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-800 rounded underline transition">U</button>
+                <div className="h-4 w-px bg-stone-750 mx-1"></div>
+                <button type="button" onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H1</button>
+                <button type="button" onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H2</button>
+                <button type="button" onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Quote</button>
+                <button type="button" onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Para</button>
+              </div>
+            )}
+
+            {mode === 'edit' ? (
+              <div className="relative border-b border-dashed border-stone-200/55 pb-6">
+                <RichTextEditable
+                  tagName="div"
+                  id="editorial-canvas-editor"
+                  html={markdownToHtml(content)}
+                  onChange={(newHtml) => {
+                    const editorEl = document.getElementById('editorial-canvas-editor');
+                    if (editorEl) {
+                      updateCanvasBadges(editorEl);
+                      const md = htmlToMarkdown(editorEl.innerHTML);
+                      setContent(md);
+                      triggerSave(md, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData);
+                    }
+                  }}
+                  placeholder="Begin writing your manuscript here... Right-click to insert Footnotes and Margin Notes."
+                  onContextMenu={handleContextMenu}
+                  className="w-full min-h-[450px] bg-transparent border-none focus:outline-none resize-none font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111] outline-none"
+                />
+              </div>
+            ) : (
               <div className="space-y-6">
-                {parseContentToBlocks(content).map((block, idx) => {
-                  return mode === 'edit' ? renderVisualBlockWrapper(block, idx) : renderBlock(block, idx);
-                })}
-              </div>
-            )}
-
-            {/* Article rendering with paragraph-by-paragraph margin notes */}
-            {contentType === 'Article' && (
-              <div className="space-y-4">
-                {paragraphs.map((para, index) => {
-                  const hasMarginNote = !!marginNotes[index]?.trim();
-                  const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
-
-                  return (
-                    <div key={index} className="pb-1 last:pb-0">
-                      {/* Desktop split layout */}
-                      <div className="hidden xl:grid xl:grid-cols-12 gap-8 items-start relative">
-                        <div className={hasMarginNote ? "xl:col-span-8 w-full" : "xl:col-span-12 w-full"}>
-                          {mode === 'edit'
-                            ? renderVisualBlockWrapper(block, index, hasMarginNote, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
-                            : renderBlock(block, index, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
-                          }
-                        </div>
-                        {hasMarginNote && (
-                          <div className="xl:col-span-4 pl-2 h-1 w-full invisible pointer-events-none" />
-                        )}
-                      </div>
-
-                      {/* Mobile view (< xl screens): Clean, relative layout with absolute side-note outside card */}
-                      <div className="xl:hidden relative w-full text-left">
-                        <div className="w-full">
-                          {mode === 'edit'
-                            ? renderVisualBlockWrapper(block, index, hasMarginNote, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
-                            : renderBlock(block, index, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {mode === 'edit' && (
-              <div className="pt-8 text-center select-none border-t border-dashed border-stone-200/60 mt-8">
-                <div className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-3">Add Content Block (Visual Mode)</div>
-                <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleInsertNewBlock('paragraph')}
-                    className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Paragraph
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInsertNewBlock('heading')}
-                    className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Heading
-                  </button>
-                  {!showQuoteTypes ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowQuoteTypes(true)}
-                      className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Quote
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 bg-stone-100/50 p-1 rounded border border-stone-200">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInsertNewBlock('latin-quote');
-                          setShowQuoteTypes(false);
-                        }}
-                        className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon border border-stone-200 rounded font-sans text-xs transition cursor-pointer"
-                      >
-                        LTR (Left-to-Right)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleInsertNewBlock('arabic-quote');
-                          setShowQuoteTypes(false);
-                        }}
-                        className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon border border-stone-200 rounded font-sans text-xs transition cursor-pointer"
-                      >
-                        RTL (Right-to-Left)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowQuoteTypes(false)}
-                        className="p-1 hover:bg-stone-200 text-stone-500 rounded transition cursor-pointer"
-                        title="Cancel"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {(() => {
+                  const citeMap = getCitationsMap();
+                  const fMap = getFootnotesReadingOrderMap().map;
+                  const mOrderMap = getMarginNotesReadingOrderMap().map;
+                  
+                  const viewParagraphs = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+                  return viewParagraphs.map((para, index) => {
+                    const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
+                    return renderBlock(block, index, undefined, undefined);
+                  });
+                })()}
               </div>
             )}
 
           </div>
+
+          {/* Right margin notes sidebar */}
+          {contentType === 'Article' && (
+            <div className="hidden xl:block xl:col-span-4 relative min-h-[400px]">
+              {(() => {
+                const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
+                const citeMap = getCitationsMap();
+                const fMap = getFootnotesReadingOrderMap().map;
+                
+                if (mode === 'edit') {
+                  return occurrences.map((id) => {
+                    const top = marginOffsets[id] !== undefined ? marginOffsets[id] : 0;
+                    return (
+                      <div 
+                        key={id}
+                        style={{ position: 'absolute', top: `${top}px`, left: 0 }}
+                        className="border-l-2 border-adjung-maroon/20 pl-4 py-1 text-left w-full space-y-1 transition-all duration-300 animate-fade-in"
+                      >
+                        <div className="flex items-center justify-between text-[8px] font-mono text-stone-400 select-none">
+                          <span className="uppercase">Margin Note [{toRoman(mMap[id])}]</span>
+                          <button 
+                            type="button" 
+                            onClick={() => deleteNote(id, 'margin-note')}
+                            className="hover:text-red-650 text-[10px]"
+                          >
+                            × delete
+                          </button>
+                        </div>
+                        <textarea
+                          value={marginNotesData[id] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = { ...marginNotesData, [id]: val };
+                            setMarginNotesData(updated);
+                            triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
+                          }}
+                          placeholder="Add side margin note here..."
+                          rows={2}
+                          className="w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
+                        />
+                      </div>
+                    );
+                  });
+                } else {
+                  return occurrences.map((id) => {
+                    const top = marginOffsets[id] !== undefined ? marginOffsets[id] : 0;
+                    return (
+                      <div 
+                        key={id}
+                        style={{ position: 'absolute', top: `${top}px`, left: 0 }}
+                        className="border-l border-stone-300 pl-4 py-0.5 text-left text-stone-500 font-serif italic text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in"
+                      >
+                        <span className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{toRoman(mMap[id])}]</span>
+                        {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap)}
+                      </div>
+                    );
+                  });
+                }
+              })()}
+            </div>
+          )}
 
         </div>
 
@@ -4019,8 +4348,8 @@ export function EntryRenderer({
                             value={marginNotes[index] || ''}
                             onChange={(e) => handleMarginNoteChange(index, e.target.value)}
                             placeholder="Add side margin note here..."
-                            rows={1}
-                            className="w-full bg-transparent font-sans text-xs text-stone-650 leading-normal border-none focus:outline-none resize-y p-0"
+                            rows={5}
+                            className="w-full min-h-[100px] bg-transparent font-sans text-xs text-stone-650 leading-relaxed border-none focus:outline-none resize-y p-0"
                           />
                         </div>
                       </div>
@@ -4060,36 +4389,38 @@ export function EntryRenderer({
                 <p className="text-xs text-stone-400 italic select-none">No footnotes registered yet. Insert [^1], [^2], etc. inside text blocks and use the "+" button or bottom controls to write them.</p>
               ) : (
                 <div className="space-y-4">
-                  {footnotes.map((footnote, idx) => (
-                    <div key={idx} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
+                  {getOrderedFootnotesToRender().map((item) => {
+                    const originalIdx = parseInt(item.originalNum, 10) - 1;
+                    return (
+                    <div key={item.originalNum} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
                       <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
-                        [{idx + 1}]
+                        [{item.displayNum}]
                       </span>
                       <div className="flex-grow space-y-1">
                         <div className="flex items-center justify-between select-none">
-                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text</span>
-                          <span className={getWordCount(footnote) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
-                            {getWordCount(footnote)}/1000 words
+                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text (Internal ID: [^{item.originalNum}])</span>
+                          <span className={getWordCount(item.text) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
+                            {getWordCount(item.text)}/1000 words
                           </span>
                         </div>
                         <textarea
-                          value={footnote}
-                          onChange={(e) => handleFootnoteChange(idx, e.target.value)}
+                          value={item.text}
+                          onChange={(e) => handleFootnoteChange(originalIdx, e.target.value)}
                           rows={2}
                           className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
-                          placeholder={`Enter footnote ${idx + 1} text content...`}
+                          placeholder={`Enter footnote ${item.displayNum} text content...`}
                         />
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleRemoveFootnote(idx)}
+                        onClick={() => handleRemoveFootnote(originalIdx)}
                         className="text-stone-300 hover:text-red-700 p-1 rounded mt-1 select-none cursor-pointer"
                         title="Remove Footnote"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -4170,8 +4501,46 @@ export function EntryRenderer({
   const isEditingWorkspace = mode === 'edit';
   const effectiveViewMode = isEditingWorkspace ? (viewMode || 'preview') : 'preview';
 
+  const handleGlobalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'b')) {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        e.preventDefault();
+        const start = target.selectionStart;
+        const end = target.selectionEnd;
+        if (start !== null && end !== null && start !== end) {
+          const value = target.value;
+          const selectedText = value.substring(start, end);
+          const before = value.substring(0, start);
+          const after = value.substring(end);
+          
+          const markdownChar = e.key.toLowerCase() === 'b' ? '**' : '*';
+          const newVal = before + markdownChar + selectedText + markdownChar + after;
+          
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+          const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+          
+          if (target instanceof HTMLInputElement && nativeInputValueSetter) {
+             nativeInputValueSetter.call(target, newVal);
+          } else if (target instanceof HTMLTextAreaElement && nativeTextAreaValueSetter) {
+             nativeTextAreaValueSetter.call(target, newVal);
+          } else {
+             target.value = newVal;
+          }
+          
+          target.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          setTimeout(() => {
+            target.focus();
+            target.setSelectionRange(start + markdownChar.length, end + markdownChar.length);
+          }, 0);
+        }
+      }
+    }
+  };
+
   return (
-    <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`}>
+    <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`} onKeyDown={handleGlobalKeyDown}>
       {!isEditingWorkspace ? (
         // Standard high-contrast reading layout
         renderPublishedContent()

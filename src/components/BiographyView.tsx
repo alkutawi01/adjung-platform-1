@@ -1,5 +1,6 @@
 import React from 'react';
 import { BiographyItem, IdentityProfile, User } from '../types';
+import { stripMarkdown, parseInlineFormatting } from '../utils';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -96,7 +97,7 @@ export function BiographyView({
                     <div className="flex items-center gap-2">
                       <span className="md:hidden font-serif font-bold text-base text-[#802334]">{item.year}</span>
                       <span className="md:hidden text-stone-300">|</span>
-                      <h4 className="font-serif font-semibold text-[#111111] text-base">{item.title}</h4>
+                      <h4 className="font-serif font-semibold text-[#111111] text-base">{parseInlineFormatting(item.title)}</h4>
                     </div>
                     <span className="font-mono text-[9px] uppercase tracking-wider text-[#111111]/50 bg-[#111111]/5 px-2 py-0.5 rounded">
                       {item.category}

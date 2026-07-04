@@ -1,7 +1,7 @@
 import React from 'react';
 import { ListOrdered, Info } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../types';
-import { isArabicText, parseInlineFormatting } from '../utils';
+import { isArabicText, stripMarkdown, parseInlineFormatting } from '../utils';
 
 interface EditorialIndexProps {
   entries: Entry[];

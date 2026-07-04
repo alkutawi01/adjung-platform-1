@@ -4,6 +4,7 @@ import { citationStyleRegistry, HarvardStylePlugin } from './services/citationSt
 
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
 const LATIN_REGEX = /[a-zA-Z]/g;
+const ARABIC_PHRASE_REGEX = /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[\s.,،؟؛'"]+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/;
 
 /**
  * Detects if a given text block's dominant script is Arabic/Jawi.
@@ -20,6 +21,110 @@ export function isArabicText(text: string): boolean {
 
   // Dominant script determines the direction of the block
   return arabicMatches.length > latinMatches.length;
+}
+
+export function stripMarkdown(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/(\*\*\*|___)(.*?)\1/g, '$2')
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/(\*|_)(.*?)\1/g, '$2')
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/\+\+(.*?)\+\+/g, '$1')
+    .replace(/<u>(.*?)<\/u>/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+}
+
+export function handleMarkdownShortcut(
+  e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, 
+  value: string, 
+  onChange: (newVal: string) => void
+) {
+  // Keeping this for Source Mode where we still use textareas
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+    e.preventDefault();
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    
+    if (start !== null && end !== null && start !== end) {
+      const selectedText = value.substring(start, end);
+      const before = value.substring(0, start);
+      const after = value.substring(end);
+      
+      const newVal = before + '*' + selectedText + '*' + after;
+      onChange(newVal);
+      
+      setTimeout(() => {
+        target.focus();
+        target.setSelectionRange(start + 1, end + 1);
+      }, 0);
+    }
+  }
+  
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+    e.preventDefault();
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    
+    if (start !== null && end !== null && start !== end) {
+      const selectedText = value.substring(start, end);
+      const before = value.substring(0, start);
+      const after = value.substring(end);
+      
+      const newVal = before + '**' + selectedText + '**' + after;
+      onChange(newVal);
+      
+      setTimeout(() => {
+        target.focus();
+        target.setSelectionRange(start + 2, end + 2);
+      }, 0);
+    }
+  }
+}export function markdownToHtml(md: string): string {
+  if (!md) return '';
+  return md
+    .replace(/\[\^(fn-[a-zA-Z0-9-]+)\]/g, '<span class="footnote-badge" data-id="$1" contenteditable="false"></span>')
+    .replace(/\[\^(mn-[a-zA-Z0-9-]+)\]/g, '<span class="margin-note-badge" data-id="$1" contenteditable="false"></span>')
+    .replace(/\[\^(\d+)\]/g, '<span class="footnote-badge" data-id="fn-legacy-$1" contenteditable="false"></span>')
+    .replace(/(\*\*\*|___)(.*?)\1/g, '<strong><em>$2</em></strong>')
+    .replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>')
+    .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '<a href="$2">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+export function htmlToMarkdown(html: string): string {
+  if (!html) return '';
+  let md = html
+    .replace(/<span[^>]*class="footnote-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
+    .replace(/<span[^>]*class="margin-note-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
+    .replace(/<div[^>]*>/gi, '\n')
+    .replace(/<p[^>]*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<strong[^>]*><em[^>]*>(.*?)<\/em><\/strong>/gi, '***$1***')
+    .replace(/<em[^>]*><strong[^>]*>(.*?)<\/strong><\/em>/gi, '***$1***')
+    .replace(/<b[^>]*><i[^>]*>(.*?)<\/i><\/b>/gi, '***$1***')
+    .replace(/<i[^>]*><b[^>]*>(.*?)<\/b><\/i>/gi, '***$1***')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+    .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+    .replace(/<u[^>]*>(.*?)<\/u>/gi, '++$1++')
+    .replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n\n\n+/g, '\n\n')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
+    
+  return md.trim();
 }
 
 type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'LINK';
@@ -117,7 +222,19 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
     const token = tokens[i];
 
     if (token.type === 'TEXT') {
-      result.push(<React.Fragment key={`${keyPrefix}-${keyIdx++}`}>{token.text}</React.Fragment>);
+      const parts = token.text.split(ARABIC_PHRASE_REGEX);
+      const textNodes = parts.map((part, pIdx) => {
+        if (!part) return null;
+        if (ARABIC_PHRASE_REGEX.test(part)) {
+          return (
+            <bdi key={`ar-${pIdx}`} dir="rtl" className="font-arabic font-normal inline-block" style={{ lineHeight: 'normal' }}>
+              {part}
+            </bdi>
+          );
+        }
+        return part;
+      });
+      result.push(<React.Fragment key={`${keyPrefix}-${keyIdx++}`}>{textNodes}</React.Fragment>);
       i++;
       continue;
     }
@@ -192,7 +309,21 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
   return result;
 }
 
-const UNIFIED_REGEX = /(\[\^(fn-[a-zA-Z0-9-]+)\]|\[\^?(\d+)\]|\[cite:([^\]]+)\]|\[@(fig|tbl|sec|fn):([a-zA-Z0-9-]+)\])/g;
+const UNIFIED_REGEX = /(\[\^((?:fn|mn)-[a-zA-Z0-9-]+)\]|\[\^(\d+)\]|\[cite:([^\]]+)\]|\[@(fig|tbl|sec|fn):([a-zA-Z0-9-]+)\])/g;
+
+export function toRoman(num: number): string {
+  const val = [10, 9, 5, 4, 1];
+  const syb = ["x", "ix", "v", "iv", "i"];
+  let roman = "";
+  let n = num;
+  for (let i = 0; i < val.length; i++) {
+    while (n >= val[i]) {
+      roman += syb[i];
+      n -= val[i];
+    }
+  }
+  return roman;
+}
 
 /**
  * Semantic Inline Markdown Parser:
@@ -206,11 +337,12 @@ export function parseInlineFormatting(
   citationsMap: { [id: string]: number } = {},
   footnotesMap: Record<string, number> = {},
   crossRefMap: Record<string, string> = {},
-  citationStyle: string = 'harvard'
+  citationStyle: string = 'harvard',
+  marginNotesMap: Record<string, number> = {}
 ): React.ReactNode {
   if (!text) return '';
 
-  const parts: { type: 'text' | 'fn-stable' | 'fn-legacy' | 'cite' | 'cross-ref'; content: string; key: string }[] = [];
+  const parts: { type: 'text' | 'fn-stable' | 'fn-legacy' | 'mn-stable' | 'cite' | 'cross-ref'; content: string; key: string }[] = [];
   let lastIndex = 0;
   let match;
   let keyIdx = 0;
@@ -227,7 +359,11 @@ export function parseInlineFormatting(
 
     if (match[2]) {
       const fnId = match[2];
-      parts.push({ type: 'fn-stable', content: fnId, key: `fn-stable-${fnId}-${keyIdx++}` });
+      if (fnId.startsWith('mn-')) {
+        parts.push({ type: 'mn-stable', content: fnId, key: `mn-stable-${fnId}-${keyIdx++}` });
+      } else {
+        parts.push({ type: 'fn-stable', content: fnId, key: `fn-stable-${fnId}-${keyIdx++}` });
+      }
     } else if (match[3]) {
       const fnNum = match[3];
       parts.push({ type: 'fn-legacy', content: fnNum, key: `fn-legacy-${fnNum}-${keyIdx++}` });
@@ -251,6 +387,9 @@ export function parseInlineFormatting(
   }
 
   return parts.map((part) => {
+    if (part.type === 'text') {
+      return <React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>;
+    }
     if (part.type === 'fn-stable') {
       const num = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`] || '?';
       return (
@@ -278,6 +417,21 @@ export function parseInlineFormatting(
         >
           [{num}]
         </a>
+      );
+    }
+
+    if (part.type === 'mn-stable') {
+      const num = marginNotesMap[part.content] || '?';
+      const roman = typeof num === 'number' ? toRoman(num) : num;
+      return (
+        <span 
+          key={part.key}
+          id={`mn-marker-${part.content}`}
+          className="inline-flex items-center justify-center rounded-full border border-adjung-maroon min-w-[18px] h-[18px] px-1 text-[9px] font-sans font-bold text-adjung-maroon bg-white hover:bg-adjung-maroon/10 select-none mx-0.5 align-middle transition-colors cursor-pointer"
+          title={`Margin Note ${roman}`}
+        >
+          {roman}
+        </span>
       );
     }
 

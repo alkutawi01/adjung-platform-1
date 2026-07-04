@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-react';
 import { Entry, User } from '../types';
 import { EntryRenderer } from './EntryRenderer';
-import { parseInlineFormatting } from '../utils';
+import { parseInlineFormatting, stripMarkdown } from '../utils';
 
 interface WritingDeskProps {
   currentUser: User;

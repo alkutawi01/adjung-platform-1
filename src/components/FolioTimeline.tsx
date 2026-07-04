@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { Entry, WriterProfile, User } from '../types';
-import { isArabicText, parseInlineFormatting } from '../utils';
+import { isArabicText, parseInlineFormatting, stripMarkdown } from '../utils';
 import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
 
 interface FolioTimelineProps {

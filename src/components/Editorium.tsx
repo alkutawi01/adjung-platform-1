@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions } from '../types';
 import { db } from '../db/mockDb';
-import { parseInlineFormatting } from '../utils';
+import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown } from '../utils';
 
 interface EditoriumProps {
   currentUser: User;

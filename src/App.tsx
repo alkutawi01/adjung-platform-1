@@ -1779,7 +1779,7 @@ Editorial Board of Adjung`;
                                     isAr ? 'font-arabic text-right' : ''
                                   }`}
                                 >
-                                  {item.title}
+                                  {parseInlineFormatting(item.title || '')}
                                 </h3>
                               )}
 
@@ -1961,7 +1961,7 @@ Editorial Board of Adjung`;
                           <div className="flex items-center gap-2">
                             <span className="md:hidden font-serif font-bold text-base text-adjung-maroon">{item.year}</span>
                             <span className="md:hidden text-stone-300">|</span>
-                            <h4 className="font-serif font-semibold text-stone-900 text-sm md:text-base text-left">{item.title}</h4>
+                            <h4 className="font-serif font-semibold text-stone-900 text-sm md:text-base text-left">{parseInlineFormatting(item.title || '')}</h4>
                           </div>
                           <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
                             {item.category}
@@ -2148,7 +2148,7 @@ Editorial Board of Adjung`;
                                 <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {draft.contentType === 'Note' ? (parseInlineFormatting(draft.content.split('\n')[0] || '(Empty Note)')) : draft.title}
+                                {draft.contentType === 'Note' ? (parseInlineFormatting(draft.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(draft.title || '')}
                               </h4>
                             </div>
                             <FileEdit className="w-4 h-4 text-stone-400 group-hover:text-adjung-maroon flex-shrink-0" />
@@ -2184,7 +2184,7 @@ Editorial Board of Adjung`;
                                 <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {pub.contentType === 'Note' ? (parseInlineFormatting(pub.content.split('\n')[0] || '(Empty Note)')) : pub.title}
+                                {pub.contentType === 'Note' ? (parseInlineFormatting(pub.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(pub.title || '')}
                               </h4>
                             </div>
                             <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">
@@ -2227,7 +2227,7 @@ Editorial Board of Adjung`;
                                 <span>Archived {new Date(arch.updatedDate).toLocaleDateString()}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-700 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {arch.contentType === 'Note' ? (parseInlineFormatting(arch.content.split('\n')[0] || '(Empty Note)')) : arch.title}
+                                {arch.contentType === 'Note' ? (parseInlineFormatting(arch.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(arch.title || '')}
                               </h4>
                             </div>
                             <div className="flex items-center gap-3 text-stone-450 flex-shrink-0">
@@ -2327,7 +2327,7 @@ Editorial Board of Adjung`;
                               {parseInlineFormatting(item.content.split('\n')[0] || '(Empty Note)')}
                             </span>
                           ) : (
-                            item.title
+                            parseInlineFormatting(item.title || '')
                           )}
                           {isArabicText(item.contentType === 'Note' ? item.content : item.title) && (
                             <span className="ml-2 font-mono text-[9px] text-adjung-maroon uppercase tracking-wide bg-red-50 px-1 rounded">AR</span>
@@ -2542,7 +2542,7 @@ Editorial Board of Adjung`;
                         {featuredEntry.contentType === 'Note' ? (
                           <span className="font-light">{parseInlineFormatting(featuredEntry.content.split('\n')[0])}</span>
                         ) : (
-                          featuredEntry.title
+                          parseInlineFormatting(featuredEntry.title || '')
                         )}
                       </h2>
                       
@@ -2707,7 +2707,7 @@ Editorial Board of Adjung`;
                                         }}
                                         className="font-serif text-[15px] font-semibold text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
                                       >
-                                        {item.title}
+                                        {parseInlineFormatting(item.title || '')}
                                       </h4>
                                     );
                                   }
