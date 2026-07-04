@@ -1,6 +1,6 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
 import { Entry } from '../types';
-import { parseContentToBlocks, isArabicText, parseInlineFormatting } from '../utils';
+import { parseContentToBlocks, isArabicText, parseInlineFormatting, getFootnotesReadingOrderMap, getMarginNotesReadingOrderMap } from '../utils';
 
 interface TimelineEntryCollapseRendererProps {
   item: Entry;
@@ -22,6 +22,8 @@ export function TimelineEntryCollapseRenderer({
   const measureContainerRef = useRef<HTMLDivElement | null>(null);
 
   const contentBlocks = parseContentToBlocks(item.content);
+  const fMap = getFootnotesReadingOrderMap(item.content).map;
+  const mMap = getMarginNotesReadingOrderMap(item.content).map;
 
   useLayoutEffect(() => {
     const measureContainer = measureContainerRef.current;
@@ -55,7 +57,7 @@ export function TimelineEntryCollapseRenderer({
   const renderSingleBlock = (block: any, pIdx: number) => {
     if (block.type === 'heading') {
       const isAr = isArabicText(block.text);
-      const textNode = parseInlineFormatting(block.text);
+      const textNode = parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
       if (block.level === 1) {
         return (
           <h3 
@@ -87,7 +89,7 @@ export function TimelineEntryCollapseRenderer({
       const listItems = block.items.slice(0, 3).map((item: any, itemIdx: number) => {
         const isAr = isArabicText(item.text);
         const isChecklist = item.checked !== undefined;
-        const textNode = parseInlineFormatting(item.text);
+        const textNode = parseInlineFormatting(item.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
         if (isChecklist) {
           return (
             <li 
@@ -159,12 +161,12 @@ export function TimelineEntryCollapseRenderer({
       return (
         <blockquote key={pIdx} className="my-4 pl-4 border-l border-adjung-maroon/20 text-left bg-transparent">
           <p className="font-serif italic text-stone-600 text-xs md:text-sm">
-            {parseInlineFormatting(block.text)}
+            {parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
           {block.translation && (
             <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
               <p className="font-serif italic text-xs text-stone-500">
-                {parseInlineFormatting(block.translation)}
+                {parseInlineFormatting(block.translation, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
               </p>
             </div>
           )}
@@ -176,12 +178,12 @@ export function TimelineEntryCollapseRenderer({
       return (
         <blockquote key={pIdx} className="my-4 pr-4 border-r border-adjung-maroon/20 text-right bg-transparent">
           <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
-            {parseInlineFormatting(block.arabic)}
+            {parseInlineFormatting(block.arabic, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
           {block.translation && (
             <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
               <p className="font-serif italic text-xs text-stone-500">
-                {parseInlineFormatting(block.translation)}
+                {parseInlineFormatting(block.translation, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
               </p>
             </div>
           )}
@@ -200,7 +202,7 @@ export function TimelineEntryCollapseRenderer({
             : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
         }`}
       >
-        {parseInlineFormatting(block.text)}
+        {parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
       </p>
     );
   };

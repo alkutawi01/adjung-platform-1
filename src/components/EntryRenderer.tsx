@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke } from '../types';
+import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke, Footnote } from '../types';
 import { SignatureRenderer } from './SignatureRenderer';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown } from '../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount } from '../utils';
 import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 
@@ -17,7 +17,7 @@ interface EntryRendererProps {
   authorSignatureStrokes?: VectorStroke[][];
 }
 
-function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir }: any) {
+function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir, id, onContextMenu }: any) {
   const editorRef = useRef<HTMLElement>(null);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -37,6 +37,7 @@ function RichTextEditable({ html, onChange, className, tagName = 'div', placehol
   return (
     <Tag
       ref={editorRef}
+      id={id}
       contentEditable
       suppressContentEditableWarning
       className={className}
@@ -47,6 +48,7 @@ function RichTextEditable({ html, onChange, className, tagName = 'div', placehol
       }}
       onInput={handleInput}
       onKeyDown={onKeyDown}
+      onContextMenu={onContextMenu}
       placeholder={placeholder}
       dir={dir}
     />
@@ -101,6 +103,7 @@ export function EntryRenderer({
 
   // For Essay:
   const [footnotes, setFootnotes] = useState<string[]>(entry.footnotes || []);
+  const [footnotesData, setFootnotesData] = useState<Footnote[]>(entry.footnotesData || []);
 
   // For Article and general content:
   const [content, setContent] = useState(entry.content);
@@ -118,6 +121,7 @@ export function EntryRenderer({
   const [selectionRange, setSelectionRange] = useState<Range | null>(null);
   const [toolbarCoords, setToolbarCoords] = useState<{ x: number; y: number } | null>(null);
   const [contextCoords, setContextCoords] = useState<{ x: number; y: number } | null>(null);
+  const [contextRange, setContextRange] = useState<Range | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -195,25 +199,24 @@ export function EntryRenderer({
     const renderedList: { displayNum: number; originalId: string; text: string }[] = [];
     
     occurrences.forEach((id, index) => {
-      const isLegacy = !isNaN(Number(id));
-      const text = isLegacy ? (footnotes[parseInt(id, 10) - 1] || '') : (footnotes[index] || '');
+      let text = '';
+      const fnItem = footnotesData.find(f => f.id === id);
+      if (fnItem) {
+        text = fnItem.content;
+      } else {
+        const isLegacy = !isNaN(Number(id));
+        if (isLegacy) {
+          text = footnotes[parseInt(id, 10) - 1] || '';
+        } else if (id.startsWith('fn-legacy-')) {
+          const numStr = id.replace('fn-legacy-', '');
+          text = footnotes[parseInt(numStr, 10) - 1] || '';
+        }
+      }
       renderedList.push({
         displayNum: index + 1,
         originalId: id,
         text
       });
-    });
-    
-    footnotes.forEach((fnText, originalIdx) => {
-      const id = (originalIdx + 1).toString();
-      if (!occurrences.includes(id)) {
-        const displayNum = renderedList.length + 1;
-        renderedList.push({
-          displayNum,
-          originalId: id,
-          text: fnText,
-        });
-      }
     });
     
     return renderedList;
@@ -241,32 +244,52 @@ export function EntryRenderer({
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData });
+  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData });
 
   useEffect(() => {
-    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData };
-  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData]);
+    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData };
+  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData]);
 
   // Unified editor helpers
   const updateCanvasBadges = (el: HTMLElement) => {
-    const fnBadges = el.querySelectorAll('.footnote-badge');
-    fnBadges.forEach((badge, idx) => {
-      badge.textContent = String(idx + 1);
-    });
-    const mnBadges = el.querySelectorAll('.margin-note-badge');
-    mnBadges.forEach((badge, idx) => {
-      badge.textContent = toRoman(idx + 1);
-    });
+    // Badges are now styled via CSS counters in index.css
+    // We keep this function in case we need to trigger any other DOM updates
   };
 
-  const triggerEditorChange = () => {
+  const triggerEditorChange = (
+    customFootnotes?: string[],
+    customMarginNotesData?: any,
+    customFootnotesData?: Footnote[]
+  ) => {
     const editorEl = document.getElementById('editorial-canvas-editor');
     if (editorEl) {
       updateCanvasBadges(editorEl);
       const html = editorEl.innerHTML;
       const md = htmlToMarkdown(html);
       setContent(md);
-      triggerSave(md, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData);
+      
+      const fns = customFootnotes !== undefined ? customFootnotes : stateRef.current.footnotes;
+      const mnd = customMarginNotesData !== undefined ? customMarginNotesData : stateRef.current.marginNotesData;
+      const fnd = customFootnotesData !== undefined ? customFootnotesData : stateRef.current.footnotesData;
+      
+      triggerSave(
+        md,
+        fns,
+        stateRef.current.marginNotes,
+        stateRef.current.contentType,
+        stateRef.current.status,
+        stateRef.current.visibility,
+        stateRef.current.tags,
+        stateRef.current.slug,
+        stateRef.current.title,
+        stateRef.current.excerpt,
+        stateRef.current.featuredImage,
+        stateRef.current.revisions,
+        stateRef.current.citations,
+        stateRef.current.referenceSortOrder,
+        mnd,
+        fnd
+      );
     }
   };
 
@@ -276,7 +299,26 @@ export function EntryRenderer({
   };
 
   const applyBlockFormat = (tag: string) => {
-    document.execCommand('formatBlock', false, tag);
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && tag !== 'P' && tag !== 'p') {
+      let parent: HTMLElement | null = selection.getRangeAt(0).startContainer.parentElement;
+      let isInsideTarget = false;
+      while (parent && parent.id !== 'editorial-canvas-editor') {
+        if (parent.tagName.toLowerCase() === tag.toLowerCase()) {
+          isInsideTarget = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      
+      if (isInsideTarget) {
+        document.execCommand('formatBlock', false, 'p');
+      } else {
+        document.execCommand('formatBlock', false, tag);
+      }
+    } else {
+      document.execCommand('formatBlock', false, tag);
+    }
     triggerEditorChange();
   };
 
@@ -286,28 +328,43 @@ export function EntryRenderer({
     span.className = type === 'footnote' ? 'footnote-badge' : 'margin-note-badge';
     span.setAttribute('data-id', id);
     span.setAttribute('contenteditable', 'false');
-    span.textContent = '*';
+    span.textContent = '\u200B'; // Zero-width space so it's not totally empty for the cursor, but relies on CSS for display
 
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
+    const range = contextRange || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
+    if (range) {
       range.deleteContents();
       range.insertNode(span);
       range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
+
+    let updatedFootnotes = footnotes;
+    let updatedFootnotesData = footnotesData;
+    let updatedMarginNotesData = marginNotesData;
 
     if (type === 'footnote') {
-      const updated = [...footnotes, 'New footnote description text.'];
-      setFootnotes(updated);
+      const newText = 'New footnote description text.';
+      updatedFootnotesData = [...footnotesData, { id, content: newText }];
+      setFootnotesData(updatedFootnotesData);
     } else {
-      const updated = { ...marginNotesData, [id]: 'New margin note content.' };
-      setMarginNotesData(updated);
+      updatedMarginNotesData = { ...marginNotesData, [id]: 'New margin note content.' };
+      setMarginNotesData(updatedMarginNotesData);
     }
 
+    setContextRange(null);
+
     // Force React to render and update canvas badges
-    setTimeout(triggerEditorChange, 50);
+    setTimeout(() => {
+      triggerEditorChange(
+        type === 'footnote' ? updatedFootnotes : undefined,
+        type === 'margin-note' ? updatedMarginNotesData : undefined,
+        type === 'footnote' ? updatedFootnotesData : undefined
+      );
+    }, 50);
   };
 
   const deleteNote = (id: string, type: 'footnote' | 'margin-note') => {
@@ -318,20 +375,30 @@ export function EntryRenderer({
         badge.remove();
       }
       
+      let updatedFootnotes = footnotes;
+      let updatedFootnotesData = footnotesData;
+      let updatedMarginNotesData = marginNotesData;
+
       if (type === 'footnote') {
         const { occurrences } = getFootnotesReadingOrderMap();
         const orderIdx = occurrences.indexOf(id);
         if (orderIdx !== -1) {
-          const updated = footnotes.filter((_, i) => i !== orderIdx);
-          setFootnotes(updated);
+          updatedFootnotes = footnotes.filter((_, i) => i !== orderIdx);
+          setFootnotes(updatedFootnotes);
         }
+        updatedFootnotesData = footnotesData.filter(f => f.id !== id);
+        setFootnotesData(updatedFootnotesData);
       } else {
-        const updated = { ...marginNotesData };
-        delete updated[id];
-        setMarginNotesData(updated);
+        updatedMarginNotesData = { ...marginNotesData };
+        delete updatedMarginNotesData[id];
+        setMarginNotesData(updatedMarginNotesData);
       }
       
-      triggerEditorChange();
+      triggerEditorChange(
+        type === 'footnote' ? updatedFootnotes : undefined,
+        type === 'margin-note' ? updatedMarginNotesData : undefined,
+        type === 'footnote' ? updatedFootnotesData : undefined
+      );
     }
   };
 
@@ -369,6 +436,35 @@ export function EntryRenderer({
     const editorEl = document.getElementById('editorial-canvas-editor');
     if (editorEl && editorEl.contains(e.target as Node)) {
       e.preventDefault();
+      
+      let range: Range | null = null;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      } else if ((document as any).caretPositionFromPoint) {
+        const position = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+        if (position) {
+          range = document.createRange();
+          range.setStart(position.offsetNode, position.offset);
+          range.collapse(true);
+        }
+      }
+      
+      if (range && editorEl.contains(range.commonAncestorContainer)) {
+        setContextRange(range);
+      } else {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const fallbackRange = sel.getRangeAt(0).cloneRange();
+          if (editorEl.contains(fallbackRange.commonAncestorContainer)) {
+            setContextRange(fallbackRange);
+          } else {
+            setContextRange(null);
+          }
+        } else {
+          setContextRange(null);
+        }
+      }
+
       const parentRect = editorEl.getBoundingClientRect();
       setContextCoords({
         x: e.clientX - parentRect.left,
@@ -782,6 +878,7 @@ export function EntryRenderer({
     setTags(entry.tags);
     setSlug(entry.slug);
     setFootnotes(entry.footnotes || []);
+    setFootnotesData(entry.footnotesData || []);
     setContent(entry.content);
     setMarginNotes(entry.marginNotes || {});
     setExcerpt(entry.excerpt || '');
@@ -806,21 +903,8 @@ export function EntryRenderer({
   }, [content]);
 
   // Document Stats Helpers
-  const getWordCount = (text: string) => {
-    if (!text) return 0;
-    const cleanText = text.trim();
-    if (!cleanText) return 0;
-    return cleanText.split(/\s+/).filter(Boolean).length;
-  };
-
   const getCharCount = (text: string) => {
     return text ? text.length : 0;
-  };
-
-  const getReadingTime = (text: string) => {
-    const words = getWordCount(text);
-    const minutes = Math.ceil(words / 200);
-    return minutes === 1 ? '1 min read' : `${minutes} min read`;
   };
 
   const getFullContentString = () => {
@@ -1061,7 +1145,9 @@ export function EntryRenderer({
     updatedFeaturedImage = stateRef.current.featuredImage,
     updatedRevisions = stateRef.current.revisions,
     updatedCitations = stateRef.current.citations,
-    updatedReferenceSortOrder = stateRef.current.referenceSortOrder
+    updatedReferenceSortOrder = stateRef.current.referenceSortOrder,
+    updatedMarginNotesData = stateRef.current.marginNotesData,
+    updatedFootnotesData = stateRef.current.footnotesData
   ) => {
     setSaveStatus('saving');
     if (saveTimeoutRef.current) {
@@ -1080,7 +1166,9 @@ export function EntryRenderer({
           slug: updatedSlug,
           content: updatedContent,
           footnotes: (updatedType === 'Essay' || updatedType === 'Article') ? updatedFootnotes : undefined,
+          footnotesData: (updatedType === 'Essay' || updatedType === 'Article') ? updatedFootnotesData : undefined,
           marginNotes: updatedType === 'Article' ? updatedMarginNotes : undefined,
+          marginNotesData: updatedMarginNotesData,
           excerpt: updatedExcerpt,
           featuredImage: updatedFeaturedImage,
           revisions: updatedRevisions,
@@ -1119,6 +1207,7 @@ export function EntryRenderer({
           featuredImage: stateRef.current.featuredImage,
           footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
           marginNotes: stateRef.current.contentType === 'Article' ? stateRef.current.marginNotes : undefined,
+          marginNotesData: stateRef.current.marginNotesData,
           status: updatedStatus,
           visibility: updatedVisibility,
           tags: stateRef.current.tags,
@@ -1141,6 +1230,7 @@ export function EntryRenderer({
         content: stateRef.current.content,
         footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
         marginNotes: stateRef.current.contentType === 'Article' ? stateRef.current.marginNotes : undefined,
+        marginNotesData: stateRef.current.marginNotesData,
         excerpt: stateRef.current.excerpt,
         featuredImage: stateRef.current.featuredImage,
         revisions: nextRevisions,
@@ -1172,7 +1262,9 @@ export function EntryRenderer({
     updatedFeaturedImage = featuredImage,
     updatedRevisions = revisions,
     updatedCitations = citations,
-    updatedReferenceSortOrder = referenceSortOrder
+    updatedReferenceSortOrder = referenceSortOrder,
+    updatedMarginNotesData = marginNotesData,
+    updatedFootnotesData = footnotesData
   ) => {
     triggerAutosave(
       updatedContent,
@@ -1188,7 +1280,9 @@ export function EntryRenderer({
       updatedFeaturedImage,
       updatedRevisions,
       updatedCitations,
-      updatedReferenceSortOrder
+      updatedReferenceSortOrder,
+      updatedMarginNotesData,
+      updatedFootnotesData
     );
   };
 
@@ -1270,8 +1364,10 @@ export function EntryRenderer({
       content: stateRef.current.content,
       excerpt: stateRef.current.excerpt,
       featuredImage: stateRef.current.featuredImage,
-      footnotes: stateRef.current.contentType === 'Essay' ? stateRef.current.footnotes : undefined,
+      footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
+      footnotesData: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotesData : undefined,
       marginNotes: stateRef.current.contentType === 'Article' ? stateRef.current.marginNotes : undefined,
+      marginNotesData: stateRef.current.marginNotesData,
       status: stateRef.current.status,
       visibility: stateRef.current.visibility,
       tags: stateRef.current.tags,
@@ -1284,7 +1380,9 @@ export function EntryRenderer({
     setExcerpt(rev.excerpt || '');
     setFeaturedImage(rev.featuredImage || '');
     setFootnotes(rev.footnotes || []);
+    setFootnotesData(rev.footnotesData || []);
     setMarginNotes(rev.marginNotes || {});
+    setMarginNotesData(rev.marginNotesData || {});
     setStatus(rev.status);
     setVisibility(rev.visibility);
     setTags(rev.tags);
@@ -1309,7 +1407,9 @@ export function EntryRenderer({
       slug: rev.slug,
       content: rev.content,
       footnotes: (contentType === 'Essay' || contentType === 'Article') ? rev.footnotes : undefined,
+      footnotesData: (contentType === 'Essay' || contentType === 'Article') ? rev.footnotesData : undefined,
       marginNotes: contentType === 'Article' ? rev.marginNotes : undefined,
+      marginNotesData: rev.marginNotesData,
       excerpt: rev.excerpt,
       featuredImage: rev.featuredImage,
       revisions: updatedRevisions,
@@ -1641,38 +1741,140 @@ export function EntryRenderer({
     triggerSave(content, footnotes, updated);
   };
 
-  const handleFootnoteChange = (index: number, val: string) => {
-    const updated = [...footnotes];
-    updated[index] = val;
-    setFootnotes(updated);
-    triggerSave(content, updated, marginNotes);
+  const handleFootnoteChange = (originalId: string, val: string) => {
+    let updatedData = [...footnotesData];
+    const itemIdx = updatedData.findIndex(f => f.id === originalId);
+    if (itemIdx !== -1) {
+      updatedData[itemIdx] = { ...updatedData[itemIdx], content: val };
+    } else {
+      updatedData.push({ id: originalId, content: val });
+    }
+    setFootnotesData(updatedData);
+
+    const ordered = getOrderedFootnotesToRender();
+    const orderedItem = ordered.find(o => o.originalId === originalId);
+    let updatedFootnotes = [...footnotes];
+    if (orderedItem) {
+      const displayIdx = orderedItem.displayNum - 1;
+      while (updatedFootnotes.length <= displayIdx) {
+        updatedFootnotes.push('');
+      }
+      updatedFootnotes[displayIdx] = val;
+    } else {
+      const isLegacy = !isNaN(Number(originalId));
+      if (isLegacy) {
+        const idx = parseInt(originalId, 10) - 1;
+        if (idx >= 0) {
+          while (updatedFootnotes.length <= idx) {
+            updatedFootnotes.push('');
+          }
+          updatedFootnotes[idx] = val;
+        }
+      }
+    }
+    setFootnotes(updatedFootnotes);
+
+    triggerSave(
+      content,
+      updatedFootnotes,
+      marginNotes,
+      contentType,
+      status,
+      visibility,
+      tags,
+      slug,
+      title,
+      excerpt,
+      featuredImage,
+      revisions,
+      citations,
+      referenceSortOrder,
+      marginNotesData,
+      updatedData
+    );
   };
 
   const handleAddFootnote = () => {
-    const updated = [...footnotes, 'New footnote citation text.'];
-    setFootnotes(updated);
-    triggerSave(content, updated, marginNotes);
+    const id = `fn-${generateUUID()}`;
+    const newText = 'New footnote citation text.';
+    const updatedFootnotes = [...footnotes, newText];
+    const updatedData = [...footnotesData, { id, content: newText }];
+    setFootnotes(updatedFootnotes);
+    setFootnotesData(updatedData);
+    triggerSave(content, updatedFootnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, updatedData);
   };
 
-  const handleRemoveFootnote = (index: number) => {
-    const updated = footnotes.filter((_, i) => i !== index);
-    setFootnotes(updated);
-    
-    // Automatically re-number the markdown text to match the new array indices
-    const targetRegex = new RegExp(`\\[\\^${index + 1}\\]`, 'g');
-    let newContent = content.replace(targetRegex, '');
-    newContent = newContent.replace(/\[\^(\d+)\]/g, (match, fnNumStr) => {
-      const num = parseInt(fnNumStr, 10);
-      if (num > index + 1) {
-        return `[^${num - 1}]`;
+  const handleRemoveFootnote = (originalId: string) => {
+    const updatedData = footnotesData.filter(f => f.id !== originalId);
+    setFootnotesData(updatedData);
+
+    const ordered = getOrderedFootnotesToRender();
+    const orderedItem = ordered.find(o => o.originalId === originalId);
+    let updatedFootnotes = footnotes;
+    if (orderedItem) {
+      const idx = orderedItem.displayNum - 1;
+      updatedFootnotes = footnotes.filter((_, i) => i !== idx);
+      setFootnotes(updatedFootnotes);
+    } else {
+      const isLegacy = !isNaN(Number(originalId));
+      if (isLegacy) {
+        const idx = parseInt(originalId, 10) - 1;
+        updatedFootnotes = footnotes.filter((_, i) => i !== idx);
+        setFootnotes(updatedFootnotes);
       }
-      return match;
-    });
+    }
+
+    const isLegacy = !isNaN(Number(originalId));
+    let targetRegex: RegExp;
+    if (isLegacy) {
+      targetRegex = new RegExp(`\\[\\^${originalId}\\]`, 'g');
+    } else {
+      targetRegex = new RegExp(`\\[\\^${originalId.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\]`, 'g');
+    }
+
+    let newContent = content.replace(targetRegex, '');
+
+    if (isLegacy) {
+      const index = parseInt(originalId, 10) - 1;
+      newContent = newContent.replace(/\[\^(\d+)\]/g, (match, fnNumStr) => {
+        const num = parseInt(fnNumStr, 10);
+        if (num > index + 1) {
+          return `[^${num - 1}]`;
+        }
+        return match;
+      });
+    }
 
     setContent(newContent);
     const parts = newContent.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
     setParagraphs(parts.length > 0 ? parts : [newContent]);
-    triggerSave(newContent, updated, marginNotes);
+
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (editorEl) {
+      const badge = editorEl.querySelector(`[data-id="${originalId}"]`);
+      if (badge) {
+        badge.remove();
+      }
+    }
+
+    triggerSave(
+      newContent,
+      updatedFootnotes,
+      marginNotes,
+      contentType,
+      status,
+      visibility,
+      tags,
+      slug,
+      title,
+      excerpt,
+      featuredImage,
+      revisions,
+      citations,
+      referenceSortOrder,
+      marginNotesData,
+      updatedData
+    );
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
@@ -1749,19 +1951,20 @@ export function EntryRenderer({
   const renderBlock = (block: ContentBlock, idx: number, marginNoteNum?: number, marginNoteText?: string) => {
     const citeMap = getCitationsMap();
     const fMap = getFootnotesReadingOrderMap().map;
+    const mOrderMap = getMarginNotesReadingOrderMap().map;
 
     const renderSuperscriptWithNote = (num: number, text?: string) => {
-      const roman = toRoman(num);
+      const roman = toRoman(num).toLowerCase();
       return (
         <span className="inline select-none ml-1 relative">
-          <span className="inline-flex items-center justify-center rounded-full border border-adjung-maroon min-w-[18px] h-[18px] px-1 text-[9px] font-sans font-bold text-adjung-maroon bg-white hover:bg-adjung-maroon/10 select-none mx-0.5 align-middle transition-colors cursor-pointer" title={`Margin Note ${roman}`}>
-            {roman}
+          <span className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-sans px-0.5 cursor-default" title={`Margin Note ${roman}`}>
+            ({roman})
           </span>
           {text && (
             <span className="absolute top-0 left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-650 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
               <span className="block">
-                <span className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{roman}]</span>
-                {parseInlineFormatting(text, citations, referenceSortOrder, citeMap, fMap)}
+                <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon mr-1.5 select-none">({roman})</span>
+                {parseInlineFormatting(text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
               </span>
             </span>
           )}
@@ -2017,7 +2220,7 @@ export function EntryRenderer({
             </span>
           </div>
           <p className="font-serif text-sm md:text-[15px] leading-relaxed my-0 whitespace-pre-wrap relative overflow-visible">
-            {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap)}
+            {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
             {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
         </div>
@@ -2035,7 +2238,7 @@ export function EntryRenderer({
             : 'font-serif text-left'
         }`}
       >
-        {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap)}
+        {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
         {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
       </p>
     );
@@ -2286,7 +2489,8 @@ export function EntryRenderer({
                 value={block.type === 'heading' ? `heading-${block.level}` : block.type}
                 onChange={(e) => {
                   const val = e.target.value;
-                  const currentText = 'text' in block ? block.text : 'arabic' in block ? block.arabic : 'code' in block ? block.code : '';
+                  const blockAny = block as any;
+                  const currentText = blockAny.text || blockAny.arabic || blockAny.code || '';
                   let newBlock: ContentBlock;
                   
                   if (val.startsWith('heading-')) {
@@ -2807,11 +3011,11 @@ export function EntryRenderer({
             </div>
           )}
 
-          {contentType === 'Essay' && (
+          {(contentType === 'Essay' || contentType === 'Article') && (
             <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold">
-                  Essay Footnotes Registry (Source Mode)
+                  Footnotes Registry (Source Mode)
                 </h4>
                 <button
                   type="button"
@@ -2827,7 +3031,7 @@ export function EntryRenderer({
               </div>
               
               {footnotes.length === 0 ? (
-                <p className="text-stone-400 italic">No footnotes registered for this essay yet. Insert `[^1]` in content to reference.</p>
+                <p className="text-stone-400 italic">No footnotes registered for this entry yet. Insert `[^1]` in content to reference.</p>
               ) : (
                 <div className="space-y-3">
                   {footnotes.map((fn, index) => (
@@ -3069,15 +3273,14 @@ export function EntryRenderer({
             {excerpt}
           </div>
         )}
-
         {/* Outline-based TOC */}
         {renderTableOfContents()}
 
         {/* Content Area Grid */}
-        <div id="article-container-grid" className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative">
+        <div id="article-container-grid" className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
           
           {/* Main content body */}
-          <div className={`${contentType === 'Article' ? 'xl:col-span-8' : 'xl:col-span-12'} space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif relative`}>
+          <div className={`${contentType === 'Article' ? 'lg:col-span-8' : 'lg:col-span-12'} space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif relative`}>
             
             {/* Custom context menu trigger in edit mode */}
             {mode === 'edit' && contextCoords && (
@@ -3086,7 +3289,8 @@ export function EntryRenderer({
                 className="bg-white border border-stone-200 shadow-xl rounded py-1 w-44 z-50 text-left font-sans text-xs"
               >
                 <button 
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault();
                     insertNote('footnote');
                     setContextCoords(null);
                   }}
@@ -3094,15 +3298,18 @@ export function EntryRenderer({
                 >
                   Insert Footnote
                 </button>
-                <button 
-                  onClick={() => {
-                    insertNote('margin-note');
-                    setContextCoords(null);
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon font-medium cursor-pointer transition-colors"
-                >
-                  Insert Margin Note
-                </button>
+                {contentType === 'Article' && (
+                  <button 
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      insertNote('margin-note');
+                      setContextCoords(null);
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon font-medium cursor-pointer transition-colors"
+                  >
+                    Insert Margin Note
+                  </button>
+                )}
               </div>
             )}
 
@@ -3117,14 +3324,14 @@ export function EntryRenderer({
                 }}
                 className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-850 animate-fade-in"
               >
-                <button type="button" onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-800 rounded font-bold transition">B</button>
-                <button type="button" onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-800 rounded italic transition">I</button>
-                <button type="button" onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-800 rounded underline transition">U</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-800 rounded font-bold transition">B</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-800 rounded italic transition">I</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-800 rounded underline transition">U</button>
                 <div className="h-4 w-px bg-stone-750 mx-1"></div>
-                <button type="button" onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H1</button>
-                <button type="button" onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H2</button>
-                <button type="button" onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Quote</button>
-                <button type="button" onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Para</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H1</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H2</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Quote</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Para</button>
               </div>
             )}
 
@@ -3168,7 +3375,7 @@ export function EntryRenderer({
 
           {/* Right margin notes sidebar */}
           {contentType === 'Article' && (
-            <div className="hidden xl:block xl:col-span-4 relative min-h-[400px]">
+            <div className="hidden lg:block lg:col-span-4 relative">
               {(() => {
                 const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
                 const citeMap = getCitationsMap();
@@ -3184,7 +3391,7 @@ export function EntryRenderer({
                         className="border-l-2 border-adjung-maroon/20 pl-4 py-1 text-left w-full space-y-1 transition-all duration-300 animate-fade-in"
                       >
                         <div className="flex items-center justify-between text-[8px] font-mono text-stone-400 select-none">
-                          <span className="uppercase">Margin Note [{toRoman(mMap[id])}]</span>
+                          <span className="uppercase">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
                           <button 
                             type="button" 
                             onClick={() => deleteNote(id, 'margin-note')}
@@ -3215,10 +3422,10 @@ export function EntryRenderer({
                       <div 
                         key={id}
                         style={{ position: 'absolute', top: `${top}px`, left: 0 }}
-                        className="border-l border-stone-300 pl-4 py-0.5 text-left text-stone-500 font-serif italic text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in"
+                        className="border-l border-stone-300 pl-4 py-0.5 text-left text-stone-600 font-serif text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in"
                       >
-                        <span className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{toRoman(mMap[id])}]</span>
-                        {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap)}
+                        <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon mr-1.5 select-none">({toRoman(mMap[id]).toLowerCase()})</span>
+                        {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mMap)}
                       </div>
                     );
                   });
@@ -3252,39 +3459,153 @@ export function EntryRenderer({
           </div>
         )}
 
+        {/* Margin Notes Fallback for Smaller Screens */}
+        {contentType === 'Article' && (
+          <div className="lg:hidden mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700 animate-fade-in">
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-stone-100 select-none">
+              <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
+                Scholarly Margin Notes
+              </h3>
+            </div>
+            
+            {(() => {
+               const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
+               const citeMap = getCitationsMap();
+               const fMap = getFootnotesReadingOrderMap().map;
+               if (occurrences.length === 0) {
+                 return (
+                   <div className="text-stone-400 font-serif italic text-sm py-4">
+                     No margin notes registered yet. Right-click inside text editor to insert margin notes.
+                   </div>
+                 );
+               }
+               return (
+                 <div className="space-y-4">
+                   {occurrences.map(id => (
+                     <div key={id} className="bg-white border border-stone-100 p-4 rounded-md shadow-sm relative">
+                       <div className="absolute top-4 left-4 select-none">
+                          <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon">
+                            ({toRoman(mMap[id]).toLowerCase()})
+                          </span>
+                        </div>
+                       <div className="pl-14">
+                         {mode === 'edit' ? (
+                           <div>
+                             <textarea
+                               value={marginNotesData[id] || ''}
+                               onChange={(e) => {
+                                 const val = e.target.value;
+                                 const updated = { ...marginNotesData, [id]: val };
+                                 setMarginNotesData(updated);
+                                 triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
+                               }}
+                               placeholder="Add margin note here..."
+                               rows={2}
+                               className="w-full bg-stone-50 border border-stone-200 focus:border-adjung-maroon rounded p-2 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
+                             />
+                             <div className="mt-2 text-right">
+                               <button 
+                                 type="button" 
+                                 onClick={() => deleteNote(id, 'margin-note')}
+                                 className="text-stone-400 hover:text-red-600 text-[10px] font-mono uppercase tracking-wider transition-colors"
+                               >
+                                 Delete Note
+                               </button>
+                             </div>
+                           </div>
+                         ) : (
+                           <div className="font-serif text-sm leading-relaxed text-stone-600">
+                             {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mMap)}
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               );
+            })()}
+          </div>
+        )}
+
         {/* Footnotes Section */}
         {(contentType === 'Essay' || contentType === 'Article') && (
           <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
                 Scholarly Footnotes & Citations
               </h3>
+              {mode === 'edit' && (
+                <span className="text-[9px] font-mono text-stone-400">Total registered: {getOrderedFootnotesToRender().length}</span>
+              )}
             </div>
 
-            {footnotes.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">No footnotes registered. Use [^1], [^2] inside text blocks to reference.</p>
+            {getOrderedFootnotesToRender().length === 0 ? (
+              mode === 'edit' ? (
+                <p className="text-xs text-stone-400 italic select-none">No footnotes registered yet. Right-click inside text editor to insert footnotes.</p>
+              ) : (
+                <p className="text-xs text-stone-400 italic">No footnotes registered. Use [^1], [^2] inside text blocks to reference.</p>
+              )
             ) : (
-              <ol className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
-                {getOrderedFootnotesToRender().map((item, idx) => {
-                  const fMap = getFootnotesReadingOrderMap().map;
-                  const citeMap = getCitationsMap();
-                  return (
-                    <li 
-                      key={idx} 
-                      id={`footnote-dest-legacy-${item.originalNum}`} 
-                      className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition"
-                    >
-                      <span className="font-mono text-xs text-adjung-maroon font-medium w-4 flex-shrink-0">
-                        [{item.displayNum}]
-                      </span>
-                      
-                      <div className="flex-grow text-left text-stone-700">
-                        {parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap)}
+              mode === 'edit' ? (
+                <div className="space-y-4">
+                  {getOrderedFootnotesToRender().map((item) => {
+                    return (
+                      <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
+                        <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
+                          [{item.displayNum}]
+                        </span>
+                        <div className="flex-grow space-y-1">
+                          <div className="flex items-center justify-between select-none">
+                            <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text (Internal ID: [^{item.originalId}])</span>
+                            <span className={getWordCount(item.text) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
+                              {getWordCount(item.text)}/1000 words
+                            </span>
+                          </div>
+                          <textarea
+                            value={item.text}
+                            onChange={(e) => {
+                              handleFootnoteChange(item.originalId, e.target.value);
+                            }}
+                            rows={2}
+                            className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
+                            placeholder={`Enter footnote ${item.displayNum} text content...`}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFootnote(item.originalId)}
+                          className="text-stone-300 hover:text-red-700 p-1 rounded mt-1 select-none cursor-pointer"
+                          title="Remove Footnote"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    </li>
-                  );
-                })}
-              </ol>
+                    );
+                  })}
+                </div>
+              ) : (
+                <ol className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
+                  {getOrderedFootnotesToRender().map((item, idx) => {
+                    const fMap = getFootnotesReadingOrderMap().map;
+                    const citeMap = getCitationsMap();
+                    return (
+                      <li 
+                        key={idx} 
+                        id={item.originalId.startsWith('fn-') ? `footnote-dest-${item.originalId}` : `footnote-dest-legacy-${item.originalId}`} 
+                        className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition"
+                      >
+                        <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none">
+                          ({item.displayNum})
+                        </span>
+                        
+                        <div className="flex-grow text-left text-stone-700">
+                          {parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap)}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )
             )}
           </div>
         )}
@@ -4390,22 +4711,23 @@ export function EntryRenderer({
               ) : (
                 <div className="space-y-4">
                   {getOrderedFootnotesToRender().map((item) => {
-                    const originalIdx = parseInt(item.originalNum, 10) - 1;
                     return (
-                    <div key={item.originalNum} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
+                    <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
                       <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
                         [{item.displayNum}]
                       </span>
                       <div className="flex-grow space-y-1">
                         <div className="flex items-center justify-between select-none">
-                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text (Internal ID: [^{item.originalNum}])</span>
+                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text (Internal ID: [^{item.originalId}])</span>
                           <span className={getWordCount(item.text) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
                             {getWordCount(item.text)}/1000 words
                           </span>
                         </div>
                         <textarea
                           value={item.text}
-                          onChange={(e) => handleFootnoteChange(originalIdx, e.target.value)}
+                          onChange={(e) => {
+                            handleFootnoteChange(item.originalId, e.target.value);
+                          }}
                           rows={2}
                           className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
                           placeholder={`Enter footnote ${item.displayNum} text content...`}
@@ -4413,7 +4735,7 @@ export function EntryRenderer({
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleRemoveFootnote(originalIdx)}
+                        onClick={() => handleRemoveFootnote(item.originalId)}
                         className="text-stone-300 hover:text-red-700 p-1 rounded mt-1 select-none cursor-pointer"
                         title="Remove Footnote"
                       >

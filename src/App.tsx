@@ -1520,6 +1520,7 @@ Editorial Board of Adjung`;
                         >
                           Sign Out
                         </button>
+
                       </div>
                     </div>
                   </>

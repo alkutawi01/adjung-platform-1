@@ -82,9 +82,43 @@ export function handleMarkdownShortcut(
       }, 0);
     }
   }
-}export function markdownToHtml(md: string): string {
+}
+
+export function markdownToHtml(md: string): string {
   if (!md) return '';
-  return md
+  let content = md.replace(/\r\n/g, '\n');
+  
+  // Split by double newline to separate blocks
+  const blocks = content.split('\n\n');
+  
+  const htmlBlocks = blocks.map(block => {
+    let trimmed = block.trim();
+    if (!trimmed) return '';
+    
+    // Check if it is a heading
+    if (trimmed.startsWith('# ')) {
+      return `<h1>${trimmed.slice(2)}</h1>`;
+    }
+    if (trimmed.startsWith('## ')) {
+      return `<h2>${trimmed.slice(3)}</h2>`;
+    }
+    
+    // Check if it is a blockquote
+    if (trimmed.startsWith('> ')) {
+      const quoteContent = trimmed.split('\n')
+        .map(line => line.startsWith('> ') ? line.slice(2) : line)
+        .join('<br>');
+      return `<blockquote>${quoteContent}</blockquote>`;
+    }
+    
+    // Otherwise it is a paragraph
+    const paraContent = trimmed.replace(/\n/g, '<br>');
+    return `<p>${paraContent}</p>`;
+  });
+  
+  const html = htmlBlocks.filter(Boolean).join('');
+
+  return html
     .replace(/\[\^(fn-[a-zA-Z0-9-]+)\]/g, '<span class="footnote-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(mn-[a-zA-Z0-9-]+)\]/g, '<span class="margin-note-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(\d+)\]/g, '<span class="footnote-badge" data-id="fn-legacy-$1" contenteditable="false"></span>')
@@ -93,8 +127,7 @@ export function handleMarkdownShortcut(
     .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '<a href="$2">$1</a>')
-    .replace(/\n/g, '<br>');
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '<a href="$2">$1</a>');
 }
 
 export function htmlToMarkdown(html: string): string {
@@ -102,6 +135,16 @@ export function htmlToMarkdown(html: string): string {
   let md = html
     .replace(/<span[^>]*class="footnote-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
     .replace(/<span[^>]*class="margin-note-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
+    .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, p1) => {
+      const lines = p1.split(/<br\s*\/?>|<\/?p[^>]*>|<\/?div[^>]*>/i)
+        .map((line: string) => line.trim())
+        .filter(Boolean);
+      return lines.map((line: string) => `> ${line}`).join('\n\n') + '\n\n';
+    })
+    .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
+    .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n\n')
     .replace(/<div[^>]*>/gi, '\n')
     .replace(/<p[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
@@ -391,46 +434,59 @@ export function parseInlineFormatting(
       return <React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>;
     }
     if (part.type === 'fn-stable') {
-      const num = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`] || '?';
+      let num = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`];
+      if (!num) {
+        num = part.content.startsWith('fn-legacy-') ? part.content.replace('fn-legacy-', '') : '?';
+      }
       return (
-        <a
+        <span
           key={part.key}
-          href={`#footnote-dest-${part.content}`}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer"
           id={`fnref-${part.content}`}
           title={`Jump to footnote ${num}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = document.getElementById(`footnote-dest-${part.content}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
         >
-          [{num}]
-        </a>
+          ({num})
+        </span>
       );
     }
 
     if (part.type === 'fn-legacy') {
       const num = footnotesMap[part.content] || part.content;
       return (
-        <a
+        <span
           key={part.key}
-          href={`#footnote-dest-legacy-${part.content}`}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer"
           id={`fnref-legacy-${part.content}`}
           title={`Jump to footnote ${num}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = document.getElementById(`footnote-dest-legacy-${part.content}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
         >
-          [{num}]
-        </a>
+          ({num})
+        </span>
       );
     }
 
     if (part.type === 'mn-stable') {
       const num = marginNotesMap[part.content] || '?';
-      const roman = typeof num === 'number' ? toRoman(num) : num;
+      const roman = typeof num === 'number' ? toRoman(num).toLowerCase() : num;
       return (
         <span 
           key={part.key}
           id={`mn-marker-${part.content}`}
-          className="inline-flex items-center justify-center rounded-full border border-adjung-maroon min-w-[18px] h-[18px] px-1 text-[9px] font-sans font-bold text-adjung-maroon bg-white hover:bg-adjung-maroon/10 select-none mx-0.5 align-middle transition-colors cursor-pointer"
+          className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-sans px-0.5 cursor-default"
           title={`Margin Note ${roman}`}
         >
-          {roman}
+          ({roman})
         </span>
       );
     }
@@ -446,14 +502,19 @@ export function parseInlineFormatting(
       const label = stylePlugin.formatCitation(citation, index, sortOrder);
       
       return (
-        <a
+        <span
           key={part.key}
-          href={`#reference-${citation.id}`}
-          className="citation-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 select-none"
+          className="citation-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
           title={`${citation.author} (${citation.year}) - ${citation.title}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = document.getElementById(`reference-${citation.id}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
         >
           {label}
-        </a>
+        </span>
       );
     }
 
@@ -467,13 +528,18 @@ export function parseInlineFormatting(
         label = crossRefMap[refId] || `${refType.charAt(0).toUpperCase() + refType.slice(1)} ?`;
       }
       return (
-        <a
+        <span
           key={part.key}
-          href={`#ref-${refId}`}
-          className="cross-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5"
+          className="cross-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = document.getElementById(`ref-${refId}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
         >
           {label}
-        </a>
+        </span>
       );
     }
 
@@ -1391,3 +1457,76 @@ export function buildCrossReferencesMap(blocks: EditorBlock[]): Record<string, s
 
   return map;
 }
+
+export function getWordCount(text: string): number {
+  if (!text) return 0;
+  const cleanText = text.trim();
+  if (!cleanText) return 0;
+  return cleanText.split(/\s+/).filter(Boolean).length;
+}
+
+export function getReadingTime(text: string): string {
+  const words = getWordCount(text);
+  const minutes = Math.ceil(words / 200);
+  return minutes === 1 ? '1 min read' : `${minutes} min read`;
+}
+
+export const getFootnotesReadingOrderMap = (content: string) => {
+  const map: Record<string, number> = {};
+  const occurrences: string[] = [];
+  const fnRegex = /\[\^(fn-[a-zA-Z0-9-]+)\]|\[\^(\d+)\]/g;
+  
+  const blocks = parseContentToBlocks(content);
+  blocks.forEach(b => {
+    let text = '';
+    if (b.type === 'paragraph') {
+      text = b.text || '';
+    } else if (b.type === 'heading') {
+      text = b.text || '';
+    } else if (b.type === 'latin-quote') {
+      text = (b.text || '') + ' ' + (b.translation || '');
+    } else if (b.type === 'arabic-quote') {
+      text = (b.arabic || '') + ' ' + (b.translation || '');
+    } else if (b.type === 'list') {
+      text = (b.items || []).map((it: any) => it.text).join(' ');
+    } else if (b.type === 'table') {
+      text = (b.headers || []).join(' ') + ' ' + (b.rows || []).map((r: string[]) => r.join(' ')).join(' ');
+    }
+    
+    let match;
+    fnRegex.lastIndex = 0;
+    while ((match = fnRegex.exec(text)) !== null) {
+      const fnId = match[1] || match[2];
+      if (fnId && !occurrences.includes(fnId)) {
+        occurrences.push(fnId);
+      }
+    }
+  });
+
+  occurrences.forEach((fnId, idx) => {
+    map[fnId] = idx + 1;
+  });
+
+  return { map, occurrences };
+};
+
+export const getMarginNotesReadingOrderMap = (content: string) => {
+  const map: Record<string, number> = {};
+  const occurrences: string[] = [];
+  const mnRegex = /\[\^(mn-[a-zA-Z0-9-]+)\]/g;
+  
+  let match;
+  mnRegex.lastIndex = 0;
+  while ((match = mnRegex.exec(content)) !== null) {
+    const mnId = match[1];
+    if (!occurrences.includes(mnId)) {
+      occurrences.push(mnId);
+    }
+  }
+  
+  occurrences.forEach((mnId, idx) => {
+    map[mnId] = idx + 1;
+  });
+  
+  return { map, occurrences };
+};

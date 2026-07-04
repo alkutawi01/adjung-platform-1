@@ -514,7 +514,21 @@ class AdjungDb {
       }
 
       if (storedEntries) {
-        this.entries = JSON.parse(storedEntries);
+        const loadedEntries = JSON.parse(storedEntries);
+        // Auto-detect and purge corrupted entries (content with ****X**** between every character)
+        const isCorrupted = (text: string) => {
+          if (!text) return false;
+          // Corrupted content has pattern: ****X**** repeated - check for many consecutive ****
+          const corruptionPattern = /\*{4}[a-zA-Z]\*{4}/;
+          return corruptionPattern.test(text);
+        };
+        this.entries = loadedEntries.filter((e: any) => {
+          if (isCorrupted(e.content) || isCorrupted(e.title)) {
+            console.warn(`[Adjung DB] Auto-removed corrupted entry: ${e.id} ("${e.title}")`);
+            return false;
+          }
+          return true;
+        });
         // Normalize entries for new metadata compatibility
         this.entries.forEach(e => {
           if (e.excerpt === undefined) e.excerpt = '';
@@ -522,11 +536,12 @@ class AdjungDb {
           if (e.revisions === undefined) e.revisions = [];
           if (e.citations === undefined) e.citations = [];
           if (e.referenceSortOrder === undefined) e.referenceSortOrder = 'alphabetical';
-          e.revisions.forEach(r => {
+          e.revisions.forEach((r: any) => {
             if (r.citations === undefined) r.citations = [];
             if (r.referenceSortOrder === undefined) r.referenceSortOrder = 'alphabetical';
           });
         });
+        this.saveEntriesToStorage();
       } else {
         this.entries = INITIAL_ENTRIES;
         this.saveEntriesToStorage();

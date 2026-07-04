@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { Entry, WriterProfile, User } from '../types';
-import { isArabicText, parseInlineFormatting, stripMarkdown } from '../utils';
+import { isArabicText, parseInlineFormatting, stripMarkdown, getFootnotesReadingOrderMap, getMarginNotesReadingOrderMap } from '../utils';
 import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
 
 interface FolioTimelineProps {
@@ -130,7 +130,7 @@ export function FolioTimeline({
                               setSelectedEntry(item);
                             }}
                           >
-                            {parseInlineFormatting(item.title)}
+                            {parseInlineFormatting(item.title, [], 'alphabetical', {}, getFootnotesReadingOrderMap(item.content).map, undefined, undefined, getMarginNotesReadingOrderMap(item.content).map)}
                           </h3>
                           <div 
                             className="cursor-pointer"

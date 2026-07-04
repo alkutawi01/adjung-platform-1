@@ -68,3 +68,74 @@ html, body {
 .footnote-ref:hover {
   background-color: rgba(128, 35, 52, 0.08);
 }
+
+/* Editor Badge Counters for Footnotes and Margin Notes */
+#editorial-canvas-editor {
+  counter-reset: footnote-badge margin-note-badge;
+}
+
+.footnote-badge {
+  counter-increment: footnote-badge;
+  color: var(--color-adjung-maroon);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+  cursor: default;
+  padding: 0 1px;
+  user-select: none;
+}
+
+.footnote-badge::before {
+  content: counter(footnote-badge);
+}
+
+.margin-note-badge {
+  counter-increment: margin-note-badge;
+  color: var(--color-adjung-dark);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+  cursor: default;
+  padding: 0 1px;
+  user-select: none;
+}
+
+.margin-note-badge::before {
+  content: counter(margin-note-badge, lower-roman);
+}
+
+/* Styled elements inside the editor canvas */
+#editorial-canvas-editor blockquote,
+blockquote {
+  border-left: 3px solid rgba(128, 35, 52, 0.25);
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #57534e; /* text-stone-600 */
+  background-color: transparent;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+
+#editorial-canvas-editor h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1c1917;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-serif);
+}
+
+#editorial-canvas-editor h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #292524;
+  margin-top: 1.25rem;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-serif);
+}
+
