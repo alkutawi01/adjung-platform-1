@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions } from '../types';
 import { db } from '../db/mockDb';
+import { parseInlineFormatting } from '../utils';
 
 interface EditoriumProps {
   currentUser: User;
@@ -455,7 +456,7 @@ export function Editorium({
                   {(() => {
                     const ent = publishedEntries.find(e => e.id === featuredEntryId);
                     if (!ent) return 'None Selected';
-                    return ent.title || ent.content.slice(0, 30) + '...';
+                    return ent.title ? parseInlineFormatting(ent.title) : ent.content.slice(0, 30) + '...';
                   })()}
                 </h5>
                 <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-400">

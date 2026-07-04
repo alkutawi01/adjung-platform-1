@@ -22,11 +22,12 @@ export function isArabicText(text: string): boolean {
   return arabicMatches.length > latinMatches.length;
 }
 
-type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT';
+type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'LINK';
 
 interface Token {
   type: TokenType;
   text: string;
+  url?: string;
 }
 
 function tokenize(text: string): Token[] {
@@ -71,6 +72,33 @@ function tokenize(text: string): Token[] {
       flushText();
       tokens.push({ type: 'BACKTICK', text: '`' });
       i += 1;
+    } else if (text.startsWith('++', i)) {
+      flushText();
+      tokens.push({ type: 'DOUBLE_PLUS', text: '++' });
+      i += 2;
+    } else if (text.startsWith('<u>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_U_OPEN', text: '<u>' });
+      i += 3;
+    } else if (text.startsWith('</u>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_U_CLOSE', text: '</u>' });
+      i += 4;
+    } else if (text.startsWith('[', i)) {
+      const closeBracket = text.indexOf('](', i);
+      if (closeBracket !== -1) {
+        const closeParen = text.indexOf(')', closeBracket);
+        if (closeParen !== -1) {
+          flushText();
+          const label = text.substring(i + 1, closeBracket);
+          const url = text.substring(closeBracket + 2, closeParen);
+          tokens.push({ type: 'LINK', text: label, url: url });
+          i = closeParen + 1;
+          continue;
+        }
+      }
+      currentText += text[i];
+      i += 1;
     } else {
       currentText += text[i];
       i += 1;
@@ -94,19 +122,30 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
       continue;
     }
 
-    // It's a formatting marker: TRIPLE_AST, TRIPLE_UND, DOUBLE_AST, DOUBLE_UND, SINGLE_AST, SINGLE_UND, BACKTICK
-    // Let's search for a matching closing marker of the same type.
+    if (token.type === 'LINK') {
+      const elementKey = `${keyPrefix}-${keyIdx++}`;
+      result.push(
+        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline cursor-pointer">
+          {token.text}
+        </a>
+      );
+      i++;
+      continue;
+    }
+
+    // It's a formatting marker
     let matchIdx = -1;
+    let closingType = token.type;
+    if (token.type === 'HTML_U_OPEN') closingType = 'HTML_U_CLOSE';
+
     for (let j = i + 1; j < tokens.length; j++) {
-      if (tokens[j].type === token.type) {
+      if (tokens[j].type === closingType) {
         matchIdx = j;
         break;
       }
     }
 
     if (matchIdx !== -1) {
-      // We found a matching closing marker!
-      // The tokens between i and matchIdx are the inner content.
       const innerTokens = tokens.slice(i + 1, matchIdx);
       const innerParsed = parseTokens(innerTokens, `${keyPrefix}-${keyIdx++}`);
 
@@ -134,6 +173,12 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
           <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-[#802334] px-1 py-0.5 rounded-sm border border-stone-200/50">
             {innerParsed}
           </code>
+        );
+      } else if (token.type === 'DOUBLE_PLUS' || token.type === 'HTML_U_OPEN') {
+        result.push(
+          <u key={elementKey} className="underline decoration-stone-300">
+            {innerParsed}
+          </u>
         );
       }
       i = matchIdx + 1;
@@ -222,14 +267,16 @@ export function parseInlineFormatting(
     }
 
     if (part.type === 'fn-legacy') {
+      const num = footnotesMap[part.content] || part.content;
       return (
         <a
           key={part.key}
           href={`#footnote-dest-legacy-${part.content}`}
           className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5"
-          title={`Jump to footnote ${part.content}`}
+          id={`fnref-legacy-${part.content}`}
+          title={`Jump to footnote ${num}`}
         >
-          [{part.content}]
+          [{num}]
         </a>
       );
     }
@@ -333,6 +380,7 @@ export interface CodeBlock {
 export interface LatinQuoteBlock {
   type: 'latin-quote';
   text: string;
+  translation?: string;
   attribution?: string;
 }
 
@@ -435,9 +483,17 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
           textVal = inner;
         }
 
+        const transStart = inner.indexOf('<translation>');
+        const transEnd = inner.indexOf('</translation>');
+        let translationVal: string | undefined = undefined;
+        if (transStart !== -1 && transEnd !== -1) {
+          translationVal = inner.substring(transStart + 13, transEnd).trim();
+        }
+
         return {
           type: 'latin-quote',
           text: textVal,
+          translation: translationVal,
           attribution: quoteAttrib
         };
       }
@@ -680,9 +736,17 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
             textVal = quoteInner;
           }
 
+          const transStart = quoteInner.indexOf('<translation>');
+          const transEnd = quoteInner.indexOf('</translation>');
+          let translationVal: string | undefined = undefined;
+          if (transStart !== -1 && transEnd !== -1) {
+            translationVal = quoteInner.substring(transStart + 13, transEnd).trim();
+          }
+
           blocks.push({
             type: 'latin-quote',
             text: textVal,
+            translation: translationVal,
             attribution: quoteAttrib
           });
         }
@@ -779,7 +843,8 @@ export function serializeBlocks(blocks: ContentBlock[]): string {
     }
     if (block.type === 'latin-quote') {
       const attr = block.attribution ? ` attribution="${block.attribution}"` : '';
-      return `<quote type="latin"${attr}><text>${block.text}</text></quote>`;
+      const trans = block.translation ? `\n  <translation>${block.translation}</translation>` : '';
+      return `<quote type="latin"${attr}>\n  <text>${block.text}</text>${trans}\n</quote>`;
     }
     if (block.type === 'arabic-quote') {
       const attr = block.attribution ? ` attribution="${block.attribution}"` : '';
@@ -832,8 +897,9 @@ export class DocumentExporter {
       } else if (block.type === 'code-block') {
         html += `    <pre><code class="language-${block.language || 'none'}">${block.code}</code></pre>\n`;
       } else if (block.type === 'latin-quote') {
+        const trans = block.translation ? `<p class="translation">${block.translation}</p>` : '';
         const attr = block.attribution ? `<cite>${block.attribution}</cite>` : '';
-        html += `    <blockquote><p>${block.text}</p>${attr}</blockquote>\n`;
+        html += `    <blockquote><p>${block.text}</p>${trans}${attr}</blockquote>\n`;
       } else if (block.type === 'arabic-quote') {
         const trans = block.translation ? `<p class="translation">${block.translation}</p>` : '';
         const attr = block.attribution ? `<cite>${block.attribution}</cite>` : '';
@@ -944,6 +1010,9 @@ export class DocumentExporter {
         const attrAttr = block.attribution ? ` attribution="${escapeXml(block.attribution)}"` : '';
         xml += `    <blockquote type="latin"${attrAttr}>\n`;
         xml += `      <text>${escapeXml(block.text)}</text>\n`;
+        if (block.translation) {
+          xml += `      <translation>${escapeXml(block.translation)}</translation>\n`;
+        }
         xml += `    </blockquote>\n`;
       } else if (block.type === 'arabic-quote') {
         const attrAttr = block.attribution ? ` attribution="${escapeXml(block.attribution)}"` : '';
@@ -1040,7 +1109,7 @@ export function parseTextToAST(content: string): EditorBlock[] {
     } else if (block.type === 'code-block') {
       data = { language: block.language, code: block.code };
     } else if (block.type === 'latin-quote') {
-      data = { text: block.text, attribution: block.attribution };
+      data = { text: block.text, translation: block.translation, attribution: block.attribution };
     } else if (block.type === 'arabic-quote') {
       data = { arabic: block.arabic, translation: block.translation, attribution: block.attribution };
     } else if (block.type === 'callout') {
@@ -1086,6 +1155,7 @@ export function serializeASTToText(blocks: EditorBlock[]): string {
     } else if (type === 'latin-quote' || type === 'quote') {
       cb.type = 'latin-quote';
       cb.text = block.data.text || '';
+      cb.translation = block.data.translation;
       cb.attribution = block.data.attribution;
     } else if (type === 'arabic-quote') {
       cb.arabic = block.data.arabic || '';
@@ -1119,7 +1189,7 @@ export function buildFootnotesMap(blocks: EditorBlock[]): { map: Record<string, 
     } else if (b.type === 'callout') {
       text = b.data.text || '';
     } else if (b.type === 'latin-quote' || b.type === 'quote') {
-      text = b.data.text || '';
+      text = (b.data.text || '') + ' ' + (b.data.translation || '');
     } else if (b.type === 'arabic-quote') {
       text = (b.data.arabic || '') + ' ' + (b.data.translation || '');
     } else if (b.type === 'list') {

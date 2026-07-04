@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { Entry, WriterProfile, User } from '../types';
-import { isArabicText } from '../utils';
+import { isArabicText, parseInlineFormatting } from '../utils';
 import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
 
 interface FolioTimelineProps {
@@ -130,7 +130,7 @@ export function FolioTimeline({
                               setSelectedEntry(item);
                             }}
                           >
-                            {item.title}
+                            {parseInlineFormatting(item.title)}
                           </h3>
                           <div 
                             className="cursor-pointer"

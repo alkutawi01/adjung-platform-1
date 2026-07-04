@@ -55,6 +55,155 @@ function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorS
 
 
 
+function renderFrontpageBlock(block: any, pIdx: number) {
+  if (block.type === 'heading') {
+    const isAr = isArabicText(block.text);
+    const textNode = parseInlineFormatting(block.text);
+    if (block.level === 1) {
+      return (
+        <h3 
+          key={pIdx} 
+          dir={isAr ? 'rtl' : 'ltr'} 
+          className={`font-serif text-stone-900 font-semibold my-2.5 ${
+            isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
+          }`}
+        >
+          {textNode}
+        </h3>
+      );
+    } else {
+      return (
+        <h4 
+          key={pIdx} 
+          dir={isAr ? 'rtl' : 'ltr'} 
+          className={`font-serif text-stone-850 font-medium my-2 ${
+            isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
+          }`}
+        >
+          {textNode}
+        </h4>
+      );
+    }
+  }
+
+  if (block.type === 'list') {
+    const listItems = block.items.map((listItem: any, itemIdx: number) => {
+      const isAr = isArabicText(listItem.text);
+      const isChecklist = listItem.checked !== undefined;
+      const textNode = parseInlineFormatting(listItem.text);
+      if (isChecklist) {
+        return (
+          <li 
+            key={itemIdx} 
+            className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
+          >
+            <input type="checkbox" checked={listItem.checked} disabled className="h-3 w-3 rounded text-adjung-maroon cursor-default" />
+            <span className={`text-[12px] ${listItem.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-serif'}`}>
+              {textNode}
+            </span>
+          </li>
+        );
+      }
+      return (
+        <li key={itemIdx} className={`text-[12px] text-stone-600 ${isAr ? 'font-arabic text-right' : 'font-serif text-left'}`}>
+          {textNode}
+        </li>
+      );
+    });
+
+    const isChecklist = block.items.some((i: any) => i.checked !== undefined);
+
+    return (
+      <div key={pIdx} className="my-2 text-left">
+        <ul className={`space-y-1 ${isChecklist ? 'list-none pl-0' : 'list-disc pl-4'}`}>
+          {listItems}
+        </ul>
+      </div>
+    );
+  }
+
+  if (block.type === 'table') {
+    return (
+      <div key={pIdx} className="my-3 overflow-x-auto border border-stone-200/50 rounded p-1 bg-stone-50/20 text-left">
+        <span className="font-mono text-[9px] text-stone-400 uppercase">Table: {block.headers.join(' | ')}</span>
+      </div>
+    );
+  }
+
+  if (block.type === 'image') {
+    return (
+      <figure key={pIdx} className="my-3 text-center bg-transparent">
+        <span className="inline-block text-[11px] text-stone-400 italic border border-stone-200/55 p-1 rounded font-serif bg-stone-50/10">
+          📷 [Image: {block.alt || 'Untitled'}]
+        </span>
+      </figure>
+    );
+  }
+
+  if (block.type === 'divider') {
+    return <hr key={pIdx} className="my-4 border-t border-stone-200/40" />;
+  }
+
+  if (block.type === 'code-block') {
+    return (
+      <pre key={pIdx} className="p-2.5 bg-stone-50 border border-stone-200/60 rounded font-mono text-[10px] text-left overflow-x-auto text-stone-700 max-h-32">
+        <code>{block.code}</code>
+      </pre>
+    );
+  }
+
+  if (block.type === 'latin-quote') {
+    return (
+      <blockquote key={pIdx} className="my-4 pl-4 border-l border-adjung-maroon/20 text-left bg-transparent">
+        <p className="font-serif italic text-stone-600 text-xs md:text-sm">
+          {parseInlineFormatting(block.text)}
+        </p>
+        {block.translation && (
+          <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
+            <p className="font-serif italic text-xs text-stone-500">
+              {parseInlineFormatting(block.translation)}
+            </p>
+          </div>
+        )}
+      </blockquote>
+    );
+  }
+
+  if (block.type === 'arabic-quote') {
+    return (
+      <blockquote key={pIdx} className="my-4 pr-4 border-r border-adjung-maroon/20 text-right bg-transparent">
+        <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
+          {parseInlineFormatting(block.arabic)}
+        </p>
+        {block.translation && (
+          <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
+            <p className="font-serif italic text-xs text-stone-500">
+              {parseInlineFormatting(block.translation)}
+            </p>
+          </div>
+        )}
+      </blockquote>
+    );
+  }
+
+  const isParaAr = isArabicText(block.text);
+  return (
+    <p 
+      key={pIdx}
+      dir={isParaAr ? 'rtl' : 'ltr'}
+      className={`${
+        isParaAr 
+          ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base' 
+          : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
+      }`}
+    >
+      {parseInlineFormatting(block.text)}
+    </p>
+  );
+}
+
+
+
 export default function App() {
   // Database States
   const [users, setUsers] = useState<User[]>(db.getUsers());
@@ -71,6 +220,7 @@ export default function App() {
   
   // Note inline expansion state
   const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
+  const [expandedFrontpageNotes, setExpandedFrontpageNotes] = useState<string[]>([]);
 
   const toggleNote = (id: string) => {
     setExpandedNoteIds(prev =>
@@ -90,11 +240,22 @@ export default function App() {
       setTimeout(() => {
         const element = document.getElementById(`note-card-${noteId}`);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 150);
     }
   }, [selectedEntry]);
+
+  // Scroll to the top of the page when activeTab or selectedEntry changes (except for Notes, which scroll inline)
+  useEffect(() => {
+    if (selectedEntry) {
+      if (selectedEntry.contentType !== 'Note') {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [activeTab, selectedEntry]);
   
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
@@ -206,6 +367,15 @@ export default function App() {
   const [deskHeroTitle, setDeskHeroTitle] = useState('');
   const [deskHeroSubtitle, setDeskHeroSubtitle] = useState('');
   const [deskHeroSignatureText, setDeskHeroSignatureText] = useState('');
+
+  const [deskViewMode, setDeskViewMode] = useState<'preview' | 'editor'>('preview');
+  const deskLastScrollY = useRef<number>(0);
+
+  useEffect(() => {
+    if (editingEntry) {
+      setDeskViewMode('preview');
+    }
+  }, [editingEntry?.id]);
 
   // Editorium - Invite Scholar States
   const [inviteName, setInviteName] = useState('');
@@ -374,7 +544,7 @@ export default function App() {
             setTimeout(() => {
               const element = document.getElementById(`note-card-${noteId}`);
               if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             }, 150);
           } else {
@@ -1100,7 +1270,7 @@ Editorial Board of Adjung`;
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 pb-16"
+          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 pb-16 overflow-x-hidden"
         >
       
       {/* Elegant Editorial Toast Notification */}
@@ -1576,7 +1746,7 @@ Editorial Board of Adjung`;
                     </div>
 
                     {/* Timeline items list */}
-                    <div className="space-y-8 divide-y divide-stone-200/40">
+                    <div className="space-y-4">
                       {timelineGroupedByYear[year].map((item, idx) => {
                         const dateObj = new Date(item.publishedDate || item.createdDate);
                         const dayMonthStr = dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
@@ -1588,9 +1758,7 @@ Editorial Board of Adjung`;
                           <div 
                             key={item.id} 
                             id={`note-card-${item.id}`}
-                            className={`pt-6 first:pt-0 group flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all duration-300 ${
-                              isNote ? 'bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] p-5 rounded border border-stone-200/40 my-3' : ''
-                            }`}
+                            className="bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] p-5 rounded border border-stone-200/40 my-3 group flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all duration-300 w-full"
                           >
                             
                             <div className="space-y-2 flex-grow text-left w-full">
@@ -1616,11 +1784,27 @@ Editorial Board of Adjung`;
                               )}
 
                               {/* Preview/Full Content snippet with visual layout collapse */}
-                              <div className="cursor-pointer" onClick={() => toggleNote(item.id)}>
+                              <div 
+                                className="cursor-pointer" 
+                                onClick={(e) => {
+                                  if (isNote) {
+                                    toggleNote(item.id);
+                                  } else {
+                                    setSelectedEntry(item);
+                                  }
+                                }}
+                              >
                                 <TimelineEntryCollapseRenderer
                                   item={item}
-                                  isExpanded={isExpanded}
-                                  onToggle={() => toggleNote(item.id)}
+                                  isExpanded={isNote ? isExpanded : false}
+                                  onToggle={() => {
+                                    if (isNote) {
+                                      toggleNote(item.id);
+                                    } else {
+                                      setSelectedEntry(item);
+                                    }
+                                  }}
+                                  onOpenText={() => setSelectedEntry(item)}
                                 />
                               </div>
 
@@ -1639,7 +1823,7 @@ Editorial Board of Adjung`;
                               <button
                                 type="button"
                                 onClick={() => setSelectedEntry(item)}
-                                className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0"
+                                className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0 cursor-pointer font-semibold"
                               >
                                 Open Text
                                 <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
@@ -1648,7 +1832,7 @@ Editorial Board of Adjung`;
                               <button
                                 type="button"
                                 onClick={() => toggleNote(item.id)}
-                                className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0"
+                                className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0 cursor-pointer"
                               >
                                 {isExpanded ? 'Collapse' : 'Expand'}
                               </button>
@@ -1873,15 +2057,57 @@ Editorial Board of Adjung`;
                   >
                     <ChevronLeft className="w-4 h-4" /> Close Composer
                   </button>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-                    <span className="font-mono text-[10px] text-stone-500 uppercase">Editor</span>
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-stone-400">View</span>
+                    <div className="flex items-center border border-stone-200 rounded overflow-hidden bg-white p-0.5 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deskLastScrollY.current = window.scrollY;
+                          setDeskViewMode('preview');
+                          setTimeout(() => {
+                            window.scrollTo({
+                              top: deskLastScrollY.current,
+                              behavior: 'auto'
+                            });
+                          }, 0);
+                        }}
+                        className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                          deskViewMode === 'preview'
+                            ? 'bg-[#802334] text-white font-medium shadow-sm'
+                            : 'text-stone-600 hover:text-adjung-maroon'
+                        }`}
+                      >
+                        ● Visual
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deskLastScrollY.current = window.scrollY;
+                          setDeskViewMode('editor');
+                          setTimeout(() => {
+                            window.scrollTo({
+                              top: deskLastScrollY.current,
+                              behavior: 'auto'
+                            });
+                          }, 0);
+                        }}
+                        className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                          deskViewMode === 'editor'
+                            ? 'bg-[#802334] text-white font-medium shadow-sm'
+                            : 'text-stone-600 hover:text-adjung-maroon'
+                        }`}
+                      >
+                        ○ Source
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <EntryRenderer
                   entry={editingEntry}
                   mode="edit"
+                  viewMode={deskViewMode}
                   onSave={handleSaveEntry}
                   onDelete={handleDeleteEntry}
                   authorName={currentUser.penName}
@@ -1922,7 +2148,7 @@ Editorial Board of Adjung`;
                                 <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {draft.contentType === 'Note' ? (draft.content.split('\n')[0] || '(Empty Note)') : draft.title}
+                                {draft.contentType === 'Note' ? (parseInlineFormatting(draft.content.split('\n')[0] || '(Empty Note)')) : draft.title}
                               </h4>
                             </div>
                             <FileEdit className="w-4 h-4 text-stone-400 group-hover:text-adjung-maroon flex-shrink-0" />
@@ -1958,7 +2184,7 @@ Editorial Board of Adjung`;
                                 <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {pub.contentType === 'Note' ? (pub.content.split('\n')[0] || '(Empty Note)') : pub.title}
+                                {pub.contentType === 'Note' ? (parseInlineFormatting(pub.content.split('\n')[0] || '(Empty Note)')) : pub.title}
                               </h4>
                             </div>
                             <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">
@@ -2001,7 +2227,7 @@ Editorial Board of Adjung`;
                                 <span>Archived {new Date(arch.updatedDate).toLocaleDateString()}</span>
                               </div>
                               <h4 className="font-serif font-semibold text-stone-700 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {arch.contentType === 'Note' ? (arch.content.split('\n')[0] || '(Empty Note)') : arch.title}
+                                {arch.contentType === 'Note' ? (parseInlineFormatting(arch.content.split('\n')[0] || '(Empty Note)')) : arch.title}
                               </h4>
                             </div>
                             <div className="flex items-center gap-3 text-stone-450 flex-shrink-0">
@@ -2097,8 +2323,8 @@ Editorial Board of Adjung`;
                         <td className="p-3 font-sans font-medium text-stone-800">{author?.penName || 'Anonymous'}</td>
                         <td className="p-3 text-stone-900 font-medium text-left">
                           {item.contentType === 'Note' ? (
-                            <span className="italic text-stone-600 font-normal line-clamp-1">
-                              {item.content.split('\n')[0] || '(Empty Note)'}
+                            <span className="text-stone-600 font-normal line-clamp-1">
+                              {parseInlineFormatting(item.content.split('\n')[0] || '(Empty Note)')}
                             </span>
                           ) : (
                             item.title
@@ -2314,7 +2540,7 @@ Editorial Board of Adjung`;
                         className="font-serif text-2xl md:text-3xl font-normal text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
                       >
                         {featuredEntry.contentType === 'Note' ? (
-                          <span className="italic font-light">"{featuredEntry.content.split('\n')[0]}"</span>
+                          <span className="font-light">{parseInlineFormatting(featuredEntry.content.split('\n')[0])}</span>
                         ) : (
                           featuredEntry.title
                         )}
@@ -2335,7 +2561,7 @@ Editorial Board of Adjung`;
                         </span>
                       </p>
 
-                      <p className="font-serif text-[13.5px] text-stone-600 leading-relaxed line-clamp-4 italic bg-stone-50/50 p-4 border-l-2 border-l-[#802334]/40 rounded-r">
+                      <p className={`font-serif text-[13.5px] text-stone-600 leading-relaxed line-clamp-4 bg-stone-50/50 p-4 border-l-2 border-l-[#802334]/40 rounded-r ${featuredEntry.contentType === 'Note' ? '' : 'italic'}`}>
                         {featuredEntry.content.replace(/[#*`_]/g, '').slice(0, 420)}...
                       </p>
 
@@ -2397,9 +2623,9 @@ Editorial Board of Adjung`;
                           return (
                             <div 
                               key={item.id} 
-                              className={`bg-white border border-stone-150 rounded-sm hover:border-stone-300 transition-all text-left flex flex-col md:flex-row justify-between items-start md:items-center gap-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] ${isCompact ? 'p-3.5' : 'p-5'}`}
+                              className={`bg-white border border-stone-150 rounded-sm hover:border-stone-300 transition-all text-left flex flex-col gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] ${isCompact ? 'p-3.5' : 'p-5'}`}
                             >
-                              <div className="space-y-1 md:max-w-lg">
+                              <div className="space-y-1 w-full">
                                 <div className="flex items-center gap-2">
                                   <span className="font-mono text-[7.5px] uppercase tracking-wider text-adjung-maroon bg-red-50 border border-red-100/40 px-1 rounded-sm">
                                     {item.contentType}
@@ -2408,20 +2634,84 @@ Editorial Board of Adjung`;
                                     {item.publishedDate ? new Date(item.publishedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : 'Archived'}
                                   </span>
                                 </div>
-                                <h4 
-                                  onClick={() => {
-                                    setSelectedAuthorId(item.authorId);
-                                    setSelectedEntry(item);
-                                    setActiveTab('folio');
-                                  }}
-                                  className="font-serif text-[15px] font-semibold text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
-                                >
-                                  {item.contentType === 'Note' ? (
-                                    <span className="italic font-normal">"{item.content.split('\n')[0]}"</span>
-                                  ) : (
-                                    item.title
-                                  )}
-                                </h4>
+                                {(() => {
+                                  if (item.contentType === 'Note') {
+                                    const lines = item.content.split('\n').filter(line => line.trim().length > 0);
+                                    const firstLine = lines[0] || '';
+                                    const hasContinuation = lines.length > 1 || item.content.trim().length > firstLine.trim().length;
+                                    const isExpanded = expandedFrontpageNotes.includes(item.id);
+
+                                    if (isExpanded) {
+                                      return (
+                                        <div className="space-y-3 mt-2 text-left animate-fade-in">
+                                          {parseContentToBlocks(item.content).map((block, bIdx) => {
+                                            return renderFrontpageBlock(block, bIdx);
+                                          })}
+                                          <div className="flex items-center gap-3 pt-2">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setExpandedFrontpageNotes(prev => prev.filter(id => id !== item.id));
+                                              }}
+                                              className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
+                                            >
+                                              Show Less ↑
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedAuthorId(item.authorId);
+                                                setSelectedEntry(item);
+                                                setActiveTab('folio');
+                                              }}
+                                              className="text-[10px] font-mono tracking-wider uppercase text-stone-500 hover:text-stone-850 hover:underline flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
+                                            >
+                                              Open in Folio →
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    } else {
+                                      return (
+                                        <h4 
+                                          onClick={(e) => {
+                                            if (hasContinuation) {
+                                              e.stopPropagation();
+                                              setExpandedFrontpageNotes(prev => [...prev, item.id]);
+                                            } else {
+                                              setSelectedAuthorId(item.authorId);
+                                              setSelectedEntry(item);
+                                              setActiveTab('folio');
+                                            }
+                                          }}
+                                          className="font-serif text-[15px] text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
+                                        >
+                                          <span className="font-normal">
+                                            {parseInlineFormatting(firstLine)}
+                                            {hasContinuation && (
+                                              <span className="text-[#802334] font-bold ml-1 hover:underline select-none">...</span>
+                                            )}
+                                          </span>
+                                        </h4>
+                                      );
+                                    }
+                                  } else {
+                                    return (
+                                      <h4 
+                                        onClick={() => {
+                                          setSelectedAuthorId(item.authorId);
+                                          setSelectedEntry(item);
+                                          setActiveTab('folio');
+                                        }}
+                                        className="font-serif text-[15px] font-semibold text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
+                                      >
+                                        {item.title}
+                                      </h4>
+                                    );
+                                  }
+                                })()}
                                 <p className="font-sans text-[11px] text-stone-400">
                                   Scribed by{" "}
                                   <span 
@@ -2437,17 +2727,6 @@ Editorial Board of Adjung`;
                                   </span>
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedAuthorId(item.authorId);
-                                  setSelectedEntry(item);
-                                  setActiveTab('folio');
-                                }}
-                                className="bg-stone-50 hover:bg-[#802334] hover:text-[#FDFDFD] border border-stone-200 hover:border-[#802334] transition text-stone-700 text-[10.5px] font-mono uppercase tracking-wider px-3.5 py-1 rounded-sm whitespace-nowrap self-stretch md:self-auto text-center cursor-pointer"
-                              >
-                                Read
-                              </button>
                             </div>
                           );
                         })}

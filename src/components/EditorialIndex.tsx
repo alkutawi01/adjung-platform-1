@@ -1,7 +1,7 @@
 import React from 'react';
 import { ListOrdered, Info } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../types';
-import { isArabicText } from '../utils';
+import { isArabicText, parseInlineFormatting } from '../utils';
 
 interface EditorialIndexProps {
   entries: Entry[];
@@ -58,7 +58,7 @@ export function EditorialIndex({
                     <td className="p-3 pl-4 font-mono text-[9px] text-[#111111]/40 select-all">{item.id.slice(0, 13)}...</td>
                     <td className="p-3 font-sans font-medium text-[#111111]">{author?.penName || 'Anonymous'}</td>
                     <td className="p-3 text-[#111111] font-medium text-left">
-                      {item.title}
+                      {parseInlineFormatting(item.title)}
                       {isAr && (
                         <span className="ml-2 font-mono text-[9px] text-[#802334] uppercase tracking-wide bg-[#802334]/5 px-1 rounded">AR</span>
                       )}

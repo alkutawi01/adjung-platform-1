@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-react';
 import { Entry, User } from '../types';
 import { EntryRenderer } from './EntryRenderer';
+import { parseInlineFormatting } from '../utils';
 
 interface WritingDeskProps {
   currentUser: User;
@@ -50,6 +51,15 @@ export function WritingDesk({
   deskBioText,
   setDeskBioText,
 }: WritingDeskProps) {
+  const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
+  const lastScrollY = useRef<number>(0);
+
+  useEffect(() => {
+    if (editingEntry) {
+      setViewMode('preview');
+    }
+  }, [editingEntry?.id]);
+
   return (
     <div className="space-y-12">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#111111]/10 pb-5">
@@ -103,15 +113,57 @@ export function WritingDesk({
             >
               <ChevronLeft className="w-4 h-4" /> Close Composer
             </button>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#802334] animate-pulse" />
-              <span className="font-mono text-[10px] text-[#111111]/60 uppercase">Editor</span>
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[#111111]/40">View</span>
+              <div className="flex items-center border border-[#111111]/10 rounded overflow-hidden bg-white p-0.5 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    lastScrollY.current = window.scrollY;
+                    setViewMode('preview');
+                    setTimeout(() => {
+                      window.scrollTo({
+                        top: lastScrollY.current,
+                        behavior: 'auto'
+                      });
+                    }, 0);
+                  }}
+                  className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                    viewMode === 'preview'
+                      ? 'bg-[#802334] text-white font-medium shadow-sm'
+                      : 'text-[#111111]/60 hover:text-[#802334]'
+                  }`}
+                >
+                  ● Visual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    lastScrollY.current = window.scrollY;
+                    setViewMode('editor');
+                    setTimeout(() => {
+                      window.scrollTo({
+                        top: lastScrollY.current,
+                        behavior: 'auto'
+                      });
+                    }, 0);
+                  }}
+                  className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                    viewMode === 'editor'
+                      ? 'bg-[#802334] text-white font-medium shadow-sm'
+                      : 'text-[#111111]/60 hover:text-[#802334]'
+                  }`}
+                >
+                  ○ Source
+                </button>
+              </div>
             </div>
           </div>
 
           <EntryRenderer
             entry={editingEntry}
             mode="edit"
+            viewMode={viewMode}
             onSave={handleSaveEntry}
             onDelete={handleDeleteEntry}
             authorName={currentUser.penName}
@@ -149,7 +201,7 @@ export function WritingDesk({
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
                         <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-[#802334] transition-colors text-left">
-                          {draft.title}
+                          {parseInlineFormatting(draft.title)}
                         </h4>
                       </div>
                       <FileEdit className="w-4 h-4 text-[#111111]/40 group-hover:text-[#802334] flex-shrink-0" />
@@ -185,7 +237,7 @@ export function WritingDesk({
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>
                         <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-[#802334] transition-colors text-left">
-                          {pub.title}
+                          {parseInlineFormatting(pub.title)}
                         </h4>
                       </div>
                       <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">

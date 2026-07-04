@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke } from '../types';
 import { SignatureRenderer } from './SignatureRenderer';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock } from '../utils';
-import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy } from 'lucide-react';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock } from '../utils';
+import { EntryImage, EntryImageEditor } from './EntryImage';
+import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 
 interface EntryRendererProps {
   entry: Entry;
   mode: 'view' | 'edit';
+  viewMode?: 'preview' | 'editor';
   onSave?: (updatedEntry: Entry) => void;
   onDelete?: (id: string) => void;
   authorName: string;
@@ -17,6 +20,7 @@ interface EntryRendererProps {
 export function EntryRenderer({
   entry,
   mode,
+  viewMode,
   onSave,
   onDelete,
   authorName,
@@ -32,6 +36,7 @@ export function EntryRenderer({
   const [slug, setSlug] = useState(entry.slug);
   const [showSettings, setShowSettings] = useState(false);
   const [activeQuoteInsert, setActiveQuoteInsert] = useState<'latin' | 'arabic' | null>(null);
+  const [quoteInsertDir, setQuoteInsertDir] = useState<'ltr' | 'rtl'>('ltr');
   const [excerpt, setExcerpt] = useState(entry.excerpt || '');
   const [featuredImage, setFeaturedImage] = useState(entry.featuredImage || '');
   const [revisions, setRevisions] = useState<Revision[]>(entry.revisions || []);
@@ -39,10 +44,16 @@ export function EntryRenderer({
   const [citations, setCitations] = useState<Citation[]>(entry.citations || []);
   const [referenceSortOrder, setReferenceSortOrder] = useState<'alphabetical' | 'appearance'>(entry.referenceSortOrder || 'alphabetical');
 
+  // Editor tab and validation states
+  const [editorTab, setEditorTab] = useState<'write' | 'preview'>('write');
+  const [isValidationRunning, setIsValidationRunning] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationSuccess, setValidationSuccess] = useState(false);
+  const [hasValidated, setHasValidated] = useState(false);
+
   // Visual Builders States
   const [activeTableInsert, setActiveTableInsert] = useState(false);
   const [activeCitationInsert, setActiveCitationInsert] = useState(false);
-  const [activeCalloutInsert, setActiveCalloutInsert] = useState(false);
 
   // Table Grid Builders States
   const [tableHeaders, setTableHeaders] = useState<string[]>(['Header 1', 'Header 2', 'Header 3']);
@@ -64,6 +75,98 @@ export function EntryRenderer({
   });
   const [marginNotes, setMarginNotes] = useState<{ [key: number]: string }>(entry.marginNotes || {});
   const [prevEntryId, setPrevEntryId] = useState(entry.id);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1280);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const [showQuoteTypes, setShowQuoteTypes] = useState(false);
+
+  const getFootnotesReadingOrderMap = () => {
+    const map: Record<string, number> = {};
+    const occurrences: string[] = [];
+    const fnRegex = /\[\^(\d+)\]/g;
+    
+    const blocks = parseContentToBlocks(content);
+    blocks.forEach(b => {
+      let text = '';
+      if (b.type === 'paragraph') {
+        text = b.text || '';
+      } else if (b.type === 'heading') {
+        text = b.text || '';
+      } else if (b.type === 'latin-quote') {
+        text = (b.text || '') + ' ' + (b.translation || '');
+      } else if (b.type === 'arabic-quote') {
+        text = (b.arabic || '') + ' ' + (b.translation || '');
+      } else if (b.type === 'list') {
+        text = (b.items || []).map((it: any) => it.text).join(' ');
+      } else if (b.type === 'table') {
+        text = (b.headers || []).join(' ') + ' ' + (b.rows || []).map((r: string[]) => r.join(' ')).join(' ');
+      }
+      
+      let match;
+      fnRegex.lastIndex = 0;
+      while ((match = fnRegex.exec(text)) !== null) {
+        const fnNum = match[1];
+        if (!occurrences.includes(fnNum)) {
+          occurrences.push(fnNum);
+        }
+      }
+    });
+
+    occurrences.forEach((fnNum, idx) => {
+      map[fnNum] = idx + 1;
+    });
+
+    return { map, occurrences };
+  };
+
+  const getOrderedFootnotesToRender = () => {
+    const { map, occurrences } = getFootnotesReadingOrderMap();
+    const renderedList: { displayNum: number; originalNum: string; text: string }[] = [];
+    
+    occurrences.forEach((fnNumStr) => {
+      const originalIdx = parseInt(fnNumStr, 10) - 1;
+      if (originalIdx >= 0 && originalIdx < footnotes.length) {
+        renderedList.push({
+          displayNum: map[fnNumStr],
+          originalNum: fnNumStr,
+          text: footnotes[originalIdx],
+        });
+      }
+    });
+    
+    footnotes.forEach((fnText, originalIdx) => {
+      const fnNumStr = (originalIdx + 1).toString();
+      if (!occurrences.includes(fnNumStr)) {
+        const displayNum = renderedList.length + 1;
+        renderedList.push({
+          displayNum,
+          originalNum: fnNumStr,
+          text: fnText,
+        });
+      }
+    });
+    
+    return renderedList;
+  };
+
+  // Scroll to the absolute top of the page immediately when mounting or switching entries in view mode
+  useEffect(() => {
+    if (mode === 'view') {
+      window.scrollTo(0, 0);
+      const handle = requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+      });
+      return () => cancelAnimationFrame(handle);
+    }
+  }, [entry.id, mode]);
 
   // Toast notifications for action feedback:
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -73,6 +176,7 @@ export function EntryRenderer({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [activeTextareaIdx, setActiveTextareaIdx] = useState<number | null>(null);
+  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder });
@@ -80,6 +184,334 @@ export function EntryRenderer({
   useEffect(() => {
     stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder };
   }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder]);
+
+  // Floating selection-formatting toolbar states
+  const [selectionState, setSelectionState] = useState<{
+    show: boolean;
+    start: number;
+    end: number;
+    x: number;
+    y: number;
+    text: string;
+    textareaId: string;
+  } | null>(null);
+
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [showInsertMenu, setShowInsertMenu] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'edit') return;
+
+    const getTextareaSelectionCoords = (textarea: HTMLTextAreaElement) => {
+      const { selectionStart, selectionEnd } = textarea;
+      if (selectionStart === null || selectionEnd === null) return null;
+
+      // Create a mirror div to calculate coordinates
+      const div = document.createElement('div');
+      const style = window.getComputedStyle(textarea);
+
+      // Copy essential layout and typography styles
+      const stylesToCopy = [
+        'fontFamily', 'fontSize', 'fontWeight', 'lineHeight',
+        'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+        'borderWidth', 'borderStyle', 'boxSizing', 'whiteSpace',
+        'wordBreak', 'wordWrap', 'width', 'textAlign', 'direction'
+      ];
+
+      stylesToCopy.forEach(prop => {
+        (div.style as any)[prop] = (style as any)[prop];
+      });
+
+      div.style.position = 'absolute';
+      div.style.visibility = 'hidden';
+      div.style.left = '-9999px';
+      div.style.top = '-9999px';
+      div.style.height = 'auto';
+
+      const text = textarea.value;
+      const beforeText = text.substring(0, selectionStart);
+      const selectedText = text.substring(selectionStart, selectionEnd);
+
+      const beforeSpan = document.createElement('span');
+      beforeSpan.textContent = beforeText;
+
+      const selectSpan = document.createElement('span');
+      selectSpan.textContent = selectedText;
+
+      div.appendChild(beforeSpan);
+      div.appendChild(selectSpan);
+
+      document.body.appendChild(div);
+
+      const textareaRect = textarea.getBoundingClientRect();
+      const selectRect = selectSpan.getBoundingClientRect();
+      const divRect = div.getBoundingClientRect();
+
+      const relativeTop = selectRect.top - divRect.top;
+      const relativeLeft = selectRect.left - divRect.left;
+      const selectWidth = selectRect.width;
+
+      document.body.removeChild(div);
+
+      return {
+        left: textareaRect.left + relativeLeft - textarea.scrollLeft,
+        top: textareaRect.top + relativeTop - textarea.scrollTop,
+        width: selectWidth,
+        height: selectRect.height
+      };
+    };
+
+    const handleSelection = () => {
+      const activeEl = document.activeElement;
+      if (activeEl instanceof HTMLTextAreaElement && activeEl.id.startsWith('editorial-content-textarea')) {
+        const start = activeEl.selectionStart;
+        const end = activeEl.selectionEnd;
+        if (start !== null && end !== null && start !== end) {
+          const text = activeEl.value.substring(start, end);
+          
+          const selectionCoords = getTextareaSelectionCoords(activeEl);
+          if (selectionCoords) {
+            // Horizontal center of selection
+            const selectionViewportX = selectionCoords.left + selectionCoords.width / 2;
+            
+            // Prioritize positioning above selection (using a 12px gap)
+            // Height of the toolbar is ~38px, let's set y relative to selection top
+            let selectionViewportY = selectionCoords.top - 38 - 12; // 12px gap above selection
+            
+            // If too close to the top of the viewport (< 70px), place 12px below the selection instead
+            if (selectionCoords.top < 70) {
+              selectionViewportY = selectionCoords.top + selectionCoords.height + 12; // 12px gap below selection
+            }
+
+            // Map viewport coordinates to the relative container of the absolute-positioned toolbar
+            const container = activeEl.closest('.relative.max-w-4xl.mx-auto') || activeEl.offsetParent;
+            const containerRect = container ? container.getBoundingClientRect() : { left: 0, top: 0 };
+
+            setSelectionState({
+              show: true,
+              start,
+              end,
+              x: selectionViewportX - containerRect.left,
+              y: selectionViewportY - containerRect.top,
+              text,
+              textareaId: activeEl.id
+            });
+            return;
+          }
+        }
+      }
+      if (!showLinkInput) {
+        setSelectionState(null);
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelection);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelection);
+    };
+  }, [mode, showLinkInput]);
+
+  const updateVisualBlockText = (textareaId: string, newValue: string) => {
+    let blockIdx = -1;
+    let field: 'text' | 'arabic' | 'translation' = 'text';
+
+    if (textareaId.startsWith('editorial-content-textarea-visual-latin-')) {
+      blockIdx = parseInt(textareaId.replace('editorial-content-textarea-visual-latin-', ''), 10);
+      field = 'text';
+    } else if (textareaId.startsWith('editorial-content-textarea-visual-arabic-')) {
+      blockIdx = parseInt(textareaId.replace('editorial-content-textarea-visual-arabic-', ''), 10);
+      field = 'arabic';
+    } else if (textareaId.startsWith('editorial-content-textarea-visual-trans-')) {
+      blockIdx = parseInt(textareaId.replace('editorial-content-textarea-visual-trans-', ''), 10);
+      field = 'translation';
+    } else if (textareaId.startsWith('editorial-content-textarea-visual-')) {
+      blockIdx = parseInt(textareaId.replace('editorial-content-textarea-visual-', ''), 10);
+      field = 'text';
+    }
+
+    if (blockIdx === -1) return;
+
+    let block: ContentBlock;
+    if (contentType === 'Article') {
+      const para = paragraphs[blockIdx];
+      block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
+    } else {
+      const blocks = parseContentToBlocks(content);
+      block = blocks[blockIdx];
+    }
+
+    if (block) {
+      if (field === 'text') {
+        (block as any).text = newValue;
+      } else if (field === 'arabic') {
+        (block as any).arabic = newValue;
+      } else if (field === 'translation') {
+        (block as any).translation = newValue;
+      }
+      handleVisualBlockChange(blockIdx, block);
+    }
+  };
+
+  const handleValueChange = (textareaId: string, newValue: string, footnotesToSave = footnotes) => {
+    if (textareaId.startsWith('editorial-content-textarea-visual-')) {
+      updateVisualBlockText(textareaId, newValue);
+    } else if (contentType === 'Article' && textareaId.startsWith('editorial-content-textarea-')) {
+      const blockIdx = parseInt(textareaId.replace('editorial-content-textarea-', ''), 10);
+      handleContentChange(blockIdx, newValue);
+    } else {
+      setContent(newValue);
+      triggerSave(newValue, footnotesToSave, marginNotes);
+    }
+  };
+
+  const applyBold = () => {
+    if (!selectionState) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    let newValue = '';
+    let newStart = start;
+    let newEnd = end;
+
+    if (text.startsWith('**') && text.endsWith('**') && text.length >= 4) {
+      const unwrapped = text.substring(2, text.length - 2);
+      newValue = val.substring(0, start) + unwrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + unwrapped.length;
+    } else {
+      const wrapped = `**${text}**`;
+      newValue = val.substring(0, start) + wrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + wrapped.length;
+    }
+
+    handleValueChange(selectionState.textareaId, newValue);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newStart, newEnd);
+    }, 50);
+  };
+
+  const applyItalic = () => {
+    if (!selectionState) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    let newValue = '';
+    let newStart = start;
+    let newEnd = end;
+
+    if (text.startsWith('*') && text.endsWith('*') && text.length >= 2) {
+      const unwrapped = text.substring(1, text.length - 1);
+      newValue = val.substring(0, start) + unwrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + unwrapped.length;
+    } else {
+      const wrapped = `*${text}*`;
+      newValue = val.substring(0, start) + wrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + wrapped.length;
+    }
+
+    handleValueChange(selectionState.textareaId, newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newStart, newEnd);
+    }, 50);
+  };
+
+  const applyUnderline = () => {
+    if (!selectionState) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    let newValue = '';
+    let newStart = start;
+    let newEnd = end;
+
+    if (text.startsWith('<u>') && text.endsWith('</u>') && text.length >= 7) {
+      const unwrapped = text.substring(3, text.length - 4);
+      newValue = val.substring(0, start) + unwrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + unwrapped.length;
+    } else if (text.startsWith('++') && text.endsWith('++') && text.length >= 4) {
+      const unwrapped = text.substring(2, text.length - 2);
+      newValue = val.substring(0, start) + unwrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + unwrapped.length;
+    } else {
+      const wrapped = `<u>${text}</u>`;
+      newValue = val.substring(0, start) + wrapped + val.substring(end);
+      newStart = start;
+      newEnd = start + wrapped.length;
+    }
+
+    handleValueChange(selectionState.textareaId, newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newStart, newEnd);
+    }, 50);
+  };
+
+  const applyLink = (url: string) => {
+    if (!selectionState || !url) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    
+    const wrapped = `[${text}](${url})`;
+    const newValue = val.substring(0, start) + wrapped + val.substring(end);
+
+    handleValueChange(selectionState.textareaId, newValue);
+
+    setShowLinkInput(false);
+    setLinkUrl('');
+    setSelectionState(null);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 1, start + 1 + text.length);
+    }, 50);
+  };
+
+  const applyFootnote = () => {
+    if (!selectionState) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    
+    const footnoteText = text ? `Rujukan untuk "${text}": ` : "Rujukan nota kaki baharu.";
+    const updatedFootnotes = [...footnotes, footnoteText];
+    setFootnotes(updatedFootnotes);
+
+    const footnoteNum = updatedFootnotes.length;
+    const marker = `[^${footnoteNum}]`;
+    const wrapped = `${text}${marker}`;
+    const newValue = val.substring(0, start) + wrapped + val.substring(end);
+
+    handleValueChange(selectionState.textareaId, newValue, updatedFootnotes);
+
+    setSelectionState(null);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start, start + wrapped.length);
+    }, 50);
+  };
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToast({ message, type });
@@ -151,6 +583,55 @@ export function EntryRenderer({
       return paragraphs.join('\n\n');
     }
     return content;
+  };
+
+  const validateLimits = (
+    currentContent = content,
+    currentFootnotes = footnotes,
+    currentMarginNotes = marginNotes,
+    currentType = contentType
+  ): string | null => {
+    // 1. Check entry content limit
+    const cleanContent = currentType === 'Article' 
+      ? paragraphs.join('\n\n') 
+      : currentContent;
+    const strippedContent = cleanContent.replace(/<[^>]*>/g, ' ');
+    const wordCount = getWordCount(strippedContent);
+
+    if (currentType === 'Note' && wordCount > 100) {
+      return `Note exceeds the maximum limit of 100 words (Current: ${wordCount} words). Please shorten your note.`;
+    }
+    if (currentType === 'Essay' && wordCount > 1000) {
+      return `Essay exceeds the maximum limit of 1000 words (Current: ${wordCount} words). Please shorten your essay.`;
+    }
+    if (currentType === 'Article' && wordCount > 10000) {
+      return `Article exceeds the maximum limit of 10,000 words (Current: ${wordCount} words). Please shorten your article.`;
+    }
+
+    // 2. Check each footnote limit
+    if (currentType === 'Essay' || currentType === 'Article') {
+      for (let i = 0; i < currentFootnotes.length; i++) {
+        const fnWords = getWordCount(currentFootnotes[i]);
+        if (fnWords > 1000) {
+          return `Footnote #[${i + 1}] exceeds the maximum limit of 1000 words (Current: ${fnWords} words). Please shorten this footnote.`;
+        }
+      }
+    }
+
+    // 3. Check each margin note limit
+    if (currentType === 'Article') {
+      const keys = Object.keys(currentMarginNotes);
+      for (const key of keys) {
+        const idx = parseInt(key, 10);
+        const marginNoteText = currentMarginNotes[idx] || '';
+        const mnWords = getWordCount(marginNoteText);
+        if (mnWords > 50) {
+          return `Margin Note for Block #${idx + 1} exceeds the maximum limit of 50 words (Current: ${mnWords} words). Please shorten this margin note.`;
+        }
+      }
+    }
+
+    return null;
   };
 
   // Keyboard Formatting Inserters
@@ -353,7 +834,7 @@ export function EntryRenderer({
           tags: updatedTags,
           slug: updatedSlug,
           content: updatedContent,
-          footnotes: updatedType === 'Essay' ? updatedFootnotes : undefined,
+          footnotes: (updatedType === 'Essay' || updatedType === 'Article') ? updatedFootnotes : undefined,
           marginNotes: updatedType === 'Article' ? updatedMarginNotes : undefined,
           excerpt: updatedExcerpt,
           featuredImage: updatedFeaturedImage,
@@ -391,7 +872,7 @@ export function EntryRenderer({
           content: stateRef.current.content,
           excerpt: stateRef.current.excerpt,
           featuredImage: stateRef.current.featuredImage,
-          footnotes: stateRef.current.contentType === 'Essay' ? stateRef.current.footnotes : undefined,
+          footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
           marginNotes: stateRef.current.contentType === 'Article' ? stateRef.current.marginNotes : undefined,
           status: updatedStatus,
           visibility: updatedVisibility,
@@ -413,7 +894,7 @@ export function EntryRenderer({
         tags: stateRef.current.tags,
         slug: stateRef.current.slug,
         content: stateRef.current.content,
-        footnotes: stateRef.current.contentType === 'Essay' ? stateRef.current.footnotes : undefined,
+        footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
         marginNotes: stateRef.current.contentType === 'Article' ? stateRef.current.marginNotes : undefined,
         excerpt: stateRef.current.excerpt,
         featuredImage: stateRef.current.featuredImage,
@@ -582,7 +1063,7 @@ export function EntryRenderer({
       tags: rev.tags,
       slug: rev.slug,
       content: rev.content,
-      footnotes: contentType === 'Essay' ? rev.footnotes : undefined,
+      footnotes: (contentType === 'Essay' || contentType === 'Article') ? rev.footnotes : undefined,
       marginNotes: contentType === 'Article' ? rev.marginNotes : undefined,
       excerpt: rev.excerpt,
       featuredImage: rev.featuredImage,
@@ -823,6 +1304,87 @@ export function EntryRenderer({
     triggerSave(newContentString, footnotes, updatedMarginNotes);
   };
 
+  const handleUpdateContentImage = (blockIndex: number, newUrl: string, newAlt: string) => {
+    if (contentType === 'Article') {
+      const updated = [...paragraphs];
+      updated[blockIndex] = `![${newAlt.trim()}](${newUrl.trim()})`;
+      setParagraphs(updated);
+      const newContentString = updated.join('\n\n');
+      setContent(newContentString);
+      triggerSave(newContentString, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      if (blocks[blockIndex] && blocks[blockIndex].type === 'image') {
+        const imgBlock = blocks[blockIndex] as ImageBlock;
+        imgBlock.url = newUrl.trim();
+        imgBlock.alt = newAlt.trim();
+        const serialized = serializeBlocks(blocks);
+        setContent(serialized);
+        triggerSave(serialized, footnotes, marginNotes);
+      }
+    }
+  };
+
+  const runImageValidation = async () => {
+    setIsValidationRunning(true);
+    setValidationErrors([]);
+    setValidationSuccess(false);
+    setHasValidated(true);
+
+    const imagesToCheck: { label: string; url: string }[] = [];
+    if (featuredImage && featuredImage.trim()) {
+      imagesToCheck.push({ label: 'Featured Image', url: featuredImage.trim() });
+    }
+
+    const blocks = parseContentToBlocks(content);
+    let imageIdx = 1;
+    blocks.forEach(block => {
+      if (block.type === 'image') {
+        imagesToCheck.push({
+          label: `Figure ${imageIdx}: ${block.alt || 'Untitled'}`,
+          url: block.url
+        });
+        imageIdx++;
+      }
+    });
+
+    if (imagesToCheck.length === 0) {
+      setIsValidationRunning(false);
+      setValidationSuccess(true);
+      return;
+    }
+
+    const errors: string[] = [];
+    const checks = imagesToCheck.map(async (img) => {
+      const isOk = await new Promise<boolean>((resolve) => {
+        if (!img.url) {
+          resolve(false);
+          return;
+        }
+        if (img.url.startsWith('data:') || img.url.startsWith('blob:') || !img.url.startsWith('http')) {
+          resolve(true);
+          return;
+        }
+        const tester = new Image();
+        tester.onload = () => resolve(true);
+        tester.onerror = () => resolve(false);
+        tester.src = img.url;
+      });
+      if (!isOk) {
+        errors.push(`${img.label} (${img.url})`);
+      }
+    });
+
+    await Promise.all(checks);
+    setIsValidationRunning(false);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationSuccess(false);
+    } else {
+      setValidationSuccess(true);
+    }
+  };
+
   const handleMarginNoteChange = (index: number, val: string) => {
     const updated = { ...marginNotes };
     if (!val.trim()) {
@@ -910,23 +1472,43 @@ export function EntryRenderer({
     return figCount;
   };
 
-  const renderBlock = (block: ContentBlock, idx: number) => {
+  const renderBlock = (block: ContentBlock, idx: number, marginNoteNum?: number, marginNoteText?: string) => {
     const citeMap = getCitationsMap();
+    const fMap = getFootnotesReadingOrderMap().map;
+
+    const renderSuperscriptWithNote = (num: number, text?: string) => {
+      return (
+        <span className="inline select-none ml-1">
+          <sup className="text-xs font-mono font-bold text-adjung-maroon cursor-pointer hover:underline animate-fade-in" title={`Margin Note ${num}`}>
+            [{num}]
+          </sup>
+          {text && (
+            <span className="absolute left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-650 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
+              <span className="block">
+                <sup className="font-mono font-bold text-adjung-maroon mr-1.5 select-none">[{num}]</sup>
+                {parseInlineFormatting(text, citations, referenceSortOrder, citeMap, fMap)}
+              </span>
+            </span>
+          )}
+        </span>
+      );
+    };
 
     if (block.type === 'heading') {
       const isAr = isArabicText(block.text);
-      const textNode = parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap);
+      const textNode = parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap);
       if (block.level === 1) {
         return (
           <h2 
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-900 font-light mt-8 mb-4 border-b border-stone-200/50 pb-2 pb-2 ${
+            className={`font-serif text-stone-900 font-light mt-8 mb-4 border-b border-stone-200/50 pb-2 relative overflow-visible ${
               isAr ? 'text-right text-2xl font-arabic leading-loose' : 'text-left text-xl md:text-2xl tracking-tight'
             }`}
           >
             {textNode}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </h2>
         );
       } else if (block.level === 2) {
@@ -935,11 +1517,12 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-850 font-normal mt-6 mb-3 ${
+            className={`font-serif text-stone-850 font-normal mt-6 mb-3 relative overflow-visible ${
               isAr ? 'text-right text-xl font-arabic leading-loose' : 'text-left text-lg md:text-xl'
             }`}
           >
             {textNode}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </h3>
         );
       } else {
@@ -948,11 +1531,12 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-700 font-medium mt-4 mb-2 ${
+            className={`font-serif text-stone-700 font-medium mt-4 mb-2 relative overflow-visible ${
               isAr ? 'text-right text-base font-arabic leading-loose' : 'text-left text-base'
             }`}
           >
             {textNode}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </h4>
         );
       }
@@ -962,7 +1546,7 @@ export function EntryRenderer({
       const listItems = block.items.map((item, itemIdx) => {
         const isAr = isArabicText(item.text);
         const isChecklist = item.checked !== undefined;
-        const textNode = parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap);
+        const textNode = parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap);
         if (isChecklist) {
           return (
             <li 
@@ -1033,7 +1617,7 @@ export function EntryRenderer({
                     const alignClass = align === 'center' ? 'text-center' : (align === 'right' ? 'text-right' : 'text-left');
                     return (
                       <td key={cIdx} className={`p-3 text-stone-700 border-r border-stone-200 last:border-r-0 leading-relaxed font-sans text-xs md:text-sm ${alignClass}`}>
-                        {parseInlineFormatting(cell, citations, referenceSortOrder, citeMap)}
+                        {parseInlineFormatting(cell, citations, referenceSortOrder, citeMap, fMap)}
                       </td>
                     );
                   })}
@@ -1048,19 +1632,16 @@ export function EntryRenderer({
     if (block.type === 'image') {
       const figNum = getFigureNumber(idx);
       return (
-        <figure key={idx} className="my-8 text-center bg-transparent select-none">
-          <img 
-            src={block.url} 
-            alt={block.alt} 
-            className="max-w-full h-auto mx-auto border border-stone-200/50 p-1.5 bg-white shadow-sm rounded-sm"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Image+Not+Available';
-            }}
-          />
-          <figcaption className="text-xs text-stone-400 mt-2.5 italic font-serif">
-            Figure {figNum}: {block.alt || 'Untitled'}
-          </figcaption>
-        </figure>
+        <EntryImage
+          key={idx}
+          url={block.url}
+          alt={block.alt}
+          figNum={figNum}
+          isAuthor={mode === 'edit'}
+          onUpdateImage={(newUrl, newAlt) => {
+            handleUpdateContentImage(idx, newUrl, newAlt);
+          }}
+        />
       );
     }
 
@@ -1087,15 +1668,16 @@ export function EntryRenderer({
       return (
         <blockquote 
           key={idx} 
-          className="my-8 pl-6 border-l border-adjung-maroon/20 text-left bg-transparent"
+          className="my-8 pl-6 border-l border-adjung-maroon/20 text-left bg-transparent relative overflow-visible"
         >
-          <p className="font-serif italic text-[14.5px] md:text-[15.5px] text-stone-600 leading-relaxed my-1">
-            {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap)}
+          <p className="font-serif italic text-[14.5px] md:text-[15.5px] text-stone-600 leading-relaxed my-1 relative overflow-visible">
+            {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap)}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
-          {block.attribution && (
-            <cite className="block text-[11px] font-mono text-stone-400 uppercase mt-2 tracking-wide font-normal">
-              &mdash; {block.attribution}
-            </cite>
+          {block.translation && (
+            <div className="mt-2 text-stone-550 font-serif italic text-xs leading-relaxed">
+              {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
+            </div>
           )}
         </blockquote>
       );
@@ -1105,26 +1687,21 @@ export function EntryRenderer({
       return (
         <blockquote 
           key={idx} 
-          className="my-8 pr-6 border-r border-adjung-maroon/20 text-right bg-transparent"
+          className="my-8 pr-6 border-r border-adjung-maroon/20 text-right bg-transparent relative overflow-visible"
         >
           <div dir="rtl">
-            <p className="font-arabic text-[18.5px] md:text-[20px] text-stone-900 leading-loose">
-              {parseInlineFormatting(block.arabic, citations, referenceSortOrder, citeMap)}
+            <p className="font-arabic text-[18.5px] md:text-[20px] text-stone-900 leading-loose relative overflow-visible">
+              {parseInlineFormatting(block.arabic, citations, referenceSortOrder, citeMap, fMap)}
+              {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
             </p>
           </div>
 
           {block.translation && (
             <div dir="ltr" className="mt-4 pt-4 border-t border-stone-200/40 text-left">
               <p className="font-serif italic text-[13.5px] md:text-[14.5px] text-stone-500 leading-relaxed">
-                {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap)}
+                {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
               </p>
             </div>
-          )}
-          
-          {block.attribution && (
-            <cite dir="ltr" className="block text-[11px] font-mono text-stone-400 uppercase mt-2 tracking-wide font-normal text-left">
-              &mdash; {block.attribution}
-            </cite>
           )}
         </blockquote>
       );
@@ -1136,7 +1713,7 @@ export function EntryRenderer({
         warning: 'bg-red-50/50 border-red-200 text-stone-850',
         tip: 'bg-emerald-50/20 border-emerald-200 text-stone-800',
         important: 'bg-stone-100/60 border-stone-800 text-stone-900',
-        definition: 'bg-[#802334]/5 border-[#802334]/20 text-stone-850'
+        definition: 'bg-[#802334]/5 border-[#802334]/20 text-stone-855'
       };
       const titleStyles = {
         note: 'text-stone-700 font-bold font-mono',
@@ -1158,14 +1735,15 @@ export function EntryRenderer({
       const label = typeLabels[block.calloutType] || typeLabels.note;
       
       return (
-        <div key={idx} className={`my-6 p-4 border-l-2 rounded-sm text-left ${themeClass}`}>
+        <div key={idx} className={`my-6 p-4 border-l-2 rounded-sm text-left relative overflow-visible ${themeClass}`}>
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className={`text-[10px] uppercase tracking-wider ${titleTheme}`}>
               {block.title ? `${label}: ${block.title}` : label}
             </span>
           </div>
-          <p className="font-serif text-sm md:text-[15px] leading-relaxed my-0 whitespace-pre-wrap">
+          <p className="font-serif text-sm md:text-[15px] leading-relaxed my-0 whitespace-pre-wrap relative overflow-visible">
             {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap)}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
         </div>
       );
@@ -1176,13 +1754,14 @@ export function EntryRenderer({
       <p
         key={idx}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`leading-relaxed text-[15px] md:text-base text-[#111111] whitespace-pre-wrap ${
+        className={`leading-relaxed text-[15px] md:text-base text-[#111111] whitespace-pre-wrap relative overflow-visible ${
           isAr 
             ? 'font-arabic text-right text-lg leading-loose' 
             : 'font-serif text-left'
         }`}
       >
         {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap)}
+        {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
       </p>
     );
   };
@@ -1224,13 +1803,891 @@ export function EntryRenderer({
     );
   };
 
+  // Visual Mode Helper Actions
+  const handleVisualBlockChange = (blockIdx: number, updatedBlock: ContentBlock) => {
+    if (contentType === 'Article') {
+      const serialized = serializeBlocks([updatedBlock]);
+      const updatedParagraphs = [...paragraphs];
+      updatedParagraphs[blockIdx] = serialized;
+      setParagraphs(updatedParagraphs);
+      const newContent = updatedParagraphs.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      blocks[blockIdx] = updatedBlock;
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+    }
+  };
+
+  const handleMoveBlockUp = (idx: number) => {
+    if (idx === 0) return;
+    if (contentType === 'Article') {
+      const updated = [...paragraphs];
+      const temp = updated[idx];
+      updated[idx] = updated[idx - 1];
+      updated[idx - 1] = temp;
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      const temp = blocks[idx];
+      blocks[idx] = blocks[idx - 1];
+      blocks[idx - 1] = temp;
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+    }
+    if (editingBlockIndex === idx) setEditingBlockIndex(idx - 1);
+    else if (editingBlockIndex === idx - 1) setEditingBlockIndex(idx);
+  };
+
+  const handleMoveBlockDown = (idx: number) => {
+    if (contentType === 'Article') {
+      if (idx === paragraphs.length - 1) return;
+      const updated = [...paragraphs];
+      const temp = updated[idx];
+      updated[idx] = updated[idx + 1];
+      updated[idx + 1] = temp;
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      if (idx === blocks.length - 1) return;
+      const temp = blocks[idx];
+      blocks[idx] = blocks[idx + 1];
+      blocks[idx + 1] = temp;
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+    }
+    if (editingBlockIndex === idx) setEditingBlockIndex(idx + 1);
+    else if (editingBlockIndex === idx + 1) setEditingBlockIndex(idx);
+  };
+
+  const handleDuplicateBlock = (idx: number) => {
+    if (contentType === 'Article') {
+      const updated = [...paragraphs];
+      updated.splice(idx + 1, 0, paragraphs[idx]);
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      blocks.splice(idx + 1, 0, JSON.parse(JSON.stringify(blocks[idx])));
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+    }
+  };
+
+  const handleInsertBlockBelow = (idx: number) => {
+    if (contentType === 'Article') {
+      const updated = [...paragraphs];
+      updated.splice(idx + 1, 0, 'New paragraph content.');
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+      setEditingBlockIndex(idx + 1);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      blocks.splice(idx + 1, 0, { type: 'paragraph', text: 'New paragraph content.' });
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+      setEditingBlockIndex(idx + 1);
+    }
+  };
+
+  const handleDeleteBlock = (idx: number) => {
+    if (contentType === 'Article') {
+      if (paragraphs.length <= 1) return;
+      const updated = paragraphs.filter((_, i) => i !== idx);
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      if (blocks.length <= 1) return;
+      const updatedBlocks = blocks.filter((_, i) => i !== idx);
+      const serialized = serializeBlocks(updatedBlocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+    }
+    setEditingBlockIndex(null);
+  };
+
+  const handleInsertNewBlock = (type: 'paragraph' | 'heading' | 'latin-quote' | 'arabic-quote') => {
+    let newBlockText = '';
+    let newBlock: ContentBlock;
+    
+    if (type === 'paragraph') {
+      newBlock = { type: 'paragraph', text: 'Kandungan perenggan baharu.' };
+      newBlockText = 'Kandungan perenggan baharu.';
+    } else if (type === 'heading') {
+      newBlock = { type: 'heading', text: 'Tajuk Baharu', level: 2 };
+      newBlockText = '## Tajuk Baharu';
+    } else if (type === 'latin-quote') {
+      newBlock = { 
+        type: 'latin-quote', 
+        text: 'Enter LTR quote here...', 
+        translation: 'Terjemahan di sini...'
+      };
+      newBlockText = '<quote type="latin">\n  <text>Enter LTR quote here...</text>\n  <translation>Terjemahan di sini...</translation>\n</quote>';
+    } else {
+      newBlock = { 
+        type: 'arabic-quote', 
+        arabic: 'اكتب النص العربي هنا', 
+        translation: 'Terjemahan di sini...'
+      };
+      newBlockText = '<quote type="arabic">\n  <arabic>اكتب النص العربي هنا</arabic>\n  <translation>Terjemahan di sini...</translation>\n</quote>';
+    }
+
+    if (contentType === 'Article') {
+      const updated = [...paragraphs, newBlockText];
+      setParagraphs(updated);
+      const newContent = updated.join('\n\n');
+      setContent(newContent);
+      triggerSave(newContent, footnotes, marginNotes);
+      setEditingBlockIndex(updated.length - 1);
+    } else {
+      const blocks = parseContentToBlocks(content);
+      blocks.push(newBlock);
+      const serialized = serializeBlocks(blocks);
+      setContent(serialized);
+      const parts = serialized.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      setParagraphs(parts.length > 0 ? parts : [serialized]);
+      triggerSave(serialized, footnotes, marginNotes);
+      setEditingBlockIndex(blocks.length - 1);
+    }
+  };
+
+  // Inline Block Editor in Visual Mode
+  const renderInlineBlockEditor = (
+    block: ContentBlock,
+    idx: number,
+    hasMarginNote: boolean = false,
+    marginNoteNum?: number,
+    marginNoteText?: string
+  ) => {
+    const blockText = ('text' in block) ? (block as any).text : '';
+    const blockArabic = ('arabic' in block) ? (block as any).arabic : '';
+    const isAr = isArabicText(blockText || blockArabic || '');
+
+    if (block.type === 'paragraph' || block.type === 'heading') {
+      const hClass = block.type === 'heading'
+        ? (block.level === 1 ? 'text-xl md:text-2xl tracking-tight font-medium' : (block.level === 2 ? 'text-lg md:text-xl font-medium' : 'text-base font-medium'))
+        : '';
+
+      return (
+        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left">
+          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
+                {block.type === 'heading' ? `Heading H${block.level}` : 'Paragraph'} Block
+              </span>
+              <select
+                value={block.type === 'heading' ? `heading-${block.level}` : 'paragraph'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  let newBlock: ContentBlock;
+                  if (val.startsWith('heading-')) {
+                    const level = parseInt(val.split('-')[1]) as 1 | 2 | 3;
+                    newBlock = { type: 'heading', text: block.text || '', level };
+                  } else {
+                    newBlock = { type: 'paragraph', text: block.text || '' };
+                  }
+                  handleVisualBlockChange(idx, newBlock);
+                }}
+                className="border border-stone-200 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-white focus:outline-none focus:border-adjung-maroon text-stone-600"
+              >
+                <option value="paragraph">Paragraph</option>
+                <option value="heading-1">Heading 1</option>
+                <option value="heading-2">Heading 2</option>
+                <option value="heading-3">Heading 3</option>
+              </select>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setEditingBlockIndex(null)}
+              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+            >
+              ✓ Done
+            </button>
+          </div>
+
+          <div className="relative">
+            <textarea
+              id={`editorial-content-textarea-visual-${idx}`}
+              autoFocus
+              value={block.text || ''}
+              dir={isAr ? 'rtl' : 'ltr'}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleVisualBlockChange(idx, { ...block, text: val });
+              }}
+              onBlur={() => {
+                setTimeout(() => setEditingBlockIndex(null), 150);
+              }}
+              placeholder={block.type === 'heading' ? "Enter Heading text..." : "Begin writing your manuscript here..."}
+              className={`w-full bg-transparent border-none focus:outline-none resize-none p-0 overflow-hidden ${
+                block.type === 'heading' 
+                  ? `font-serif text-stone-900 ${hClass}` 
+                  : 'font-serif text-[15px] md:text-base text-stone-900 leading-relaxed'
+              } ${isAr ? 'text-right font-arabic leading-loose text-lg font-medium' : 'text-left'}`}
+              style={{ height: 'auto' }}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+                }
+              }}
+            />
+          </div>
+          
+          {contentType === 'Article' && (
+            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+              <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                Horizontal Margin Note (Aligned with Block)
+              </label>
+              <textarea
+                value={marginNotes[idx] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updatedNotes = { ...marginNotes, [idx]: val };
+                  setMarginNotes(updatedNotes);
+                  triggerSave(content, footnotes, updatedNotes);
+                }}
+                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                rows={1}
+                className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (block.type === 'latin-quote' || block.type === 'arabic-quote') {
+      return (
+        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+            <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
+              Quote ({block.type === 'latin-quote' ? 'Latin' : 'Arabic'}) Block
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditingBlockIndex(null)}
+              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+            >
+              ✓ Done
+            </button>
+          </div>
+
+          {block.type === 'latin-quote' ? (
+            <div className="space-y-2 font-serif">
+              <div>
+                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Original Quote</label>
+                <textarea
+                  id={`editorial-content-textarea-visual-latin-${idx}`}
+                  autoFocus
+                  value={block.text || ''}
+                  onChange={(e) => handleVisualBlockChange(idx, { ...block, text: e.target.value })}
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 italic text-sm text-stone-750 leading-relaxed text-left"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Translation</label>
+                <textarea
+                  id={`editorial-content-textarea-visual-trans-${idx}`}
+                  value={block.translation || ''}
+                  onChange={(e) => handleVisualBlockChange(idx, { ...block, translation: e.target.value })}
+                  placeholder="Translation..."
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 text-stone-550 leading-relaxed text-xs text-left"
+                  rows={1}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-right">Original Quote (Arabic/RTL)</label>
+                <textarea
+                  id={`editorial-content-textarea-visual-arabic-${idx}`}
+                  autoFocus
+                  value={block.arabic || ''}
+                  dir="rtl"
+                  onChange={(e) => handleVisualBlockChange(idx, { ...block, arabic: e.target.value })}
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 font-arabic text-right text-stone-900 leading-loose text-lg"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-left font-sans">Translation</label>
+                <textarea
+                  id={`editorial-content-textarea-visual-trans-${idx}`}
+                  value={block.translation || ''}
+                  onChange={(e) => handleVisualBlockChange(idx, { ...block, translation: e.target.value })}
+                  placeholder="Translation..."
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 font-serif italic text-xs text-stone-500 leading-relaxed text-left"
+                  rows={1}
+                />
+              </div>
+            </div>
+          )}
+          
+          {contentType === 'Article' && (
+            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+              <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                Horizontal Margin Note (Aligned with Block)
+              </label>
+              <textarea
+                value={marginNotes[idx] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updatedNotes = { ...marginNotes, [idx]: val };
+                  setMarginNotes(updatedNotes);
+                  triggerSave(content, footnotes, updatedNotes);
+                }}
+                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                rows={1}
+                className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (block.type === 'callout') {
+      return (
+        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
+                Callout Block
+              </span>
+              <select
+                value={block.calloutType}
+                onChange={(e) => handleVisualBlockChange(idx, { ...block, calloutType: e.target.value as any })}
+                className="border border-stone-200 rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-white focus:outline-none focus:border-adjung-maroon text-stone-600"
+              >
+                <option value="note">Note</option>
+                <option value="tip">Tip</option>
+                <option value="warning">Warning</option>
+                <option value="important">Important</option>
+                <option value="definition">Definition</option>
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingBlockIndex(null)}
+              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+            >
+              ✓ Done
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-left">Callout Title (Optional)</label>
+              <input
+                type="text"
+                value={block.title || ''}
+                onChange={(e) => handleVisualBlockChange(idx, { ...block, title: e.target.value })}
+                placeholder="Title..."
+                className="w-full bg-transparent border-b border-stone-200 focus:border-adjung-maroon focus:outline-none p-1 text-sm font-bold font-mono uppercase tracking-wider text-stone-850"
+              />
+            </div>
+            <div>
+              <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-left">Callout Body</label>
+              <textarea
+                autoFocus
+                value={block.text || ''}
+                onChange={(e) => handleVisualBlockChange(idx, { ...block, text: e.target.value })}
+                placeholder="Callout content..."
+                rows={3}
+                className="w-full bg-transparent border-none focus:outline-none resize-none font-serif text-sm md:text-[15px] leading-relaxed text-stone-800"
+              />
+            </div>
+          </div>
+          
+          {contentType === 'Article' && (
+            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+              <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                Horizontal Margin Note (Aligned with Block)
+              </label>
+              <textarea
+                value={marginNotes[idx] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updatedNotes = { ...marginNotes, [idx]: val };
+                  setMarginNotes(updatedNotes);
+                  triggerSave(content, footnotes, updatedNotes);
+                }}
+                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                rows={1}
+                className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (block.type === 'image') {
+      return (
+        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+            <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
+              Figure Image Block
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditingBlockIndex(null)}
+              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+            >
+              ✓ Done
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-left">Image URL</label>
+              <input
+                type="text"
+                autoFocus
+                value={block.url || ''}
+                onChange={(e) => handleVisualBlockChange(idx, { ...block, url: e.target.value })}
+                placeholder="https://example.com/illustration.jpg"
+                className="w-full bg-transparent border-b border-stone-200 focus:border-adjung-maroon focus:outline-none p-1 text-xs font-mono text-stone-700"
+              />
+            </div>
+            <div>
+              <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-left">Caption / Alt Text</label>
+              <input
+                type="text"
+                value={block.alt || ''}
+                onChange={(e) => handleVisualBlockChange(idx, { ...block, alt: e.target.value })}
+                placeholder="Figure description..."
+                className="w-full bg-transparent border-b border-stone-200 focus:border-adjung-maroon focus:outline-none p-1 text-xs text-stone-700"
+              />
+            </div>
+            {block.url && (
+              <div className="mt-2 text-center">
+                <img src={block.url} alt={block.alt} className="max-h-32 mx-auto rounded border border-stone-200 p-1 bg-white" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+            )}
+          </div>
+          
+          {contentType === 'Article' && (
+            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+              <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                Horizontal Margin Note (Aligned with Block)
+              </label>
+              <textarea
+                value={marginNotes[idx] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updatedNotes = { ...marginNotes, [idx]: val };
+                  setMarginNotes(updatedNotes);
+                  triggerSave(content, footnotes, updatedNotes);
+                }}
+                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                rows={1}
+                className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const rawMarkup = serializeBlocks([block]);
+    return (
+      <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+        <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+          <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
+            {block.type.toUpperCase()} Block
+          </span>
+          <button
+            type="button"
+            onClick={() => setEditingBlockIndex(null)}
+            className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+          >
+            ✓ Done
+          </button>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider">Edit Block Markdown Markup</label>
+          <textarea
+            autoFocus
+            value={rawMarkup}
+            onChange={(e) => {
+              const val = e.target.value;
+              const parsed = parseContentToBlocks(val)[0];
+              if (parsed) {
+                handleVisualBlockChange(idx, parsed);
+              }
+            }}
+            placeholder={`Edit ${block.type} markup...`}
+            rows={5}
+            className="w-full bg-white border border-stone-200 rounded p-2 font-mono text-xs text-stone-850 leading-relaxed focus:outline-none focus:border-adjung-maroon resize-y"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // Visual Mode Hover/Click Wrapper
+  const renderVisualBlockWrapper = (
+    block: ContentBlock,
+    idx: number,
+    hasMarginNote: boolean = false,
+    marginNoteNum?: number,
+    marginNoteText?: string
+  ) => {
+    const isEditingThisBlock = editingBlockIndex === idx;
+
+    if (isEditingThisBlock) {
+      return renderInlineBlockEditor(block, idx, hasMarginNote, marginNoteNum, marginNoteText);
+    }
+
+    return (
+      <div 
+        key={idx}
+        onClick={() => setEditingBlockIndex(idx)}
+        className="group relative cursor-pointer hover:bg-stone-50/70 p-3 -m-3 rounded-md transition-all duration-200 text-left"
+        title="Click to edit block"
+      >
+        <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none hidden md:block">
+          <Edit3 className="w-4 h-4 text-adjung-maroon/60" />
+        </div>
+
+        {renderBlock(block, idx, marginNoteNum, marginNoteText)}
+
+        <div className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 flex items-center gap-1 bg-white border border-stone-200/60 rounded px-1.5 py-0.5 shadow-sm text-stone-400 pointer-events-auto transition-opacity duration-150">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveBlockUp(idx);
+            }}
+            disabled={idx === 0}
+            className="p-1 hover:text-adjung-maroon hover:bg-stone-50 rounded transition disabled:opacity-30 disabled:hover:bg-transparent"
+            title="Move up"
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveBlockDown(idx);
+            }}
+            disabled={idx === (contentType === 'Article' ? paragraphs.length - 1 : parseContentToBlocks(content).length - 1)}
+            className="p-1 hover:text-adjung-maroon hover:bg-stone-50 rounded transition disabled:opacity-30 disabled:hover:bg-transparent"
+            title="Move down"
+          >
+            <ArrowDown className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicateBlock(idx);
+            }}
+            className="p-1 hover:text-adjung-maroon hover:bg-stone-50 rounded transition"
+            title="Duplicate block"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleInsertBlockBelow(idx);
+            }}
+            className="p-1 hover:text-adjung-maroon hover:bg-stone-50 rounded transition"
+            title="Insert block below"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteBlock(idx);
+            }}
+            className="p-1 hover:text-red-650 hover:bg-red-50 rounded transition text-stone-400"
+            title="Delete block"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Source Mode Canvas
+  const renderSourceContent = () => {
+    return (
+      <div className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative animate-fade-in">
+        <div className="mb-6 pb-4 border-b border-stone-150 flex items-center justify-between select-none">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#802334]" />
+            <h3 className="font-mono text-xs uppercase tracking-wider text-stone-600 font-semibold">
+              Source Editor (Markdown / XML)
+            </h3>
+          </div>
+          <div className="text-[10px] font-mono text-stone-400">
+            Characters: {content.length} | Words: {getWordCount(content)}/10,000
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <textarea
+            id="editorial-content-textarea"
+            value={content}
+            onChange={(e) => {
+              const val = e.target.value;
+              setContent(val);
+              const parts = val.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+              setParagraphs(parts.length > 0 ? parts : [val]);
+              triggerSave(val, footnotes, marginNotes);
+            }}
+            placeholder="Write your raw Markdown or structured XML markup here..."
+            className="w-full min-h-[550px] bg-stone-50/40 hover:bg-stone-50/70 focus:bg-white border border-stone-200/85 focus:border-adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
+          />
+
+          {contentType === 'Article' && (
+            <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
+              <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-4">
+                Article Margin Notes Registry (Source Mode)
+              </h4>
+              <div className="space-y-4">
+                {paragraphs.map((para, index) => {
+                  const previewText = para.substring(0, 80) + (para.length > 80 ? '...' : '');
+                  return (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
+                      <div className="md:col-span-4 font-mono text-[10px] text-stone-500">
+                        <span className="font-bold text-adjung-maroon">Block #{index + 1}</span>
+                        <p className="font-serif italic text-stone-400 mt-1 line-clamp-2">{previewText}</p>
+                      </div>
+                      <div className="md:col-span-8">
+                        <textarea
+                          value={marginNotes[index] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updatedNotes = { ...marginNotes, [index]: val };
+                            setMarginNotes(updatedNotes);
+                            triggerSave(content, footnotes, updatedNotes);
+                          }}
+                          placeholder="Side note for this block..."
+                          rows={1}
+                          className="w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {contentType === 'Essay' && (
+            <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold">
+                  Essay Footnotes Registry (Source Mode)
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...footnotes, 'New footnote content.'];
+                    setFootnotes(updated);
+                    triggerSave(content, updated, marginNotes);
+                  }}
+                  className="px-2.5 py-1 border border-stone-200 hover:border-adjung-maroon text-stone-600 hover:text-adjung-maroon rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer"
+                >
+                  + Add Footnote
+                </button>
+              </div>
+              
+              {footnotes.length === 0 ? (
+                <p className="text-stone-400 italic">No footnotes registered for this essay yet. Insert `[^1]` in content to reference.</p>
+              ) : (
+                <div className="space-y-3">
+                  {footnotes.map((fn, index) => (
+                    <div key={index} className="flex gap-3 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
+                      <span className="font-mono text-[10px] font-bold text-adjung-maroon mt-1">[^{index + 1}]</span>
+                      <div className="flex-1">
+                        <textarea
+                          value={fn}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = [...footnotes];
+                            updated[index] = val;
+                            setFootnotes(updated);
+                            triggerSave(content, updated, marginNotes);
+                          }}
+                          placeholder="Footnote reference text..."
+                          rows={1}
+                          className="w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = footnotes.filter((_, i) => i !== index);
+                          setFootnotes(updated);
+                          triggerSave(content, updated, marginNotes);
+                        }}
+                        className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded text-stone-400 transition"
+                        title="Remove footnote"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFloatingToolbar = () => {
+    if (!selectionState || !selectionState.show) return null;
+    return (
+      <div 
+        style={{ left: `${selectionState.x}px`, top: `${selectionState.y}px` }}
+        className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/45 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
+      >
+        {!showLinkInput ? (
+          <>
+            <button
+              type="button"
+              onClick={applyBold}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-bold transition cursor-pointer font-sans"
+              title="Bold"
+            >
+              B
+            </button>
+            <button
+              type="button"
+              onClick={applyItalic}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 italic transition cursor-pointer font-sans"
+              title="Italic"
+            >
+              I
+            </button>
+            <button
+              type="button"
+              onClick={applyUnderline}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 underline transition cursor-pointer font-sans"
+              title="Underline"
+            >
+              U
+            </button>
+            <span className="w-px h-4 bg-stone-800 mx-1" />
+            <button
+              type="button"
+              onClick={() => setShowLinkInput(true)}
+              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
+              title="Insert Link"
+            >
+              Link
+            </button>
+            <button
+              type="button"
+              onClick={applyFootnote}
+              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
+              title="Insert Footnote (Auto Number)"
+            >
+              FN
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-1.5 px-1 font-sans">
+            <input
+              type="text"
+              placeholder="URL (https://...)"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-adjung-maroon w-36 font-sans"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  applyLink(linkUrl);
+                }
+              }}
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => applyLink(linkUrl)}
+              className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
+            >
+              Apply
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowLinkInput(false);
+                setLinkUrl('');
+              }}
+              className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   /**
    * Renders the complete, beautiful published layout.
    * This is used for BOTH reading/viewing and the Writing Desk's live preview.
    */
   const renderPublishedContent = () => {
+    const isArticle = contentType === 'Article';
     return (
-      <article className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-hidden">
+      <motion.article
+        drag={isMobile && isArticle ? "x" : false}
+        dragConstraints={isMobile && isArticle ? { left: -240, right: 0 } : undefined}
+        dragElastic={isMobile && isArticle ? 0.15 : 0}
+        dragSnapToOrigin={true}
+        className={`max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible ${
+          isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
+        }`}
+      >
         {/* Header Block */}
         <header className="mb-10 border-b border-stone-200/70 pb-6">
           {/* Metadata Bar */}
@@ -1281,10 +2738,25 @@ export function EntryRenderer({
           )}
 
           {/* Title Area */}
-          {contentType !== 'Note' && title && (
-            <h1 className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight mb-3">
-              {title}
-            </h1>
+          {contentType !== 'Note' && (
+            isEditingWorkspace ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, e.target.value);
+                }}
+                placeholder="Enter Title..."
+                className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none mb-3 py-1 text-left"
+              />
+            ) : (
+              title && (
+                <h1 className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight mb-3 text-left">
+                  {title}
+                </h1>
+              )
+            )
           )}
 
           {/* Author / Signature Stamp Block */}
@@ -1320,50 +2792,107 @@ export function EntryRenderer({
             {(contentType === 'Note' || contentType === 'Essay') && (
               <div className="space-y-6">
                 {parseContentToBlocks(content).map((block, idx) => {
-                  return renderBlock(block, idx);
+                  return mode === 'edit' ? renderVisualBlockWrapper(block, idx) : renderBlock(block, idx);
                 })}
               </div>
             )}
 
             {/* Article rendering with paragraph-by-paragraph margin notes */}
             {contentType === 'Article' && (
-              <div className="space-y-8">
+              <div className="space-y-4">
                 {paragraphs.map((para, index) => {
                   const hasMarginNote = !!marginNotes[index]?.trim();
+                  const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
 
-                  if (hasMarginNote) {
-                    return (
-                      <div key={index} className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-start border-b border-stone-100/40 pb-6 last:border-b-0">
-                        {/* Left: Paragraph Text */}
-                        <div className="xl:col-span-8 w-full">
-                          {(() => {
-                            const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
-                            return renderBlock(block, index);
-                          })()}
+                  return (
+                    <div key={index} className="pb-1 last:pb-0">
+                      {/* Desktop split layout */}
+                      <div className="hidden xl:grid xl:grid-cols-12 gap-8 items-start relative">
+                        <div className={hasMarginNote ? "xl:col-span-8 w-full" : "xl:col-span-12 w-full"}>
+                          {mode === 'edit'
+                            ? renderVisualBlockWrapper(block, index, hasMarginNote, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
+                            : renderBlock(block, index, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
+                          }
                         </div>
+                        {hasMarginNote && (
+                          <div className="xl:col-span-4 pl-2 h-1 w-full invisible pointer-events-none" />
+                        )}
+                      </div>
 
-                        {/* Right: Margin Note Commentary */}
-                        <div className="xl:col-span-4 border-l-2 border-adjung-maroon/15 xl:border-l pl-3 xl:pl-4 py-1.5 flex flex-col justify-start">
-                          <span className="block font-mono text-[9px] uppercase tracking-wider text-adjung-maroon/70 mb-1 select-none text-left">
-                            Margin Note {index + 1}
-                          </span>
-                          <span className="font-sans text-xs italic text-stone-600 leading-relaxed block text-left">
-                            {parseInlineFormatting(marginNotes[index])}
-                          </span>
+                      {/* Mobile view (< xl screens): Clean, relative layout with absolute side-note outside card */}
+                      <div className="xl:hidden relative w-full text-left">
+                        <div className="w-full">
+                          {mode === 'edit'
+                            ? renderVisualBlockWrapper(block, index, hasMarginNote, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
+                            : renderBlock(block, index, hasMarginNote ? index + 1 : undefined, hasMarginNote ? marginNotes[index] : undefined)
+                          }
                         </div>
                       </div>
-                    );
-                  } else {
-                    return (
-                      <div key={index} className="w-full border-b border-stone-100/40 pb-6 last:border-b-0">
-                        {(() => {
-                          const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
-                          return renderBlock(block, index);
-                        })()}
-                      </div>
-                    );
-                  }
+                    </div>
+                  );
                 })}
+              </div>
+            )}
+
+            {mode === 'edit' && (
+              <div className="pt-8 text-center select-none border-t border-dashed border-stone-200/60 mt-8">
+                <div className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-3">Add Content Block (Visual Mode)</div>
+                <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleInsertNewBlock('paragraph')}
+                    className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Paragraph
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertNewBlock('heading')}
+                    className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Heading
+                  </button>
+                  {!showQuoteTypes ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowQuoteTypes(true)}
+                      className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-adjung-maroon border border-stone-200 hover:border-adjung-maroon/30 rounded font-sans text-xs transition cursor-pointer flex items-center gap-1 shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Quote
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 bg-stone-100/50 p-1 rounded border border-stone-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInsertNewBlock('latin-quote');
+                          setShowQuoteTypes(false);
+                        }}
+                        className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon border border-stone-200 rounded font-sans text-xs transition cursor-pointer"
+                      >
+                        LTR (Left-to-Right)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInsertNewBlock('arabic-quote');
+                          setShowQuoteTypes(false);
+                        }}
+                        className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon border border-stone-200 rounded font-sans text-xs transition cursor-pointer"
+                      >
+                        RTL (Right-to-Left)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuoteTypes(false)}
+                        className="p-1 hover:bg-stone-200 text-stone-500 rounded transition cursor-pointer"
+                        title="Cancel"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1394,8 +2923,8 @@ export function EntryRenderer({
           </div>
         )}
 
-        {/* Essay Footnotes Section */}
-        {contentType === 'Essay' && (
+        {/* Footnotes Section */}
+        {(contentType === 'Essay' || contentType === 'Article') && (
           <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
@@ -1407,20 +2936,21 @@ export function EntryRenderer({
               <p className="text-xs text-stone-400 italic">No footnotes registered. Use [^1], [^2] inside text blocks to reference.</p>
             ) : (
               <ol className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
-                {footnotes.map((footnote, idx) => {
-                  const num = idx + 1;
+                {getOrderedFootnotesToRender().map((item, idx) => {
+                  const fMap = getFootnotesReadingOrderMap().map;
+                  const citeMap = getCitationsMap();
                   return (
                     <li 
                       key={idx} 
-                      id={`footnote-dest-${num}`} 
+                      id={`footnote-dest-legacy-${item.originalNum}`} 
                       className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition"
                     >
                       <span className="font-mono text-xs text-adjung-maroon font-medium w-4 flex-shrink-0">
-                        [{num}]
+                        [{item.displayNum}]
                       </span>
                       
                       <div className="flex-grow text-left text-stone-700">
-                        {parseInlineFormatting(footnote)}
+                        {parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap)}
                       </div>
                     </li>
                   );
@@ -1499,7 +3029,9 @@ export function EntryRenderer({
             ))}
           </div>
         )}
-      </article>
+
+        {mode === 'edit' && renderFloatingToolbar()}
+      </motion.article>
     );
   };
 
@@ -1507,1118 +3039,1149 @@ export function EntryRenderer({
    * Renders the interactive editor canvas (Composer).
    * Fully wide, responsive inputs that make typing highly fluid.
    */
-  const renderComposer = () => {
+  /**
+   * Renders the unified single-pane writing desk where the Entry itself IS the editor.
+   * This is in line with SPEC-023's corrected philosophy: Adjung is NOT trying to simulate physical paper,
+   * but rather having Draft and Published share the same gorgeous, high-contrast, distraction-free visual canvas.
+   */
+  const renderEditableContent = () => {
+    const isArticle = contentType === 'Article';
+    const citeMap = getCitationsMap();
+
+    const PlusMenu = () => (
+      <div className="relative inline-block text-left">
+        <button
+          type="button"
+          onClick={() => setShowInsertMenu(!showInsertMenu)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-stone-850 hover:bg-[#802334] text-stone-200 hover:text-white shadow-sm text-[10.5px] font-mono uppercase tracking-wider cursor-pointer transition-all"
+        >
+          <Plus className={`w-3.5 h-3.5 transition-transform duration-200 ${showInsertMenu ? 'rotate-45 text-white' : ''}`} />
+          Insert Object
+        </button>
+
+        {showInsertMenu && (
+          <div className="absolute z-50 bottom-10 left-0 w-72 bg-[#1e1c18] border border-stone-800 rounded shadow-2xl p-4 text-left animate-fade-in font-sans text-stone-200">
+            <div className="text-[9.5px] font-mono text-stone-400 uppercase tracking-widest border-b border-stone-800 pb-2 mb-3 select-none">
+              Advanced Entry Objects
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveQuoteInsert('latin');
+                  setQuoteInsertDir('ltr');
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Quote (LTR)</span>
+                <span className="text-[9px] text-stone-450 font-mono">Kiri ke Kanan (Latin, Tamil, dsb)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveQuoteInsert('arabic');
+                  setQuoteInsertDir('rtl');
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Quote (RTL)</span>
+                <span className="text-[9px] text-stone-450 font-mono">Kanan ke Kiri (Arabic, Jawi, dsb)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextNum = footnotes.length + 1;
+                  const updated = [...footnotes, 'New footnote description text.'];
+                  setFootnotes(updated);
+                  insertMarkdownText(`[^${nextNum}]`);
+                  triggerSave(content, updated, marginNotes);
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Footnote</span>
+                <span className="text-[9px] text-stone-450 font-mono">Scholarly reference</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCitationInsert(true);
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Citation</span>
+                <span className="text-[9px] text-stone-450 font-mono">Bibliography registry</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTableInsert(true);
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Table</span>
+                <span className="text-[9px] text-stone-450 font-mono">Tabular grid editor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertMarkdownText('![Figure caption](', ')');
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Figure</span>
+                <span className="text-[9px] text-stone-450 font-mono">Scholarly illustration</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertMarkdownText('\n---\n');
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">Divider</span>
+                <span className="text-[9px] text-stone-450 font-mono">Horizontal separator</span>
+              </button>
+            </div>
+
+            <div className="text-[8px] font-mono text-stone-550 uppercase tracking-wider border-t border-stone-850 pt-2 mt-3 mb-2 select-none">
+              Basic Typography Markers
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('# ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                H1
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('## ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                H2
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('### ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                H3
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('- ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                Bullet
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('1. ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                Numbered
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertLinePrefix('- [ ] ');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                Checklist
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertMarkdownText('`', '`');
+                  setShowInsertMenu(false);
+                }}
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+              >
+                Code
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
     return (
-      <div className="space-y-6 bg-white border border-stone-200 rounded-md p-6 shadow-sm text-left font-sans text-xs text-stone-700">
-        <div className="border-b border-stone-250/10 pb-4 mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-mono font-medium text-stone-900 tracking-wider uppercase text-xs">
-              Entry Composer
-            </h3>
-            <p className="text-stone-400 text-[10px] mt-1">
-              Write your entry below. Changes propagate to the Live Preview instantly.
-            </p>
-          </div>
-        </div>
+      <div className="relative max-w-4xl mx-auto">
+        {/* Floating Formatting Selection Toolbar */}
+        {renderFloatingToolbar()}
 
-        {/* Title */}
-        {contentType !== 'Note' && (
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
-              Entry Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              placeholder="Title of your publication..."
-              className="w-full border border-stone-200 bg-white p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-base text-[#111111]"
-            />
-          </div>
-        )}
-
-        {/* Metadata: Excerpt and Featured Image */}
-        {contentType !== 'Note' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-stone-50/50 p-4 border border-stone-200/60 rounded-sm">
-            <div className="space-y-1.5 text-left">
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                Featured Image URL
-              </label>
-              <input
-                type="text"
-                value={featuredImage}
-                onChange={handleFeaturedImageChange}
-                placeholder="https://example.com/image.jpg"
-                className="w-full border border-stone-200 bg-white p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs text-stone-700"
-              />
-              {featuredImage && (
-                <div className="mt-2 border border-stone-200 p-1 bg-white inline-block rounded-sm max-w-full">
-                  <img src={featuredImage} alt="Preview" className="h-12 max-w-full object-cover rounded-sm" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5 text-left">
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500 flex justify-between">
-                <span>Excerpt / Abstract</span>
-                <span className="text-stone-400 font-normal lowercase">{excerpt.length} chars</span>
-              </label>
-              <textarea
-                value={excerpt}
-                onChange={handleExcerptChange}
-                placeholder="A concise scholarly abstract or summary of this work..."
-                rows={2}
-                className="w-full border border-stone-200 bg-white p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif text-xs text-stone-700 leading-relaxed resize-y"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Minimalist Formatting Helper Toolbar */}
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-stone-200/80 pb-2.5 mb-1.5 select-none bg-stone-50/30 p-2 rounded">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mr-1.5">Insert:</span>
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('# ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Heading 1 (Ctrl+Shift+1)"
-          >
-            H1
-          </button>
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('## ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Heading 2 (Ctrl+Shift+2)"
-          >
-            H2
-          </button>
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('### ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Heading 3 (Ctrl+Shift+3)"
-          >
-            H3
-          </button>
-          <span className="w-px h-3 bg-stone-200 mx-0.5" />
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('- ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Bullet List"
-          >
-            Bullet List
-          </button>
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('1. ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Numbered List"
-          >
-            Numbered List
-          </button>
-          <button
-            type="button"
-            onClick={() => insertLinePrefix('- [ ] ')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Checklist"
-          >
-            Checklist
-          </button>
-          <span className="w-px h-3 bg-stone-200 mx-0.5" />
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTableInsert(!activeTableInsert);
-              setActiveCitationInsert(false);
-              setActiveCalloutInsert(false);
-            }}
-            className={`px-2 py-0.5 rounded text-[9.5px] font-mono border transition cursor-pointer ${activeTableInsert ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'}`}
-            title="Visual Table Editor"
-          >
-            + Table
-          </button>
-          <button
-            type="button"
-            onClick={() => { insertMarkdownText('![Figure caption](', ')'); showToast('Figure inserted. Type title/caption in brackets.', 'info'); }}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Image/Figure Block"
-          >
-            + Figure
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const nextNum = footnotes.length + 1;
-              const updated = [...footnotes, 'New footnote description text.'];
-              setFootnotes(updated);
-              insertMarkdownText(`[^${nextNum}]`);
-              triggerSave(content, updated, marginNotes);
-              showToast(`Footnote marker [^${nextNum}] inserted`, 'success');
-            }}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Insert Footnote Anchor [^n]"
-          >
-            + Footnote
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveCitationInsert(!activeCitationInsert);
-              setActiveTableInsert(false);
-              setActiveCalloutInsert(false);
-            }}
-            className={`px-2 py-0.5 rounded text-[9.5px] font-mono border transition cursor-pointer ${activeCitationInsert ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'}`}
-            title="Citation Manager Panel"
-          >
-            + Citation
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveCalloutInsert(!activeCalloutInsert);
-              setActiveTableInsert(false);
-              setActiveCitationInsert(false);
-            }}
-            className={`px-2 py-0.5 rounded text-[9.5px] font-mono border transition cursor-pointer ${activeCalloutInsert ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'}`}
-            title="Visual Callout Builder"
-          >
-            + Callout
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownText('\n---\n')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Horizontal Divider"
-          >
-            Divider
-          </button>
-          <span className="w-px h-3 bg-stone-200 mx-0.5" />
-          <button
-            type="button"
-            onClick={() => insertMarkdownText('`', '`')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Inline Code Block"
-          >
-            Code
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownText('\n```javascript\n', '\n```\n')}
-            className="px-2 py-0.5 bg-white hover:bg-stone-100 text-stone-700 rounded text-[9.5px] font-mono border border-stone-200 transition cursor-pointer"
-            title="Syntax Code Block"
-          >
-            Code Block
-          </button>
-        </div>
-
-        {/* Content input */}
-        {(contentType === 'Note' || contentType === 'Essay') ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                Entry Body Content
-              </label>
-              {contentType === 'Essay' && (
-                <span className="text-[10px] text-stone-400 font-mono">
-                  Insert footnote markers like <code>[^1]</code> in text.
+        <motion.article
+          className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible select-text"
+        >
+          {/* Header Block */}
+          <header className="mb-10 border-b border-stone-200/70 pb-6 relative">
+            
+            {/* Metadata Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-adjung-maroon">{contentType}</span>
+                <span className="text-stone-300">|</span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {formatDate(entry.createdDate)}
                 </span>
-              )}
-            </div>
-
-            {/* Premium, Minimalist Editorial Quotation Toolbar */}
-            <div className="flex flex-col gap-2 bg-stone-50 border border-stone-200/80 p-3 rounded-md">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-600 font-bold">
-                    Quotation Builder
-                  </span>
-                  <span className="text-[10px] text-stone-300 font-sans select-none">|</span>
-                  <span className="text-[10px] text-stone-400 font-sans italic">Click to construct & insert semantic quote blocks</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveQuoteInsert(activeQuoteInsert === 'latin' ? null : 'latin')}
-                    className={`px-2.5 py-1 font-mono text-[9px] uppercase border rounded transition cursor-pointer ${
-                      activeQuoteInsert === 'latin'
-                        ? 'bg-adjung-maroon text-white border-adjung-maroon font-medium shadow-sm'
-                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100 hover:text-stone-950'
-                    }`}
-                  >
-                    + Latin Quote
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveQuoteInsert(activeQuoteInsert === 'arabic' ? null : 'arabic')}
-                    className={`px-2.5 py-1 font-mono text-[9px] uppercase border rounded transition cursor-pointer ${
-                      activeQuoteInsert === 'arabic'
-                        ? 'bg-adjung-maroon text-white border-adjung-maroon font-medium shadow-sm'
-                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100 hover:text-stone-955'
-                    }`}
-                  >
-                    + Arabic Quote
-                  </button>
-                </div>
+                <span className="text-stone-300">|</span>
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3 h-3 text-stone-400" />
+                  {getReadingTime(getFullContentString())}
+                </span>
+                {saveStatus && (
+                  <>
+                    <span className="text-stone-300">|</span>
+                    <span className={`flex items-center gap-1 font-semibold ${saveStatus === 'saving' ? 'text-amber-600 animate-pulse' : saveStatus === 'error' ? 'text-red-600' : 'text-emerald-650'}`}>
+                      {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'error' ? 'Save Error' : 'Saved'}
+                    </span>
+                  </>
+                )}
               </div>
-
-              {/* Quote config panels */}
-              {activeQuoteInsert === 'latin' && (
-                <div className="mt-2.5 p-3 bg-white border border-stone-200 rounded-md space-y-3 animate-fade-in text-left">
-                  <div className="flex justify-between items-center pb-1 border-b border-stone-100">
-                    <span className="text-[9.5px] font-mono text-adjung-maroon uppercase font-bold">Configure Latin Quotation Block</span>
-                  </div>
-                  <textarea
-                    id="latin-quote-input"
-                    rows={3}
-                    placeholder="Type English or other Latin script quotation text..."
-                    className="w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-serif text-[#111111] bg-stone-50/20 leading-relaxed"
-                  />
-                  <input
-                    id="latin-quote-attribution"
-                    type="text"
-                    placeholder="Attribution (e.g. Ibn Rushd, 1179) - Optional"
-                    className="w-full p-2 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon bg-stone-50/20"
-                  />
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setActiveQuoteInsert(null)}
-                      className="px-2.5 py-1 font-mono text-[9px] uppercase border border-stone-200 text-stone-500 rounded hover:bg-stone-50 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.getElementById('latin-quote-input') as HTMLTextAreaElement;
-                        const attrInput = document.getElementById('latin-quote-attribution') as HTMLInputElement;
-                        const text = input?.value || '';
-                        const attr = attrInput?.value ? ` attribution="${attrInput.value.trim()}"` : '';
-                        if (text.trim()) {
-                          insertQuoteAtCursor(`<quote type="latin"${attr}><text>${text.trim()}</text></quote>`);
-                        }
-                        setActiveQuoteInsert(null);
-                      }}
-                      className="px-3 py-1 font-mono text-[9px] uppercase bg-adjung-maroon text-white rounded hover:bg-adjung-maroon/90 font-medium cursor-pointer shadow-sm"
-                    >
-                      Insert Block
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeQuoteInsert === 'arabic' && (
-                <div className="mt-2.5 p-3 bg-white border border-stone-200 rounded-md space-y-3.5 animate-fade-in text-left">
-                  <div className="flex justify-between items-center pb-1 border-b border-stone-100">
-                    <span className="text-[9.5px] font-mono text-adjung-maroon uppercase font-bold">Configure Arabic Quotation Block</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[9.5px] font-mono text-stone-500 uppercase mb-1">Original Arabic (RTL)</label>
-                      <textarea
-                        id="arabic-quote-input-ar"
-                        dir="rtl"
-                        rows={2}
-                        placeholder="اكتب النص العربي هنا..."
-                        className="w-full p-2.5 text-sm border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-arabic text-right text-stone-900 bg-stone-50/20 leading-loose"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9.5px] font-mono text-stone-500 uppercase mb-1">English/Malay Translation (Optional)</label>
-                      <textarea
-                        id="arabic-quote-input-en"
-                        rows={2}
-                        placeholder="Type English translation here..."
-                        className="w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-serif text-[#111111] bg-stone-50/20 leading-relaxed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9.5px] font-mono text-stone-500 uppercase mb-1">Attribution (Optional)</label>
-                      <input
-                        id="arabic-quote-attribution"
-                        type="text"
-                        placeholder="Attribution (e.g. Al-Ghazali) - Optional"
-                        className="w-full p-2 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon bg-stone-50/20"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setActiveQuoteInsert(null)}
-                      className="px-2.5 py-1 font-mono text-[9px] uppercase border border-stone-200 text-stone-500 rounded hover:bg-stone-50 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const arInput = document.getElementById('arabic-quote-input-ar') as HTMLTextAreaElement;
-                        const enInput = document.getElementById('arabic-quote-input-en') as HTMLTextAreaElement;
-                        const attrInput = document.getElementById('arabic-quote-attribution') as HTMLInputElement;
-                        const arabic = arInput?.value || '';
-                        const translation = enInput?.value || '';
-                        const attr = attrInput?.value ? ` attribution="${attrInput.value.trim()}"` : '';
-                        if (arabic.trim()) {
-                          const transXml = translation.trim() ? `\n  <translation>${translation.trim()}</translation>` : '';
-                          insertQuoteAtCursor(`<quote type="arabic"${attr}>\n  <arabic>${arabic.trim()}</arabic>${transXml}\n</quote>`);
-                        }
-                        setActiveQuoteInsert(null);
-                      }}
-                      className="px-3 py-1 font-mono text-[9px] uppercase bg-adjung-maroon text-white rounded hover:bg-adjung-maroon/90 font-medium cursor-pointer shadow-sm"
-                    >
-                      Insert Block
-                    </button>
-                  </div>
-                </div>
-              )}
+              
+              <div className="flex items-center gap-2">
+                {status === 'Draft' && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[9px] font-medium lowercase">
+                    draft
+                  </span>
+                )}
+                {visibility === 'Private' && (
+                  <span className="inline-flex items-center gap-1 text-red-800 text-[10px]">
+                    <Lock className="w-3 h-3" /> private
+                  </span>
+                )}
+                {visibility === 'Public' && (
+                  <span className="inline-flex items-center gap-1 text-stone-400 text-[10px]">
+                    <Globe className="w-3 h-3" /> canonical public
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Visual Table Editor Panel */}
-            {activeTableInsert && (
-              <div className="bg-stone-50 border border-stone-200 p-4 rounded-md space-y-4 text-left animate-fade-in">
-                <div className="flex justify-between items-center pb-1.5 border-b border-stone-200">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">Visual Table Editor Grid</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setActiveTableInsert(false)} 
-                    className="text-stone-400 hover:text-stone-700 text-xs font-mono"
-                  >
-                    Close
-                  </button>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-3 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newRow = Array(tableHeaders.length).fill('');
-                      setTableData([...tableData, newRow]);
-                    }}
-                    className="px-2 py-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 rounded font-mono cursor-pointer"
-                  >
-                    + Add Row
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (tableData.length > 1) {
-                        setTableData(tableData.slice(0, -1));
-                      }
-                    }}
-                    className="px-2 py-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 rounded font-mono cursor-pointer"
-                  >
-                    - Remove Row
-                  </button>
-                  <span className="text-stone-300">|</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTableHeaders([...tableHeaders, `Header ${tableHeaders.length + 1}`]);
-                      setTableAlignments([...tableAlignments, 'left']);
-                      setTableData(tableData.map(row => [...row, '']));
-                    }}
-                    className="px-2 py-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 rounded font-mono cursor-pointer"
-                  >
-                    + Add Column
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (tableHeaders.length > 1) {
-                        setTableHeaders(tableHeaders.slice(0, -1));
-                        setTableAlignments(tableAlignments.slice(0, -1));
-                        setTableData(tableData.map(row => row.slice(0, -1)));
-                      }
-                    }}
-                    className="px-2 py-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 rounded font-mono cursor-pointer"
-                  >
-                    - Remove Column
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto border border-stone-200 rounded bg-white p-2">
-                  <table className="min-w-full text-xs">
-                    <thead>
-                      <tr>
-                        {tableHeaders.map((header, cIdx) => (
-                          <th key={`th-${cIdx}`} className="p-1 border border-stone-100 min-w-[120px]">
-                            <div className="flex flex-col gap-1.5">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = [...tableAlignments];
-                                    next[cIdx] = 'left';
-                                    setTableAlignments(next);
-                                  }}
-                                  className={`px-1 text-[8px] font-mono border rounded cursor-pointer ${tableAlignments[cIdx] === 'left' ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-stone-50 border-stone-200'}`}
-                                >
-                                  L
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = [...tableAlignments];
-                                    next[cIdx] = 'center';
-                                    setTableAlignments(next);
-                                  }}
-                                  className={`px-1 text-[8px] font-mono border rounded cursor-pointer ${tableAlignments[cIdx] === 'center' ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-stone-50 border-stone-200'}`}
-                                >
-                                  C
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = [...tableAlignments];
-                                    next[cIdx] = 'right';
-                                    setTableAlignments(next);
-                                  }}
-                                  className={`px-1 text-[8px] font-mono border rounded cursor-pointer ${tableAlignments[cIdx] === 'right' ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-stone-50 border-stone-200'}`}
-                                >
-                                  R
-                                </button>
-                              </div>
-                              <input
-                                type="text"
-                                value={header}
-                                onChange={(e) => {
-                                  const next = [...tableHeaders];
-                                  next[cIdx] = e.target.value;
-                                  setTableHeaders(next);
-                                }}
-                                className="w-full text-center p-1 text-xs border border-stone-200 bg-stone-50 font-bold focus:outline-none rounded focus:border-adjung-maroon text-stone-900"
-                              />
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableData.map((row, rIdx) => (
-                        <tr key={`tr-${rIdx}`}>
-                          {row.map((cell, cIdx) => (
-                            <td key={`td-${rIdx}-${cIdx}`} className="p-1 border border-stone-100">
-                              <input
-                                type="text"
-                                value={cell}
-                                onChange={(e) => {
-                                  const nextData = tableData.map((r, ri) => 
-                                    ri === rIdx ? r.map((c, ci) => ci === cIdx ? e.target.value : c) : r
-                                  );
-                                  setTableData(nextData);
-                                }}
-                                className="w-full p-1 text-xs border border-stone-100 bg-white focus:outline-none rounded focus:border-adjung-maroon text-stone-800"
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-end gap-2 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTableHeaders(['Header 1', 'Header 2', 'Header 3']);
-                      setTableAlignments(['left', 'left', 'left']);
-                      setTableData([
-                        ['Cell 1.1', 'Cell 1.2', 'Cell 1.3'],
-                        ['Cell 2.1', 'Cell 2.2', 'Cell 2.3']
-                      ]);
-                      setActiveTableInsert(false);
-                    }}
-                    className="px-2.5 py-1 border border-stone-200 text-stone-500 rounded font-mono hover:bg-stone-50 cursor-pointer"
-                  >
-                    Reset & Close
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const headerStr = '| ' + tableHeaders.join(' | ') + ' |';
-                      const sepStr = '| ' + tableAlignments.map(align => {
-                        if (align === 'center') return ':---:';
-                        if (align === 'right') return '---:';
-                        return '---';
-                      }).join(' | ') + ' |';
-                      const rowStrings = tableData.map(row => '| ' + row.join(' | ') + ' |');
-                      const tableText = `\n${headerStr}\n${sepStr}\n${rowStrings.join('\n')}\n`;
-                      
-                      insertMarkdownText(tableText);
-                      setActiveTableInsert(false);
-                      showToast('Visual table block inserted', 'success');
-                    }}
-                    className="px-3 py-1 font-mono uppercase bg-adjung-maroon text-white font-medium rounded hover:bg-adjung-maroon/90 shadow-sm cursor-pointer"
-                  >
-                    Insert Table Block
-                  </button>
-                </div>
+            {/* Featured Image URL Input Field */}
+            {contentType !== 'Note' && (
+              <div className="mb-6 space-y-1 bg-stone-50/50 p-3 border border-stone-200/40 rounded transition">
+                <label className="block text-[9px] font-mono uppercase tracking-widest text-stone-400">Featured Image URL</label>
+                <input
+                  type="text"
+                  value={featuredImage}
+                  onChange={(e) => {
+                    setFeaturedImage(e.target.value);
+                    triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, e.target.value);
+                  }}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full bg-white border border-stone-200 p-1.5 rounded text-xs font-mono focus:outline-none focus:border-adjung-maroon text-stone-700"
+                />
+                {featuredImage && (
+                  <img 
+                    src={featuredImage} 
+                    alt="Featured preview" 
+                    className="mt-2 max-h-32 rounded object-cover border border-stone-200"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                )}
               </div>
             )}
 
-            {/* Visual Callout Builder Panel */}
-            {activeCalloutInsert && (
-              <div className="bg-stone-50 border border-stone-200 p-4 rounded-md space-y-3 text-left animate-fade-in">
-                <div className="flex justify-between items-center pb-1.5 border-b border-stone-200">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">Visual Callout Block Builder</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setActiveCalloutInsert(false)} 
-                    className="text-stone-400 hover:text-stone-700 text-xs font-mono"
-                  >
-                    Close
-                  </button>
-                </div>
+            {/* Title Input Field */}
+            {contentType !== 'Note' ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, e.target.value);
+                }}
+                placeholder="Enter Title..."
+                className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none mb-3 py-1"
+              />
+            ) : (
+              <div className="text-stone-400 font-mono text-[10px] uppercase mb-4 tracking-widest">Note Canvas</div>
+            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="space-y-1">
-                    <label className="block text-[9.5px] font-mono text-stone-500 uppercase">Callout Style/Type</label>
-                    <select
-                      id="callout-insert-type"
-                      className="w-full p-2 border border-stone-200 text-xs bg-white focus:outline-none rounded focus:border-adjung-maroon text-stone-800"
+            {/* Author Stamp Row */}
+            <div className="flex items-center gap-3 text-stone-600 mt-2 select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#802334]" />
+              <div className="font-serif italic text-[13px] text-stone-500">
+                Author: <span className="font-sans font-semibold text-stone-850 not-italic">{authorName}</span>
+              </div>
+            </div>
+          </header>
+
+          {/* Abstract/Excerpt Field */}
+          {contentType !== 'Note' && (
+            <div className="mb-8">
+              <textarea
+                value={excerpt}
+                onChange={(e) => {
+                  setExcerpt(e.target.value);
+                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, e.target.value);
+                }}
+                placeholder="Type a concise scholarly abstract or summary of this work..."
+                rows={2}
+                className="w-full bg-transparent border-l-2 border-adjung-maroon/20 pl-4 py-1 text-stone-500 font-serif italic text-sm md:text-[15px] leading-relaxed focus:outline-none resize-none"
+              />
+            </div>
+          )}
+
+          {/* Active Builder Overlay Block */}
+          {(activeTableInsert || activeCitationInsert || activeQuoteInsert) && (
+            <div className="mb-8 p-4 border border-dashed border-adjung-maroon/30 rounded bg-stone-50/50 relative animate-fade-in text-left">
+              <div className="absolute top-2 right-2 z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTableInsert(false);
+                    setActiveCitationInsert(false);
+                    setActiveQuoteInsert(null);
+                  }}
+                  className="text-stone-400 hover:text-stone-600 font-mono text-[9px] uppercase cursor-pointer"
+                >
+                  Close Builder ×
+                </button>
+              </div>
+
+              {/* Table Builder */}
+              {activeTableInsert && (
+                <div className="space-y-3">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">Visual Table Editor</div>
+                  <div className="flex flex-wrap items-center gap-3 text-[10px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-stone-550 uppercase">Cols:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextCols = tableHeaders.length + 1;
+                          setTableHeaders([...tableHeaders, `Header ${nextCols}`]);
+                          setTableAlignments([...tableAlignments, 'left']);
+                          setTableData(tableData.map(row => [...row, '']));
+                        }}
+                        className="px-1.5 py-0.5 border border-stone-200 hover:bg-stone-50 rounded"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (tableHeaders.length <= 1) return;
+                          setTableHeaders(tableHeaders.slice(0, -1));
+                          setTableAlignments(tableAlignments.slice(0, -1));
+                          setTableData(tableData.map(row => row.slice(0, -1)));
+                        }}
+                        className="px-1.5 py-0.5 border border-stone-200 hover:bg-stone-50 rounded"
+                      >
+                        -
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-stone-550 uppercase">Rows:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTableData([...tableData, Array(tableHeaders.length).fill('')]);
+                        }}
+                        className="px-1.5 py-0.5 border border-stone-200 hover:bg-stone-50 rounded"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (tableData.length <= 1) return;
+                          setTableData(tableData.slice(0, -1));
+                        }}
+                        className="px-1.5 py-0.5 border border-stone-200 hover:bg-stone-50 rounded"
+                      >
+                        -
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto border border-stone-200 rounded">
+                    <table className="w-full text-left font-serif text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-stone-50">
+                          {tableHeaders.map((head, idx) => (
+                            <th key={`th-${idx}`} className="p-1 border border-stone-150">
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  value={head}
+                                  onChange={(e) => {
+                                    const nextHeaders = [...tableHeaders];
+                                    nextHeaders[idx] = e.target.value;
+                                    setTableHeaders(nextHeaders);
+                                  }}
+                                  className="w-full p-1 border border-stone-100 bg-white font-bold focus:outline-none rounded text-stone-850 focus:border-adjung-maroon"
+                                />
+                                <select
+                                  value={tableAlignments[idx]}
+                                  onChange={(e) => {
+                                    const nextAlign = [...tableAlignments];
+                                    nextAlign[idx] = e.target.value as 'left' | 'center' | 'right';
+                                    setTableAlignments(nextAlign);
+                                  }}
+                                  className="w-full text-[9px] font-mono p-0.5 border border-stone-100 bg-white rounded text-stone-500"
+                                >
+                                  <option value="left">Left</option>
+                                  <option value="center">Center</option>
+                                  <option value="right">Right</option>
+                                </select>
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableData.map((row, rIdx) => (
+                          <tr key={`tr-${rIdx}`}>
+                            {row.map((cell, cIdx) => (
+                              <td key={`td-${rIdx}-${cIdx}`} className="p-1 border border-stone-100">
+                                <input
+                                  type="text"
+                                  value={cell}
+                                  onChange={(e) => {
+                                    const nextData = tableData.map((r, ri) => 
+                                      ri === rIdx ? r.map((c, ci) => ci === cIdx ? e.target.value : c) : r
+                                    );
+                                    setTableData(nextData);
+                                  }}
+                                  className="w-full p-1 text-xs border border-stone-100 bg-white focus:outline-none rounded focus:border-adjung-maroon text-stone-800"
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-end gap-2 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const headerStr = '| ' + tableHeaders.join(' | ') + ' |';
+                        const sepStr = '| ' + tableAlignments.map(align => {
+                          if (align === 'center') return ':---:';
+                          if (align === 'right') return '---:';
+                          return '---';
+                        }).join(' | ') + ' |';
+                        const rowStrings = tableData.map(row => '| ' + row.join(' | ') + ' |');
+                        const tableText = `\n${headerStr}\n${sepStr}\n${rowStrings.join('\n')}\n`;
+                        
+                        insertMarkdownText(tableText);
+                        setActiveTableInsert(false);
+                        showToast('Visual table block inserted', 'success');
+                      }}
+                      className="px-3 py-1 font-mono uppercase bg-adjung-maroon text-white font-medium rounded hover:bg-[#962e41] shadow-sm cursor-pointer"
                     >
-                      <option value="note">Note (Sleek Slate)</option>
-                      <option value="warning">Warning (Crimson Sand)</option>
-                      <option value="tip">Tip (Olive Sage)</option>
-                      <option value="important">Important (Charcoal Obsidian)</option>
-                      <option value="definition">Definition (Maroon Parchment)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9.5px] font-mono text-stone-500 uppercase">Header Title (Optional)</label>
-                    <input
-                      id="callout-insert-title"
-                      type="text"
-                      placeholder="e.g. Scholarly Note"
-                      className="w-full p-2 border border-stone-200 text-xs bg-white focus:outline-none rounded focus:border-adjung-maroon text-stone-800"
-                    />
+                      Insert Table
+                    </button>
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <label className="block text-[9.5px] font-mono text-stone-500 uppercase">Callout Body Text</label>
-                  <textarea
-                    id="callout-insert-text"
-                    rows={2.5}
-                    placeholder="Enter callout body content..."
-                    className="w-full p-2 border border-stone-200 text-xs bg-white focus:outline-none rounded focus:border-adjung-maroon text-stone-800 font-serif leading-relaxed"
-                  />
-                </div>
 
-                <div className="flex justify-end gap-2 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => setActiveCalloutInsert(false)}
-                    className="px-2.5 py-1 border border-stone-200 text-stone-500 rounded font-mono hover:bg-stone-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const typeEl = document.getElementById('callout-insert-type') as HTMLSelectElement;
-                      const titleEl = document.getElementById('callout-insert-title') as HTMLInputElement;
-                      const textEl = document.getElementById('callout-insert-text') as HTMLTextAreaElement;
+
+              {/* Citation Registry */}
+              {activeCitationInsert && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-1 border-b border-stone-200">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">Citation Registry</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-mono text-stone-500 uppercase">Sort Style:</span>
+                      <select
+                        value={referenceSortOrder}
+                        onChange={(e) => {
+                          const style = e.target.value;
+                          setReferenceSortOrder(style);
+                          triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, style);
+                          showToast(`Bibliography sorting style changed to ${style}`, 'success');
+                        }}
+                        className="p-1 text-[9.5px] border border-stone-200 bg-white font-mono rounded text-stone-850"
+                      >
+                        <option value="alphabetical">Alphabetical (Harvard)</option>
+                        <option value="appearance">Appearance (Vancouver)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.currentTarget;
+                      const author = form.elements.namedItem('cit_author').value.trim();
+                      const title = form.elements.namedItem('cit_title').value.trim();
+                      const year = parseInt(form.elements.namedItem('cit_year').value.trim());
+                      const publisher = form.elements.namedItem('cit_publisher').value.trim();
+                      const url = form.elements.namedItem('cit_url').value.trim() || undefined;
+                      const doi = form.elements.namedItem('cit_doi').value.trim() || undefined;
                       
-                      const cType = typeEl?.value || 'note';
-                      const cTitle = titleEl?.value?.trim() || '';
-                      const cText = textEl?.value?.trim() || '';
-                      
-                      if (!cText) {
-                        alert('Callout body text is required.');
+                      if (!author || !title || !year || !publisher) {
+                        alert('Author, Title, Year, and Publisher are required fields.');
                         return;
                       }
                       
-                      const titleAttr = cTitle ? ` title="${cTitle}"` : '';
-                      const calloutStr = `\n<callout type="${cType}"${titleAttr}>\n  ${cText}\n</callout>\n`;
-                      
-                      insertMarkdownText(calloutStr);
-                      setActiveCalloutInsert(false);
-                      showToast('Visual callout block inserted', 'success');
+                      handleAddCitation({ author, title, year, publisher, url, doi });
+                      form.reset();
                     }}
-                    className="px-3 py-1 font-mono uppercase bg-adjung-maroon text-white font-medium rounded hover:bg-adjung-maroon/90 shadow-sm cursor-pointer"
+                    className="space-y-3 bg-white p-3 border border-stone-200 rounded text-[10px]"
                   >
-                    Insert Callout Block
-                  </button>
-                </div>
-              </div>
-            )}
+                    <div className="text-[9.5px] font-mono text-stone-550 uppercase font-bold">Register New Bibliography Entry</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">Author</label>
+                        <input name="cit_author" type="text" placeholder="Ibn Rushd" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" required />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">Title</label>
+                        <input name="cit_title" type="text" placeholder="Incoherence of the Incoherence" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" required />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">Publication Year</label>
+                        <input name="cit_year" type="number" placeholder="1179" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" required />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">Publisher</label>
+                        <input name="cit_publisher" type="text" placeholder="Cairo Press" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" required />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">External URL (Optional)</label>
+                        <input name="cit_url" type="text" placeholder="https://..." className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-mono uppercase text-stone-400">DOI Reference (Optional)</label>
+                        <input name="cit_doi" type="text" placeholder="10.1000/xyz123" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 focus:outline-none focus:border-adjung-maroon" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="submit"
+                        className="px-3.5 py-1.5 bg-adjung-maroon text-[#FDFDFD] font-mono font-medium rounded hover:bg-[#962e41] shadow-sm uppercase cursor-pointer"
+                      >
+                        Add Source
+                      </button>
+                    </div>
+                  </form>
 
-            {/* Visual Citation Manager Panel */}
-            {activeCitationInsert && (
-              <div className="bg-stone-50 border border-stone-200 p-4 rounded-md space-y-4 text-left animate-fade-in">
-                <div className="flex justify-between items-center pb-1.5 border-b border-stone-200">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">Citation Registry Manager</span>
-                  <div className="flex items-center gap-2">
-                    <label className="text-[9px] font-mono text-stone-500 uppercase">Sort style:</label>
-                    <select
-                      value={referenceSortOrder}
-                      onChange={(e) => {
-                        const style = e.target.value as 'alphabetical' | 'appearance';
-                        setReferenceSortOrder(style);
-                        triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, style);
-                        showToast(`Bibliography sorting style changed to ${style}`, 'success');
-                      }}
-                      className="p-1 text-[9.5px] border border-stone-200 bg-white font-mono rounded text-stone-850"
-                    >
-                      <option value="alphabetical">Alphabetical (Harvard)</option>
-                      <option value="appearance">Appearance (Vancouver)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const form = e.currentTarget;
-                    const author = (form.elements.namedItem('cit_author') as HTMLInputElement).value.trim();
-                    const title = (form.elements.namedItem('cit_title') as HTMLInputElement).value.trim();
-                    const year = parseInt((form.elements.namedItem('cit_year') as HTMLInputElement).value.trim());
-                    const publisher = (form.elements.namedItem('cit_publisher') as HTMLInputElement).value.trim();
-                    const url = (form.elements.namedItem('cit_url') as HTMLInputElement).value.trim() || undefined;
-                    const doi = (form.elements.namedItem('cit_doi') as HTMLInputElement).value.trim() || undefined;
-                    
-                    if (!author || !title || !year || !publisher) {
-                      alert('Author, Title, Year, and Publisher are required fields.');
-                      return;
-                    }
-                    
-                    handleAddCitation({ author, title, year, publisher, url, doi });
-                    form.reset();
-                  }}
-                  className="space-y-3 bg-white p-3 border border-stone-200 rounded text-[10px]"
-                >
-                  <div className="text-[9.5px] font-mono text-stone-500 uppercase font-bold">Register New Citation Source</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">Author (e.g. Ibn Rushd)</label>
-                      <input name="cit_author" type="text" placeholder="Ibn Rushd" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" required />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">Book/Article Title</label>
-                      <input name="cit_title" type="text" placeholder="The Incoherence of the Incoherence" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="space-y-1 md:col-span-1">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">Year</label>
-                      <input name="cit_year" type="number" placeholder="1179" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" required />
-                    </div>
-                    <div className="space-y-1 md:col-span-3">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">Publisher</label>
-                      <input name="cit_publisher" type="text" placeholder="Cordoba Academic Press" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">URL (Optional)</label>
-                      <input name="cit_url" type="url" placeholder="https://example.org/rushd" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[9px] font-mono uppercase text-stone-400">DOI Reference (Optional)</label>
-                      <input name="cit_doi" type="text" placeholder="10.1016/j.rushd.1179" className="w-full p-1.5 border border-stone-200 rounded text-xs text-stone-700 bg-stone-50/10 focus:outline-none focus:border-adjung-maroon" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-1">
-                    <button type="submit" className="px-3.5 py-1 font-mono uppercase bg-adjung-maroon text-white font-medium rounded hover:bg-adjung-maroon/90 shadow-sm cursor-pointer">
-                      Register Source
-                    </button>
-                  </div>
-                </form>
-
-                <div className="space-y-2">
-                  <div className="text-[9.5px] font-mono text-stone-500 uppercase font-bold">Registered References ({citations.length})</div>
-                  {citations.length === 0 ? (
-                    <div className="p-3 border border-dashed border-stone-200 rounded bg-white text-stone-400 text-center font-serif italic text-xs">
-                      No citations registered. Use the form above to add references.
-                    </div>
-                  ) : (
-                    <div className="max-h-[160px] overflow-y-auto border border-stone-200 rounded bg-white divide-y divide-stone-100">
-                      {citations.map((cit) => (
-                        <div key={cit.id} className="p-2 flex items-center justify-between gap-4 text-xs font-serif hover:bg-stone-50/30">
-                          <div className="flex-1 text-stone-700 leading-normal text-[11px]">
-                            <strong className="font-sans text-[10px] text-stone-500 uppercase font-bold tracking-tight block">{cit.author} ({cit.year})</strong>
-                            <span>"{cit.title}" &mdash; <em>{cit.publisher}</em></span>
-                            {cit.doi && <span className="font-mono text-[9px] text-stone-400 ml-1.5">DOI:{cit.doi}</span>}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                insertMarkdownText(`[cite:${cit.id}]`);
-                                showToast(`Citation marker [cite:${cit.id}] inserted inline`, 'success');
-                              }}
-                              className="px-2 py-0.5 border border-adjung-maroon text-adjung-maroon hover:bg-adjung-maroon hover:text-white rounded font-mono text-[9px] transition cursor-pointer"
-                              title="Insert inline marker at current cursor"
-                            >
-                              Insert Inline
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCitation(cit.id)}
-                              className="p-1 hover:text-red-600 text-stone-400 transition cursor-pointer"
-                              title="Delete citation from entry database"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                  {/* Registered Sources list with in-text insertion clicks */}
+                  {citations.length > 0 && (
+                    <div className="space-y-2 max-h-36 overflow-y-auto border border-stone-200/60 rounded p-2 bg-white">
+                      <div className="text-[9px] font-mono uppercase text-stone-400">Registered Sources (Click to insert in-text citation marker):</div>
+                      {citations.map((cit, cIdx) => (
+                        <div key={cit.id} className="flex items-center justify-between p-2 hover:bg-stone-50 border border-stone-100 rounded text-xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              insertMarkdownText(`[cite:${cit.id}]`);
+                              showToast('Citation marker inserted', 'success');
+                            }}
+                            className="font-serif text-stone-700 font-medium hover:text-adjung-maroon cursor-pointer text-left flex-grow pr-4"
+                          >
+                            {cit.author} ({cit.year}) - "{cit.title}"
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCitation(cit.id)}
+                            className="text-stone-300 hover:text-red-700 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Universal Quotation Builder */}
+              {activeQuoteInsert !== null && (
+                <div className="space-y-4 p-4 border border-stone-200 bg-stone-50/50 rounded shadow-md animate-fade-in text-left">
+                  <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">
+                      Universal Quotation Builder &bull; Pembuat Petikan Universal
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveQuoteInsert(null)}
+                      className="text-stone-400 hover:text-stone-600 font-mono text-[9px] uppercase transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {/* Direction Switcher Toggle */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                      Writing Direction &bull; Arah Tulisan
+                    </label>
+                    <div className="flex rounded bg-stone-100 p-0.5 border border-stone-200">
+                      <button
+                        type="button"
+                        onClick={() => setQuoteInsertDir('ltr')}
+                        className={`flex-1 py-1 rounded text-[10px] font-mono uppercase tracking-wider transition cursor-pointer ${
+                          quoteInsertDir === 'ltr'
+                            ? 'bg-white text-adjung-maroon font-semibold shadow-sm'
+                            : 'text-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        Left-to-Right (LTR / Kiri ke Kanan)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuoteInsertDir('rtl')}
+                        className={`flex-1 py-1 rounded text-[10px] font-mono uppercase tracking-wider transition cursor-pointer ${
+                          quoteInsertDir === 'rtl'
+                            ? 'bg-white text-adjung-maroon font-semibold shadow-sm'
+                            : 'text-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        Right-to-Left (RTL / Kanan ke Kiri)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Original Quote Text */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                        Original Quotation &bull; Petikan Asal
+                      </label>
+                      <span className="text-[8px] font-mono text-stone-400 uppercase tracking-wide">
+                        {quoteInsertDir === 'rtl' ? 'RTL Mode Enabled' : 'LTR Mode Enabled'}
+                      </span>
+                    </div>
+                    <textarea
+                      id="universal-quote-input-text"
+                      rows={3}
+                      dir={quoteInsertDir === 'rtl' ? 'rtl' : 'ltr'}
+                      placeholder={
+                        quoteInsertDir === 'rtl'
+                          ? 'اكتب النص هنا... (e.g., Arabic, Jawi, Hebrew, Tamil, Chinese, etc.)'
+                          : 'Type quote text here... (e.g., English, Confucius, Tamil, etc.)'
+                      }
+                      className={`w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon text-[#111111] bg-white leading-relaxed ${
+                        quoteInsertDir === 'rtl'
+                          ? 'font-arabic text-right text-base leading-loose'
+                          : 'font-serif text-left'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Translation Text (Optional) */}
+                  <div className="space-y-1">
+                    <label className="block text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                      Translation &bull; Terjemahan (Optional)
+                    </label>
+                    <textarea
+                      id="universal-quote-input-translation"
+                      rows={2}
+                      placeholder="Type English/Malay translation here... (mungkin petikan asal berhajat kepada terjemahan)"
+                      className="w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-serif text-[#111111] bg-white leading-relaxed text-left"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1 border-t border-stone-200/50 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveQuoteInsert(null)}
+                      className="px-3 py-1 font-mono text-[9px] uppercase border border-stone-200 rounded text-stone-500 hover:text-stone-800 hover:bg-stone-50 cursor-pointer transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const txtInput = document.getElementById('universal-quote-input-text') as HTMLTextAreaElement | null;
+                        const transInput = document.getElementById('universal-quote-input-translation') as HTMLTextAreaElement | null;
+
+                        const quoteText = txtInput?.value || '';
+                        const translationText = transInput?.value || '';
+
+                        if (quoteText.trim()) {
+                          const transPart = translationText.trim() ? `\n  <translation>${translationText.trim()}</translation>` : '';
+
+                          let quoteStr = '';
+                          if (quoteInsertDir === 'rtl') {
+                            quoteStr = `<quote type="arabic">\n  <arabic>${quoteText.trim()}</arabic>${transPart}\n</quote>`;
+                          } else {
+                            quoteStr = `<quote type="latin">\n  <text>${quoteText.trim()}</text>${transPart}\n</quote>`;
+                          }
+                          insertMarkdownText(quoteStr);
+                        }
+                        setActiveQuoteInsert(null);
+                      }}
+                      className="px-3 py-1 font-mono text-[9px] uppercase bg-adjung-maroon text-white rounded hover:bg-[#962e41] font-semibold cursor-pointer shadow-sm transition"
+                    >
+                      Insert Quote
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Core Writing Body */}
+          <div className="text-[#111111] font-serif leading-relaxed tracking-normal text-[15px] md:text-base relative min-h-[350px]">
+            
+            {/* Note & Essay - Large unified editing viewport */}
+            {(contentType === 'Note' || contentType === 'Essay') && (
+              <div className="space-y-4">
+                <textarea
+                  id="editorial-content-textarea"
+                  onFocus={() => setActiveTextareaIdx(null)}
+                  value={content}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setContent(val);
+                    triggerSave(val, footnotes, marginNotes);
+                  }}
+                  placeholder="Begin writing your manuscript here... Standard markdown markers are fully compiled in-canvas."
+                  className="w-full min-h-[450px] bg-transparent border-none focus:outline-none resize-y font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111]"
+                />
+
+                {/* Lightweight insert popover trigger at the bottom of the textarea */}
+                <div className="flex items-center justify-between pt-4 border-t border-stone-100 select-none">
+                  <div className="flex items-center gap-1">
+                    <PlusMenu />
+                  </div>
+                  <div className="text-[10px] font-mono text-stone-400">
+                    Characters: {getCharCount(content)} | Words: {getWordCount(content)}/10,000
+                  </div>
+                </div>
               </div>
             )}
 
-            <textarea
-              value={content}
-              onFocus={() => setActiveTextareaIdx(null)}
-              onChange={(e) => {
-                const val = e.target.value;
-                setContent(val);
-                triggerSave(val, footnotes, marginNotes);
-              }}
-              placeholder="Begin typing your manuscript here..."
-              className="w-full min-h-[400px] border border-stone-200 bg-white p-3.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm text-[#111111] leading-relaxed resize-y mt-2"
-              id="editorial-content-textarea"
-            />
-          </div>
-        ) : (
-          /* Article paragraph blocks */
-          <div className="space-y-6">
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
-              Article Paragraph Blocks & Margin Notes
-            </label>
-            <div className="space-y-5">
-              {paragraphs.map((para, index) => {
-                const blocksOfPara = parseContentToBlocks(para);
-                const currentBlock = blocksOfPara[0] || { type: 'paragraph', text: para };
-                const currentType = currentBlock.type;
+            {/* Article - Sequenced modular block editor */}
+            {contentType === 'Article' && (
+              <div className="space-y-6">
+                {paragraphs.map((para, index) => {
+                  const blocksOfPara = parseContentToBlocks(para);
+                  const currentBlock = blocksOfPara[0] || { type: 'paragraph', text: para };
+                  const currentType = currentBlock.type;
+                  const isAr = currentType === 'arabic-quote' || (currentType === 'paragraph' && isArabicText(currentBlock.text));
 
-                return (
-                  <div key={index} className="p-4 bg-stone-50 border border-stone-200/60 rounded-md space-y-4 relative">
-                    <div className="flex flex-wrap items-center justify-between border-b border-stone-200 pb-2 gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] font-semibold text-adjung-maroon uppercase">
-                          Block #{index + 1}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] font-mono text-stone-400 uppercase select-none">Type:</span>
-                        <button
-                          type="button"
-                          onClick={() => handleBlockTypeChange(index, 'paragraph')}
-                          className={`px-2 py-0.5 font-mono text-[9px] uppercase border rounded transition cursor-pointer ${
-                            currentType === 'paragraph'
-                              ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/30 font-semibold'
-                              : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
-                          }`}
-                        >
-                          Paragraph
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleBlockTypeChange(index, 'latin-quote')}
-                          className={`px-2 py-0.5 font-mono text-[9px] uppercase border rounded transition cursor-pointer ${
-                            currentType === 'latin-quote'
-                              ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/30 font-semibold'
-                              : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
-                          }`}
-                        >
-                          Latin Quote
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleBlockTypeChange(index, 'arabic-quote')}
-                          className={`px-2 py-0.5 font-mono text-[9px] uppercase border rounded transition cursor-pointer ${
-                            currentType === 'arabic-quote'
-                              ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/30 font-semibold'
-                              : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
-                          }`}
-                        >
-                          Arabic Quote
-                        </button>
-                      </div>
+                  return (
+                    <div 
+                      key={index} 
+                      className="group relative border border-dashed border-stone-200/55 hover:border-adjung-maroon/30 p-4 rounded bg-stone-50/20 hover:bg-white focus-within:bg-white transition-all space-y-3"
+                    >
+                      {/* Floating Block controls header */}
+                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 flex flex-wrap items-center justify-between border-b border-stone-100 pb-2 gap-2 transition-all duration-200">
+                        <div className="flex items-center gap-1.5 select-none">
+                          <span className="font-mono text-[9px] font-bold text-adjung-maroon/60 uppercase">
+                            Block #{index + 1}
+                          </span>
+                          <span className="text-stone-300 font-mono text-[9px]">|</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleBlockTypeChange(index, 'paragraph')}
+                              className={`px-1.5 py-0.5 font-mono text-[8px] uppercase border rounded transition ${
+                                currentType === 'paragraph'
+                                  ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/20 font-semibold'
+                                  : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
+                              }`}
+                            >
+                              Paragraph
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBlockTypeChange(index, 'latin-quote')}
+                              className={`px-1.5 py-0.5 font-mono text-[8px] uppercase border rounded transition ${
+                                currentType === 'latin-quote'
+                                  ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/20 font-semibold'
+                                  : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
+                              }`}
+                            >
+                              Latin Quote
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBlockTypeChange(index, 'arabic-quote')}
+                              className={`px-1.5 py-0.5 font-mono text-[8px] uppercase border rounded transition ${
+                                currentType === 'arabic-quote'
+                                  ? 'bg-adjung-maroon/10 text-adjung-maroon border-adjung-maroon/20 font-semibold'
+                                  : 'bg-white text-stone-400 border-stone-200 hover:text-stone-600'
+                              }`}
+                            >
+                              Arabic Quote
+                            </button>
+                          </div>
+                        </div>
 
-                      {/* Editorial Toolbar Controls */}
-                      <div className="flex items-center gap-1 bg-white border border-stone-200 rounded px-1.5 py-0.5 ml-auto">
-                        {/* Move Up */}
-                        <button
-                          type="button"
-                          onClick={() => handleMoveUp(index)}
-                          disabled={index === 0}
-                          className={`p-1 rounded transition ${
-                            index === 0 ? 'text-stone-250 cursor-not-allowed opacity-40' : 'text-stone-500 hover:text-adjung-maroon hover:bg-stone-50'
-                          }`}
-                          title="Move block up"
-                        >
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Move Down */}
-                        <button
-                          type="button"
-                          onClick={() => handleMoveDown(index)}
-                          disabled={index === paragraphs.length - 1}
-                          className={`p-1 rounded transition ${
-                            index === paragraphs.length - 1 ? 'text-stone-250 cursor-not-allowed opacity-40' : 'text-stone-500 hover:text-adjung-maroon hover:bg-stone-50'
-                          }`}
-                          title="Move block down"
-                        >
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </button>
-
-                        <span className="w-px h-3 bg-stone-200 mx-0.5" />
-
-                        {/* Duplicate */}
-                        <button
-                          type="button"
-                          onClick={() => handleDuplicateParagraph(index)}
-                          className="p-1 rounded text-stone-500 hover:text-adjung-maroon hover:bg-stone-50 transition"
-                          title="Duplicate block"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Insert Below */}
-                        <button
-                          type="button"
-                          onClick={() => handleInsertBelow(index)}
-                          className="p-1 rounded text-stone-500 hover:text-adjung-maroon hover:bg-stone-50 transition"
-                          title="Insert block below"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-
-                        {paragraphs.length > 1 && (
-                          <>
-                            <span className="w-px h-3 bg-stone-200 mx-0.5" />
-                            {/* Delete */}
+                        {/* Order & Modification icons */}
+                        <div className="flex items-center gap-1 select-none">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveUp(index)}
+                            disabled={index === 0}
+                            className="p-1 rounded text-stone-400 hover:text-adjung-maroon hover:bg-stone-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                            title="Move Block Up"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveDown(index)}
+                            disabled={index === paragraphs.length - 1}
+                            className="p-1 rounded text-stone-400 hover:text-adjung-maroon hover:bg-stone-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                            title="Move Block Down"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateParagraph(index)}
+                            className="p-1 rounded text-stone-400 hover:text-adjung-maroon hover:bg-stone-50"
+                            title="Duplicate Block"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleInsertBelow(index)}
+                            className="p-1 rounded text-stone-400 hover:text-adjung-maroon hover:bg-stone-50"
+                            title="Insert Empty Block Below"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                          {paragraphs.length > 1 && (
                             <button
                               type="button"
                               onClick={() => handleRemoveParagraph(index)}
-                              className="p-1 rounded text-stone-400 hover:text-red-700 hover:bg-red-50 transition"
-                              title="Delete block"
+                              className="p-1 rounded text-stone-400 hover:text-red-700 hover:bg-red-50"
+                              title="Delete Block"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Rendering inputs depending on block type */}
-                    {currentType === 'paragraph' && (
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-mono text-stone-400 uppercase">Paragraph Content</span>
-                        <textarea
-                          id={`editorial-content-textarea-${index}`}
-                          onFocus={() => setActiveTextareaIdx(index)}
-                          value={currentBlock.text}
-                          onChange={(e) => handleContentChange(index, e.target.value)}
-                          placeholder={`Write paragraph ${index + 1}...`}
-                          className="w-full min-h-[90px] border border-stone-200 bg-white p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm text-[#111111] leading-relaxed resize-y"
-                        />
-                      </div>
-                    )}
-
-                    {currentType === 'latin-quote' && (
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-mono text-stone-400 uppercase">Latin Quotation Text</span>
-                        <textarea
-                          id={`editorial-content-textarea-${index}`}
-                          onFocus={() => setActiveTextareaIdx(index)}
-                          value={currentBlock.text}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const serialized = `<quote type="latin"><text>${val}</text></quote>`;
-                            handleContentChange(index, serialized);
-                          }}
-                          placeholder="Type quotation text..."
-                          className="w-full min-h-[90px] border border-stone-200 bg-white p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm italic text-stone-700 leading-relaxed resize-y"
-                        />
-                      </div>
-                    )}
-
-                    {currentType === 'arabic-quote' && (
-                      <div className="space-y-3.5">
-                        <div className="space-y-1">
-                          <span className="text-[9px] font-mono text-stone-400 uppercase">Original Arabic (RTL)</span>
-                          <textarea
-                            id={`editorial-content-textarea-${index}`}
-                            onFocus={() => setActiveTextareaIdx(index)}
-                            dir="rtl"
-                            value={currentBlock.arabic}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const transPart = currentBlock.translation ? `\n  <translation>${currentBlock.translation}</translation>` : '';
-                              const serialized = `<quote type="arabic">\n  <arabic>${val}</arabic>${transPart}\n</quote>`;
-                              handleContentChange(index, serialized);
-                            }}
-                            placeholder="اكتب النص العربي هنا..."
-                            className="w-full min-h-[80px] border border-stone-200 bg-white p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-arabic text-sm text-right text-stone-900 leading-loose resize-y"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[9px] font-mono text-stone-400 uppercase">English/Malay Translation (Optional)</span>
-                          <textarea
-                            value={currentBlock.translation || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const transPart = val ? `\n  <translation>${val}</translation>` : '';
-                              const serialized = `<quote type="arabic">\n  <arabic>${currentBlock.arabic}</arabic>${transPart}\n</quote>`;
-                              handleContentChange(index, serialized);
-                            }}
-                            placeholder="Type translation text..."
-                            className="w-full min-h-[60px] border border-stone-200 bg-white p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-xs text-stone-600 leading-relaxed resize-y"
-                          />
+                          )}
                         </div>
                       </div>
-                    )}
 
-                    {/* Margin Note Text */}
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono text-stone-400 uppercase">Margin Note Commentary</span>
-                      <textarea
-                        value={marginNotes[index] || ''}
-                        onChange={(e) => handleMarginNoteChange(index, e.target.value)}
-                        placeholder="Add scholarly margin annotation directly opposite this paragraph..."
-                        className="w-full min-h-[60px] border border-stone-200 bg-white p-2.5 rounded font-sans text-xs text-stone-600 focus:outline-none focus:border-adjung-maroon resize-y"
-                      />
+                      {/* Editorial Workspace Grid */}
+                      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start relative overflow-visible">
+                        {/* Writing Pane */}
+                        <div className="xl:col-span-8 w-full">
+                          {currentType === 'paragraph' && (
+                            <textarea
+                              id={`editorial-content-textarea-${index}`}
+                              onFocus={() => setActiveTextareaIdx(index)}
+                              value={currentBlock.text}
+                              dir={isAr ? 'rtl' : 'ltr'}
+                              onChange={(e) => handleContentChange(index, e.target.value)}
+                              placeholder={`Paragraph ${index + 1} manuscript... Supports Arabic text & inline footnotes.`}
+                              rows={3}
+                              className={`w-full bg-transparent font-serif text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0 ${
+                                isAr ? 'text-right font-arabic leading-loose text-lg font-medium' : 'text-left'
+                              }`}
+                            />
+                          )}
+
+                          {currentType === 'latin-quote' && (
+                            <div className="space-y-3 border-l-2 border-stone-300 pl-4 py-1">
+                              <div>
+                                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Original Quote (LTR)</label>
+                                <textarea
+                                  id={`editorial-content-textarea-${index}`}
+                                  onFocus={() => setActiveTextareaIdx(index)}
+                                  value={currentBlock.text}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const transPart = currentBlock.translation ? `\n  <translation>${currentBlock.translation}</translation>` : '';
+                                    const serialized = `<quote type="latin">\n  <text>${val}</text>${transPart}\n</quote>`;
+                                    handleContentChange(index, serialized);
+                                  }}
+                                  placeholder="Type quote text here... (e.g., English, Chinese, Tamil, etc.)"
+                                  rows={2}
+                                  className="w-full bg-transparent font-serif italic text-sm text-stone-750 leading-relaxed border-none focus:outline-none resize-y p-0 text-left"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Translation (Optional)</label>
+                                <textarea
+                                  value={currentBlock.translation || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const transPart = val ? `\n  <translation>${val}</translation>` : '';
+                                    const serialized = `<quote type="latin">\n  <text>${currentBlock.text}</text>${transPart}\n</quote>`;
+                                    handleContentChange(index, serialized);
+                                  }}
+                                  placeholder="English / Malay translation..."
+                                  rows={1}
+                                  className="w-full bg-transparent font-serif text-stone-550 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs text-left"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {currentType === 'arabic-quote' && (
+                            <div className="space-y-3 border-r-2 border-adjung-maroon/20 pr-4 py-1">
+                              <div>
+                                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5 text-right">Original Quote (RTL)</label>
+                                <textarea
+                                  id={`editorial-content-textarea-${index}`}
+                                  onFocus={() => setActiveTextareaIdx(index)}
+                                  value={currentBlock.arabic}
+                                  dir="rtl"
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const transPart = currentBlock.translation ? `\n  <translation>${currentBlock.translation}</translation>` : '';
+                                    const serialized = `<quote type="arabic">\n  <arabic>${val}</arabic>${transPart}\n</quote>`;
+                                    handleContentChange(index, serialized);
+                                  }}
+                                  placeholder="اكتب النص هنا... (e.g., Arabic, Jawi, Hebrew, etc.)"
+                                  rows={2}
+                                  className="w-full bg-transparent font-arabic text-right text-stone-900 leading-loose border-none focus:outline-none resize-y p-0 text-lg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Translation (Optional)</label>
+                                <textarea
+                                  value={currentBlock.translation || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const transPart = val ? `\n  <translation>${val}</translation>` : '';
+                                    const serialized = `<quote type="arabic">\n  <arabic>${currentBlock.arabic}</arabic>${transPart}\n</quote>`;
+                                    handleContentChange(index, serialized);
+                                  }}
+                                  placeholder="English / Malay translation..."
+                                  rows={1}
+                                  className="w-full bg-transparent font-serif text-stone-600 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {currentType === 'image' && (
+                            <EntryImageEditor
+                              url={currentBlock.url}
+                              alt={currentBlock.alt}
+                              idx={index}
+                              onUpdate={(newUrl, newAlt) => {
+                                handleUpdateContentImage(index, newUrl, newAlt);
+                              }}
+                              onConvertToParagraph={() => {
+                                handleContentChange(index, `![${currentBlock.alt}](${currentBlock.url})`);
+                              }}
+                            />
+                          )}
+
+                          {currentType !== 'paragraph' && currentType !== 'latin-quote' && currentType !== 'arabic-quote' && currentType !== 'image' && (
+                            <div className="space-y-1">
+                              <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Raw Block Content ({currentType})</label>
+                              <textarea
+                                id={`editorial-content-textarea-${index}`}
+                                onFocus={() => setActiveTextareaIdx(index)}
+                                value={para}
+                                onChange={(e) => handleContentChange(index, e.target.value)}
+                                placeholder="Type block content here..."
+                                rows={3}
+                                className="w-full bg-transparent font-serif text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Margin Commentary Commentary Area */}
+                        <div className="xl:col-span-4 pl-2 border-t xl:border-t-0 xl:border-l border-stone-200/50 pt-2 xl:pt-0 space-y-1">
+                          <div className="flex items-center justify-between text-[9px] font-mono text-stone-400 select-none">
+                            <span className="uppercase">Margin Note Commentary</span>
+                            <span>{getWordCount(marginNotes[index] || '')}/50 words</span>
+                          </div>
+                          <textarea
+                            value={marginNotes[index] || ''}
+                            onChange={(e) => handleMarginNoteChange(index, e.target.value)}
+                            placeholder="Add side margin note here..."
+                            rows={1}
+                            className="w-full bg-transparent font-sans text-xs text-stone-650 leading-normal border-none focus:outline-none resize-y p-0"
+                          />
+                        </div>
+                      </div>
                     </div>
+                  );
+                })}
+
+                {/* Add block button */}
+                <div className="pt-2 select-none flex justify-between items-center">
+                  <div className="flex items-center gap-1">
+                    <PlusMenu />
                   </div>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleAddParagraph}
-              className="w-full border border-dashed border-stone-300 py-3 rounded-md text-stone-500 hover:text-adjung-maroon hover:border-adjung-maroon/60 transition font-mono text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 bg-white"
-            >
-              <Plus className="w-4 h-4" />
-              Insert Editorial Paragraph Block
-            </button>
-          </div>
-        )}
-
-        {/* Essay Footnotes Editor List */}
-        {contentType === 'Essay' && (
-          <div className="space-y-4 border-t border-stone-200/60 pt-4">
-            <div className="flex items-center justify-between">
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                Footnotes & Citations Registry
-              </label>
-              <button
-                type="button"
-                onClick={handleAddFootnote}
-                className="flex items-center gap-1 text-[10px] text-adjung-maroon border border-adjung-maroon/20 hover:bg-adjung-maroon/5 px-2 py-1 rounded transition font-mono uppercase tracking-wider"
-              >
-                <Plus className="w-3 h-3" /> Add Citation
-              </button>
-            </div>
-
-            {footnotes.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">No footnotes registered. Put <code>[^1]</code> in paragraphs to reference.</p>
-            ) : (
-              <div className="space-y-3">
-                {footnotes.map((footnote, idx) => (
-                  <div key={idx} className="flex gap-2 items-start bg-stone-50 p-2.5 border border-stone-200 rounded-md">
-                    <span className="font-mono text-xs text-adjung-maroon font-medium w-5 mt-1.5">
-                      [{idx + 1}]
-                    </span>
-                    <textarea
-                      value={footnote}
-                      onChange={(e) => handleFootnoteChange(idx, e.target.value)}
-                      className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFootnote(idx)}
-                      className="text-stone-300 hover:text-red-700 p-1 rounded mt-1"
-                      title="Remove Footnote"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={handleAddParagraph}
+                    className="inline-flex items-center gap-1 px-4 py-1.5 border border-dashed border-stone-300 hover:border-adjung-maroon text-stone-550 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider rounded transition-all cursor-pointer bg-stone-50/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Append Paragraph Block
+                  </button>
+                </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Real-time Statistics & Autosave Indicator */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mt-6 px-1 text-[10px] font-mono text-stone-500 border-t border-stone-150 pt-3 select-none">
-          <div className="flex items-center gap-3">
-            <span>{getCharCount(getFullContentString())} characters</span>
-            <span className="text-stone-300">|</span>
-            <span>{getWordCount(getFullContentString())} words</span>
-            <span className="text-stone-300">|</span>
-            <span>{getReadingTime(getFullContentString())}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            {saveStatus === 'saving' && (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span>Saving draft...</span>
-              </>
-            )}
-            {saveStatus === 'saved' && (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Saved {lastSavedTime ? `at ${lastSavedTime}` : ''}</span>
-              </>
-            )}
-            {saveStatus === 'error' && (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-red-650">Error saving changes</span>
-              </>
-            )}
-          </div>
-        </div>
+
+          {/* Footnotes Workspace Section */}
+          {(contentType === 'Essay' || contentType === 'Article') && (
+            <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
+                <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
+                  Scholarly Footnotes & Citations
+                </h3>
+                <span className="text-[9px] font-mono text-stone-400">Total registered: {footnotes.length}</span>
+              </div>
+
+              {footnotes.length === 0 ? (
+                <p className="text-xs text-stone-400 italic select-none">No footnotes registered yet. Insert [^1], [^2], etc. inside text blocks and use the "+" button or bottom controls to write them.</p>
+              ) : (
+                <div className="space-y-4">
+                  {footnotes.map((footnote, idx) => (
+                    <div key={idx} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
+                      <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
+                        [{idx + 1}]
+                      </span>
+                      <div className="flex-grow space-y-1">
+                        <div className="flex items-center justify-between select-none">
+                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text</span>
+                          <span className={getWordCount(footnote) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
+                            {getWordCount(footnote)}/1000 words
+                          </span>
+                        </div>
+                        <textarea
+                          value={footnote}
+                          onChange={(e) => handleFootnoteChange(idx, e.target.value)}
+                          rows={2}
+                          className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
+                          placeholder={`Enter footnote ${idx + 1} text content...`}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFootnote(idx)}
+                        className="text-stone-300 hover:text-red-700 p-1 rounded mt-1 select-none cursor-pointer"
+                        title="Remove Footnote"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* References & Bibliography */}
+          {citations.length > 0 && (
+            <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
+                <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
+                  References & Bibliography
+                </h3>
+                <span className="font-mono text-[9px] text-stone-400 uppercase">
+                  Sorted by ${referenceSortOrder === 'alphabetical' ? 'Author' : 'Appearance'}
+                </span>
+              </div>
+
+              <ul className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
+                {(() => {
+                  const sorted = [...citations].sort((a, b) => {
+                    if (referenceSortOrder === 'alphabetical') {
+                      return a.author.localeCompare(b.author);
+                    } else {
+                      const aIdx = citeMap[a.id] || 9999;
+                      const bIdx = citeMap[b.id] || 9999;
+                      return aIdx - bIdx;
+                    }
+                  });
+
+                  return sorted.map((cit, idx) => {
+                    const displayIdx = citeMap[cit.id] || idx + 1;
+                    return (
+                      <li 
+                        key={cit.id} 
+                        className="text-stone-700 text-left hover:bg-stone-50/50 p-1.5 rounded transition flex items-baseline gap-2"
+                      >
+                        <span className="font-mono text-xs text-adjung-maroon font-medium select-none">
+                          {referenceSortOrder === 'appearance' ? `[${displayIdx}]` : '•'}
+                        </span>
+                        <div className="flex-grow">
+                          <strong className="font-sans font-semibold text-stone-900">{cit.author}</strong> ({cit.year}). 
+                          <span> "${cit.title}."</span> <em>{cit.publisher}</em>.
+                          {cit.url && (
+                            <a href={cit.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline ml-1.5 font-mono text-[10px] break-all">
+                              [Link]
+                            </a>
+                          )}
+                          {cit.doi && (
+                            <span className="text-stone-400 ml-1.5 font-mono text-[10px]">
+                              doi:{cit.doi}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  });
+                })()}
+              </ul>
+            </div>
+          )}
+
+          {/* Tags list */}
+          {tags.length > 0 && (
+            <div className="mt-12 pt-6 border-t border-stone-200/40 flex flex-wrap gap-2 items-center select-none">
+              <Tag className="w-3.5 h-3.5 text-stone-400" />
+              {tags.map((t) => (
+                <span key={t} className="font-mono text-[10px] text-adjung-maroon bg-stone-50 px-2 py-0.5 rounded border border-stone-200/30">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
+        </motion.article>
       </div>
     );
   };
 
+  const isEditingWorkspace = mode === 'edit';
+  const effectiveViewMode = isEditingWorkspace ? (viewMode || 'preview') : 'preview';
+
   return (
-    <div className={`w-full relative ${mode === 'edit' ? 'pb-28' : ''}`}>
-      {mode === 'view' ? (
+    <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`}>
+      {!isEditingWorkspace ? (
         // Standard high-contrast reading layout
         renderPublishedContent()
       ) : (
-        // Beautiful side-by-side composer layout with instant live folio preview
-        <div className="space-y-8 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Left Hand: Interactive Entry Composer */}
-            <div className="lg:col-span-6 space-y-6">
-              {renderComposer()}
-            </div>
-            
-            {/* Right Hand: Full Live Folio Preview */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="bg-stone-50/50 border border-adjung-maroon/10 rounded-lg p-3 md:p-5 relative shadow-sm">
-                <div className="flex items-center justify-between mb-4 border-b border-adjung-maroon/10 pb-2">
-                  <div className="flex items-center gap-1.5 select-none">
-                    <BookOpen className="w-4 h-4 text-adjung-maroon" />
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-semibold">
-                      Live Preview
-                    </span>
-                  </div>
-                  <span className="text-[9.5px] font-mono text-stone-400">Updates in real-time</span>
-                </div>
-                
-                {/* Embedded render of the final publication */}
-                {renderPublishedContent()}
-              </div>
-            </div>
-
-          </div>
+        <>
+          {effectiveViewMode === 'preview' ? (
+            renderPublishedContent()
+          ) : (
+            renderSourceContent()
+          )}
 
           {/* Collapsible Publishing Controls at the bottom */}
           <div className="max-w-4xl mx-auto mt-12 pt-6 border-t border-stone-200/60">
@@ -2669,12 +4232,12 @@ export function EntryRenderer({
                     >
                       <option value="Note">Note</option>
                       <option value="Essay">Essay (supports footnotes)</option>
-                      <option value="Article">Article (supports margin notes)</option>
+                      <option value="Article">Article (supports margin notes & footnotes)</option>
                     </select>
                     <p className="text-[10px] text-stone-400 mt-1">
-                      {contentType === 'Note' && 'Short form text. Supports Arabic/Jawi.'}
-                      {contentType === 'Essay' && 'Classical long form. Supports bottom footnotes.'}
-                      {contentType === 'Article' && 'Highly structured. Supports side margin notes.'}
+                      {contentType === 'Note' && 'Short form text (max 100 words). Supports Arabic/Jawi.'}
+                      {contentType === 'Essay' && 'Classical long form (max 1000 words). Supports bottom footnotes (max 1000 words each).'}
+                      {contentType === 'Article' && 'Highly structured (max 10,000 words). Supports side margin notes (max 50 words each) and bottom footnotes (max 1000 words each).'}
                     </p>
                   </div>
 
@@ -2835,6 +4398,65 @@ export function EntryRenderer({
                   )}
                 </div>
 
+                {/* Pre-Publication Image Verification */}
+                <div className="border-t border-stone-200/60 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500">
+                      External Image Validation (Optional)
+                    </label>
+                    <button
+                      type="button"
+                      disabled={isValidationRunning}
+                      onClick={() => runImageValidation()}
+                      className="text-[10px] text-adjung-maroon border border-adjung-maroon/20 hover:bg-adjung-maroon/5 disabled:opacity-50 px-2 py-1 rounded transition font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                    >
+                      {isValidationRunning ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Checking Assets...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3 h-3" />
+                          Verify Image Links
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {hasValidated && (
+                    <div className="p-3 bg-stone-50 border border-stone-200/60 rounded text-[11px] space-y-2">
+                      {isValidationRunning && (
+                        <p className="text-stone-550 italic font-mono text-[10px] animate-pulse">Running checks on external image assets in the manuscript...</p>
+                      )}
+
+                      {!isValidationRunning && validationSuccess && (
+                        <div className="flex gap-2 items-center text-emerald-800">
+                          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span className="font-sans font-medium">All external images validated and online! Publication safe.</span>
+                        </div>
+                      )}
+
+                      {!isValidationRunning && !validationSuccess && validationErrors.length > 0 && (
+                        <div className="space-y-1.5">
+                          <div className="flex gap-2 items-center text-amber-800">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                            <span className="font-sans font-semibold">Validation Warn: Some external image assets failed to load!</span>
+                          </div>
+                          <ul className="list-disc pl-5 space-y-1 text-stone-600 font-mono text-[10px] leading-relaxed">
+                            {validationErrors.map((err, i) => (
+                              <li key={i}>{err}</li>
+                            ))}
+                          </ul>
+                          <p className="text-[10.5px] text-stone-400 italic pt-1 font-sans leading-relaxed">
+                            Note: This check is completely optional and will not block publication. Any failed image will simply be omitted from the reader's folio view, ensuring a seamless experience.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* XML Canonical Schema Export */}
                 <div className="border-t border-stone-200/60 pt-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -2878,7 +4500,7 @@ export function EntryRenderer({
               </div>
             )}
           </div>
-        </div>
+        </>
       )}
 
       {/* Sticky Bottom/Fixed Footer Actions Bar */}
@@ -2908,6 +4530,11 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
+                  const err = validateLimits();
+                  if (err) {
+                    showToast(err, 'error');
+                    return;
+                  }
                   setStatus('Draft');
                   forceImmediateSave('Draft', visibility);
                   showToast('Draft saved', 'success');
@@ -2925,6 +4552,11 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
+                  const err = validateLimits();
+                  if (err) {
+                    showToast(err, 'error');
+                    return;
+                  }
                   setStatus('Published');
                   setVisibility('Public');
                   forceImmediateSave('Published', 'Public');
@@ -2939,6 +4571,11 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
+                  const err = validateLimits();
+                  if (err) {
+                    showToast(err, 'error');
+                    return;
+                  }
                   forceImmediateSave(status, visibility);
                   showToast('Changes saved', 'success');
                 }}
@@ -2951,6 +4588,11 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
+                  const err = validateLimits();
+                  if (err) {
+                    showToast(err, 'error');
+                    return;
+                  }
                   setStatus('Archived');
                   forceImmediateSave('Archived', visibility);
                   showToast('Changes saved', 'success');
@@ -2988,13 +4630,19 @@ export function EntryRenderer({
       {toast && (
         <div 
           onClick={() => setToastVisible(false)}
-          className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${
+          className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-md w-auto ${
             toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
-          <div className="bg-[#FDFDFD] border border-stone-200/80 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-serif text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
-            <span className="text-[#802334] font-semibold">✓</span>
-            <span className="tracking-wide">{toast.message}</span>
+          <div className={`border shadow-md px-4 py-3 rounded-sm flex items-start gap-2.5 font-serif text-[13px] hover:opacity-95 transition-all text-left ${
+            toast.type === 'error' 
+              ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/40' 
+              : 'bg-[#FDFDFD] border-stone-200/80 text-stone-700 shadow-sm'
+          }`}>
+            <span className={`font-semibold text-base leading-none ${toast.type === 'error' ? 'text-red-600' : 'text-[#802334]'}`}>
+              {toast.type === 'error' ? '⚠' : '✓'}
+            </span>
+            <span className="tracking-wide leading-snug">{toast.message}</span>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { User, UserRole, Entry, WriterProfile, IdentityProfile, DigitalSignature, Citation, SystemSettings, BiographyItem, SystemLog } from '../types';
+import { BRAND } from '../config/brand';
 
 export const INITIAL_LOGS: SystemLog[] = [
   {
@@ -396,7 +397,7 @@ To restore the dignity of typographic grids on screens, we must treat the screen
 
 export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   academicAffiliation: 'Consortium of Independent Editorial Scholars',
-  editorialPolicy: 'Adjung maintains a text-first, classical layout discipline inspired by early European university journals and Arabic calligraphic treatises.',
+  editorialPolicy: BRAND.tagline,
   accentColor: '#802334',
   allowSelfRegistration: false,
   featuredScholarId: 'user-zayd-ghazali',
@@ -533,6 +534,9 @@ class AdjungDb {
 
       if (storedSettings) {
         this.systemSettings = JSON.parse(storedSettings);
+        if (this.systemSettings.editorialPolicy === 'Adjung maintains a text-first, classical layout discipline inspired by early European university journals and Arabic calligraphic treatises.') {
+          this.systemSettings.editorialPolicy = BRAND.tagline;
+        }
 
         // Robustly ensure all roles and permission keys are populated
         if (!this.systemSettings.rolePermissions) {

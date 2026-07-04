@@ -7,6 +7,7 @@ interface TimelineEntryCollapseRendererProps {
   isExpanded: boolean;
   onToggle: () => void;
   maxHeight?: number;
+  onOpenText?: () => void;
 }
 
 export function TimelineEntryCollapseRenderer({
@@ -14,6 +15,7 @@ export function TimelineEntryCollapseRenderer({
   isExpanded,
   onToggle,
   maxHeight = 220,
+  onOpenText,
 }: TimelineEntryCollapseRendererProps) {
   const [visibleCount, setVisibleCount] = useState<number>(9999);
   const [exceedsLimit, setExceedsLimit] = useState<boolean>(false);
@@ -159,6 +161,13 @@ export function TimelineEntryCollapseRenderer({
           <p className="font-serif italic text-stone-600 text-xs md:text-sm">
             {parseInlineFormatting(block.text)}
           </p>
+          {block.translation && (
+            <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
+              <p className="font-serif italic text-xs text-stone-500">
+                {parseInlineFormatting(block.translation)}
+              </p>
+            </div>
+          )}
         </blockquote>
       );
     }
@@ -219,7 +228,7 @@ export function TimelineEntryCollapseRenderer({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-2 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition"
+                className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-2 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
               >
                 Show Less
               </button>
@@ -229,16 +238,33 @@ export function TimelineEntryCollapseRenderer({
           <div className="space-y-3">
             {contentBlocks.slice(0, visibleCount).map((block, idx) => renderSingleBlock(block, idx))}
             {exceedsLimit && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle();
-                }}
-                className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition"
-              >
-                Read More ↓
-              </button>
+              item.contentType === 'Note' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle();
+                  }}
+                  className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
+                >
+                  Read More ↓
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onOpenText) {
+                      onOpenText();
+                    } else {
+                      onToggle();
+                    }
+                  }}
+                  className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2.5 py-1 rounded transition cursor-pointer font-semibold"
+                >
+                  Open Text →
+                </button>
+              )
             )}
           </div>
         )}
