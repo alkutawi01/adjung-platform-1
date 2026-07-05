@@ -41,7 +41,7 @@ export const HtmlExporter: DocumentExporter = {
   name: 'HTML',
   extension: 'html',
   exportDocument: (entry: Entry, blocks: EditorBlock[], citations: Citation[], authorName: string) => {
-    let html = `<article class="adjung-publication" data-type="${entry.contentType}">\n`;
+    let html = `<article class="Adjung-publication" data-type="${entry.contentType}">\n`;
     html += `  <header class="publication-header">\n`;
     if (entry.contentType !== 'Note') {
       html += `    <h1>${entry.title}</h1>\n`;

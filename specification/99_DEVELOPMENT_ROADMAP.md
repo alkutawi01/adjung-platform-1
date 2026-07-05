@@ -39,8 +39,8 @@ Introduce stable, permanent, and human-readable URLs to fulfill the core constit
 
 ### Features
 * **Routing Library Integration**: Integrate a robust routing library (e.g., TanStack Router or React Router).
-* **Per-Author Subdomains**: Implement routing middleware to parse and map `username.adjung.com` requests directly to that author's Folio and Biography views.
-* **Portal and Site Separation**: Decouple the landing page/frontpage (`adjung.com`) so it acts strictly as the discovery portal, separate from individual author domains.
+* **Per-Author Subdomains**: Implement routing middleware to parse and map `username.Adjung.com` requests directly to that author's Folio and Biography views.
+* **Portal and Site Separation**: Decouple the landing page/frontpage (`Adjung.com`) so it acts strictly as the discovery portal, separate from individual author domains.
 * **Canonical URL Generation**: Dynamically generate permanent, citable canonical URLs for every Note, Essay, and Article.
 * **Reserved Paths**: Protect system paths (`/admin`, `/api`, `/search`, `/settings`, `/login`, `/register`) to prevent authors from claiming them as usernames.
 

@@ -115,7 +115,7 @@ Adjung IS NOT:
 
 Every registered Author within the Adjung ecosystem is assigned exactly ONE Author Site. The Author Site serves as the author's permanent intellectual presence on the platform.
 
-- **Canonical Identity**: The canonical URL for an Author Site is defined strictly by the subdomain structure: `username.adjung.com`. External custom domains are intentionally not supported to ensure long-term stability and ecological cohesion.
+- **Canonical Identity**: The canonical URL for an Author Site is defined strictly by the subdomain structure: `username.Adjung.com`. External custom domains are intentionally not supported to ensure long-term stability and ecological cohesion.
 - **Platform Governance**: The Author Site is hosted and governed by the Adjung platform. While Authors retain full ownership of their intellectual content, Adjung governs the platform architecture, typography standards, navigation models, routing policies, long-term preservation, and the overall user experience.
 - **Core Site Anatomy**: Every Author Site consists of exactly four primary pages. No additional primary pages or sections may be introduced without a revision to the official platform specifications:
   1. **Folio**: The homepage of the Author Site, displaying a curated selection of the author's work.
@@ -134,7 +134,7 @@ These publication types are strictly defined as publication objects, not distinc
 
 ### 7.3. The Ecosystem Portal
 
-The address `adjung.com` serves as the public ecosystem portal. It is not an individual author's primary site; rather, it functions as the central gateway that connects all individual Author Sites, facilitating discovery, cross-referencing, indexing, and scholarly synthesis across the entire Adjung publishing ecosystem.
+The address `Adjung.com` serves as the public ecosystem portal. It is not an individual author's primary site; rather, it functions as the central gateway that connects all individual Author Sites, facilitating discovery, cross-referencing, indexing, and scholarly synthesis across the entire Adjung publishing ecosystem.
 
 ------------------------------------------------------------------------
 

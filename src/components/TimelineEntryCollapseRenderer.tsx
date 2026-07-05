@@ -96,7 +96,7 @@ export function TimelineEntryCollapseRenderer({
               key={itemIdx} 
               className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
             >
-              <input type="checkbox" checked={item.checked} disabled className="h-3 w-3 rounded text-adjung-maroon cursor-default" />
+              <input type="checkbox" checked={item.checked} disabled className="h-3 w-3 rounded text-Adjung-maroon cursor-default" />
               <span className={`text-[12px] ${item.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-serif'}`}>
                 {textNode}
               </span>
@@ -159,7 +159,7 @@ export function TimelineEntryCollapseRenderer({
 
     if (block.type === 'latin-quote') {
       return (
-        <blockquote key={pIdx} className="my-4 pl-4 border-l border-adjung-maroon/20 text-left bg-transparent">
+        <blockquote key={pIdx} className="my-4 pl-4 border-l border-Adjung-maroon/20 text-left bg-transparent">
           <p className="font-serif italic text-stone-600 text-xs md:text-sm">
             {parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
@@ -176,7 +176,7 @@ export function TimelineEntryCollapseRenderer({
 
     if (block.type === 'arabic-quote') {
       return (
-        <blockquote key={pIdx} className="my-4 pr-4 border-r border-adjung-maroon/20 text-right bg-transparent">
+        <blockquote key={pIdx} className="my-4 pr-4 border-r border-Adjung-maroon/20 text-right bg-transparent">
           <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
             {parseInlineFormatting(block.arabic, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
@@ -230,7 +230,7 @@ export function TimelineEntryCollapseRenderer({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-2 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
+                className="text-[10px] font-mono tracking-wider uppercase text-Adjung-maroon hover:underline mt-2 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
               >
                 Show Less
               </button>
@@ -247,7 +247,7 @@ export function TimelineEntryCollapseRenderer({
                     e.stopPropagation();
                     onToggle();
                   }}
-                  className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
+                  className="text-[10px] font-mono tracking-wider uppercase text-Adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
                 >
                   Read More ↓
                 </button>
@@ -262,7 +262,7 @@ export function TimelineEntryCollapseRenderer({
                       onToggle();
                     }
                   }}
-                  className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2.5 py-1 rounded transition cursor-pointer font-semibold"
+                  className="text-[10px] font-mono tracking-wider uppercase text-Adjung-maroon hover:underline mt-1.5 flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2.5 py-1 rounded transition cursor-pointer font-semibold"
                 >
                   Open Text →
                 </button>

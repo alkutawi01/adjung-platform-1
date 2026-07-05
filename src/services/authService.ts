@@ -57,7 +57,7 @@ export class RbacService {
 // 3. Session Service (State Preservation & Audit)
 // ==========================================
 export class SessionService {
-  private static SESSION_KEY = 'adjung_session_user_id';
+  private static SESSION_KEY = 'Adjung_session_user_id';
 
   /**
    * Starts a persistent session by storing the user ID.
@@ -128,7 +128,7 @@ export class AuthService {
     }
 
     // 3. Verify Password (checks localStorage for custom user password, falling back to 'password')
-    const userPassword = localStorage.getItem(`adjung_password_${user.id}`) || 'password';
+    const userPassword = localStorage.getItem(`Adjung_password_${user.id}`) || 'password';
     if (passwordInput !== userPassword) {
       throw new AuthError('IncorrectPassword', `Incorrect password. (Note: use the active password for this user; default is "password")`);
     }

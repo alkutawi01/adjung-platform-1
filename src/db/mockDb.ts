@@ -392,6 +392,322 @@ To restore the dignity of typographic grids on screens, we must treat the screen
       1: 'The grid’s primary purpose is to establish "rhythm". Just as in musical composition, the silent intervals are as critical as the sounding notes.',
       3: 'The choice of typeface—traditionally Haas Grotesk, which became Helvetica—reinforced the ethos of absolute semantic neutrality.'
     }
+  },
+    {
+      id: 'entry-mock-note-1',
+      authorId: 'user-tariq-malik',
+      contentType: 'Note',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-04-30T16:00:00.000Z',
+      updatedDate: '2026-04-30T16:00:00.000Z',
+      publishedDate: '2026-04-30T16:00:00.000Z',
+      title: 'Note 1 - Brief Observation',
+      slug: 'mock-note-1',
+      tags: ['Observation', 'Thoughts'],
+      canonicalUrl: 'https://tariq.Adjung.com/note/mock-note-1',
+      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 1.`
+    },
+    {
+      id: 'entry-mock-note-2',
+      authorId: 'user-amina-masri',
+      contentType: 'Note',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-05-01T16:00:00.000Z',
+      updatedDate: '2026-05-01T16:00:00.000Z',
+      publishedDate: '2026-05-01T16:00:00.000Z',
+      title: 'Note 2 - Brief Observation',
+      slug: 'mock-note-2',
+      tags: ['Observation', 'Thoughts'],
+      canonicalUrl: 'https://author.Adjung.com/note/mock-note-2',
+      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 2.`
+    },
+    {
+      id: 'entry-mock-note-3',
+      authorId: 'user-amina-masri',
+      contentType: 'Note',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-05-02T16:00:00.000Z',
+      updatedDate: '2026-05-02T16:00:00.000Z',
+      publishedDate: '2026-05-02T16:00:00.000Z',
+      title: 'Note 3 - Brief Observation',
+      slug: 'mock-note-3',
+      tags: ['Observation', 'Thoughts'],
+      canonicalUrl: 'https://author.Adjung.com/note/mock-note-3',
+      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 3.`
+    },
+    {
+      id: 'entry-mock-note-4',
+      authorId: 'user-zayd-ghazali',
+      contentType: 'Note',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-05-03T16:00:00.000Z',
+      updatedDate: '2026-05-03T16:00:00.000Z',
+      publishedDate: '2026-05-03T16:00:00.000Z',
+      title: 'Note 4 - Brief Observation',
+      slug: 'mock-note-4',
+      tags: ['Observation', 'Thoughts'],
+      canonicalUrl: 'https://author.Adjung.com/note/mock-note-4',
+      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 4.`
+    },
+    {
+      id: 'entry-mock-note-5',
+      authorId: 'user-tariq-malik',
+      contentType: 'Note',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-05-04T16:00:00.000Z',
+      updatedDate: '2026-05-04T16:00:00.000Z',
+      publishedDate: '2026-05-04T16:00:00.000Z',
+      title: 'Note 5 - Brief Observation',
+      slug: 'mock-note-5',
+      tags: ['Observation', 'Thoughts'],
+      canonicalUrl: 'https://author.Adjung.com/note/mock-note-5',
+      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 5.`
+    },
+    {
+      id: 'entry-mock-essay-1',
+      authorId: 'user-tariq-malik',
+      contentType: 'Essay',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-05-31T16:00:00.000Z',
+      updatedDate: '2026-05-31T16:00:00.000Z',
+      publishedDate: '2026-05-31T16:00:00.000Z',
+      title: 'Essay 1: On the Nature of Typography and Meaning',
+      slug: 'mock-essay-1',
+      tags: ['Typography', 'Meaning', 'Design'],
+      canonicalUrl: 'https://tariq.Adjung.com/essay/mock-essay-1',
+      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
+
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 1 serves as a testament to the enduring power of classical typographic grids.`
+    },
+    {
+      id: 'entry-mock-essay-2',
+      authorId: 'user-amina-masri',
+      contentType: 'Essay',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-06-01T16:00:00.000Z',
+      updatedDate: '2026-06-01T16:00:00.000Z',
+      publishedDate: '2026-06-01T16:00:00.000Z',
+      title: 'Essay 2: On the Nature of Typography and Meaning',
+      slug: 'mock-essay-2',
+      tags: ['Typography', 'Meaning', 'Design'],
+      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-2',
+      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
+
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 2 serves as a testament to the enduring power of classical typographic grids.`
+    },
+    {
+      id: 'entry-mock-essay-3',
+      authorId: 'user-tariq-malik',
+      contentType: 'Essay',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-06-02T16:00:00.000Z',
+      updatedDate: '2026-06-02T16:00:00.000Z',
+      publishedDate: '2026-06-02T16:00:00.000Z',
+      title: 'Essay 3: On the Nature of Typography and Meaning',
+      slug: 'mock-essay-3',
+      tags: ['Typography', 'Meaning', 'Design'],
+      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-3',
+      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
+
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 3 serves as a testament to the enduring power of classical typographic grids.`
+    },
+    {
+      id: 'entry-mock-essay-4',
+      authorId: 'user-tariq-malik',
+      contentType: 'Essay',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-06-03T16:00:00.000Z',
+      updatedDate: '2026-06-03T16:00:00.000Z',
+      publishedDate: '2026-06-03T16:00:00.000Z',
+      title: 'Essay 4: On the Nature of Typography and Meaning',
+      slug: 'mock-essay-4',
+      tags: ['Typography', 'Meaning', 'Design'],
+      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-4',
+      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
+
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 4 serves as a testament to the enduring power of classical typographic grids.`
+    },
+    {
+      id: 'entry-mock-essay-5',
+      authorId: 'user-tariq-malik',
+      contentType: 'Essay',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-06-04T16:00:00.000Z',
+      updatedDate: '2026-06-04T16:00:00.000Z',
+      publishedDate: '2026-06-04T16:00:00.000Z',
+      title: 'Essay 5: On the Nature of Typography and Meaning',
+      slug: 'mock-essay-5',
+      tags: ['Typography', 'Meaning', 'Design'],
+      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-5',
+      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
+
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 5 serves as a testament to the enduring power of classical typographic grids.`
+    },
+    {
+      id: 'entry-mock-article-1',
+      authorId: 'user-tariq-malik',
+      contentType: 'Article',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-06-30T16:00:00.000Z',
+      updatedDate: '2026-06-30T16:00:00.000Z',
+      publishedDate: '2026-06-30T16:00:00.000Z',
+      title: 'Comprehensive Review 1: The Archival Systems of Antiquity',
+      slug: 'mock-article-1',
+      tags: ['Archive', 'History', 'Systems'],
+      canonicalUrl: 'https://tariq.Adjung.com/article/mock-article-1',
+      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+
+This article 1 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+
+As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
+      footnotes: [
+        'Refer to the foundational texts on archival theory for further reading.',
+        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
+      ]
+    },
+    {
+      id: 'entry-mock-article-2',
+      authorId: 'user-zayd-ghazali',
+      contentType: 'Article',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-07-01T16:00:00.000Z',
+      updatedDate: '2026-07-01T16:00:00.000Z',
+      publishedDate: '2026-07-01T16:00:00.000Z',
+      title: 'Comprehensive Review 2: The Archival Systems of Antiquity',
+      slug: 'mock-article-2',
+      tags: ['Archive', 'History', 'Systems'],
+      canonicalUrl: 'https://author.Adjung.com/article/mock-article-2',
+      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+
+This article 2 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+
+As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
+      footnotes: [
+        'Refer to the foundational texts on archival theory for further reading.',
+        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
+      ]
+    },
+    {
+      id: 'entry-mock-article-3',
+      authorId: 'user-tariq-malik',
+      contentType: 'Article',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-07-02T16:00:00.000Z',
+      updatedDate: '2026-07-02T16:00:00.000Z',
+      publishedDate: '2026-07-02T16:00:00.000Z',
+      title: 'Comprehensive Review 3: The Archival Systems of Antiquity',
+      slug: 'mock-article-3',
+      tags: ['Archive', 'History', 'Systems'],
+      canonicalUrl: 'https://author.Adjung.com/article/mock-article-3',
+      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+
+This article 3 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+
+As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
+      footnotes: [
+        'Refer to the foundational texts on archival theory for further reading.',
+        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
+      ]
+    },
+    {
+      id: 'entry-mock-article-4',
+      authorId: 'user-amina-masri',
+      contentType: 'Article',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-07-03T16:00:00.000Z',
+      updatedDate: '2026-07-03T16:00:00.000Z',
+      publishedDate: '2026-07-03T16:00:00.000Z',
+      title: 'Comprehensive Review 4: The Archival Systems of Antiquity',
+      slug: 'mock-article-4',
+      tags: ['Archive', 'History', 'Systems'],
+      canonicalUrl: 'https://author.Adjung.com/article/mock-article-4',
+      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+
+This article 4 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+
+As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
+      footnotes: [
+        'Refer to the foundational texts on archival theory for further reading.',
+        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
+      ]
+    },
+    {
+      id: 'entry-mock-article-5',
+      authorId: 'user-amina-masri',
+      contentType: 'Article',
+      status: 'Published',
+      visibility: 'Public',
+      createdDate: '2026-07-04T16:00:00.000Z',
+      updatedDate: '2026-07-04T16:00:00.000Z',
+      publishedDate: '2026-07-04T16:00:00.000Z',
+      title: 'Comprehensive Review 5: The Archival Systems of Antiquity',
+      slug: 'mock-article-5',
+      tags: ['Archive', 'History', 'Systems'],
+      canonicalUrl: 'https://author.Adjung.com/article/mock-article-5',
+      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+
+This article 5 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+
+As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
+      footnotes: [
+        'Refer to the foundational texts on archival theory for further reading.',
+        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
+      ]
+    },{
+    id: 'entry-mock-notice-1',
+    authorId: 'user-tariq-malik', // Chief Editor
+    contentType: 'Notice',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: new Date(2026, 6, 1).toISOString(),
+    updatedDate: new Date(2026, 6, 1).toISOString(),
+    publishedDate: new Date(2026, 6, 1).toISOString(),
+    title: 'Scheduled Platform Maintenance',
+    slug: 'scheduled-platform-maintenance-july',
+    tags: ['Announcement', 'Maintenance'],
+    canonicalUrl: 'https://Adjung.com/notice/scheduled-platform-maintenance-july',
+    content: `Please be advised that the Adjung scholarly archive will undergo scheduled platform maintenance on **July 15, 2026**. During this time, the editorium and reading interfaces may be temporarily unavailable.
+
+We anticipate the downtime to last no longer than two hours. We thank you for your patience as we upgrade our core archival infrastructure.`,
+    isInstitutional: true,
+    isPinned: true,
+    priority: 'High'
+  },{
+    id: 'entry-mock-editorial-1',
+    authorId: 'user-tariq-malik', // Chief Editor
+    contentType: 'Editor\'s Note',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: new Date(2026, 0, 1).toISOString(),
+    updatedDate: new Date(2026, 0, 1).toISOString(),
+    publishedDate: new Date(2026, 0, 1).toISOString(),
+    title: 'On the Future of Adjung',
+    slug: 'on-the-future-of-adjung',
+    tags: ['Philosophy', 'Direction', 'Editorial'],
+    canonicalUrl: 'https://Adjung.com/editorial/on-the-future-of-adjung',
+    content: `As we move into a new era of digital scholarship, the Adjung Editorial Board reflects on our founding principles. The digital age promised democratization of knowledge, yet often delivered fragmentation. 
+
+In this note, we reaffirm our commitment to structured, deliberate, and deeply integrated academic publishing. The future of Adjung is not merely about hosting texts; it is about preserving the relationships between texts—the citations, the margins, the silent dialogues that bridge centuries of thought.
+
+We invite our writers to continue pushing the boundaries of what a digital manuscript can be.`,
+    excerpt: 'As we move into a new era of digital scholarship, the Adjung Editorial Board reflects on our founding principles. The digital age promised democratization of knowledge, yet often delivered fragmentation.',
+    isInstitutional: true,
+    isPinned: true,
+    editorialCategory: 'Philosophy'
   }
 ];
 
@@ -400,6 +716,7 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   editorialPolicy: BRAND.tagline,
   accentColor: '#802334',
   allowSelfRegistration: false,
+  editorialSelectionIds: ['entry-1', 'entry-2', 'entry-3'],
   featuredScholarId: 'user-zayd-ghazali',
   featuredEntryId: 'entry-zayd-1',
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
@@ -514,7 +831,11 @@ class AdjungDb {
       }
 
       if (storedEntries) {
-        const loadedEntries = JSON.parse(storedEntries);
+        let loadedEntries = JSON.parse(storedEntries);
+        // Force merge INITIAL_ENTRIES if the mock entries are missing from local storage
+        if (loadedEntries.length < 17) {
+          loadedEntries = [...INITIAL_ENTRIES];
+        }
         // Auto-detect and purge corrupted entries (content with ****X**** between every character)
         const isCorrupted = (text: string) => {
           if (!text) return false;

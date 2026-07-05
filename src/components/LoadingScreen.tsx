@@ -16,14 +16,14 @@ export const LoadingScreen: React.FC = () => {
 
   return (
     <div 
-      id="adjung-loading-screen"
+      id="Adjung-loading-screen"
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#802334] text-[#FDFDFD] transition-colors duration-300 select-none px-6"
     >
       <div className="max-w-md w-full flex flex-col items-center text-center space-y-6">
         
         {/* 1. Official Adjung Logo */}
         <div className="flex items-center gap-2 select-none">
-          <span className="font-serif text-3xl font-semibold tracking-wider text-[#FDFDFD] lowercase">
+          <span className="font-serif text-3xl font-semibold tracking-wider text-[#FDFDFD]">
             {BRAND.logoText}
           </span>
           <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-200 border-l border-stone-200/50 pl-3">

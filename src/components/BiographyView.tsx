@@ -1,6 +1,7 @@
 import React from 'react';
 import { BiographyItem, IdentityProfile, User } from '../types';
 import { stripMarkdown, parseInlineFormatting } from '../utils';
+import { SignatureRenderer } from './SignatureRenderer';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -42,11 +43,27 @@ export function BiographyView({
         {/* Signature stamp card representation */}
         <div className="lg:col-span-4 bg-[#FDFDFD] border border-stone-200/65 rounded p-6 text-center shadow-sm select-none">
           <span className="font-sans text-[9px] uppercase tracking-widest text-[#111111]/40 block mb-2">Signature</span>
-          <div 
-            className="text-5xl text-[#802334]/80 py-4 rotate-[-3deg]" 
-            style={{ fontFamily: "'Pinyon Script', 'Georgia', cursive" }}
-          >
-            {currentAuthor.signature}
+          <div className="h-32 flex items-center justify-center z-10 overflow-visible">
+            {(() => {
+              const defaultSig = authorProfile.signatures.find(s => s.status === 'Default');
+              if (defaultSig) {
+                return (
+                  <SignatureRenderer 
+                    {...defaultSig}
+                    color="#802334"
+                    enableBleed={true}
+                  />
+                );
+              }
+              return (
+                <div 
+                  className="text-5xl text-[#802334]/80 py-4" 
+                  style={{ fontFamily: "'Pinyon Script', 'Georgia', cursive" }}
+                >
+                  {currentAuthor.signature}
+                </div>
+              );
+            })()}
           </div>
           <div className="border-t border-stone-200/55 pt-4 mt-2">
             <span className="block text-[10px] font-sans uppercase tracking-wider text-[#111111]/40">Pen Name</span>

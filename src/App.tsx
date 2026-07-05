@@ -221,6 +221,17 @@ export default function App() {
   // Note inline expansion state
   const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
   const [expandedFrontpageNotes, setExpandedFrontpageNotes] = useState<string[]>([]);
+  // Frontpage Carousel State
+  const [frontpageCarouselIndex, setFrontpageCarouselIndex] = useState(0);
+
+  useEffect(() => {
+    if (activeTab === 'frontpage') {
+      const interval = setInterval(() => {
+        setFrontpageCarouselIndex((prev) => prev + 1);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   const toggleNote = (id: string) => {
     setExpandedNoteIds(prev =>
@@ -936,7 +947,9 @@ export default function App() {
       ? 'This is the first paragraph of your scholarly article.\n\nThis is the second paragraph of your article. Margin notes are displayed adjacent to their respective paragraph.'
       : type === 'Essay'
       ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text.\n\nAnother paragraph expanding on your thesis.'
-      : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
+      : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
+        : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
+        : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
 
     const slugSuffix = Date.now().toString().slice(-4);
     const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
@@ -1306,7 +1319,7 @@ Editorial Board of Adjung`;
             }}
             className="flex items-center cursor-pointer group text-stone-850 hover:opacity-90 transition"
           >
-            <span className="font-serif text-[15px] font-semibold tracking-wider text-[#802334] lowercase">
+            <span className="font-serif text-[15px] font-semibold tracking-wider text-[#802334]">
               {BRAND.logoText}
             </span>
           </div>
@@ -2040,6 +2053,25 @@ Editorial Board of Adjung`;
                   >
                     <Plus className="w-3.5 h-3.5" /> Article
                   </button>
+                    {(currentUser.role === 'Chief Editor' || currentUser.role === 'Editor') && (
+                      <>
+                        <div className="w-px h-6 bg-stone-300 mx-1 self-center" />
+                        <button
+                          type="button"
+                          onClick={() => handleCreateNewEntry('Notice')}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-stone-300 hover:bg-stone-100 text-stone-700 rounded text-xs font-mono tracking-wider uppercase transition"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Notice
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCreateNewEntry("Editor's Note")}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-stone-300 hover:bg-stone-100 text-stone-700 rounded text-xs font-mono tracking-wider uppercase transition"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Ed. Note
+                        </button>
+                      </>
+                    )}
                 </div>
               )}
             </div>
@@ -2453,403 +2485,143 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 0B: CURATED FRONTPAGE (Platform public index of publications & scholars) */}
         {activeTab === 'frontpage' && (() => {
-          // Find curation items dynamically
           const featuredEntry = entries.find(e => e.id === systemSettings.featuredEntryId && e.status === 'Published');
-          const featuredScholar = users.find(u => u.id === systemSettings.featuredScholarId);
-          const featuredScholarProfile = featuredScholar ? profiles.find(p => p.authorId === featuredScholar.id) : null;
+          const notice = entries.find(e => e.contentType === 'Notice' && e.status === 'Published' && e.isPinned);
+          const editorNote = entries.find(e => e.contentType === "Editor's Note" && e.status === 'Published' && e.isPinned);
           
-          // Density-specific spacing values
-          const isCompact = systemSettings.layoutDensity === 'Compact';
-          const containerSpacing = isCompact ? 'space-y-6 py-4' : 'space-y-12 py-8';
-          const sectionGap = isCompact ? 'space-y-4' : 'space-y-8';
-          const gridGap = isCompact ? 'gap-4' : 'gap-8 md:gap-12';
+          const editorialSelections = entries.filter(e => systemSettings.editorialSelectionIds?.includes(e.id) && e.status === 'Published');
           
+          const latestEntries = entries
+            .filter(e => e.status === 'Published' && !e.isInstitutional && e.id !== featuredEntry?.id)
+            .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())
+            .slice(0, 10);
+            
+          const currentLatestEntry = latestEntries.length > 0 ? latestEntries[frontpageCarouselIndex % latestEntries.length] : null;
+
           return (
-            <div className={`max-w-4xl mx-auto select-none animate-fade-in ${containerSpacing}`}>
+            <div className="max-w-4xl mx-auto select-none animate-fade-in space-y-24 py-16 px-4">
               
-              {/* Traditional Arabic / Eastern Calligraphic Scriptorium Accent */}
-              {systemSettings.enableArabicAccent && (
-                <div className="text-center pt-2 select-none animate-fade-in">
-                  <span className="font-serif text-[#802334]/70 text-lg md:text-xl tracking-wider block" dir="rtl" lang="ar">
-                    العلم صيد والكتابة قيده
-                  </span>
-                  <span className="font-mono text-[7px] text-stone-400 uppercase tracking-[0.2em] block mt-1">
-                    “Knowledge is a hunt, and writing is its snare.”
-                  </span>
-                  <div className="flex justify-center items-center gap-1 mt-2">
-                    <div className="h-px w-8 bg-stone-200" />
-                    <span className="text-[#802334] text-[8px] font-serif">❖</span>
-                    <div className="h-px w-8 bg-stone-200" />
-                  </div>
-                </div>
-              )}
-
-              {/* Dignified Notice / Announcement board - rendered only if configured */}
-              {systemSettings.announcementBanner && systemSettings.announcementBanner.trim() !== '' && (
-                <div className="px-5 py-3.5 bg-stone-50 border border-stone-200/80 rounded-sm flex items-start gap-3.5 text-left animate-fade-in">
-                  <span className="font-mono text-[8px] text-[#802334] font-bold uppercase tracking-widest bg-[#802334]/5 border border-[#802334]/20 px-1.5 py-0.5 rounded-sm mt-0.5">
-                    Notice
-                  </span>
-                  <div className="font-serif italic text-xs text-stone-600 leading-relaxed">
-                    {systemSettings.announcementBanner}
-                  </div>
-                </div>
-              )}
-
-              {/* Dignified Masthead / Entrance Signboard (Identity, not Marketing) */}
-              <div className="text-center space-y-3.5 pb-2">
-                <h1 className="font-serif text-3xl md:text-5xl font-semibold tracking-wider text-[#802334] lowercase">
-                  {BRAND.logoText}
-                </h1>
-                <p className="font-serif italic text-stone-500 text-[13px] max-w-xl mx-auto leading-relaxed">
-                  "{systemSettings.editorialPolicy}"
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="h-px w-10 bg-stone-200" />
-                  <span className="font-mono text-[8.5px] uppercase tracking-[0.25em] text-stone-400 font-semibold">
-                    {systemSettings.academicAffiliation}
-                  </span>
-                  <span className="h-px w-10 bg-stone-200" />
-                </div>
+              {/* 1. Logo / Identiti Adjung */}
+              <div className="text-center pt-8">
+                <h1 className="font-serif text-5xl md:text-6xl font-light text-[#802334] tracking-tight mb-4">{BRAND.logoText}</h1>
+                <span className="font-mono text-[10px] text-stone-500 uppercase tracking-[0.3em]">{BRAND.tagline}</span>
               </div>
 
-              {/* Main Editorial Content - Asymmetrical Layout */}
-              <div className={`grid grid-cols-1 lg:grid-cols-12 ${gridGap}`}>
-                
-                {/* Left Column (8 cols): Primary Curation & Main Feed */}
-                <div className="lg:col-span-8 space-y-10">
-                  
-                  {/* Curated Lead Work (Visible only if an entry is selected and published) */}
-                  {featuredEntry && (
-                    <div className="border-b border-stone-200 pb-10 space-y-4 text-left animate-fade-in">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[8.5px] uppercase tracking-widest text-[#802334] font-bold bg-[#802334]/5 px-2 py-0.5 rounded-sm">
-                          Featured Work • {featuredEntry.contentType}
-                        </span>
-                        <span className="font-mono text-[9px] text-stone-400">•</span>
-                        <span className="font-mono text-[9px] text-stone-400">
-                          {featuredEntry.publishedDate ? new Date(featuredEntry.publishedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : 'Curated'}
-                        </span>
-                      </div>
-                      
-                      <h2 
+              {/* 2. Featured Entry */}
+              {featuredEntry && (
+                <div className="text-center group cursor-pointer" onClick={() => {
+                  setSelectedEntry(featuredEntry);
+                  setSelectedAuthorId(featuredEntry.authorId);
+                  setActiveTab('folio');
+                }}>
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="h-px w-12 bg-stone-200"></div>
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-[#802334] font-bold">Featured Entry</span>
+                    <div className="h-px w-12 bg-stone-200"></div>
+                  </div>
+                  <h2 className="font-serif text-3xl md:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-[#802334] transition-colors px-4">
+                    {featuredEntry.title}
+                  </h2>
+                  <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
+                    {featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...'}
+                  </p>
+                </div>
+              )}
+
+              {/* 3. Editor's Note (Optional) */}
+              {editorNote && (
+                <div className="border-t border-stone-200 pt-16 max-w-2xl mx-auto text-center cursor-pointer group" onClick={() => {
+                  setSelectedEntry(editorNote);
+                  setActiveTab('institutional-view');
+                }}>
+                  <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-4">Editor's Note</span>
+                  <h3 className="font-serif text-2xl text-stone-900 mb-4 group-hover:text-[#802334] transition">{editorNote.title}</h3>
+                  <p className="font-serif italic text-stone-600 line-clamp-2">{editorNote.excerpt || editorNote.content.substring(0, 150) + '...'}</p>
+                </div>
+              )}
+
+              {/* 4. Editorial Selection */}
+              {editorialSelections.length > 0 && (
+                <div className="pt-8">
+                  <div className="flex items-center gap-4 mb-12">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 flex-shrink-0">Editorial Selection</span>
+                    <div className="h-px w-full bg-stone-100"></div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                    {editorialSelections.map(item => {
+                      const author = users.find(u => u.id === item.authorId);
+                      return (
+                        <div key={item.id} className="group cursor-pointer text-left" onClick={() => {
+                          setSelectedEntry(item);
+                          setSelectedAuthorId(item.authorId);
+                          setActiveTab('folio');
+                        }}>
+                          <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-2">{item.contentType}</span>
+                          <h4 className="font-serif text-xl text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2">
+                            {item.title}
+                          </h4>
+                          <span className="font-sans text-[11px] text-stone-500">{author?.penName || 'Writer'}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Latest Entries (Auto-Rotate) */}
+              {currentLatestEntry && (
+                <div className="bg-stone-50/50 border border-stone-200/50 p-12 text-center rounded-sm">
+                  <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-8">Latest Transmissions</span>
+                  <div className="h-24 flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentLatestEntry.id}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.5 }}
+                        className="cursor-pointer group"
                         onClick={() => {
-                          setSelectedAuthorId(featuredEntry.authorId);
-                          setSelectedEntry(featuredEntry);
+                          setSelectedEntry(currentLatestEntry);
+                          setSelectedAuthorId(currentLatestEntry.authorId);
                           setActiveTab('folio');
                         }}
-                        className="font-serif text-2xl md:text-3xl font-normal text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
                       >
-                        {featuredEntry.contentType === 'Note' ? (
-                          <span className="font-light">{parseInlineFormatting(featuredEntry.content.split('\n')[0])}</span>
-                        ) : (
-                          parseInlineFormatting(featuredEntry.title || '')
-                        )}
-                      </h2>
-                      
-                      <p className="font-sans text-xs text-stone-500">
-                        Scribed under the folio of{" "}
-                        <span 
-                          onClick={() => {
-                            setSelectedAuthorId(featuredEntry.authorId);
-                            setActiveTab('folio');
-                            setSelectedEntry(null);
-                            setEditingEntry(null);
-                          }}
-                          className="font-medium text-stone-700 hover:underline cursor-pointer"
-                        >
-                          {users.find(u => u.id === featuredEntry.authorId)?.penName || 'Writer'}
-                        </span>
-                      </p>
-
-                      <p className={`font-serif text-[13.5px] text-stone-600 leading-relaxed line-clamp-4 bg-stone-50/50 p-4 border-l-2 border-l-[#802334]/40 rounded-r ${featuredEntry.contentType === 'Note' ? '' : 'italic'}`}>
-                        {featuredEntry.content.replace(/[#*`_]/g, '').slice(0, 420)}...
-                      </p>
-
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedAuthorId(featuredEntry.authorId);
-                            setSelectedEntry(featuredEntry);
-                            setActiveTab('folio');
-                          }}
-                          className="text-xs font-mono uppercase tracking-wider text-[#802334] hover:text-[#9c2c41] font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                        >
-                          Begin Reading →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* General Library Index / feed */}
-                  <div className="space-y-4 text-left">
-                    <div className="border-b border-stone-200 pb-2.5 flex flex-col md:flex-row md:items-end justify-between gap-3">
-                      <div>
-                        <h3 className="font-serif text-[16px] font-semibold text-stone-900">Platform Index</h3>
-                        <p className="font-mono text-[8.5px] uppercase tracking-wider text-stone-400 mt-0.5">Enduring works archived in the digital scriptorium</p>
-                      </div>
-                      
-                      {/* Quiet Inline Search Bar */}
-                      <div className="relative max-w-xs w-full md:w-64">
-                        <input
-                          type="text"
-                          placeholder="Search index..."
-                          value={frontpageSearchQuery}
-                          onChange={(e) => setFrontpageSearchQuery(e.target.value)}
-                          className="w-full border border-stone-200/80 p-1.5 pl-7 pr-3 rounded-sm text-[11px] font-sans focus:outline-none focus:border-adjung-maroon bg-white font-mono"
-                        />
-                        <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2 top-2.5" />
-                      </div>
-                    </div>
-
-                    {/* Feed Content */}
-                    <div className={isCompact ? 'space-y-2.5' : 'space-y-4'}>
-                      {entries
-                        .filter(e => e.status === 'Published' && e.id !== systemSettings.featuredEntryId)
-                        .filter(e => {
-                          const q = frontpageSearchQuery.trim().toLowerCase();
-                          if (!q) return true;
-                          const authorName = users.find(u => u.id === e.authorId)?.penName || '';
-                          return (
-                            e.title.toLowerCase().includes(q) ||
-                            e.content.toLowerCase().includes(q) ||
-                            e.contentType.toLowerCase().includes(q) ||
-                            authorName.toLowerCase().includes(q) ||
-                            e.tags.some(t => t.toLowerCase().includes(q))
-                          );
-                        })
-                        .map((item) => {
-                          const author = users.find(u => u.id === item.authorId);
-                          return (
-                            <div 
-                              key={item.id} 
-                              className={`bg-white border border-stone-150 rounded-sm hover:border-stone-300 transition-all text-left flex flex-col gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] ${isCompact ? 'p-3.5' : 'p-5'}`}
-                            >
-                              <div className="space-y-1 w-full">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono text-[7.5px] uppercase tracking-wider text-adjung-maroon bg-red-50 border border-red-100/40 px-1 rounded-sm">
-                                    {item.contentType}
-                                  </span>
-                                  <span className="font-mono text-[8.5px] text-stone-400">
-                                    {item.publishedDate ? new Date(item.publishedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : 'Archived'}
-                                  </span>
-                                </div>
-                                {(() => {
-                                  if (item.contentType === 'Note') {
-                                    const lines = item.content.split('\n').filter(line => line.trim().length > 0);
-                                    const firstLine = lines[0] || '';
-                                    const hasContinuation = lines.length > 1 || item.content.trim().length > firstLine.trim().length;
-                                    const isExpanded = expandedFrontpageNotes.includes(item.id);
-
-                                    if (isExpanded) {
-                                      return (
-                                        <div className="space-y-3 mt-2 text-left animate-fade-in">
-                                          {parseContentToBlocks(item.content).map((block, bIdx) => {
-                                            return renderFrontpageBlock(block, bIdx);
-                                          })}
-                                          <div className="flex items-center gap-3 pt-2">
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setExpandedFrontpageNotes(prev => prev.filter(id => id !== item.id));
-                                              }}
-                                              className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
-                                            >
-                                              Show Less ↑
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedAuthorId(item.authorId);
-                                                setSelectedEntry(item);
-                                                setActiveTab('folio');
-                                              }}
-                                              className="text-[10px] font-mono tracking-wider uppercase text-stone-500 hover:text-stone-850 hover:underline flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 px-2 py-0.5 rounded transition cursor-pointer"
-                                            >
-                                              Open in Folio →
-                                            </button>
-                                          </div>
-                                        </div>
-                                      );
-                                    } else {
-                                      return (
-                                        <h4 
-                                          onClick={(e) => {
-                                            if (hasContinuation) {
-                                              e.stopPropagation();
-                                              setExpandedFrontpageNotes(prev => [...prev, item.id]);
-                                            } else {
-                                              setSelectedAuthorId(item.authorId);
-                                              setSelectedEntry(item);
-                                              setActiveTab('folio');
-                                            }
-                                          }}
-                                          className="font-serif text-[15px] text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
-                                        >
-                                          <span className="font-normal">
-                                            {parseInlineFormatting(firstLine)}
-                                            {hasContinuation && (
-                                              <span className="text-[#802334] font-bold ml-1 hover:underline select-none">...</span>
-                                            )}
-                                          </span>
-                                        </h4>
-                                      );
-                                    }
-                                  } else {
-                                    return (
-                                      <h4 
-                                        onClick={() => {
-                                          setSelectedAuthorId(item.authorId);
-                                          setSelectedEntry(item);
-                                          setActiveTab('folio');
-                                        }}
-                                        className="font-serif text-[15px] font-semibold text-stone-900 hover:text-[#802334] cursor-pointer transition leading-tight"
-                                      >
-                                        {parseInlineFormatting(item.title || '')}
-                                      </h4>
-                                    );
-                                  }
-                                })()}
-                                <p className="font-sans text-[11px] text-stone-400">
-                                  Scribed by{" "}
-                                  <span 
-                                    onClick={() => {
-                                      setSelectedAuthorId(item.authorId);
-                                      setActiveTab('folio');
-                                      setSelectedEntry(null);
-                                      setEditingEntry(null);
-                                    }}
-                                    className="font-medium text-stone-600 hover:underline cursor-pointer"
-                                  >
-                                    {author?.penName || 'Writer'}
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                      {/* Fallback if no search match or empty archive */}
-                      {entries.filter(e => e.status === 'Published').length === 0 && (
-                        <div className="p-8 text-center italic text-stone-400 font-serif bg-stone-50 border border-stone-200/60 rounded">
-                          The repository is currently silent. No works have been indexed.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Right Column (4 cols): Curated Writer Highlight & Quiet Institutional Footnote */}
-                <div className="lg:col-span-4 space-y-8 lg:border-l lg:border-l-stone-200/60 lg:pl-8">
-                  
-                  {/* Curated Highlight Profile */}
-                  {featuredScholar && (
-                    <div className="space-y-4 text-left animate-fade-in">
-                      <div className="border-b border-stone-200 pb-2">
-                        <span className="font-mono text-[8.5px] uppercase tracking-widest text-stone-400 font-bold">
-                          Featured Writer
-                        </span>
-                        <h3 className="font-serif text-lg font-normal text-stone-900 mt-1">Curated Highlight</h3>
-                      </div>
-
-                      <div className="space-y-3">
-                        <h4 className="font-serif text-base font-semibold text-stone-900 leading-tight">
-                          {featuredScholar.penName}
+                        <h4 className="font-serif text-2xl text-stone-900 group-hover:text-[#802334] transition mb-3">
+                          {currentLatestEntry.title}
                         </h4>
-                        
-                        {featuredScholar.signature && (
-                          <div className="font-signature text-2xl text-adjung-maroon border-b border-stone-100 pb-2">
-                            {featuredScholar.signature}
-                          </div>
-                        )}
-
-                        {featuredScholarProfile?.heroTitle && (
-                          <p className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-semibold leading-normal">
-                            {featuredScholarProfile.heroTitle}
-                          </p>
-                        )}
-
-                        <p className="font-serif italic text-xs text-stone-600 leading-relaxed">
-                          {featuredScholarProfile?.bioText ? `"${featuredScholarProfile.bioText.slice(0, 180)}..."` : featuredScholar.bioSummary || 'Independent writer at Adjung.'}
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedAuthorId(featuredScholar.id);
-                            setActiveTab('folio');
-                            setSelectedEntry(null);
-                            setEditingEntry(null);
-                          }}
-                          className="w-full bg-stone-900 hover:bg-stone-800 text-[#FDFDFD] py-2 rounded-sm font-mono text-[10.5px] uppercase tracking-wider transition text-center font-semibold cursor-pointer"
-                        >
-                          Open Folio Site
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Other Scholars in Ecosystem (Quiet Index list) */}
-                  <div className="space-y-3 text-left">
-                    <div className="border-b border-stone-200 pb-2">
-                      <span className="font-mono text-[8.5px] uppercase tracking-widest text-stone-400 font-bold">
-                        Writers Directory
-                      </span>
-                      <h3 className="font-serif text-sm font-normal text-stone-900 mt-0.5">Scribes & Scholars</h3>
-                    </div>
-
-                    <div className="divide-y divide-stone-100">
-                      {users
-                        .filter(u => u.id !== systemSettings.featuredScholarId)
-                        .map((u) => {
-                          const pubCount = entries.filter(e => e.authorId === u.id && e.status === 'Published').length;
-                          return (
-                            <div 
-                              key={u.id} 
-                              onClick={() => {
-                                setSelectedAuthorId(u.id);
-                                setActiveTab('folio');
-                                setSelectedEntry(null);
-                                setEditingEntry(null);
-                              }}
-                              className="py-2.5 flex items-center justify-between hover:bg-stone-50 px-1 rounded transition cursor-pointer group"
-                            >
-                              <div>
-                                <h5 className="font-serif text-[13px] font-medium text-stone-800 group-hover:text-[#802334] transition-colors leading-tight">
-                                  {u.penName}
-                                </h5>
-                                <span className="font-mono text-[8px] text-stone-400 uppercase tracking-wider">@{u.username}</span>
-                              </div>
-                              <span className="font-mono text-[9px] text-stone-400 text-right bg-stone-100 px-1.5 py-0.5 rounded-sm">
-                                {pubCount} {pubCount === 1 ? 'pub' : 'pubs'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="font-sans text-[11px] text-stone-500">
+                            {users.find(u => u.id === currentLatestEntry.authorId)?.penName || 'Writer'}
+                          </span>
+                          <span className="w-1 h-1 bg-stone-300 rounded-full"></span>
+                          <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">{currentLatestEntry.contentType}</span>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-
-                  {/* Simple Preservation Pledge (The Last Test) */}
-                  <div className="p-4 bg-stone-50 border border-stone-200/60 rounded-sm text-left space-y-2">
-                    <span className="font-mono text-[8px] text-[#802334] uppercase tracking-widest font-bold">Preservation Pledge</span>
-                    <p className="font-serif text-[10.5px] text-stone-500 leading-relaxed italic">
-                      "Should Adjung vanish tomorrow, every published monograph, handwritten signature, and chronological biographical entry remains formatted for clean print output — preserving the permanence of the human word."
-                    </p>
-                  </div>
-
                 </div>
+              )}
 
-              </div>
+              {/* 6. Notice (Optional, Bottom) */}
+              {notice && (
+                <div className="mt-24 pt-12 border-t border-stone-200 cursor-pointer group" onClick={() => {
+                  setSelectedEntry(notice);
+                  setActiveTab('institutional-view');
+                }}>
+                  <div className="max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left bg-[#802334]/5 p-6 rounded border border-[#802334]/10 hover:bg-[#802334]/10 transition">
+                    <span className="w-2 h-2 bg-[#802334] rotate-45 flex-shrink-0"></span>
+                    <div>
+                      <h4 className="font-serif text-lg text-[#802334] mb-1">{notice.title}</h4>
+                      <p className="font-sans text-[13px] text-stone-600 line-clamp-2">{notice.excerpt || notice.content}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
           );
         })()}
-
-
 
       </main>
 
@@ -3380,14 +3152,30 @@ Editorial Board of Adjung`;
       )}
 
       {/* ==================== 6. ACADEMIC FOOTER ==================== */}
-     <footer className="w-full mt-12 pt-8 pb-0 border-t border-[#EAE8E3] text-center select-none font-sans text-[11px] text-stone-400">
-        <div className="max-w-4xl mx-auto space-y-2">
-          <p className="font-serif italic font-medium text-stone-600 text-[12px]">
-            "{systemSettings.editorialPolicy}"
-          </p>
-          <p className="font-mono uppercase tracking-widest text-[9px] text-stone-400">
-            {BRAND.copyright}
-          </p>
+      <footer className="w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
+        <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
+          <div className="space-y-4 lg:col-span-2">
+            <h1 className="font-serif text-2xl font-semibold tracking-wider text-[#802334]">{BRAND.logoText}</h1>
+            <p className="font-serif italic text-stone-600 text-sm max-w-sm">"{systemSettings.editorialPolicy}"</p>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Institutional Publications</h4>
+            <ul className="space-y-2 font-sans text-xs text-stone-600">
+              <li><button onClick={() => { setActiveTab('editorials'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Notes</button></li>
+              <li><button onClick={() => { setActiveTab('notices'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Notice Board</button></li>
+              <li><span className="hover:text-[#802334] transition cursor-pointer">Publishing Policy</span></li>
+              <li><span className="hover:text-[#802334] transition cursor-pointer">Version History</span></li>
+            </ul>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Network</h4>
+            <ul className="space-y-2 font-sans text-xs text-stone-600">
+              <li><span className="hover:text-[#802334] transition cursor-pointer">About Adjung</span></li>
+              <li><button onClick={() => { setActiveTab('directory'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
+            </ul>
+          </div>
         </div>
       </footer>
 

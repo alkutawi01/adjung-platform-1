@@ -11,7 +11,20 @@ export interface DigitalSignature {
   label: string; 
   status: 'Archived' | 'Default';
   strokes: VectorStroke[][]; 
+  type?: 'drawn' | 'typed';
+  typedText?: string;
+  fontFamily?: string;
   createdAt: string;
+  penStyle?: {
+    nibAngle?: number;
+    inkFlowWeight?: number;
+    inkColor?: string;
+    paperTexture?: string;
+  };
+  typographyStyle?: {
+    letterSpacing?: number;
+    fontWeight?: number;
+  };
 }
 
 
@@ -39,7 +52,7 @@ export interface User {
   suspended?: boolean;
 }
 
-export type EntryType = 'Note' | 'Essay' | 'Article';
+export type EntryType = 'Note' | 'Essay' | 'Article' | 'Notice' | 'Editor\'s Note';
 export type EntryStatus = 'Draft' | 'Published' | 'Archived';
 export type EntryVisibility = 'Public' | 'Private';
 
@@ -85,6 +98,14 @@ export interface Revision {
   referenceSortOrder?: 'alphabetical' | 'appearance';
   referenceStyle?: string;
   signatureVersionId?: string;
+  
+  // Institutional Metadata
+  priority?: 'High' | 'Normal' | 'Low';
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isPinned?: boolean;
+  editorialCategory?: string;
+  isInstitutional?: boolean;
 }
 
 export interface Entry {
@@ -113,6 +134,15 @@ export interface Entry {
   referenceSortOrder?: 'alphabetical' | 'appearance';
   referenceStyle?: string;
   signatureVersionId?: string;
+  
+  // Institutional Metadata
+  priority?: 'High' | 'Normal' | 'Low';
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isPinned?: boolean;
+  editorialCategory?: string;
+  isInstitutional?: boolean;
+  discipline?: string;
 }
 
 export interface BiographyItem {
@@ -148,9 +178,11 @@ export interface SystemSettings {
   allowSelfRegistration: boolean;
   featuredScholarId?: string;
   featuredEntryId?: string;
+  editorialSelectionIds?: string[]; // Max 10 entries for Frontpage curation
   announcementBanner?: string;
   enableArabicAccent?: boolean;
   layoutDensity?: 'Standard' | 'Compact' | 'Classical';
+  allowedSignatureFonts?: string[];
   rolePermissions?: {
     'Chief Editor': RolePermissions;
     'Editor': RolePermissions;

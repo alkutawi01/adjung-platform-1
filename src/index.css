@@ -8,10 +8,10 @@
   --font-arabic: "Noto Naskh Arabic", serif;
   --font-signature: "Pinyon Script", "Alex Brush", cursive;
   
-  --color-adjung-maroon: #802334;
-  --color-adjung-cream: #FDFDFD;
-  --color-adjung-dark: #111111;
-  --color-adjung-gray-light: #EAE8E3;
+  --color-Adjung-maroon: #802334;
+  --color-Adjung-cream: #FDFDFD;
+  --color-Adjung-dark: #111111;
+  --color-Adjung-gray-light: #EAE8E3;
 }
 
 /* Base resets & styles for Adjung scholarly magazine */
@@ -76,7 +76,7 @@ html, body {
 
 .footnote-badge {
   counter-increment: footnote-badge;
-  color: var(--color-adjung-maroon);
+  color: var(--color-Adjung-maroon);
   font-weight: 600;
   font-family: var(--font-mono);
   font-size: 0.75em;
@@ -93,7 +93,7 @@ html, body {
 
 .margin-note-badge {
   counter-increment: margin-note-badge;
-  color: var(--color-adjung-dark);
+  color: var(--color-Adjung-dark);
   font-weight: 600;
   font-family: var(--font-mono);
   font-size: 0.75em;

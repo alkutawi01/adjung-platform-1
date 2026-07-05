@@ -51,7 +51,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
             placeholder="Search members by name, role, bio..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white"
+            className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-Adjung-maroon font-sans bg-white"
           />
           <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
         </div>
@@ -66,7 +66,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
               onClick={() => setRoleFilter(role)}
               className={`px-2.5 py-1 rounded text-[11px] transition ${
                 roleFilter === role
-                  ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border border-adjung-maroon/20'
+                  ? 'bg-Adjung-maroon/10 text-Adjung-maroon font-semibold border border-Adjung-maroon/20'
                   : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 bg-transparent border border-transparent'
               }`}
             >
@@ -88,14 +88,14 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map(u => {
-            const domain = `${u.username}.adjung.com`;
+            const domain = `${u.username}.Adjung.com`;
             return (
               <div
                 key={u.id}
-                className="bg-white border border-stone-200 rounded-sm p-6 hover:shadow-md hover:border-adjung-maroon/30 transition duration-300 flex flex-col justify-between text-left relative overflow-hidden group"
+                className="bg-white border border-stone-200 rounded-sm p-6 hover:shadow-md hover:border-Adjung-maroon/30 transition duration-300 flex flex-col justify-between text-left relative overflow-hidden group"
               >
                 {/* Decorative personal seal top-right */}
-                <div className="absolute top-4 right-4 font-signature text-2xl text-adjung-maroon/10 group-hover:text-adjung-maroon/15 transition-colors pointer-events-none select-none rotate-[-6deg]">
+                <div className="absolute top-4 right-4 font-signature text-2xl text-Adjung-maroon/10 group-hover:text-Adjung-maroon/15 transition-colors pointer-events-none select-none rotate-[-6deg]">
                   {u.signature}
                 </div>
 
@@ -108,7 +108,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
                       </h3>
                       <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded tracking-wider ${
                         u.role === 'Chief Editor'
-                          ? 'bg-adjung-maroon text-[#FDFDFD] font-bold'
+                          ? 'bg-Adjung-maroon text-[#FDFDFD] font-bold'
                           : u.role === 'Editor'
                           ? 'bg-amber-100 text-amber-900 border border-amber-200/50'
                           : 'bg-stone-100 text-stone-600'
@@ -125,7 +125,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
                   {/* Personal Subdomain */}
                   <div className="flex items-center gap-1.5 text-stone-500 font-mono text-[10px]">
                     <Globe className="w-3.5 h-3.5 text-stone-300 flex-shrink-0" />
-                    <span className="lowercase hover:text-adjung-maroon select-all">{domain}</span>
+                    <span className="lowercase hover:text-Adjung-maroon select-all">{domain}</span>
                   </div>
 
                   {/* Biography summary (optional) */}
@@ -145,7 +145,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
                   <button
                     type="button"
                     onClick={() => onSelectMember(u.id, 'folio')}
-                    className="flex items-center justify-center gap-1.5 border border-stone-200 hover:border-adjung-maroon hover:bg-adjung-maroon/[0.02] text-stone-700 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider py-1.5 rounded transition cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 border border-stone-200 hover:border-Adjung-maroon hover:bg-Adjung-maroon/[0.02] text-stone-700 hover:text-Adjung-maroon font-mono text-[10px] uppercase tracking-wider py-1.5 rounded transition cursor-pointer"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
                     View Folio
@@ -153,7 +153,7 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
                   <button
                     type="button"
                     onClick={() => onSelectMember(u.id, 'bio')}
-                    className="flex items-center justify-center gap-1.5 border border-stone-200 hover:border-adjung-maroon hover:bg-adjung-maroon/[0.02] text-stone-700 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider py-1.5 rounded transition cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 border border-stone-200 hover:border-Adjung-maroon hover:bg-Adjung-maroon/[0.02] text-stone-700 hover:text-Adjung-maroon font-mono text-[10px] uppercase tracking-wider py-1.5 rounded transition cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     Biography

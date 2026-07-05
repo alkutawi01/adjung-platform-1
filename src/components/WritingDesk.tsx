@@ -3,6 +3,7 @@ import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-re
 import { Entry, User } from '../types';
 import { EntryRenderer } from './EntryRenderer';
 import { parseInlineFormatting, stripMarkdown } from '../utils';
+import { db } from '../db/mockDb';
 
 interface WritingDeskProps {
   currentUser: User;
@@ -168,6 +169,15 @@ export function WritingDesk({
             onDelete={handleDeleteEntry}
             authorName={currentUser.penName}
             authorSignature={currentUser.signature}
+            authorDigitalSignature={(() => {
+              const identity = db.getIdentityByAccountId(currentUser.id);
+              if (!identity) return undefined;
+              if (editingEntry?.signatureVersionId) {
+                const sig = identity.signatures.find(s => s.id === editingEntry.signatureVersionId);
+                if (sig) return sig;
+              }
+              return identity.signatures.find(s => s.status === 'Default');
+            })()}
           />
         </div>
       ) : (

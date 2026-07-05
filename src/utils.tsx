@@ -285,7 +285,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
     if (token.type === 'LINK') {
       const elementKey = `${keyPrefix}-${keyIdx++}`;
       result.push(
-        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline cursor-pointer">
+        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-Adjung-maroon hover:underline cursor-pointer">
           {token.text}
         </a>
       );
@@ -434,14 +434,14 @@ export function parseInlineFormatting(
       return <React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>;
     }
     if (part.type === 'fn-stable') {
-      let num = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`];
+      let num: number | string | undefined = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`];
       if (!num) {
         num = part.content.startsWith('fn-legacy-') ? part.content.replace('fn-legacy-', '') : '?';
       }
       return (
         <span
           key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer"
           id={`fnref-${part.content}`}
           title={`Jump to footnote ${num}`}
           onClick={(e) => {
@@ -461,7 +461,7 @@ export function parseInlineFormatting(
       return (
         <span
           key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer"
           id={`fnref-legacy-${part.content}`}
           title={`Jump to footnote ${num}`}
           onClick={(e) => {
@@ -483,7 +483,7 @@ export function parseInlineFormatting(
         <span 
           key={part.key}
           id={`mn-marker-${part.content}`}
-          className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-sans px-0.5 cursor-default"
+          className="margin-note-ref text-[10px] font-medium align-super select-none text-Adjung-maroon font-sans px-0.5 cursor-default"
           title={`Margin Note ${roman}`}
         >
           ({roman})
@@ -504,7 +504,7 @@ export function parseInlineFormatting(
       return (
         <span
           key={part.key}
-          className="citation-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
+          className="citation-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
           title={`${citation.author} (${citation.year}) - ${citation.title}`}
           onClick={(e) => {
             e.preventDefault();
@@ -530,7 +530,7 @@ export function parseInlineFormatting(
       return (
         <span
           key={part.key}
-          className="cross-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 cursor-pointer"
+          className="cross-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 cursor-pointer"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -554,7 +554,7 @@ export function parseInlineFormatting(
  */
 export function generateCanonicalUrl(penName: string, type: string, slug: string): string {
   const authorSubdomain = penName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return `https://${authorSubdomain}.adjung.com/${type.toLowerCase()}/${slug}`;
+  return `https://${authorSubdomain}.Adjung.com/${type.toLowerCase()}/${slug}`;
 }
 
 export interface ParagraphBlock {
@@ -1094,7 +1094,7 @@ export class DocumentExporter {
   // HTML Export
   static exportToHtml(entry: { title: string; contentType: string; content: string; excerpt?: string }): string {
     const blocks = parseContentToBlocks(entry.content);
-    let html = `<article class="adjung-publication" data-type="${entry.contentType}">\n`;
+    let html = `<article class="Adjung-publication" data-type="${entry.contentType}">\n`;
     html += `  <header class="publication-header">\n`;
     if (entry.contentType !== 'Note') {
       html += `    <h1>${entry.title}</h1>\n`;
