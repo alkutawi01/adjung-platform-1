@@ -211,6 +211,7 @@ export default function App() {
   const [entries, setEntries] = useState<Entry[]>(db.getEntries());
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(db.getSystemSettings());
   const [initializing, setInitializing] = useState(true);
+  const [showNavbar, setShowNavbar] = useState(true);
 
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -291,6 +292,20 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastVisible]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const isAtBottom = maxScroll > 100 ? window.scrollY >= Math.max(50, maxScroll - 400) : false;
+      if (isAtBottom) {
+        setShowNavbar(false);
+      } else {
+        setShowNavbar(true);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Startup Session Restore & Verification (no silent seeded fallbacks!)
   useEffect(() => {
@@ -1283,7 +1298,7 @@ Editorial Board of Adjung`;
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 pb-16 overflow-x-hidden"
+          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 pb-16"
         >
       
       {/* Elegant Editorial Toast Notification */}
@@ -1302,7 +1317,11 @@ Editorial Board of Adjung`;
       )}
 
       {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
-      <nav className="w-full sticky top-0 bg-[#FDFDFD]/95 backdrop-blur-md border-b border-stone-200/40 z-40 px-4 md:px-8 select-none shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+      <nav 
+        className={`w-full sticky top-0 bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 z-40 px-4 md:px-8 select-none shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-700 ease-in-out ${
+          showNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
         <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
           
           {/* Left: Beautiful brand wordmark logo linking back to Frontpage */}
@@ -1319,7 +1338,7 @@ Editorial Board of Adjung`;
             }}
             className="flex items-center cursor-pointer group text-stone-850 hover:opacity-90 transition"
           >
-            <span className="font-serif text-[15px] font-semibold tracking-wider text-[#802334]">
+            <span className="font-serif text-[15px] font-semibold tracking-wider text-[#FDFDFD]">
               {BRAND.logoText}
             </span>
           </div>
@@ -1339,7 +1358,7 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition text-stone-500 hover:text-[#802334]"
+                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition text-stone-200 hover:text-[#FDFDFD]"
                     >
                       Frontpage
                     </button>
@@ -1356,8 +1375,8 @@ Editorial Board of Adjung`;
                       }}
                       className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                         activeTab === 'directory'
-                          ? 'text-[#802334] font-semibold underline underline-offset-4 decoration-2'
-                          : 'text-stone-500 hover:text-stone-900'
+                          ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
+                          : 'text-stone-200 hover:text-white'
                       }`}
                     >
                       Directory
@@ -1375,8 +1394,8 @@ Editorial Board of Adjung`;
                       }}
                       className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                         activeTab === 'index'
-                          ? 'text-[#802334] font-semibold underline underline-offset-4 decoration-2'
-                          : 'text-stone-500 hover:text-stone-900'
+                          ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
+                          : 'text-stone-200 hover:text-white'
                       }`}
                     >
                       Index
@@ -1395,8 +1414,8 @@ Editorial Board of Adjung`;
                     }}
                     className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                       activeTab === 'folio'
-                        ? 'text-[#802334] font-semibold underline underline-offset-4 decoration-2'
-                        : 'text-stone-500 hover:text-stone-900'
+                        ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
+                        : 'text-stone-200 hover:text-white'
                     }`}
                   >
                     Folio
@@ -1411,8 +1430,8 @@ Editorial Board of Adjung`;
                     }}
                     className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                       activeTab === 'bio'
-                        ? 'text-[#802334] font-semibold underline underline-offset-4 decoration-2'
-                        : 'text-stone-500 hover:text-stone-900'
+                        ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
+                        : 'text-stone-200 hover:text-white'
                     }`}
                   >
                     Biography
@@ -1421,7 +1440,7 @@ Editorial Board of Adjung`;
                   {/* Desk: Only if the authenticated user is the owner of this author site */}
                   {currentUser?.id === selectedAuthorId && (
                     <>
-                      <span className="text-stone-300 text-[10px] select-none font-mono">|</span>
+                      <span className="text-white/20 text-[10px] select-none font-mono">|</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1429,10 +1448,10 @@ Editorial Board of Adjung`;
                           setSelectedEntry(null);
                           setEditingEntry(null);
                         }}
-                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border border-[#802334] rounded-sm ${
+                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border border-stone-200/40 rounded-sm ${
                           activeTab === 'desk'
-                            ? 'bg-[#802334] text-[#FDFDFD] font-semibold'
-                            : 'text-[#802334] hover:bg-[#802334]/5 font-medium'
+                            ? 'bg-[#FDFDFD] text-[#802334] font-semibold'
+                            : 'text-[#FDFDFD] hover:bg-white/10 font-medium'
                         }`}
                         title="Your private workspace"
                       >
@@ -1444,7 +1463,7 @@ Editorial Board of Adjung`;
               )}
             </div>
 
-            <div className="h-4 w-px bg-stone-200/50" />
+            <div className="h-4 w-px bg-white/20" />
 
             {/* Right: Authentication or User menu */}
             {currentUser ? (
@@ -1452,7 +1471,7 @@ Editorial Board of Adjung`;
                 <button
                   type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-stone-700 hover:text-[#802334] transition uppercase cursor-pointer"
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-stone-200 hover:text-white transition uppercase cursor-pointer"
                 >
                   <span>{currentUser.penName}</span>
                   <span className="text-[10px] opacity-60">▾</span>
@@ -1546,7 +1565,7 @@ Editorial Board of Adjung`;
                   setLoginError('');
                   setShowLoginModal(true);
                 }}
-                className="px-1.5 py-1 text-xs font-mono tracking-wider text-[#802334] hover:text-stone-900 font-semibold transition uppercase cursor-pointer"
+                className="px-1.5 py-1 text-xs font-mono tracking-wider text-[#FDFDFD] hover:text-white font-semibold transition uppercase cursor-pointer"
               >
                 Sign In
               </button>
@@ -3176,6 +3195,13 @@ Editorial Board of Adjung`;
               <li><button onClick={() => { setActiveTab('directory'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
             </ul>
           </div>
+        </div>
+
+        {/* Copyright Bottom Bar */}
+        <div className="max-w-4xl mx-auto px-4 border-t border-stone-200/50 mt-8 pt-6 text-center">
+          <p className="font-mono uppercase tracking-widest text-[9px] text-stone-400">
+            {BRAND.copyright}
+          </p>
         </div>
       </footer>
 
