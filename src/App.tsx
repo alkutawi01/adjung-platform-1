@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke } from './types';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature } from './types';
 import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { EntryRenderer } from './components/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollapseRenderer';
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks } from './utils';
+import { SignatureLayout } from './components/SignatureLayout';
+import { SignatureRenderer } from './components/SignatureRenderer';
 import { 
   Compass,
   User as UserIcon,
@@ -50,7 +52,35 @@ function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorS
   }
   
   const defaultSig = identity.signatures.find(s => s.status === 'Default');
-  return defaultSig ? defaultSig.strokes : undefined;
+  if (defaultSig && defaultSig.type === 'drawn') return defaultSig.strokes;
+  return undefined;
+}
+
+function resolveSignatureText(authorId: string, fallback: string): string {
+  const identity = db.getIdentityByAccountId(authorId);
+  if (!identity || !identity.signatures) return fallback;
+  const defaultSig = identity.signatures.find(s => s.status === 'Default');
+  if (defaultSig) {
+    if (defaultSig.type === 'typed') return defaultSig.typedText;
+    if (defaultSig.type === 'drawn') return ''; // If drawn, we don't display text fallback
+  }
+  return fallback;
+}
+
+function resolveDigitalSignature(authorId: string): DigitalSignature | undefined {
+  const identity = db.getIdentityByAccountId(authorId);
+  if (!identity || !identity.signatures) return undefined;
+  return identity.signatures.find(s => s.status === 'Default');
+}
+
+function resolveSignatureFont(authorId: string): string | undefined {
+  const identity = db.getIdentityByAccountId(authorId);
+  if (!identity || !identity.signatures) return undefined;
+  const defaultSig = identity.signatures.find(s => s.status === 'Default');
+  if (defaultSig && defaultSig.type === 'typed' && defaultSig.fontFamily) {
+    return `"${defaultSig.fontFamily}", cursive`;
+  }
+  return undefined;
 }
 
 
@@ -212,11 +242,14 @@ export default function App() {
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(db.getSystemSettings());
   const [initializing, setInitializing] = useState(true);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [navVisible, setNavVisible] = useState(true);
+  const [isFloating, setIsFloating] = useState(false);
+  const lastScrollY = useRef(0);
 
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium'>('landing');
+  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity'>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   
   // Note inline expansion state
@@ -473,6 +506,43 @@ export default function App() {
     }
   }, [currentUser, activeTab, systemSettings, selectedAuthorId]);
 
+  // Editorial Top Navbar scroll behavior
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          // 1. floating state (if scrolled > 15px)
+          setIsFloating(currentScrollY > 15);
+
+          // 2. visibility state
+          if (currentScrollY <= 15) {
+            // Rest at top
+            setNavVisible(true);
+          } else if (currentScrollY > lastScrollY.current) {
+            // Scroll down: hide only after scroll threshold (100px)
+            if (currentScrollY > 100) {
+              setNavVisible(false);
+            }
+          } else {
+            // Scroll up slightly: gently show
+            setNavVisible(true);
+          }
+
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Two-way URL Hash Router Synchronization
   useEffect(() => {
     if (initializing) return;
@@ -491,6 +561,7 @@ export default function App() {
       else if (activeTab === 'desk') newHash = '#/desk';
       else if (activeTab === 'folio') newHash = `#/folio/${selectedAuthorId || ''}`;
       else if (activeTab === 'bio') newHash = `#/bio/${selectedAuthorId || ''}`;
+      else if (activeTab === 'identity') newHash = '#/identity';
     }
 
     if (window.location.hash !== newHash) {
@@ -519,7 +590,19 @@ export default function App() {
         setActiveTab('frontpage');
         setSelectedEntry(null);
         setEditingEntry(null);
-      } else if (route === 'directory') {
+        return;
+      }
+      if (route === 'identity') {
+        if (!currentUser) {
+          window.location.hash = '#/landing';
+        } else {
+          setActiveTab('identity');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+        }
+        return;
+      }
+      if (route === 'directory') {
         setActiveTab('directory');
         setSelectedEntry(null);
         setEditingEntry(null);
@@ -1318,8 +1401,14 @@ Editorial Board of Adjung`;
 
       {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
       <nav 
-        className={`w-full sticky top-0 bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 z-40 px-4 md:px-8 select-none shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-700 ease-in-out ${
-          showNavbar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-300 ease-in-out ${
+          !showNavbar ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+        } ${
+          !navVisible ? '-translate-y-full shadow-none' : 'translate-y-0'
+        } ${
+          isFloating 
+            ? 'bg-[#FDFDFD]/90 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.03),0_1px_3px_rgba(0,0,0,0.02)] border-stone-200/60' 
+            : 'bg-[#FDFDFD] border-stone-200/30 shadow-none'
         }`}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
@@ -1336,9 +1425,9 @@ Editorial Board of Adjung`;
                 setActiveTab('landing');
               }
             }}
-            className="flex items-center cursor-pointer group text-stone-850 hover:opacity-90 transition"
+            className="flex items-center cursor-pointer group text-[#802334] hover:opacity-85 transition-opacity"
           >
-            <span className="font-serif text-[15px] font-semibold tracking-wider text-[#FDFDFD]">
+            <span className="font-serif text-[15px] font-semibold tracking-wider">
               {BRAND.logoText}
             </span>
           </div>
@@ -1358,7 +1447,7 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition text-stone-200 hover:text-[#FDFDFD]"
+                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition-colors text-stone-500 hover:text-[#802334]"
                     >
                       Frontpage
                     </button>
@@ -1373,10 +1462,10 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                         activeTab === 'directory'
-                          ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
-                          : 'text-stone-200 hover:text-white'
+                          ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
+                          : 'text-stone-500 hover:text-[#802334]'
                       }`}
                     >
                       Directory
@@ -1392,10 +1481,10 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                         activeTab === 'index'
-                          ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
-                          : 'text-stone-200 hover:text-white'
+                          ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
+                          : 'text-stone-500 hover:text-[#802334]'
                       }`}
                     >
                       Index
@@ -1412,10 +1501,10 @@ Editorial Board of Adjung`;
                       setSelectedEntry(null);
                       setEditingEntry(null);
                     }}
-                    className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                       activeTab === 'folio'
-                        ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
-                        : 'text-stone-200 hover:text-white'
+                        ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
+                        : 'text-stone-500 hover:text-[#802334]'
                     }`}
                   >
                     Folio
@@ -1428,10 +1517,10 @@ Editorial Board of Adjung`;
                       setSelectedEntry(null);
                       setEditingEntry(null);
                     }}
-                    className={`px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
                       activeTab === 'bio'
-                        ? 'text-[#FDFDFD] font-semibold underline underline-offset-4 decoration-2'
-                        : 'text-stone-200 hover:text-white'
+                        ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
+                        : 'text-stone-500 hover:text-[#802334]'
                     }`}
                   >
                     Biography
@@ -1440,7 +1529,7 @@ Editorial Board of Adjung`;
                   {/* Desk: Only if the authenticated user is the owner of this author site */}
                   {currentUser?.id === selectedAuthorId && (
                     <>
-                      <span className="text-white/20 text-[10px] select-none font-mono">|</span>
+                      <span className="text-stone-200 text-[10px] select-none font-mono">|</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1448,10 +1537,10 @@ Editorial Board of Adjung`;
                           setSelectedEntry(null);
                           setEditingEntry(null);
                         }}
-                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border border-stone-200/40 rounded-sm ${
+                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border border-stone-200 rounded-sm ${
                           activeTab === 'desk'
-                            ? 'bg-[#FDFDFD] text-[#802334] font-semibold'
-                            : 'text-[#FDFDFD] hover:bg-white/10 font-medium'
+                            ? 'bg-[#802334] border-[#802334] text-white font-semibold'
+                            : 'text-stone-500 hover:bg-stone-50 font-medium'
                         }`}
                         title="Your private workspace"
                       >
@@ -1463,7 +1552,7 @@ Editorial Board of Adjung`;
               )}
             </div>
 
-            <div className="h-4 w-px bg-white/20" />
+            <div className="h-4 w-px bg-stone-200" />
 
             {/* Right: Authentication or User menu */}
             {currentUser ? (
@@ -1471,7 +1560,7 @@ Editorial Board of Adjung`;
                 <button
                   type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-stone-200 hover:text-white transition uppercase cursor-pointer"
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-stone-600 hover:text-[#802334] transition uppercase cursor-pointer"
                 >
                   <span>{currentUser.penName}</span>
                   <span className="text-[10px] opacity-60">▾</span>
@@ -1565,7 +1654,7 @@ Editorial Board of Adjung`;
                   setLoginError('');
                   setShowLoginModal(true);
                 }}
-                className="px-1.5 py-1 text-xs font-mono tracking-wider text-[#FDFDFD] hover:text-white font-semibold transition uppercase cursor-pointer"
+                className="px-1.5 py-1 text-xs font-mono tracking-wider text-stone-600 hover:text-[#802334] font-semibold transition uppercase cursor-pointer"
               >
                 Sign In
               </button>
@@ -1583,7 +1672,7 @@ Editorial Board of Adjung`;
             {/* Main classical visual focus: The Author's Identity with refined lines */}
             <div className="border-t border-b border-stone-200/50 py-5 my-1 max-w-3xl mx-auto">
               <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
-                PERSONAL FOLIO
+                PERSONAL SITE
               </span>
               
               <h1 
@@ -1647,8 +1736,9 @@ Editorial Board of Adjung`;
               entry={selectedEntry} 
               mode="view" 
               authorName={users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer'}
-              authorSignature={users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer'}
+              authorSignature={resolveSignatureText(selectedEntry.authorId, users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
               authorSignatureStrokes={resolveSignatureStrokes(selectedEntry, selectedEntry.authorId)}
+              authorSignatureFont={resolveSignatureFont(selectedEntry.authorId)}
             />
           </div>
         )}
@@ -1714,10 +1804,22 @@ Editorial Board of Adjung`;
                 
                 {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
                 <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-5 py-1.5 select-none">
-                  <span className="font-signature text-4xl text-adjung-maroon/80 block select-none rotate-[-1deg] my-1">
-                    {currentAuthor?.signature}
-                  </span>
-                  <span className="font-serif text-[10px] font-semibold uppercase tracking-wider text-stone-600 block">
+                  <div className="h-16 w-40 flex items-center justify-center rotate-[-1deg] my-1 mix-blend-multiply">
+                    {currentAuthor && (
+                      <SignatureRenderer
+                        strokes={resolveDigitalSignature(currentAuthor.id)?.strokes || []}
+                        type={resolveDigitalSignature(currentAuthor.id)?.type || 'drawn'}
+                        typedText={resolveDigitalSignature(currentAuthor.id)?.typedText || currentAuthor.signature}
+                        fontFamily={resolveDigitalSignature(currentAuthor.id)?.fontFamily}
+                        typographyStyle={resolveDigitalSignature(currentAuthor.id)?.typographyStyle}
+                        className="w-full h-full overflow-visible origin-center"
+                        color="rgba(128, 35, 52, 0.85)"
+                        strokeWidth={2.5}
+                        enableBleed={true}
+                      />
+                    )}
+                  </div>
+                  <span className="font-serif text-[10px] font-semibold uppercase tracking-wider text-stone-600 block mt-1">
                     {currentAuthor?.penName}
                   </span>
                 </div>
@@ -1938,16 +2040,14 @@ Editorial Board of Adjung`;
               </div>
 
               {/* Signature stamp card representation */}
-              <div className="md:col-span-4 bg-[#FDFDFD] border border-adjung-maroon/20 rounded-md p-6 text-center shadow-sm select-none scholarly-border">
-                <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400 block mb-2">Signature</span>
-                <span className="font-signature text-6xl text-adjung-maroon block py-3 select-none rotate-[-3deg]">
-                  {currentAuthor.signature}
-                </span>
-                <div className="border-t border-stone-200/80 pt-4 mt-2">
-                  <span className="block text-xs font-mono uppercase tracking-wider text-stone-500">Pen Name</span>
-                  <span className="font-serif font-semibold text-stone-900 text-sm">{currentAuthor.penName}</span>
-                  <span className="block font-mono text-[9px] text-stone-400 mt-1">{currentAuthor.email}</span>
-                </div>
+              <div className="md:col-span-4 bg-[#FDFDFD] border border-adjung-maroon/20 rounded-md p-6 flex flex-col items-center justify-center shadow-sm select-none scholarly-border">
+                <SignatureLayout
+                  signature={resolveDigitalSignature(currentAuthor.id)}
+                  penName={currentAuthor.penName}
+                  role="SCHOLARLY WRITER"
+                  strokeWidth={3.0}
+                  className="scale-90"
+                />
               </div>
             </div>
 
@@ -2163,8 +2263,9 @@ Editorial Board of Adjung`;
                   onSave={handleSaveEntry}
                   onDelete={handleDeleteEntry}
                   authorName={currentUser.penName}
-                  authorSignature={currentUser.signature}
+                  authorSignature={resolveSignatureText(currentUser.id, currentUser.signature)}
                   authorSignatureStrokes={resolveSignatureStrokes(editingEntry, currentUser.id)}
+                  authorSignatureFont={resolveSignatureFont(currentUser.id)}
                 />
               </div>
             ) : (

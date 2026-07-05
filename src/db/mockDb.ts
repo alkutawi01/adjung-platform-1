@@ -722,6 +722,7 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
   enableArabicAccent: true,
   layoutDensity: 'Standard',
+  allowedSignatureFonts: ['Pinyon Script', 'Alex Brush', 'Great Vibes', 'Parisienne', 'Allura', 'Herr Von Muellerhoff'],
   rolePermissions: {
     'Chief Editor': {
       viewIndex: true,
@@ -870,6 +871,9 @@ class AdjungDb {
 
       if (storedSettings) {
         this.systemSettings = JSON.parse(storedSettings);
+        if (!this.systemSettings.allowedSignatureFonts || this.systemSettings.allowedSignatureFonts.length === 0 || this.systemSettings.allowedSignatureFonts.includes('Outfit') || this.systemSettings.allowedSignatureFonts.includes('Sacramento')) {
+          this.systemSettings.allowedSignatureFonts = [...(INITIAL_SYSTEM_SETTINGS.allowedSignatureFonts || [])];
+        }
         if (this.systemSettings.editorialPolicy === 'Adjung maintains a text-first, classical layout discipline inspired by early European university journals and Arabic calligraphic treatises.') {
           this.systemSettings.editorialPolicy = BRAND.tagline;
         }
@@ -888,10 +892,7 @@ class AdjungDb {
                 ...this.systemSettings.rolePermissions[role]
               };
             }
-            // Directory is KIV - disable viewDirectory permission for Writer and Visitor
-            if (role === 'Writer' || role === 'Visitor') {
-              this.systemSettings.rolePermissions[role].viewDirectory = false;
-            }
+            
           });
         }
         this.saveSettingsToStorage();
@@ -1035,11 +1036,44 @@ class AdjungDb {
   }
   
   getIdentityByAccountId(accountId: string): IdentityProfile | undefined {
-    return this.identities.find(i => i.accountId === accountId);
+    let identity = this.identities.find(i => i.accountId === accountId);
+    if (!identity) {
+      const user = this.getUserById(accountId);
+      if (user) {
+        identity = {
+          identityId: `id-${accountId}`,
+          accountId: accountId,
+          username: user.username,
+          displayName: user.penName || user.username,
+          penName: user.penName || user.username,
+          biography: user.bioSummary || '',
+          publicVisibility: 'Public',
+          lifeTimeline: [],
+          signatures: user.signature ? [{
+            id: `sig-${Date.now()}`,
+            label: user.signature,
+            type: 'typed',
+            typedText: user.signature,
+            fontFamily: 'Outfit',
+            status: 'Default',
+            strokes: [],
+            createdAt: new Date().toISOString()
+          }] : []
+        };
+        this.identities.push(identity);
+        this.saveIdentitiesToStorage();
+      }
+    }
+    return identity;
   }
   
   updateIdentity(identity: IdentityProfile) {
-    this.identities = this.identities.map(i => i.identityId === identity.identityId ? identity : i);
+    const exists = this.identities.some(i => i.identityId === identity.identityId);
+    if (exists) {
+      this.identities = this.identities.map(i => i.identityId === identity.identityId ? identity : i);
+    } else {
+      this.identities.push(identity);
+    }
     this.saveIdentitiesToStorage();
   }
   

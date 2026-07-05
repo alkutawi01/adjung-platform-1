@@ -52,9 +52,15 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
   const [currentStroke, setCurrentStroke] = useState<VectorStroke[]>([]);
   
   // Customization states
-  const allowedFonts = db.getSystemSettings().allowedSignatureFonts || [];
+  const allowedFonts = [
+    'Pinyon Script',
+    'Alex Brush',
+    'Great Vibes',
+    'Parisienne',
+    'Allura',
+    'Herr Von Muellerhoff'
+  ];
   const dynamicFontOptions = allowedFonts.map(f => ({ name: f, value: `${f}, cursive` }));
-
   const [signatureMode, setSignatureMode] = useState<'draw' | 'type'>('draw');
   const [typedText, setTypedText] = useState('');
   const [selectedFont, setSelectedFont] = useState(dynamicFontOptions[0]?.value || 'cursive');
@@ -682,8 +688,8 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
               className="relative mt-2 border border-stone-800 rounded-lg overflow-hidden flex items-center justify-center h-40 shadow-inner shrink-0"
             >
                <span 
-                 style={{ fontFamily: selectedFont, fontSize: '48px', color: INK_COLORS[inkColor].value, letterSpacing: `${letterSpacing}px`, fontWeight }}
-                 className={`transition-all ${!typedText ? 'opacity-30' : ''}`}
+                 style={{ fontFamily: selectedFont, fontSize: '48px', color: INK_COLORS[inkColor].value, letterSpacing: `${letterSpacing}px`, fontWeight, textAlign: 'center' }}
+                 className={`transition-all text-center block max-w-full px-6 ${!typedText ? 'opacity-30' : ''}`}
                >
                  {typedText || 'Sign Here'}
                </span>

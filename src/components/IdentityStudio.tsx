@@ -24,15 +24,44 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    const ident = db.getIdentityByAccountId(currentUser.id);
-    if (ident) {
-      setIdentity(ident);
-      setUsername(ident.username);
-      setDisplayName(ident.displayName || '');
-      setPenName(ident.penName);
-      setBiography(ident.biography || '');
-      setVisibility(ident.publicVisibility || 'Public');
+    let ident = db.getIdentityByAccountId(currentUser.id);
+    
+    // Robust fallback: if no identity is found, construct a default one so the studio never hangs
+    if (!ident) {
+      ident = {
+        identityId: `id-${currentUser.id}`,
+        accountId: currentUser.id,
+        username: currentUser.username,
+        displayName: currentUser.penName || currentUser.username,
+        penName: currentUser.penName || currentUser.username,
+        biography: currentUser.bioSummary || '',
+        publicVisibility: 'Public',
+        lifeTimeline: [],
+        signatures: currentUser.signature ? [{
+          id: `sig-${Date.now()}`,
+          label: currentUser.signature,
+          type: 'typed',
+          typedText: currentUser.signature,
+          fontFamily: 'Outfit',
+          status: 'Default',
+          strokes: [],
+          createdAt: new Date().toISOString()
+        }] : []
+      };
+      // Force save to db
+      try {
+        db.updateIdentity(ident);
+      } catch (e) {
+        console.error("Could not save fallback identity", e);
+      }
     }
+
+    setIdentity(ident);
+    setUsername(ident.username);
+    setDisplayName(ident.displayName || '');
+    setPenName(ident.penName);
+    setBiography(ident.biography || '');
+    setVisibility(ident.publicVisibility || 'Public');
   }, [currentUser]);
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity Studio...</div>;

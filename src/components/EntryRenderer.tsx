@@ -16,6 +16,7 @@ interface EntryRendererProps {
   authorName: string;
   authorSignature: string;
   authorSignatureStrokes?: VectorStroke[][];
+  authorSignatureFont?: string;
   authorDigitalSignature?: DigitalSignature;
 }
 
@@ -66,6 +67,7 @@ export function EntryRenderer({
   authorName,
   authorSignature,
   authorSignatureStrokes,
+  authorSignatureFont,
   authorDigitalSignature
 }: EntryRendererProps) {
   const [title, setTitle] = useState(entry.title || '');
@@ -3469,7 +3471,8 @@ export function EntryRenderer({
               />
             ) : (
               <div className="flex flex-col items-center">
-                <div className="font-signature text-5xl text-Adjung-maroon mb-2 rotate-[-2deg]">
+                <div className="text-5xl text-Adjung-maroon mb-2 rotate-[-2deg]"
+                     style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
                   {authorSignature}
                 </div>
                 <div className="font-sans font-medium text-stone-900 tracking-wide mt-2">{authorName}</div>
