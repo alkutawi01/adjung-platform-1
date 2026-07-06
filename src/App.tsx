@@ -2441,86 +2441,13 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 4: INDEX (Editor/Admin only dynamically generated published entries list) */}
         {activeTab === 'index' && currentUser && hasPermission('viewIndex') && (
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-1 border-b border-stone-200 pb-5">
-              <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
-                <ListOrdered className="w-6 h-6 text-adjung-maroon" />
-                Index
-              </h2>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
-                Live dynamic catalog of all published entries in the shared index database
-              </p>
-            </div>
-
-            {/* Explanatory banner */}
-            <div className="p-4 bg-adjung-maroon/5 border border-adjung-maroon/20 rounded flex gap-3 text-xs text-stone-700 leading-relaxed font-sans select-none">
-              <Info className="w-4 h-4 text-adjung-maroon flex-shrink-0 mt-0.5" />
-              <div>
-                This directory displays all published entries across the platform.
-              </div>
-            </div>
-
-            {/* List Table */}
-            <div className="bg-white border border-stone-200 rounded overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse font-sans text-xs">
-                <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[10px] uppercase tracking-wider text-stone-500">
-                    <th className="p-3 pl-4">UUID</th>
-                    <th className="p-3">Author</th>
-                    <th className="p-3">Title</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Published</th>
-                    <th className="p-3">Slug</th>
-                    <th className="p-3 text-right pr-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100 font-serif">
-                  {entries.filter(e => e.status === 'Published').map((item, idx) => {
-                    const author = users.find(u => u.id === item.authorId);
-                    return (
-                      <tr key={item.id} className="hover:bg-stone-50/50 transition">
-                        <td className="p-3 pl-4 font-mono text-[9px] text-stone-400 select-all">{item.id.slice(0, 13)}...</td>
-                        <td className="p-3 font-sans font-medium text-stone-800">{author?.penName || 'Anonymous'}</td>
-                        <td className="p-3 text-stone-900 font-medium text-left">
-                          {item.contentType === 'Note' ? (
-                            <span className="text-stone-600 font-normal line-clamp-1">
-                              {parseInlineFormatting(item.content.split('\n')[0] || '(Empty Note)')}
-                            </span>
-                          ) : (
-                            parseInlineFormatting(item.title || '')
-                          )}
-                          {isArabicText(item.contentType === 'Note' ? item.content : item.title) && (
-                            <span className="ml-2 font-mono text-[9px] text-adjung-maroon uppercase tracking-wide bg-red-50 px-1 rounded">AR</span>
-                          )}
-                        </td>
-                        <td className="p-3 font-sans"><span className="text-adjung-maroon font-semibold">{item.contentType}</span></td>
-                        <td className="p-3 font-mono text-stone-500 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
-                        <td className="p-3 font-mono text-stone-400 text-[10px]">{item.slug}</td>
-                        <td className="p-3 text-right pr-4">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedEntry(item);
-                            }}
-                            className="text-adjung-maroon hover:underline font-mono text-[10px] uppercase tracking-wider"
-                          >
-                            Open Publication
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {entries.filter(e => e.status === 'Published').length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center italic text-stone-400 font-sans">
-                        No published articles are indexed in the shared database yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
+          <div className="max-w-6xl mx-auto">
+            <EditorialIndex
+              entries={entries}
+              users={users}
+              setSelectedEntry={setSelectedEntry}
+              systemSettings={systemSettings}
+            />
           </div>
         )}
 
