@@ -17,7 +17,7 @@ export function EditorialIndex({
   systemSettings,
 }: EditorialIndexProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'All' | 'Article' | 'Essay' | 'Note'>('All');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Article' | 'Essay' | 'Note' | 'Notice' | "Editor's Note">('All');
 
   // Filter entries based on search query and type filter
   const filteredEntries = entries.filter(e => {
@@ -28,7 +28,9 @@ export function EditorialIndex({
 
     const query = searchQuery.trim().toLowerCase();
     const author = users.find(u => u.id === e.authorId);
-    const authorName = author?.penName || 'Anonymous';
+    const authorName = e.publicationClass === 'Institutional'
+      ? (e.publisher || 'Adjung Editorial Board')
+      : (author?.penName || 'Anonymous');
 
     const matchesSearch = !query ||
       e.title.toLowerCase().includes(query) ||
@@ -56,7 +58,7 @@ export function EditorialIndex({
       <div className="p-4 bg-[#802334]/5 border border-[#802334]/20 rounded flex gap-3 text-xs text-[#111111]/70 leading-relaxed font-sans select-none text-left">
         <Info className="w-4 h-4 text-[#802334] flex-shrink-0 mt-0.5" />
         <div>
-          <strong>Shared Database Index:</strong> every Note, Essay, and Article resides inside a single storage and indexing engine. No content is duplicated or moved. This panel allows users to review the public global directory.
+          <strong>Shared Database Index:</strong> every Note, Essay, Article, Notice, and Editor's Note resides inside a single storage and indexing engine. No content is duplicated or moved. This panel allows users to review the public global directory.
         </div>
       </div>
 
@@ -77,7 +79,7 @@ export function EditorialIndex({
         {/* Type Filters */}
         <div className="flex flex-wrap items-center gap-1 text-xs font-mono select-none">
           <span className="text-stone-400 uppercase tracking-wider mr-2 text-[10px]">Filter Type:</span>
-          {(['All', 'Article', 'Essay', 'Note'] as const).map(type => (
+          {(['All', 'Article', 'Essay', 'Note', 'Notice', "Editor's Note"] as const).map(type => (
             <button
               key={type}
               type="button"
@@ -88,7 +90,7 @@ export function EditorialIndex({
                   : 'text-stone-500 hover:text-[#802334] hover:bg-stone-50 border border-transparent'
               }`}
             >
-              {type === 'All' ? 'All Types' : type}
+              {type === 'All' ? 'All' : type}
             </button>
           ))}
         </div>
@@ -101,7 +103,7 @@ export function EditorialIndex({
             <thead>
               <tr className="bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
                 <th className="p-3 pl-4">UUID</th>
-                <th className="p-3">Author</th>
+                <th className="p-3">Author / Publisher</th>
                 <th className="p-3">Title</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">Published</th>
@@ -119,7 +121,11 @@ export function EditorialIndex({
                     className="hover:bg-stone-50 cursor-pointer transition-colors"
                   >
                     <td className="p-3 pl-4 font-mono text-[9px] text-[#111111]/40 select-all" onClick={(e) => e.stopPropagation()}>{item.id.slice(0, 13)}...</td>
-                    <td className="p-3 font-sans font-medium text-[#111111]">{author?.penName || 'Anonymous'}</td>
+                    <td className="p-3 font-sans font-medium text-[#111111]">
+                      {item.publicationClass === 'Institutional'
+                        ? (item.publisher || 'Adjung Editorial Board')
+                        : (author?.penName || 'Anonymous')}
+                    </td>
                     <td className="p-3 text-[#111111] font-medium text-left">
                       {parseInlineFormatting(item.title)}
                       {isAr && (

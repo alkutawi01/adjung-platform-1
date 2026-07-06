@@ -1181,7 +1181,7 @@ export function EntryRenderer({
           referenceSortOrder: updatedReferenceSortOrder,
           publishedDate: updatedStatus === 'Published' ? (entry.publishedDate || new Date().toISOString()) : null,
           updatedDate: new Date().toISOString(),
-          canonicalUrl: `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${updatedType.toLowerCase()}/${updatedSlug}`
+          canonicalUrl: entry.publicationClass === 'Institutional' ? `https://adjung.com/${updatedType === 'Notice' ? 'notice' : 'editorial'}/${updatedSlug}` : `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${updatedType.toLowerCase()}/${updatedSlug}`
         };
         onSave(savedEntry);
         setSaveStatus('saved');
@@ -1243,7 +1243,7 @@ export function EntryRenderer({
         referenceSortOrder: stateRef.current.referenceSortOrder,
         publishedDate: updatedStatus === 'Published' ? (entry.publishedDate || new Date().toISOString()) : null,
         updatedDate: new Date().toISOString(),
-        canonicalUrl: `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${stateRef.current.contentType.toLowerCase()}/${stateRef.current.slug}`
+        canonicalUrl: entry.publicationClass === 'Institutional' ? `https://adjung.com/${stateRef.current.contentType === 'Notice' ? 'notice' : 'editorial'}/${stateRef.current.slug}` : `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${stateRef.current.contentType.toLowerCase()}/${stateRef.current.slug}`
       };
       onSave(savedEntry);
       setSaveStatus('saved');
@@ -1420,7 +1420,7 @@ export function EntryRenderer({
       revisions: updatedRevisions,
       publishedDate: rev.status === 'Published' ? (entry.publishedDate || new Date().toISOString()) : null,
       updatedDate: new Date().toISOString(),
-      canonicalUrl: `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${contentType.toLowerCase()}/${rev.slug}`
+      canonicalUrl: entry.publicationClass === 'Institutional' ? `https://adjung.com/${contentType === 'Notice' ? 'notice' : 'editorial'}/${rev.slug}` : `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${contentType.toLowerCase()}/${rev.slug}`
     };
 
     if (onSave) {

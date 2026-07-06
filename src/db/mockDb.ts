@@ -1,5 +1,112 @@
-import { User, UserRole, Entry, WriterProfile, IdentityProfile, DigitalSignature, Citation, SystemSettings, BiographyItem, SystemLog } from '../types';
+import { User, UserRole, Entry, WriterProfile, IdentityProfile, DigitalSignature, Citation, SystemSettings, BiographyItem, SystemLog, ReleaseLog, PolicyDocument } from '../types';
 import { BRAND } from '../config/brand';
+
+export const INITIAL_RELEASE_LOGS: ReleaseLog[] = [
+  {
+    id: 'rel-1.0',
+    version: 'v1.0.0',
+    date: '2026-06-01T00:00:00Z',
+    changes: {
+      added: [
+        'Initial scriptorium structure and scholarly architecture.',
+        'Continuous timeline folio support for scholars.'
+      ],
+      improved: [
+        'Typographic proportions based on Ibn Rushd\'s Al-Mizan.'
+      ]
+    }
+  },
+  {
+    id: 'rel-1.8',
+    version: 'v1.8.0',
+    date: '2026-07-05T00:00:00Z',
+    changes: {
+      added: [
+        'Handwritten signature pads and vector strokes rendering.',
+        'Institutional communication modules: Notices and Editor\'s Notes.'
+      ],
+      improved: [
+        'Dynamic scroll transparency on top navigation bars.'
+      ],
+      fixed: [
+        'Database corruption issues caused by text serialization.'
+      ]
+    }
+  }
+];
+
+export const INITIAL_POLICIES: PolicyDocument[] = [
+  {
+    id: 'policy-publishing',
+    type: 'Publishing',
+    title: 'Publishing Policy',
+    lastUpdated: '2026-07-01T12:00:00Z',
+    sections: [
+      {
+        id: 'pub-sec-1',
+        title: 'Academic Focus',
+        content: 'Adjung prioritizes deliberate, structured scholarly submissions of Notes, Essays, and Articles.'
+      },
+      {
+        id: 'pub-sec-2',
+        title: 'Open Access Charter',
+        content: 'All publications reside on an open, permanent, decentralized archive for long-term human preservation.'
+      }
+    ]
+  },
+  {
+    id: 'policy-editorial',
+    type: 'Editorial',
+    title: 'Editorial Board Policy',
+    lastUpdated: '2026-07-01T12:00:00Z',
+    sections: [
+      {
+        id: 'ed-sec-1',
+        title: 'Double-Blind Review',
+        content: 'Every essay and article undergoes an independent double-blind review process conducted by the Board of Editors.'
+      }
+    ]
+  },
+  {
+    id: 'policy-ai',
+    type: 'AI',
+    title: 'Artificial Intelligence Policy',
+    lastUpdated: '2026-07-01T12:00:00Z',
+    sections: [
+      {
+        id: 'ai-sec-1',
+        title: 'Human Author Integrity',
+        content: 'Generative AI tools must not be used to draft scholarly content. All manuscripts must represent original human reflection.'
+      }
+    ]
+  },
+  {
+    id: 'policy-community',
+    type: 'Community',
+    title: 'Community Guidelines',
+    lastUpdated: '2026-07-01T12:00:00Z',
+    sections: [
+      {
+        id: 'comm-sec-1',
+        title: 'Constructive Disagreement',
+        content: 'Scholarly critique must remain strictly focused on textual arguments, maintaining deep respect and academic integrity.'
+      }
+    ]
+  },
+  {
+    id: 'policy-citation',
+    type: 'Citation',
+    title: 'Citation Policy',
+    lastUpdated: '2026-07-01T12:00:00Z',
+    sections: [
+      {
+        id: 'cite-sec-1',
+        title: 'Long-term Citation Standards',
+        content: 'References must include complete titles, publisher records, and permanent DOIs or URLs to guarantee persistent links.'
+      }
+    ]
+  }
+];
 
 export const INITIAL_LOGS: SystemLog[] = [
   {
@@ -733,7 +840,17 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
       editOthersContent: false,
       manageSettings: true,
       manageRbac: true,
-      manageLogs: true
+      manageLogs: true,
+      createNotice: true,
+      editNotice: true,
+      publishNotice: true,
+      archiveNotice: true,
+      deleteNotice: true,
+      createEditorNote: true,
+      editEditorNote: true,
+      publishEditorNote: true,
+      archiveEditorNote: true,
+      deleteEditorNote: true
     },
     'Editor': {
       viewIndex: true,
@@ -744,7 +861,17 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
       editOthersContent: false,
       manageSettings: false,
       manageRbac: false,
-      manageLogs: false
+      manageLogs: false,
+      createNotice: true,
+      editNotice: true,
+      publishNotice: true,
+      archiveNotice: true,
+      deleteNotice: true,
+      createEditorNote: true,
+      editEditorNote: true,
+      publishEditorNote: true,
+      archiveEditorNote: true,
+      deleteEditorNote: true
     },
     'Writer': {
       viewIndex: false,
@@ -755,7 +882,17 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
       editOthersContent: false,
       manageSettings: false,
       manageRbac: false,
-      manageLogs: false
+      manageLogs: false,
+      createNotice: false,
+      editNotice: false,
+      publishNotice: false,
+      archiveNotice: false,
+      deleteNotice: false,
+      createEditorNote: false,
+      editEditorNote: false,
+      publishEditorNote: false,
+      archiveEditorNote: false,
+      deleteEditorNote: false
     },
     'Visitor': {
       viewIndex: false,
@@ -766,12 +903,21 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
       editOthersContent: false,
       manageSettings: false,
       manageRbac: false,
-      manageLogs: false
+      manageLogs: false,
+      createNotice: false,
+      editNotice: false,
+      publishNotice: false,
+      archiveNotice: false,
+      deleteNotice: false,
+      createEditorNote: false,
+      editEditorNote: false,
+      publishEditorNote: false,
+      archiveEditorNote: false,
+      deleteEditorNote: false
     }
   }
 };
 
-// Database class helper to encapsulate read/write
 class AdjungDb {
   private users: User[] = [];
   private profiles: WriterProfile[] = [];
@@ -780,6 +926,8 @@ class AdjungDb {
   private entries: Entry[] = [];
   private systemSettings: SystemSettings = INITIAL_SYSTEM_SETTINGS;
   private logs: SystemLog[] = [];
+  private releaseLogs: ReleaseLog[] = [];
+  private policies: PolicyDocument[] = [];
 
   constructor() {
     this.loadFromStorage();
@@ -796,7 +944,6 @@ class AdjungDb {
 
       if (storedUsers) {
         let loadedUsers: User[] = JSON.parse(storedUsers);
-        // Ensure all INITIAL_USERS are present in the list (so they can't be permanently deleted/lost)
         INITIAL_USERS.forEach(initUser => {
           if (!loadedUsers.some(u => u.id === initUser.id)) {
             loadedUsers.push({ ...initUser });
@@ -865,9 +1012,27 @@ class AdjungDb {
         });
         this.saveEntriesToStorage();
       } else {
-        this.entries = INITIAL_ENTRIES;
+        this.entries = [...INITIAL_ENTRIES];
         this.saveEntriesToStorage();
       }
+
+      // Populate publicationClass and authorId on all entries
+      this.entries.forEach((e: any) => {
+        if (e.id === 'entry-mock-notice-1' || e.contentType === 'Notice') {
+          e.publicationClass = 'Institutional';
+          e.authorId = null;
+          e.publisher = 'Adjung Editorial Board';
+          e.isInstitutional = true;
+        } else if (e.id === 'entry-mock-editorial-1' || e.contentType === "Editor's Note") {
+          e.publicationClass = 'Institutional';
+          e.authorId = null;
+          e.publisher = 'Adjung Editorial Board';
+          e.isInstitutional = true;
+        } else {
+          e.publicationClass = e.publicationClass || 'Scholarly';
+        }
+      });
+      this.saveEntriesToStorage();
 
       if (storedSettings) {
         this.systemSettings = JSON.parse(storedSettings);
@@ -892,7 +1057,6 @@ class AdjungDb {
                 ...this.systemSettings.rolePermissions[role]
               };
             }
-            
           });
         }
         this.saveSettingsToStorage();
@@ -908,15 +1072,48 @@ class AdjungDb {
         this.logs = INITIAL_LOGS;
         this.saveLogsToStorage();
       }
+
+      const storedReleaseLogs = localStorage.getItem('adjung_release_logs');
+      if (storedReleaseLogs) {
+        this.releaseLogs = JSON.parse(storedReleaseLogs);
+      } else {
+        this.releaseLogs = INITIAL_RELEASE_LOGS;
+        this.saveReleaseLogsToStorage();
+      }
+
+      const storedPolicies = localStorage.getItem('adjung_policies');
+      if (storedPolicies) {
+        this.policies = JSON.parse(storedPolicies);
+      } else {
+        this.policies = INITIAL_POLICIES;
+        this.savePoliciesToStorage();
+      }
     } catch (e) {
       console.error('Error loading Adjung DB, fallback to initial data', e);
       this.users = INITIAL_USERS;
       this.profiles = INITIAL_PROFILES;
       this.identities = INITIAL_IDENTITIES;
       this.citations = INITIAL_CITATIONS;
-      this.entries = INITIAL_ENTRIES;
+      this.entries = [...INITIAL_ENTRIES];
+      this.entries.forEach((e: any) => {
+        if (e.id === 'entry-mock-notice-1' || e.contentType === 'Notice') {
+          e.publicationClass = 'Institutional';
+          e.authorId = null;
+          e.publisher = 'Adjung Editorial Board';
+          e.isInstitutional = true;
+        } else if (e.id === 'entry-mock-editorial-1' || e.contentType === "Editor's Note") {
+          e.publicationClass = 'Institutional';
+          e.authorId = null;
+          e.publisher = 'Adjung Editorial Board';
+          e.isInstitutional = true;
+        } else {
+          e.publicationClass = e.publicationClass || 'Scholarly';
+        }
+      });
       this.systemSettings = INITIAL_SYSTEM_SETTINGS;
       this.logs = INITIAL_LOGS;
+      this.releaseLogs = INITIAL_RELEASE_LOGS;
+      this.policies = INITIAL_POLICIES;
     }
   }
 
@@ -942,12 +1139,50 @@ class AdjungDb {
   private saveLogsToStorage() {
     localStorage.setItem('adjung_logs', JSON.stringify(this.logs));
   }
+  private saveReleaseLogsToStorage() {
+    localStorage.setItem('adjung_release_logs', JSON.stringify(this.releaseLogs));
+  }
+  private savePoliciesToStorage() {
+    localStorage.setItem('adjung_policies', JSON.stringify(this.policies));
+  }
+
+  // --- RELEASE LOGS API ---
+  getReleaseLogs(): ReleaseLog[] {
+    return this.releaseLogs;
+  }
+  saveReleaseLog(log: ReleaseLog) {
+    const idx = this.releaseLogs.findIndex(l => l.id === log.id);
+    if (idx >= 0) {
+      this.releaseLogs[idx] = log;
+    } else {
+      this.releaseLogs.push(log);
+    }
+    this.saveReleaseLogsToStorage();
+  }
+  deleteReleaseLog(id: string) {
+    this.releaseLogs = this.releaseLogs.filter(l => l.id !== id);
+    this.saveReleaseLogsToStorage();
+  }
+
+  // --- POLICIES API ---
+  getPolicies(): PolicyDocument[] {
+    return this.policies;
+  }
+  savePolicy(policy: PolicyDocument) {
+    const idx = this.policies.findIndex(p => p.id === policy.id);
+    policy.lastUpdated = new Date().toISOString();
+    if (idx >= 0) {
+      this.policies[idx] = policy;
+    } else {
+      this.policies.push(policy);
+    }
+    this.savePoliciesToStorage();
+  }
 
   // Public APIs
   getUsers(): User[] {
     return this.users;
   }
-
   getUserById(id: string): User | undefined {
     return this.users.find(u => u.id === id);
   }
@@ -1101,11 +1336,11 @@ class AdjungDb {
   getCitations(): Citation[] {
     return this.citations;
   }
-  
+
   getCitationById(id: string): Citation | undefined {
     return this.citations.find(c => c.id === id);
   }
-  
+
   checkDuplicateCitation(citation: Omit<Citation, 'id'>): Citation | undefined {
     return this.citations.find(c => 
       c.title.toLowerCase() === citation.title.toLowerCase() && 
@@ -1113,14 +1348,14 @@ class AdjungDb {
       c.year === citation.year
     );
   }
-  
+
   createCitation(citation: Omit<Citation, 'id'>): Citation {
     const newCitation = { ...citation, id: `cit-${Date.now()}` };
     this.citations.push(newCitation);
     this.saveCitationsToStorage();
     return newCitation;
   }
-  
+
   updateCitation(id: string, updates: Partial<Citation>) {
     this.citations = this.citations.map(c => c.id === id ? { ...c, ...updates } : c);
     this.saveCitationsToStorage();
@@ -1145,6 +1380,14 @@ class AdjungDb {
   saveEntry(entry: Entry) {
     const index = this.entries.findIndex(e => e.id === entry.id);
     entry.updatedDate = new Date().toISOString();
+    if (entry.contentType === 'Notice' || entry.contentType === "Editor's Note") {
+      entry.publicationClass = 'Institutional';
+      entry.isInstitutional = true;
+      if (entry.status === 'Published') {
+        entry.authorId = null;
+        entry.publisher = 'Adjung Editorial Board';
+      }
+    }
     if (index >= 0) {
       this.entries[index] = entry;
     } else {
@@ -1192,6 +1435,8 @@ class AdjungDb {
     this.entries = INITIAL_ENTRIES;
     this.systemSettings = INITIAL_SYSTEM_SETTINGS;
     this.logs = INITIAL_LOGS;
+    this.releaseLogs = INITIAL_RELEASE_LOGS;
+    this.policies = INITIAL_POLICIES;
     this.saveUsersToStorage();
     this.saveProfilesToStorage();
     this.saveIdentitiesToStorage();
@@ -1199,6 +1444,8 @@ class AdjungDb {
     this.saveEntriesToStorage();
     this.saveSettingsToStorage();
     this.saveLogsToStorage();
+    this.saveReleaseLogsToStorage();
+    this.savePoliciesToStorage();
   }
 }
 

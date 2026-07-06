@@ -24,9 +24,10 @@ import {
   AlertTriangle,
   EyeOff
 } from 'lucide-react';
-import { User, SystemSettings, Entry, BiographyItem, RolePermissions } from '../types';
+import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocument, PolicySection } from '../types';
 import { db } from '../db/mockDb';
 import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown } from '../utils';
+import { SignatureRenderer } from './SignatureRenderer';
 
 interface EditoriumProps {
   currentUser: User;
@@ -76,7 +77,6 @@ export function Editorium({
   // Main administrative active tab - 10-tab architecture
   const [editoriumActiveTab, setEditoriumActiveTab] = useState<EditoriumTab>('platform');
 
-  // Permission helper
   const hasPermission = (permissionKey: keyof RolePermissions) => {
     return systemSettings.rolePermissions?.[currentUser.role]?.[permissionKey] ?? false;
   };
@@ -85,6 +85,17 @@ export function Editorium({
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
   const [boardSearchQuery, setBoardSearchQuery] = useState('');
+
+  const [selectedPolicyEditId, setSelectedPolicyEditId] = useState(db.getPolicies()[0]?.id || '');
+  const [policyEditSections, setPolicyEditSections] = useState<PolicySection[]>(db.getPolicies()[0]?.sections || []);
+
+  useEffect(() => {
+    const policies = db.getPolicies();
+    const current = policies.find(p => p.id === selectedPolicyEditId);
+    if (current) {
+      setPolicyEditSections(JSON.parse(JSON.stringify(current.sections)));
+    }
+  }, [selectedPolicyEditId, users]);
 
   // Filtering board members and general users
   const boardMembers = users.filter(u => u.role === 'Chief Editor' || u.role === 'Editor');
@@ -352,7 +363,7 @@ export function Editorium({
             </div>
 
             {/* Quick Summary Block */}
-            <div className="bg-stone-50 border border-stone-150 p-4 rounded text-xs text-stone-600 leading-normal font-serif flex items-start gap-2.5">
+            <div className="w-full bg-stone-50 border border-stone-200 p-4 rounded text-xs text-stone-600 leading-normal font-serif flex items-start gap-2.5">
               <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Brand Status: Active & Operational.</strong> Changes to the academic affiliation or tag seals are immediately written to the local storage mock database and synchronized across all open browser context views.
@@ -733,8 +744,8 @@ export function Editorium({
               <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Define governance criteria and guidelines of the digital scriptorium</p>
             </div>
 
-            <div className="space-y-4 text-xs font-sans text-left">
-              <div>
+            <div className="space-y-6 text-xs font-sans text-left">
+              <div className="border-b border-stone-100 pb-4">
                 <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Editorial Policy and Press Charter</label>
                 <textarea
                   value={systemSettings.editorialPolicy}
@@ -744,12 +755,86 @@ export function Editorium({
                     setSystemSettings(updated);
                     db.updateSystemSettings(updated);
                   }}
-                  className={`w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon text-xs leading-relaxed min-h-[160px] ${
+                  className={`w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon text-xs leading-relaxed min-h-[100px] ${
                     !hasPermission('manageSettings') ? 'bg-stone-50 text-stone-500 cursor-not-allowed' : 'bg-white text-stone-900'
                   }`}
                   placeholder="Enter policy text..."
                 />
                 <span className="text-stone-400 text-[9px] font-mono mt-1 block">Renders a verified policy overview displayed in scholar registration steps and guidelines.</span>
+              </div>
+
+              {/* Platform Policies Editor */}
+              <div className="space-y-4 pt-2">
+                <div className="border-b border-stone-100 pb-1.5">
+                  <h4 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+                    <Settings className="w-3.5 h-3.5 text-adjung-maroon" /> Platform Policies Manager
+                  </h4>
+                  <p className="font-mono text-[8px] uppercase tracking-wider text-stone-400 mt-0.5">Edit sections of the platform constitution and policies</p>
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1">Select Policy Document</label>
+                  <select
+                    value={selectedPolicyEditId}
+                    onChange={(e) => setSelectedPolicyEditId(e.target.value)}
+                    className="w-full border border-stone-200 p-1.5 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white"
+                  >
+                    {db.getPolicies().map(p => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                  {policyEditSections.map((section, sIdx) => (
+                    <div key={section.id} className="p-2.5 border border-stone-100 bg-stone-50/50 rounded space-y-2 text-left">
+                      <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">Section {sIdx + 1} Title</span>
+                      <input
+                        type="text"
+                        value={section.title}
+                        onChange={(e) => {
+                          const updated = [...policyEditSections];
+                          updated[sIdx].title = e.target.value;
+                          setPolicyEditSections(updated);
+                        }}
+                        placeholder="Section Title"
+                        className="w-full border border-stone-200 p-1.5 rounded focus:outline-none focus:border-adjung-maroon text-xs font-semibold bg-white"
+                      />
+                      <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">Section {sIdx + 1} Content</span>
+                      <textarea
+                        value={section.content}
+                        onChange={(e) => {
+                          const updated = [...policyEditSections];
+                          updated[sIdx].content = e.target.value;
+                          setPolicyEditSections(updated);
+                        }}
+                        placeholder="Section Content"
+                        rows={3}
+                        className="w-full border border-stone-200 p-1.5 rounded focus:outline-none focus:border-adjung-maroon text-xs leading-relaxed bg-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const p = db.getPolicies().find(x => x.id === selectedPolicyEditId);
+                    if (p) {
+                      const updatedPolicy = {
+                        ...p,
+                        sections: policyEditSections,
+                        lastUpdated: new Date().toISOString()
+                      };
+                      db.savePolicy(updatedPolicy);
+                      showToast(`Policy '${p.title}' successfully updated.`, 'success');
+                      refreshDbState();
+                    }
+                  }}
+                  className="w-full py-2 bg-[#802334] text-white font-mono uppercase tracking-wider text-[9px] hover:opacity-95 transition cursor-pointer"
+                >
+                  Save Policy Changes
+                </button>
               </div>
             </div>
           </div>
@@ -797,7 +882,27 @@ export function Editorium({
                         <span className="font-serif font-semibold text-stone-800 text-xs block">{u.penName}</span>
                         <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400">{u.role}</span>
                       </div>
-                      <span className="font-signature text-lg text-adjung-maroon">{u.signature}</span>
+                      <div className="h-10 w-28 flex items-center justify-end mix-blend-multiply select-none pointer-events-none shrink-0">
+                        {(() => {
+                          const sig = db.getIdentityByAccountId(u.id)?.signatures.find(s => s.status === 'Default');
+                          if (sig) {
+                            return (
+                              <SignatureRenderer 
+                                strokes={sig.strokes || []} 
+                                type={sig.type}
+                                typedText={sig.typedText}
+                                fontFamily={sig.fontFamily}
+                                typographyStyle={sig.typographyStyle}
+                                className="w-full h-full overflow-visible" 
+                                color="#802334" 
+                                strokeWidth={2.5} 
+                                enableBleed={true}
+                              />
+                            );
+                          }
+                          return <span className="font-signature text-sm text-adjung-maroon">{u.signature}</span>;
+                        })()}
+                      </div>
                     </div>
                   ))}
               </div>

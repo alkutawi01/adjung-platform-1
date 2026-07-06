@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-react';
-import { Entry, User } from '../types';
+import { Entry, User, EntryType } from '../types';
 import { EntryRenderer } from './EntryRenderer';
 import { parseInlineFormatting, stripMarkdown } from '../utils';
 import { db } from '../db/mockDb';
@@ -11,7 +11,7 @@ interface WritingDeskProps {
   editingEntry: Entry | null;
   setEditingEntry: (entry: Entry | null) => void;
   refreshDbState: () => void;
-  handleCreateNewEntry: (type: 'Note' | 'Essay' | 'Article') => void;
+  handleCreateNewEntry: (type: EntryType) => void;
   handleSaveEntry: (entry: Entry) => void;
   handleDeleteEntry: (id: string) => void;
   handleSaveFolioSettings: (e: React.FormEvent) => void;
@@ -97,6 +97,24 @@ export function WritingDesk({
             >
               + Article
             </button>
+            {(currentUser.role === 'Chief Editor' || currentUser.role === 'Editor') && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleCreateNewEntry('Notice')}
+                  className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
+                >
+                  + Notice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCreateNewEntry("Editor's Note")}
+                  className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
+                >
+                  + Editor's Note
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -190,15 +208,27 @@ export function WritingDesk({
               <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/50 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Drafts</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
-                  {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').length}
+                  {entries.filter(e => {
+                    const isOwner = e.authorId === currentUser.id;
+                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                    return (isOwner || isInst) && e.status === 'Draft';
+                  }).length}
                 </span>
               </h3>
 
-              {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').length === 0 ? (
+              {entries.filter(e => {
+                const isOwner = e.authorId === currentUser.id;
+                const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                return (isOwner || isInst) && e.status === 'Draft';
+              }).length === 0 ? (
                 <p className="text-xs text-[#111111]/40 italic py-3">No pending drafts. Your mind is quiet.</p>
               ) : (
                 <div className="space-y-3">
-                  {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').map(draft => (
+                  {entries.filter(e => {
+                    const isOwner = e.authorId === currentUser.id;
+                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                    return (isOwner || isInst) && e.status === 'Draft';
+                  }).map(draft => (
                     <div 
                       key={draft.id} 
                       onClick={() => setEditingEntry(draft)}
@@ -226,15 +256,27 @@ export function WritingDesk({
               <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/50 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Published</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
-                  {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').length}
+                  {entries.filter(e => {
+                    const isOwner = e.authorId === currentUser.id;
+                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                    return (isOwner || isInst) && e.status === 'Published';
+                  }).length}
                 </span>
               </h3>
 
-              {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').length === 0 ? (
+              {entries.filter(e => {
+                const isOwner = e.authorId === currentUser.id;
+                const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                return (isOwner || isInst) && e.status === 'Published';
+              }).length === 0 ? (
                 <p className="text-xs text-[#111111]/40 italic py-3">No published records on file.</p>
               ) : (
                 <div className="space-y-3">
-                  {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').map(pub => (
+                  {entries.filter(e => {
+                    const isOwner = e.authorId === currentUser.id;
+                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
+                    return (isOwner || isInst) && e.status === 'Published';
+                  }).map(pub => (
                     <div 
                       key={pub.id} 
                       onClick={() => setEditingEntry(pub)}

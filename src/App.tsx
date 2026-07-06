@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature } from './types';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature, PolicyDocument } from './types';
 import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { EntryRenderer } from './components/EntryRenderer';
@@ -239,6 +239,71 @@ function renderFrontpageBlock(block: any, pIdx: number) {
 
 
 
+interface PoliciesViewProps {
+  policies: PolicyDocument[];
+}
+
+function PoliciesView({ policies }: PoliciesViewProps) {
+  const [selectedPolicyId, setSelectedPolicyId] = useState(policies[0]?.id || '');
+  const currentPolicy = policies.find(p => p.id === selectedPolicyId);
+  return (
+    <div className="max-w-5xl mx-auto py-10 text-left">
+      <header className="border-b border-[#111111]/10 pb-6 mb-10">
+        <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">Platform Governance</span>
+        <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">Publishing & Platform Policies</h1>
+        <p className="font-serif italic text-stone-500 text-sm mt-2">Constitution, editorial covenants, and guidelines governing the Adjung repository.</p>
+      </header>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Sidebar Navigation */}
+        <aside className="md:col-span-1 border-r border-stone-200/60 pr-4 space-y-1">
+          <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-3 px-2">Policy Documents</span>
+          {policies.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedPolicyId(p.id)}
+              className={`w-full text-left px-3 py-2 rounded-sm text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                selectedPolicyId === p.id
+                  ? 'bg-[#802334]/8 text-[#802334] font-semibold border-l-2 border-[#802334]'
+                  : 'text-stone-500 hover:text-stone-850 hover:bg-stone-50'
+              }`}
+            >
+              {p.title}
+            </button>
+          ))}
+        </aside>
+
+        {/* Main Content Area */}
+        <section className="md:col-span-3 min-h-[300px]">
+          {currentPolicy ? (
+            <div className="space-y-6">
+              <div className="border-b border-stone-100 pb-4">
+                <h2 className="font-serif text-2xl md:text-3xl text-stone-900">{currentPolicy.title}</h2>
+                <div className="flex gap-4 mt-2 font-mono text-[9px] text-stone-400">
+                  <span>Last Updated: {new Date(currentPolicy.lastUpdated).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div className="space-y-8 mt-6">
+                {currentPolicy.sections && currentPolicy.sections.map(section => (
+                  <div key={section.id} className="space-y-2">
+                    <h3 className="font-serif text-lg font-semibold text-stone-900 border-b border-stone-100/50 pb-1.5">{section.title}</h3>
+                    <p className="font-serif text-stone-700 text-[14.5px] leading-relaxed whitespace-pre-wrap">
+                      {section.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="italic text-stone-400 font-serif">Select a policy document from the sidebar to read.</p>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   // Database States
   const [users, setUsers] = useState<User[]>(db.getUsers());
@@ -257,7 +322,7 @@ export default function App() {
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity'>('landing');
+  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies'>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   
   // Note inline expansion state
@@ -536,7 +601,12 @@ export default function App() {
     if (editingEntry) {
       newHash = `#/desk/edit/${editingEntry.id}`;
     } else if (selectedEntry) {
-      newHash = `#/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.authorId}/${selectedEntry.slug}`;
+      if (selectedEntry.publicationClass === 'Institutional') {
+        const typeSlug = selectedEntry.contentType === 'Notice' ? 'notice' : 'editorial';
+        newHash = `#/${typeSlug}/${selectedEntry.slug}`;
+      } else {
+        newHash = `#/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.authorId}/${selectedEntry.slug}`;
+      }
     } else {
       if (activeTab === 'landing') newHash = '#/landing';
       else if (activeTab === 'frontpage') newHash = '#/frontpage';
@@ -547,6 +617,10 @@ export default function App() {
       else if (activeTab === 'folio') newHash = `#/folio/${selectedAuthorId || ''}`;
       else if (activeTab === 'bio') newHash = `#/bio/${selectedAuthorId || ''}`;
       else if (activeTab === 'identity') newHash = '#/identity';
+      else if (activeTab === 'notices') newHash = '#/notices';
+      else if (activeTab === 'editorial') newHash = '#/editorial';
+      else if (activeTab === 'changelog') newHash = '#/changelog';
+      else if (activeTab === 'policies') newHash = '#/policies';
     }
 
     if (window.location.hash !== newHash) {
@@ -621,6 +695,40 @@ export default function App() {
       } else if (route === 'bio' && parts[1]) {
         setSelectedAuthorId(parts[1]);
         setActiveTab('bio');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'notices') {
+        setActiveTab('notices');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'notice' && parts[1]) {
+        const slug = parts[1];
+        const entry = db.getEntries().find(e => e.contentType === 'Notice' && e.slug === slug);
+        if (entry) {
+          setSelectedEntry(entry);
+          setActiveTab('notices');
+          setEditingEntry(null);
+        }
+      } else if (route === 'editorial') {
+        if (parts[1]) {
+          const slug = parts[1];
+          const entry = db.getEntries().find(e => e.contentType === "Editor's Note" && e.slug === slug);
+          if (entry) {
+            setSelectedEntry(entry);
+            setActiveTab('editorial');
+            setEditingEntry(null);
+          }
+        } else {
+          setActiveTab('editorial');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+        }
+      } else if (route === 'changelog') {
+        setActiveTab('changelog');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'policies') {
+        setActiveTab('policies');
         setSelectedEntry(null);
         setEditingEntry(null);
       } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
@@ -1718,19 +1826,31 @@ Editorial Board of Adjung`;
             <button
               type="button"
               onClick={() => setSelectedEntry(null)}
-              className="mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition"
+              className="mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Return to Catalog Timeline
+              {selectedEntry.publicationClass === 'Institutional'
+                ? (selectedEntry.contentType === 'Notice' ? 'Return to Notices' : "Return to Editor's Notes")
+                : 'Return to Catalog Timeline'}
             </button>
             <EntryRenderer 
               entry={selectedEntry} 
               mode="view" 
-              authorName={users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer'}
-              authorSignature={resolveSignatureText(selectedEntry.authorId, users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
-              authorSignatureStrokes={resolveSignatureStrokes(selectedEntry, selectedEntry.authorId)}
-              authorSignatureFont={resolveSignatureFont(selectedEntry.authorId)}
-              authorDigitalSignature={resolveDigitalSignature(selectedEntry.authorId, selectedEntry)}
+              authorName={selectedEntry.publicationClass === 'Institutional'
+                ? (selectedEntry.publisher || 'Adjung Editorial Board')
+                : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer')}
+              authorSignature={selectedEntry.publicationClass === 'Institutional'
+                ? ''
+                : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
+              authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
+                ? []
+                : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '')}
+              authorSignatureFont={selectedEntry.publicationClass === 'Institutional'
+                ? ''
+                : resolveSignatureFont(selectedEntry.authorId || '')}
+              authorDigitalSignature={selectedEntry.publicationClass === 'Institutional'
+                ? undefined
+                : resolveDigitalSignature(selectedEntry.authorId || '', selectedEntry)}
             />
           </div>
         )}
@@ -2457,7 +2577,144 @@ Editorial Board of Adjung`;
           />
         )}
 
-        
+        {/* ACTIVE MODULE: INSTITUTIONAL NOTICES */}
+        {activeTab === 'notices' && !selectedEntry && (
+          <div className="max-w-3xl mx-auto space-y-12 py-10">
+            <header className="border-b border-[#111111]/10 pb-6 text-left">
+              <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">Institutional Announcements</span>
+              <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">Notices</h1>
+              <p className="font-serif italic text-stone-500 text-sm mt-2">Operational and time-sensitive announcements from the editorial board.</p>
+            </header>
+            <div className="space-y-10">
+              {entries.filter(e => e.contentType === 'Notice' && e.status === 'Published').length === 0 ? (
+                <p className="text-center italic text-stone-400 font-serif py-12">No institutional notices have been published.</p>
+              ) : (
+                entries
+                  .filter(e => e.contentType === 'Notice' && e.status === 'Published')
+                  .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())
+                  .map(notice => (
+                    <article key={notice.id} className="group border-b border-stone-200/60 pb-8 text-left cursor-pointer" onClick={() => setSelectedEntry(notice)}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="font-mono text-[9px] uppercase text-[#802334] bg-[#802334]/5 px-2 py-0.5 font-semibold">Notice</span>
+                        <span className="text-stone-300">—</span>
+                        <time className="font-mono text-[10px] text-stone-400">{new Date(notice.publishedDate || notice.createdDate).toLocaleDateString()}</time>
+                      </div>
+                      <h3 className="font-serif text-2xl text-stone-900 group-hover:text-[#802334] transition mb-3">{parseInlineFormatting(notice.title)}</h3>
+                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">{notice.excerpt || notice.content.substring(0, 200) + '...'}</p>
+                      <span className="text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">Read Announcement →</span>
+                    </article>
+                  ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE MODULE: EDITORIAL NOTES */}
+        {activeTab === 'editorial' && !selectedEntry && (
+          <div className="max-w-3xl mx-auto space-y-12 py-10">
+            <header className="border-b border-[#111111]/10 pb-6 text-left">
+              <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">Institutional Publications</span>
+              <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">Editor's Notes</h1>
+              <p className="font-serif italic text-stone-500 text-sm mt-2">Formal opinions, statements, and policy directives from Adjung.</p>
+            </header>
+            <div className="space-y-12">
+              {entries.filter(e => e.contentType === "Editor's Note" && e.status === 'Published').length === 0 ? (
+                <p className="text-center italic text-stone-400 font-serif py-12">No editor's notes have been published.</p>
+              ) : (
+                entries
+                  .filter(e => e.contentType === "Editor's Note" && e.status === 'Published')
+                  .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())
+                  .map(note => (
+                    <article key={note.id} className="group border-b border-stone-200/60 pb-10 text-left cursor-pointer" onClick={() => setSelectedEntry(note)}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="font-mono text-[9px] uppercase text-[#802334] bg-[#802334]/5 px-2 py-0.5 font-semibold">Editorial Essay</span>
+                        <span className="text-stone-300">—</span>
+                        <time className="font-mono text-[10px] text-stone-400">{new Date(note.publishedDate || note.createdDate).toLocaleDateString()}</time>
+                      </div>
+                      <h3 className="font-serif text-2xl md:text-3xl text-stone-900 group-hover:text-[#802334] transition mb-3">{parseInlineFormatting(note.title)}</h3>
+                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-4">{note.excerpt || note.content.substring(0, 200) + '...'}</p>
+                      <span className="text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">Read Note →</span>
+                    </article>
+                  ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE MODULE: VERSION HISTORY */}
+        {activeTab === 'changelog' && (
+          <div className="max-w-3xl mx-auto space-y-12 py-10">
+            <header className="border-b border-[#111111]/10 pb-6 text-left">
+              <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">Development Timeline</span>
+              <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">Version History</h1>
+              <p className="font-serif italic text-stone-500 text-sm mt-2">Changelogs, releases, and platform versions of the Adjung repository.</p>
+            </header>
+            <div className="relative border-l border-stone-200 ml-4 pl-8 space-y-12 text-left">
+              {db.getReleaseLogs().length === 0 ? (
+                <p className="text-center italic text-stone-400 font-serif py-12 ml-[-2rem]">No releases are cataloged in version history.</p>
+              ) : (
+                db.getReleaseLogs()
+                  .sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true, sensitivity: 'base' }))
+                  .map(log => (
+                    <div key={log.id} className="relative group">
+                      {/* Chronology Dot */}
+                      <span className="absolute -left-[41px] top-1.5 w-4.5 h-4.5 bg-[#802334] border-4 border-[#FDFDFD] rounded-full group-hover:scale-110 transition-transform"></span>
+                      
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="font-mono text-sm font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded-sm">{log.version}</span>
+                          <time className="font-mono text-[10px] text-stone-400">{new Date(log.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+                        </div>
+                        <h3 className="font-serif text-xl font-medium text-stone-850">{log.version} Release</h3>
+                        <p className="font-serif italic text-stone-500 text-xs">Released by: Adjung Editorial Board</p>
+                        
+                        <div className="font-serif text-stone-600 text-sm leading-relaxed pt-2 space-y-3">
+                          {log.changes.added && log.changes.added.length > 0 && (
+                            <div>
+                              <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1 text-left">Added</span>
+                              <ul className="list-disc pl-4 space-y-1 text-left">
+                                {log.changes.added.map((item, idx) => <li key={idx}>{item}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                          {log.changes.improved && log.changes.improved.length > 0 && (
+                            <div>
+                              <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1 text-left">Improved</span>
+                              <ul className="list-disc pl-4 space-y-1 text-left">
+                                {log.changes.improved.map((item, idx) => <li key={idx}>{item}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                          {log.changes.fixed && log.changes.fixed.length > 0 && (
+                            <div>
+                              <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1 text-left">Fixed</span>
+                              <ul className="list-disc pl-4 space-y-1 text-left">
+                                {log.changes.fixed.map((item, idx) => <li key={idx}>{item}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                          {log.changes.deprecated && log.changes.deprecated.length > 0 && (
+                            <div>
+                              <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1 text-left">Deprecated</span>
+                              <ul className="list-disc pl-4 space-y-1 text-left">
+                                {log.changes.deprecated.map((item, idx) => <li key={idx}>{item}</li>)}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE MODULE: POLICIES */}
+        {activeTab === 'policies' && (
+          <PoliciesView policies={db.getPolicies()} />
+        )}
+
         {/* ACTIVE MODULE: IDENTITY STUDIO */}
         {activeTab === 'identity' && currentUser && (
           <div className="py-8">
@@ -2526,8 +2783,12 @@ Editorial Board of Adjung`;
         {/* ACTIVE MODULE 0B: CURATED FRONTPAGE (Platform public index of publications & scholars) */}
         {activeTab === 'frontpage' && (() => {
           const featuredEntry = entries.find(e => e.id === systemSettings.featuredEntryId && e.status === 'Published');
-          const notice = entries.find(e => e.contentType === 'Notice' && e.status === 'Published' && e.isPinned);
-          const editorNote = entries.find(e => e.contentType === "Editor's Note" && e.status === 'Published' && e.isPinned);
+          const notice = entries
+            .filter(e => e.contentType === 'Notice' && e.status === 'Published')
+            .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())[0];
+          const editorNote = entries
+            .filter(e => e.contentType === "Editor's Note" && e.status === 'Published')
+            .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())[0];
           
           const editorialSelections = entries.filter(e => systemSettings.editorialSelectionIds?.includes(e.id) && e.status === 'Published');
           
@@ -2572,11 +2833,12 @@ Editorial Board of Adjung`;
               {editorNote && (
                 <div className="border-t border-stone-200 pt-16 max-w-2xl mx-auto text-center cursor-pointer group" onClick={() => {
                   setSelectedEntry(editorNote);
-                  setActiveTab('institutional-view');
+                  setActiveTab('editorial');
                 }}>
                   <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-4">Editor's Note</span>
                   <h3 className="font-serif text-2xl text-stone-900 mb-4 group-hover:text-[#802334] transition">{parseInlineFormatting(editorNote.title)}</h3>
-                  <p className="font-serif italic text-stone-600 line-clamp-2">{editorNote.excerpt || editorNote.content.substring(0, 150) + '...'}</p>
+                  <p className="font-serif italic text-stone-600 line-clamp-2 mb-3">{editorNote.excerpt || editorNote.content.substring(0, 150) + '...'}</p>
+                  <span className="inline-block text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">Continue Reading →</span>
                 </div>
               )}
 
@@ -2647,7 +2909,7 @@ Editorial Board of Adjung`;
               {notice && (
                 <div className="mt-24 pt-12 border-t border-stone-200 cursor-pointer group" onClick={() => {
                   setSelectedEntry(notice);
-                  setActiveTab('institutional-view');
+                  setActiveTab('notices');
                 }}>
                   <div className="max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left bg-[#802334]/5 p-6 rounded border border-[#802334]/10 hover:bg-[#802334]/10 transition">
                     <span className="w-2 h-2 bg-[#802334] rotate-45 flex-shrink-0"></span>
@@ -3200,20 +3462,20 @@ Editorial Board of Adjung`;
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Institutional Publications</h4>
+            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Institutional</h4>
             <ul className="space-y-2 font-sans text-xs text-stone-600">
-              <li><button onClick={() => { setActiveTab('editorials'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Notes</button></li>
-              <li><button onClick={() => { setActiveTab('notices'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Notice Board</button></li>
-              <li><span className="hover:text-[#802334] transition cursor-pointer">Publishing Policy</span></li>
-              <li><span className="hover:text-[#802334] transition cursor-pointer">Version History</span></li>
+              <li><button onClick={() => { setActiveTab('editorial'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editor's Notes</button></li>
+              <li><button onClick={() => { setActiveTab('notices'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Notices</button></li>
+              <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Publishing Policies</button></li>
+              <li><button onClick={() => { setActiveTab('changelog'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Version History</button></li>
             </ul>
           </div>
           
           <div className="space-y-4">
             <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Network</h4>
             <ul className="space-y-2 font-sans text-xs text-stone-600">
-              <li><span className="hover:text-[#802334] transition cursor-pointer">About Adjung</span></li>
-              <li><button onClick={() => { setActiveTab('directory'); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
+              <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">About Adjung</button></li>
+              <li><button onClick={() => { setActiveTab('directory'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
             </ul>
           </div>
         </div>

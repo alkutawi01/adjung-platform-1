@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Globe, FileText, User as UserIcon, BookOpen, Compass } from 'lucide-react';
 import { User } from '../types';
+import { db } from '../db/mockDb';
+import { SignatureRenderer } from './SignatureRenderer';
 
 interface DirectoryProps {
   users: User[];
@@ -95,8 +97,26 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
                 className="bg-white border border-stone-200 rounded-sm p-6 hover:shadow-md hover:border-Adjung-maroon/30 transition duration-300 flex flex-col justify-between text-left relative overflow-hidden group"
               >
                 {/* Decorative personal seal top-right */}
-                <div className="absolute top-4 right-4 font-signature text-2xl text-Adjung-maroon/10 group-hover:text-Adjung-maroon/15 transition-colors pointer-events-none select-none rotate-[-6deg]">
-                  {u.signature}
+                <div className="absolute top-2 right-2 h-16 w-36 flex items-center justify-end mix-blend-multiply opacity-10 group-hover:opacity-20 transition-all pointer-events-none select-none rotate-[-6deg]">
+                  {(() => {
+                    const sig = db.getIdentityByAccountId(u.id)?.signatures.find(s => s.status === 'Default');
+                    if (sig) {
+                      return (
+                        <SignatureRenderer 
+                          strokes={sig.strokes || []} 
+                          type={sig.type}
+                          typedText={sig.typedText}
+                          fontFamily={sig.fontFamily}
+                          typographyStyle={sig.typographyStyle}
+                          className="w-full h-full overflow-visible" 
+                          color="#802334" 
+                          strokeWidth={2.0} 
+                          enableBleed={true}
+                        />
+                      );
+                    }
+                    return <span className="font-signature text-lg text-adjung-maroon">{u.signature}</span>;
+                  })()}
                 </div>
 
                 <div className="space-y-3">

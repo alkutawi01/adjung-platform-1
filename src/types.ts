@@ -40,6 +40,16 @@ export interface RolePermissions {
   manageSettings: boolean;    // LOCKED (TRUE for Chief Editor, FALSE for others)
   manageRbac: boolean;        // LOCKED (TRUE for Chief Editor, FALSE for others)
   manageLogs: boolean;
+  createNotice: boolean;
+  editNotice: boolean;
+  publishNotice: boolean;
+  archiveNotice: boolean;
+  deleteNotice: boolean;
+  createEditorNote: boolean;
+  editEditorNote: boolean;
+  publishEditorNote: boolean;
+  archiveEditorNote: boolean;
+  deleteEditorNote: boolean;
 }
 
 export interface User {
@@ -54,9 +64,38 @@ export interface User {
   suspended?: boolean;
 }
 
-export type EntryType = 'Note' | 'Essay' | 'Article' | 'Notice' | 'Editor\'s Note';
+export type PublicationClass = 'Scholarly' | 'Institutional';
+export type ScholarlyType = 'Note' | 'Essay' | 'Article';
+export type InstitutionalType = 'Notice' | 'Editor\'s Note';
+export type EntryType = ScholarlyType | InstitutionalType;
 export type EntryStatus = 'Draft' | 'Published' | 'Archived';
 export type EntryVisibility = 'Public' | 'Private';
+
+export interface ReleaseLog {
+  id: string;
+  version: string;
+  date: string;
+  changes: {
+    added?: string[];
+    improved?: string[];
+    fixed?: string[];
+    deprecated?: string[];
+  };
+}
+
+export interface PolicySection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface PolicyDocument {
+  id: string;
+  type: 'Publishing' | 'Editorial' | 'AI' | 'Community' | 'Citation';
+  title: string;
+  sections: PolicySection[];
+  lastUpdated: string;
+}
 
 export interface Citation {
   id: string;
@@ -102,6 +141,8 @@ export interface Revision {
   signatureVersionId?: string;
   
   // Institutional Metadata
+  publicationClass?: PublicationClass;
+  publisher?: string;
   priority?: 'High' | 'Normal' | 'Low';
   effectiveFrom?: string;
   effectiveUntil?: string;
@@ -112,7 +153,9 @@ export interface Revision {
 
 export interface Entry {
   id: string;
-  authorId: string;
+  publicationClass: PublicationClass;
+  authorId: string | null;
+  publisher?: string;
   contentType: EntryType;
   status: EntryStatus;
   visibility: EntryVisibility;
