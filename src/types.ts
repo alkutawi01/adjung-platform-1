@@ -111,6 +111,7 @@ export interface Citation {
 export interface Footnote {
   id: string;
   content: string;
+  label?: string; // Platform-wide subtitle/heading for footnotes
 }
 
 export interface EditorBlock {

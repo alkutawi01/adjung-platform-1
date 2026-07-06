@@ -71,7 +71,7 @@ html, body {
 }
 
 /* Editor Badge Counters for Footnotes and Margin Notes */
-#editorial-canvas-editor {
+#editorial-canvas-editor, .manifesto-container {
   counter-reset: footnote-badge margin-note-badge;
 }
 

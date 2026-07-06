@@ -815,6 +815,46 @@ We invite our writers to continue pushing the boundaries of what a digital manus
     isInstitutional: true,
     isPinned: true,
     editorialCategory: 'Philosophy'
+  },
+  {
+    id: 'entry-manifesto',
+    authorId: null,
+    publisher: 'Adjung Editorial Board',
+    contentType: 'Editor\'s Note',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: new Date(2026, 5, 12).toISOString(),
+    updatedDate: new Date(2026, 5, 12).toISOString(),
+    publishedDate: new Date(2026, 5, 12).toISOString(),
+    title: 'Why Adjung Exists',
+    slug: 'why-adjung-exists',
+    tags: ['Manifesto', 'Philosophy', 'Core'],
+    canonicalUrl: 'https://adjung.com/editorial/why-adjung-exists',
+    excerpt: 'Knowledge was never meant to compete for attention.',
+    content: `The internet allows ideas to spread faster than ever before, yet thoughtful writing is increasingly buried beneath endless streams of short-lived content.<span class="footnote-badge" data-id="fn-1"></span>
+
+Adjung exists as a quiet place where anyone—not only academics—can write, preserve and discover knowledge that deserves to remain valuable beyond today's trends.<span class="footnote-badge" data-id="fn-2"></span>
+
+Knowledge should be judged by its substance, not by popularity, appearance or algorithms.`,
+    isInstitutional: true,
+    isPinned: true,
+    footnotesData: [
+      {
+        id: 'fn-1',
+        label: 'Editorial Principle',
+        content: 'Adjung intentionally separates reading from engagement mechanics.'
+      },
+      {
+        id: 'fn-2',
+        label: 'Preservation',
+        content: 'Every publication has a permanent canonical address.'
+      }
+    ],
+    marginNotesData: {
+      'mn-1': "EDITORIAL NOTE\nLibraries were never designed for speed. They were designed for contemplation.",
+      'mn-2': "PRESERVATION\nKnowledge grows when given time.",
+      'mn-3': "EDITORIAL PRINCIPLE\nIdeas deserve readers, not algorithms."
+    }
   }
 ];
 
@@ -1010,6 +1050,14 @@ class AdjungDb {
             if (r.referenceSortOrder === undefined) r.referenceSortOrder = 'alphabetical';
           });
         });
+        
+        // Ensure entry-manifesto exists in stored database
+        if (!this.entries.some(e => e.id === 'entry-manifesto')) {
+          const manifesto = INITIAL_ENTRIES.find(e => e.id === 'entry-manifesto');
+          if (manifesto) {
+            this.entries.push(manifesto);
+          }
+        }
         this.saveEntriesToStorage();
       } else {
         this.entries = [...INITIAL_ENTRIES];
@@ -1023,7 +1071,7 @@ class AdjungDb {
           e.authorId = null;
           e.publisher = 'Adjung Editorial Board';
           e.isInstitutional = true;
-        } else if (e.id === 'entry-mock-editorial-1' || e.contentType === "Editor's Note") {
+        } else if (e.id === 'entry-mock-editorial-1' || e.id === 'entry-manifesto' || e.contentType === "Editor's Note") {
           e.publicationClass = 'Institutional';
           e.authorId = null;
           e.publisher = 'Adjung Editorial Board';
