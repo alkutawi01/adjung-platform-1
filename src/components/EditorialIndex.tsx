@@ -105,8 +105,7 @@ export function EditorialIndex({
                 <th className="p-3">Title</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">Published</th>
-                <th className="p-3">Slug</th>
-                <th className="p-3 text-right pr-4">Action</th>
+                <th className="p-3 pr-4">Slug</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
@@ -114,8 +113,12 @@ export function EditorialIndex({
                 const author = users.find(u => u.id === item.authorId);
                 const isAr = isArabicText(item.title);
                 return (
-                  <tr key={item.id} className="hover:bg-[#FDFDFD] transition-colors">
-                    <td className="p-3 pl-4 font-mono text-[9px] text-[#111111]/40 select-all">{item.id.slice(0, 13)}...</td>
+                  <tr 
+                    key={item.id} 
+                    onClick={() => setSelectedEntry(item)}
+                    className="hover:bg-stone-50 cursor-pointer transition-colors"
+                  >
+                    <td className="p-3 pl-4 font-mono text-[9px] text-[#111111]/40 select-all" onClick={(e) => e.stopPropagation()}>{item.id.slice(0, 13)}...</td>
                     <td className="p-3 font-sans font-medium text-[#111111]">{author?.penName || 'Anonymous'}</td>
                     <td className="p-3 text-[#111111] font-medium text-left">
                       {parseInlineFormatting(item.title)}
@@ -125,24 +128,13 @@ export function EditorialIndex({
                     </td>
                     <td className="p-3 font-sans"><span className="text-[#802334] font-semibold">{item.contentType}</span></td>
                     <td className="p-3 font-mono text-[#111111]/50 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
-                    <td className="p-3 font-mono text-[#111111]/40 text-[10px]">{item.slug}</td>
-                    <td className="p-3 text-right pr-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEntry(item);
-                        }}
-                        className="text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider cursor-pointer"
-                      >
-                        Open Publication
-                      </button>
-                    </td>
+                    <td className="p-3 font-mono text-[#111111]/40 text-[10px] pr-4">{item.slug}</td>
                   </tr>
                 );
               })}
               {filteredEntries.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center italic text-stone-400 font-sans">
+                  <td colSpan={6} className="p-8 text-center italic text-stone-400 font-sans">
                     No matching published entries are indexed in the shared database.
                   </td>
                 </tr>
