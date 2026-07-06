@@ -3471,7 +3471,7 @@ export function EntryRenderer({
               />
             ) : (
               <div className="flex flex-col items-center">
-                <div className="text-5xl text-Adjung-maroon mb-2 rotate-[-2deg]"
+                <div className="text-5xl text-Adjung-maroon mb-2"
                      style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
                   {authorSignature}
                 </div>

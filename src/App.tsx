@@ -67,9 +67,13 @@ function resolveSignatureText(authorId: string, fallback: string): string {
   return fallback;
 }
 
-function resolveDigitalSignature(authorId: string): DigitalSignature | undefined {
+function resolveDigitalSignature(authorId: string, entry?: Entry | null): DigitalSignature | undefined {
   const identity = db.getIdentityByAccountId(authorId);
   if (!identity || !identity.signatures) return undefined;
+  if (entry?.signatureVersionId) {
+    const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
+    if (sig) return sig;
+  }
   return identity.signatures.find(s => s.status === 'Default');
 }
 
@@ -78,7 +82,8 @@ function resolveSignatureFont(authorId: string): string | undefined {
   if (!identity || !identity.signatures) return undefined;
   const defaultSig = identity.signatures.find(s => s.status === 'Default');
   if (defaultSig && defaultSig.type === 'typed' && defaultSig.fontFamily) {
-    return `"${defaultSig.fontFamily}", cursive`;
+    const rawFamily = defaultSig.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+    return `"${rawFamily}", cursive`;
   }
   return undefined;
 }
@@ -1739,6 +1744,7 @@ Editorial Board of Adjung`;
               authorSignature={resolveSignatureText(selectedEntry.authorId, users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
               authorSignatureStrokes={resolveSignatureStrokes(selectedEntry, selectedEntry.authorId)}
               authorSignatureFont={resolveSignatureFont(selectedEntry.authorId)}
+              authorDigitalSignature={resolveDigitalSignature(selectedEntry.authorId, selectedEntry)}
             />
           </div>
         )}
@@ -1803,8 +1809,8 @@ Editorial Board of Adjung`;
                 </div>
                 
                 {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
-                <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-5 py-1.5 select-none">
-                  <div className="h-16 w-40 flex items-center justify-center rotate-[-1deg] my-1 mix-blend-multiply">
+                <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-8 py-1.5 select-none">
+                  <div className="h-16 w-64 flex items-center justify-center my-1 mix-blend-multiply">
                     {currentAuthor && (
                       <SignatureRenderer
                         strokes={resolveDigitalSignature(currentAuthor.id)?.strokes || []}
@@ -2266,6 +2272,7 @@ Editorial Board of Adjung`;
                   authorSignature={resolveSignatureText(currentUser.id, currentUser.signature)}
                   authorSignatureStrokes={resolveSignatureStrokes(editingEntry, currentUser.id)}
                   authorSignatureFont={resolveSignatureFont(currentUser.id)}
+                  authorDigitalSignature={resolveDigitalSignature(currentUser.id, editingEntry)}
                 />
               </div>
             ) : (

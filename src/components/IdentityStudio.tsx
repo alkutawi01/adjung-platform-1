@@ -71,6 +71,18 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
     setIsSaving(true);
     setSaveSuccess(false);
 
+    // Synchronize default typed signature to the penName
+    const updatedSignatures = (identity.signatures || []).map(sig => {
+      if (sig.status === 'Default' && sig.type === 'typed') {
+        return {
+          ...sig,
+          typedText: penName,
+          label: penName
+        };
+      }
+      return sig;
+    });
+
     const updatedIdentity: IdentityProfile = {
       ...identity,
       username,
@@ -78,17 +90,22 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
       penName,
       biography,
       publicVisibility: visibility,
+      signatures: updatedSignatures,
     };
 
     db.updateIdentity(updatedIdentity);
     setIdentity(updatedIdentity);
 
-    // Also update the User object penName & username to keep in sync for this prototype
+    // Also update the User object penName & username & signature to keep in sync
     const users = db.getUsers();
     const updatedUser = users.find(u => u.id === currentUser.id);
     if (updatedUser) {
       updatedUser.penName = penName;
       updatedUser.username = username;
+      const defaultSig = updatedIdentity.signatures.find(s => s.status === 'Default');
+      if (defaultSig) {
+        updatedUser.signature = defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label;
+      }
       db.saveUsersToStorage();
     }
 
@@ -101,18 +118,39 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
   };
 
   const handleIdentityUpdateFromSignature = (updatedIdentity: IdentityProfile) => {
-    setIdentity(updatedIdentity);
-    // Sync the string representation to user for legacy fallback if needed
+    // If default signature is typed, sync its text back to penName and displayName
     const defaultSig = updatedIdentity.signatures.find(s => s.status === 'Default');
-    if (defaultSig) {
-      const users = db.getUsers();
-      const updatedUser = users.find(u => u.id === currentUser.id);
-      if (updatedUser) {
-        updatedUser.signature = defaultSig.label; // text fallback or placeholder
-        db.saveUsersToStorage();
-        refreshGlobalState();
-      }
+    let finalIdentity = { ...updatedIdentity };
+    let newPenName = penName;
+    let newDisplayName = displayName;
+
+    if (defaultSig && defaultSig.type === 'typed' && defaultSig.typedText) {
+      newPenName = defaultSig.typedText;
+      newDisplayName = defaultSig.typedText;
+      finalIdentity = {
+        ...finalIdentity,
+        penName: newPenName,
+        displayName: newDisplayName
+      };
+      setPenName(newPenName);
+      setDisplayName(newDisplayName);
     }
+
+    setIdentity(finalIdentity);
+    db.updateIdentity(finalIdentity);
+
+    // Sync to User object
+    const users = db.getUsers();
+    const updatedUser = users.find(u => u.id === currentUser.id);
+    if (updatedUser) {
+      updatedUser.penName = newPenName;
+      if (defaultSig) {
+        updatedUser.signature = defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label;
+      }
+      db.saveUsersToStorage();
+    }
+
+    refreshGlobalState();
   };
 
   return (

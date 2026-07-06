@@ -73,6 +73,7 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
   const [fontWeight, setFontWeight] = useState<number>(400);
   const [showSettings, setShowSettings] = useState<boolean>(true);
   const [simulatedPressure, setSimulatedPressure] = useState<number>(2.0); // UI feedback
+  const [slantAngle, setSlantAngle] = useState<number>(0); // Slant angle in degrees (-15 to 15)
 
   // Physics & Smoothing Refs
   const lastPointRef = useRef<{ x: number, y: number } | null>(null);
@@ -326,9 +327,9 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
 
   const handleSaveSignature = () => {
     if (signatureMode === 'draw') {
-      onSave({ strokes, type: 'drawn' });
+      onSave({ strokes, type: 'drawn', typographyStyle: { slantAngle } });
     } else {
-      onSave({ strokes: [], type: 'typed', typedText, fontFamily: selectedFont, typographyStyle: { letterSpacing, fontWeight } });
+      onSave({ strokes: [], type: 'typed', typedText, fontFamily: selectedFont, typographyStyle: { letterSpacing, fontWeight, slantAngle } });
     }
   };
 
@@ -442,6 +443,23 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
                     className="w-full accent-Adjung-maroon bg-stone-800 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
+
+                {/* Slant Angle */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between font-mono text-[9px] uppercase tracking-wider text-stone-400">
+                    <span>Signature Slant (Angle)</span>
+                    <span className="text-Adjung-maroon font-bold">{slantAngle}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-15"
+                    max="15"
+                    step="1"
+                    value={slantAngle}
+                    onChange={(e) => setSlantAngle(parseInt(e.target.value))}
+                    className="w-full accent-Adjung-maroon bg-stone-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
               </div>
             </>
           ) : (
@@ -483,6 +501,23 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
                     step="0.5"
                     value={letterSpacing}
                     onChange={(e) => setLetterSpacing(parseFloat(e.target.value))}
+                    className="w-full accent-Adjung-maroon bg-stone-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Slant Angle */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between font-mono text-[9px] uppercase tracking-wider text-stone-400">
+                    <span>Signature Slant (Angle)</span>
+                    <span className="text-Adjung-maroon font-bold">{slantAngle}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-15"
+                    max="15"
+                    step="1"
+                    value={slantAngle}
+                    onChange={(e) => setSlantAngle(parseInt(e.target.value))}
                     className="w-full accent-Adjung-maroon bg-stone-800 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
@@ -625,6 +660,7 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
                 onPointerCancel={stopDrawing}
                 onPointerLeave={stopDrawing}
                 className="w-full h-full touch-none"
+                style={{ transform: `rotate(${slantAngle}deg)`, transformOrigin: 'center center' }}
               />
               
               {/* Elegant baseline guideline */}
@@ -688,7 +724,16 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
               className="relative mt-2 border border-stone-800 rounded-lg overflow-hidden flex items-center justify-center h-40 shadow-inner shrink-0"
             >
                <span 
-                 style={{ fontFamily: selectedFont, fontSize: '48px', color: INK_COLORS[inkColor].value, letterSpacing: `${letterSpacing}px`, fontWeight, textAlign: 'center' }}
+                 style={{ 
+                   fontFamily: selectedFont, 
+                   fontSize: '48px', 
+                   color: INK_COLORS[inkColor].value, 
+                   letterSpacing: `${letterSpacing}px`, 
+                   fontWeight, 
+                   textAlign: 'center',
+                   transform: `rotate(${slantAngle}deg)`,
+                   transformOrigin: 'center center'
+                 }}
                  className={`transition-all text-center block max-w-full px-6 ${!typedText ? 'opacity-30' : ''}`}
                >
                  {typedText || 'Sign Here'}

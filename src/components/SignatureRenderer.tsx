@@ -13,6 +13,7 @@ interface SignatureRendererProps {
   typographyStyle?: {
     letterSpacing?: number;
     fontWeight?: number;
+    slantAngle?: number;
   };
 }
 
@@ -76,7 +77,9 @@ export function SignatureRenderer({
             fontFamily: fontFamily || 'Mistrully, Dancing Script, cursive', 
             fontSize: '64px',
             letterSpacing: typographyStyle?.letterSpacing ? `${typographyStyle.letterSpacing}px` : 'normal',
-            fontWeight: typographyStyle?.fontWeight || 'normal'
+            fontWeight: typographyStyle?.fontWeight || 'normal',
+            transform: typographyStyle?.slantAngle ? `rotate(${typographyStyle.slantAngle}deg)` : 'none',
+            transformOrigin: 'center center'
           }}
         >
           {typedText}
@@ -149,55 +152,60 @@ export function SignatureRenderer({
         </defs>
       )}
 
-      {strokes.map((stroke, strokeIdx) => {
-        if (stroke.length === 0) return null;
-        
-        // Render first point as an ink pooling dot
-        const pStart = stroke[0];
-        const startX = pStart.x - minX + padding;
-        const startY = pStart.y - minY + padding;
-        const startWidth = pStart.pressure || strokeWidth;
+      <g style={{
+        transform: typographyStyle?.slantAngle ? `rotate(${typographyStyle.slantAngle}deg)` : 'none',
+        transformOrigin: 'center center'
+      }}>
+        {strokes.map((stroke, strokeIdx) => {
+          if (stroke.length === 0) return null;
+          
+          // Render first point as an ink pooling dot
+          const pStart = stroke[0];
+          const startX = pStart.x - minX + padding;
+          const startY = pStart.y - minY + padding;
+          const startWidth = pStart.pressure || strokeWidth;
 
-        return (
-          <g key={strokeIdx}>
-            {/* Ink pooling cap */}
-            <circle
-              cx={startX}
-              cy={startY}
-              r={startWidth * 0.45}
-              fill={color}
-            />
+          return (
+            <g key={strokeIdx}>
+              {/* Ink pooling cap */}
+              <circle
+                cx={startX}
+                cy={startY}
+                r={startWidth * 0.45}
+                fill={color}
+              />
 
-            {/* Variable-width connected segments */}
-            {stroke.map((point, pointIdx) => {
-              if (pointIdx === 0) return null;
-              
-              const pPrev = stroke[pointIdx - 1];
-              const x1 = pPrev.x - minX + padding;
-              const y1 = pPrev.y - minY + padding;
-              const x2 = point.x - minX + padding;
-              const y2 = point.y - minY + padding;
-              
-              // Width matches the point's computed pressure, falls back to default
-              const w = point.pressure !== undefined ? point.pressure : strokeWidth;
+              {/* Variable-width connected segments */}
+              {stroke.map((point, pointIdx) => {
+                if (pointIdx === 0) return null;
+                
+                const pPrev = stroke[pointIdx - 1];
+                const x1 = pPrev.x - minX + padding;
+                const y1 = pPrev.y - minY + padding;
+                const x2 = point.x - minX + padding;
+                const y2 = point.y - minY + padding;
+                
+                // Width matches the point's computed pressure, falls back to default
+                const w = point.pressure !== undefined ? point.pressure : strokeWidth;
 
-              return (
-                <line
-                  key={pointIdx}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={color}
-                  strokeWidth={w}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              );
-            })}
-          </g>
-        );
-      })}
+                return (
+                  <line
+                    key={pointIdx}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke={color}
+                    strokeWidth={w}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                );
+              })}
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }
