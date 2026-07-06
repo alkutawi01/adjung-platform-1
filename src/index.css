@@ -140,3 +140,16 @@ blockquote {
   font-family: var(--font-serif);
 }
 
+/* Landing page manifesto custom styling for margin note badges */
+.manifesto-container .margin-note-badge {
+  color: #802334;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 0 0.5px;
+}
+
+.manifesto-container .margin-note-badge::before {
+  content: "(" counter(margin-note-badge, lower-roman) ")";
+}
+

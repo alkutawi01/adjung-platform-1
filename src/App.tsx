@@ -4,7 +4,7 @@ import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { EntryRenderer } from './components/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollapseRenderer';
-import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks } from './utils';
+import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
 import { SignatureLayout } from './components/SignatureLayout';
 import { SignatureRenderer } from './components/SignatureRenderer';
 import { 
@@ -2779,16 +2779,6 @@ Editorial Board of Adjung`;
               </button>
             </div>
 
-            {/* Scroll Hint */}
-            <div 
-              className="pt-2 animate-bounce flex flex-col items-center gap-1 text-stone-400 font-mono text-[9px] uppercase tracking-wider cursor-pointer select-none"
-              onClick={() => {
-                document.getElementById('platform-description-block')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <span>Begin Reading</span>
-              <span className="text-xs">↓</span>
-            </div>
 
             {/* FASA 2 & 3: THE MANIFESTO & THE FIRST PROOF */}
             {(() => {
@@ -2821,7 +2811,7 @@ Editorial Board of Adjung`;
                     </p>
                   );
                 }
-                return <p key={idx} dangerouslySetInnerHTML={{ __html: text }} />;
+                return <p key={idx} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: text }} />;
               };
 
               // Featured Entry & Selections
@@ -2862,11 +2852,16 @@ Editorial Board of Adjung`;
                             </div>
                             <div className="lg:col-span-4 lg:pl-8 text-left">
                               {noteContent && (
-                                <div className="border-t border-stone-200/60 pt-3 mt-1 space-y-1">
-                                  <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 font-semibold">
-                                    {noteLabel}
-                                  </span>
-                                  <p className="text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed">
+                                <div className="border-l border-[#802334]/20 pl-4 py-0.5 space-y-1 transition-all">
+                                  <div className="flex items-center gap-1.5 select-none">
+                                    <span className="font-sans text-[10px] font-medium align-super text-[#802334]">
+                                      ({toRoman(idx + 1).toLowerCase()})
+                                    </span>
+                                    <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 font-semibold">
+                                      {noteLabel}
+                                    </span>
+                                  </div>
+                                  <p className="text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed font-serif">
                                     {noteContent}
                                   </p>
                                 </div>
@@ -2881,175 +2876,39 @@ Editorial Board of Adjung`;
                     {fnData.length > 0 && (
                       <div className="pt-12">
                         <div className="border-t border-stone-200/50 w-24 my-6" />
-                        <div className="space-y-4 max-w-xl">
+                        <div className="space-y-3 max-w-xl">
                           {fnData.map((fn, idx) => (
-                            <div key={fn.id} className="text-[12px] text-stone-500 leading-relaxed text-left">
-                              <span className="font-mono text-[#802334] mr-2">^{idx + 1}</span>
-                              {fn.label && (
-                                <strong className="text-stone-700 block font-sans text-[10px] uppercase tracking-wider mb-0.5">
-                                  {fn.label}
-                                </strong>
-                              )}
-                              <p className="inline">{fn.content}</p>
+                            <div key={fn.id} className="group flex gap-3 hover:bg-stone-50/50 p-1.5 rounded transition">
+                              <span className="font-sans text-[10px] font-medium align-super text-[#802334] w-4 flex-shrink-0 select-none mr-1">
+                                ({idx + 1})
+                              </span>
+                              <div className="flex-grow text-left text-stone-500 text-xs">
+                                {fn.label && (
+                                  <strong className="text-stone-750 block font-sans text-[9px] uppercase tracking-wider mb-0.5">
+                                    {fn.label}
+                                  </strong>
+                                )}
+                                <p className="inline font-serif text-[12px] md:text-[13px] text-stone-600 leading-relaxed">{fn.content}</p>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {/* EDITORIAL APPARATUS */}
-                  <div className="border-t border-b border-stone-200/60 py-4 my-16 text-center select-none">
-                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[10px] md:text-[11px] uppercase tracking-widest text-[#802334]/80 font-medium">
-                      <span>Manifesto</span>
-                      <span className="text-stone-300">•</span>
-                      <span>{Object.keys(mnData).length} editorial notes</span>
-                      <span className="text-stone-300">•</span>
-                      <span>{fnData.length} footnotes</span>
-                      <span className="text-stone-300">•</span>
-                      <span>First Edition · {manifestoYear}</span>
-                    </div>
-                  </div>
-
-                  {/* FASA 3: THE FIRST PROOF */}
-                  <div className="space-y-16">
-                    <div className="space-y-2 border-b border-stone-200/60 pb-4">
-                      <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold">
-                        Editorial Selections
-                      </span>
-                      <span className="block font-sans text-xs text-stone-400 italic">
-                        Selected by the Editorial Board
-                      </span>
-                    </div>
-
-                    {/* Featured Publication */}
-                    {featuredEntry && (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-                          <div className="lg:col-span-8 space-y-4 text-left font-serif">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold bg-stone-100 px-1.5 py-0.5 rounded">
-                                {featuredEntry.contentType}
-                              </span>
-                              <span className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider">
-                                Featured Publication
-                              </span>
-                            </div>
-                            
-                            <h4 className="text-2xl md:text-3xl font-light text-stone-900 leading-tight">
-                              {featuredEntry.title}
-                            </h4>
-                            
-                            <span className="block font-sans text-xs text-stone-500 font-medium">
-                              By {users.find(u => u.id === featuredEntry.authorId)?.penName || 'Unknown Scholar'}
-                            </span>
-                            
-                            <p className="text-stone-600 text-sm leading-relaxed max-w-xl">
-                              {featuredEntry.excerpt || featuredEntry.content.replace(/<[^>]*>/g, '').slice(0, 220) + '...'}
-                            </p>
-                            
-                            <div className="flex items-center gap-4 text-xs font-mono text-stone-400 pt-2">
-                              <span>{Math.max(1, Math.ceil(featuredEntry.content.split(/\s+/).length / 200))} min read</span>
-                              <span>•</span>
-                              <span>
-                                {featuredEntry.publishedDate 
-                                  ? new Date(featuredEntry.publishedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) 
-                                  : ''}
-                              </span>
-                            </div>
-                            
-                            <div className="pt-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedEntry(featuredEntry);
-                                  setActiveTab('frontpage');
-                                }}
-                                className="inline-block text-[#802334] hover:text-[#9c2c41] font-mono text-xs uppercase tracking-wider font-bold cursor-pointer hover:underline"
-                              >
-                                Read Publication →
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Margin note for featured entry */}
-                          <div className="lg:col-span-4 lg:pl-8 text-left">
-                            <div className="border-t border-stone-200/60 pt-3 mt-1 space-y-1">
-                              <span className="block font-mono text-[8px] uppercase tracking-wider text-[#802334] font-semibold">
-                                EDITOR'S CHOICE
-                              </span>
-                              <p className="text-stone-500 italic text-xs leading-relaxed font-serif">
-                                Selected for its lasting value and contribution to platform research.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Recently Curated selections list */}
-                    {editorialSelections.length > 0 && (
-                      <div className="space-y-8 pt-8 border-t border-stone-200/60">
-                        <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">
-                          Recently Curated Selections
-                        </span>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
-                          {editorialSelections.map((entry) => {
-                            const author = users.find(u => u.id === entry.authorId);
-                            return (
-                              <div key={entry.id} className="space-y-3 text-left font-serif">
-                                <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">
-                                  {entry.contentType}
-                                </span>
-                                
-                                <h5 className="text-lg font-normal text-stone-900 leading-snug">
-                                  {entry.title}
-                                </h5>
-                                
-                                <span className="block font-sans text-[11px] text-stone-500 font-medium">
-                                  By {author?.penName || 'Unknown Scholar'}
-                                </span>
-                                
-                                <p className="text-stone-600 text-xs md:text-sm leading-relaxed line-clamp-3">
-                                  {entry.excerpt || entry.content.replace(/<[^>]*>/g, '').slice(0, 150) + '...'}
-                                </p>
-                                
-                                <div className="flex items-center gap-4 text-[10px] font-mono text-stone-400 pt-1">
-                                  <span>{Math.max(1, Math.ceil(entry.content.split(/\s+/).length / 200))} min read</span>
-                                  <span>•</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedEntry(entry);
-                                      setActiveTab('frontpage');
-                                    }}
-                                    className="text-[#802334] hover:underline font-semibold cursor-pointer"
-                                  >
-                                    Read →
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer navigation */}
-                    <div className="text-center pt-12 border-t border-stone-100">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('frontpage');
-                          setSelectedEntry(null);
-                          setEditingEntry(null);
-                        }}
-                        className="px-6 py-2 border border-stone-200 hover:border-[#802334] text-stone-600 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold"
-                      >
-                        Browse the Frontpage →
-                      </button>
-                    </div>
+                  {/* Footer navigation */}
+                  <div className="text-center pt-12 border-t border-stone-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('frontpage');
+                        setSelectedEntry(null);
+                        setEditingEntry(null);
+                      }}
+                      className="px-6 py-2 border border-stone-200 hover:border-[#802334] text-stone-600 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold"
+                    >
+                      Browse the Frontpage →
+                    </button>
                   </div>
 
                 </div>
