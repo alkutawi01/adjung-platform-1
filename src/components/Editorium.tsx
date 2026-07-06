@@ -135,6 +135,7 @@ export function Editorium({
   const [layoutDensity, setLayoutDensity] = useState<'Standard' | 'Compact' | 'Classical'>(
     systemSettings.layoutDensity || 'Standard'
   );
+  const [editorialAddInput, setEditorialAddInput] = useState('');
 
   // Sync sub-states when systemSettings changes (e.g. on reset)
   useEffect(() => {
@@ -403,34 +404,39 @@ export function Editorium({
                 <span className="text-stone-400 text-[9px] font-mono mt-1 block">Places an editorial focus box and calligraphic seal of this scholar on the public greeting catalog.</span>
               </div>
 
-              {/* Highlight Article */}
-              {/* Editorial Selection (8-10 works) */}
                 <div className="pt-4 border-t border-stone-200">
                   <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-2">Editorial Selections (Max 10)</label>
                   
                   <div className="flex gap-2 mb-2">
-                    <select
-                      id="editorial-selection-add"
-                      className="flex-1 border border-stone-200 p-2 rounded bg-white font-serif text-sm focus:outline-none focus:border-Adjung-maroon"
-                    >
-                      <option value="">-- Add an entry --</option>
-                      {publishedEntries
-                        .filter(e => !editorialSelectionIds.includes(e.id))
-                        .map(e => (
-                          <option key={e.id} value={e.id}>{e.title || e.content.slice(0,30)}</option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      placeholder="Paste entry UUID (e.g. entry-zayd-1)..."
+                      value={editorialAddInput}
+                      onChange={(e) => setEditorialAddInput(e.target.value)}
+                      className="flex-1 border border-stone-200 p-2 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
+                    />
                     <button
                       type="button"
                       onClick={() => {
-                        const selectEl = document.getElementById('editorial-selection-add');
-                        const val = selectEl ? (selectEl as HTMLSelectElement).value : '';
-                        if (val && editorialSelectionIds.length < 10) {
-                          setEditorialSelectionIds([...editorialSelectionIds, val]);
-                          if (selectEl) (selectEl as HTMLSelectElement).value = '';
+                        const val = editorialAddInput.trim();
+                        if (!val) return;
+                        if (editorialSelectionIds.includes(val)) {
+                          showToast('Entry is already in the list.', 'info');
+                          return;
+                        }
+                        const exists = publishedEntries.some(e => e.id === val);
+                        if (exists) {
+                          if (editorialSelectionIds.length < 10) {
+                            setEditorialSelectionIds([...editorialSelectionIds, val]);
+                            setEditorialAddInput('');
+                          } else {
+                            showToast('Maximum of 10 selections reached.', 'error');
+                          }
+                        } else {
+                          showToast('Invalid UUID: Entry not found or is in draft.', 'error');
                         }
                       }}
-                      className="px-3 py-2 bg-stone-100 border border-stone-300 rounded text-xs font-mono uppercase hover:bg-stone-200 transition"
+                      className="px-4 py-2 bg-stone-100 border border-stone-300 rounded text-xs font-mono uppercase hover:bg-stone-200 transition cursor-pointer"
                     >
                       Add
                     </button>
@@ -439,14 +445,17 @@ export function Editorium({
                   <div className="space-y-2 mt-4">
                     {editorialSelectionIds.map((id, idx) => {
                       const ent = publishedEntries.find(e => e.id === id);
-                      if (!ent) return null;
                       return (
                         <div key={id} className="flex items-center justify-between bg-stone-50 p-2 rounded border border-stone-200/50">
-                          <span className="font-serif text-sm text-stone-800 line-clamp-1">{ent.title || ent.content.slice(0,30)}</span>
+                          <div className="text-left font-serif text-xs">
+                            <span className="font-mono text-[9px] bg-stone-200/60 px-1.5 py-0.5 rounded mr-2 font-bold text-stone-500">{id}</span>
+                            <span className="text-stone-800 font-semibold">{ent ? ent.title : 'Untitled / Deleted'}</span>
+                            {ent && <span className="text-stone-400 font-sans text-[10px] ml-2">({ent.contentType})</span>}
+                          </div>
                           <button
                             type="button"
                             onClick={() => setEditorialSelectionIds(editorialSelectionIds.filter(x => x !== id))}
-                            className="text-red-500 text-xs font-mono uppercase hover:underline ml-2 flex-shrink-0"
+                            className="text-red-500 text-xs font-mono uppercase hover:underline ml-2 flex-shrink-0 cursor-pointer"
                           >
                             Remove
                           </button>
@@ -454,30 +463,46 @@ export function Editorium({
                       )
                     })}
                   </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-2 block">Curated entries displayed on the Frontpage under "Editorial Selection". Order is preserved.</span>
+                  <span className="text-stone-400 text-[9px] font-mono mt-2 block">
+                    Curated entries displayed on the Frontpage under "Editorial Selection". Order is preserved. 
+                    Tip: Copy UUIDs from the <a href="#/index" target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline font-semibold">Publication Index (#/index)</a>.
+                  </span>
                 </div>
 
                 <div>
-                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Apex Pinned Publication of the Week</label>
-                <select
-                  value={featuredEntryId}
-                  onChange={(e) => setFeaturedEntryId(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded bg-white font-serif text-sm focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                >
-                  {publishedEntries.map(e => {
-                    const author = users.find(u => u.id === e.authorId);
-                    return (
-                      <option key={e.id} value={e.id}>
-                        {e.contentType}: "{e.title || e.content.slice(0, 40) + '...'}" by {author?.penName || 'Unknown'}
-                      </option>
-                    );
-                  })}
-                  {publishedEntries.length === 0 && (
-                    <option value="">(No published entries available to feature)</option>
-                  )}
-                </select>
-                <span className="text-stone-400 text-[9px] font-mono mt-1 block">Pins this publication at the absolute pinnacle of the public landing archive timeline.</span>
-              </div>
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Apex Pinned Publication of the Week (Featured Entry UUID)</label>
+                  <input
+                    type="text"
+                    value={featuredEntryId}
+                    placeholder="Enter entry UUID (e.g. entry-zayd-1)..."
+                    onChange={(e) => setFeaturedEntryId(e.target.value.trim())}
+                    className="w-full border border-stone-200 p-2.5 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
+                  />
+                  {(() => {
+                    const match = publishedEntries.find(e => e.id === featuredEntryId);
+                    if (!featuredEntryId) return null;
+                    if (match) {
+                      return (
+                        <div className="mt-2 p-2 bg-emerald-50 border border-emerald-100 rounded flex items-center gap-2 text-left">
+                          <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
+                          <span className="font-sans text-[10px] text-emerald-800">
+                            <strong>Found {match.contentType}:</strong> "{match.title || 'Untitled'}" by {users.find(u => u.id === match.authorId)?.penName || 'Unknown'}
+                          </span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded flex items-center gap-2 text-left">
+                          <span className="w-1.5 h-1.5 bg-amber-600 rounded-full animate-ping"></span>
+                          <span className="font-sans text-[10px] text-amber-800">
+                            No published entry found with ID/UUID "{featuredEntryId}". Please paste a valid published entry ID.
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
+                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">Pins this publication at the absolute pinnacle of the public landing archive timeline.</span>
+                </div>
 
               <button
                 type="button"
