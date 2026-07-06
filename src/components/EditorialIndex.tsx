@@ -82,10 +82,10 @@ export function EditorialIndex({
               key={type}
               type="button"
               onClick={() => setTypeFilter(type)}
-              className={`px-2.5 py-1 rounded text-[11px] transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-[11px] transition-all duration-300 cursor-pointer ${
                 typeFilter === type
-                  ? 'bg-[#802334]/10 text-[#802334] font-semibold border border-[#802334]/20'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 bg-transparent border border-transparent'
+                  ? 'bg-[#802334]/12 text-[#802334] font-semibold border border-[#802334]/20 backdrop-blur-sm shadow-sm shadow-[#802334]/5'
+                  : 'text-stone-500 hover:text-[#802334] hover:bg-stone-50 border border-transparent'
               }`}
             >
               {type === 'All' ? 'All Types' : type}

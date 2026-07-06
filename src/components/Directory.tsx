@@ -64,10 +64,10 @@ export function Directory({ users, onSelectMember }: DirectoryProps) {
               key={role}
               type="button"
               onClick={() => setRoleFilter(role)}
-              className={`px-2.5 py-1 rounded text-[11px] transition ${
+              className={`px-3.5 py-1.5 rounded-full text-[11px] transition-all duration-300 cursor-pointer ${
                 roleFilter === role
-                  ? 'bg-Adjung-maroon/10 text-Adjung-maroon font-semibold border border-Adjung-maroon/20'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 bg-transparent border border-transparent'
+                  ? 'bg-Adjung-maroon/12 text-Adjung-maroon font-semibold border border-Adjung-maroon/20 backdrop-blur-sm shadow-sm shadow-Adjung-maroon/5'
+                  : 'text-stone-500 hover:text-Adjung-maroon hover:bg-stone-50 border border-transparent'
               }`}
             >
               {role === 'All' ? 'All Members' : role}
