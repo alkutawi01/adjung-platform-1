@@ -249,6 +249,9 @@ export default function App() {
   const [showNavbar, setShowNavbar] = useState(true);
   const [navVisible, setNavVisible] = useState(true);
   const [isFloating, setIsFloating] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  const [maxScroll, setMaxScroll] = useState(400);
   const lastScrollY = useRef(0);
 
   // App Navigation & Session States
@@ -331,19 +334,7 @@ export default function App() {
     }
   }, [toastVisible]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const isAtBottom = maxScroll > 100 ? window.scrollY >= Math.max(50, maxScroll - 400) : false;
-      if (isAtBottom) {
-        setShowNavbar(false);
-      } else {
-        setShowNavbar(true);
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+
 
   // Startup Session Restore & Verification (no silent seeded fallbacks!)
   useEffect(() => {
@@ -519,25 +510,11 @@ export default function App() {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-
-          // 1. floating state (if scrolled > 15px)
+          const currentMaxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          setScrollY(currentScrollY);
+          setMaxScroll(currentMaxScroll);
           setIsFloating(currentScrollY > 15);
-
-          // 2. visibility state
-          if (currentScrollY <= 15) {
-            // Rest at top
-            setNavVisible(true);
-          } else if (currentScrollY > lastScrollY.current) {
-            // Scroll down: hide only after scroll threshold (100px)
-            if (currentScrollY > 100) {
-              setNavVisible(false);
-            }
-          } else {
-            // Scroll up slightly: gently show
-            setNavVisible(true);
-          }
-
-          lastScrollY.current = currentScrollY;
+          setNavVisible(true); // Always keep navbar visibility state true, opacity is handled via style
           ticking = false;
         });
         ticking = true;
@@ -545,8 +522,11 @@ export default function App() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    // Measure initially
+    handleScroll();
+
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [activeTab, selectedEntry, selectedAuthorId]);
 
   // Two-way URL Hash Router Synchronization
   useEffect(() => {
@@ -1406,15 +1386,21 @@ Editorial Board of Adjung`;
 
       {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
       <nav 
-        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-300 ease-in-out backdrop-blur-md ${
-          !showNavbar ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
-        } ${
-          !navVisible ? '-translate-y-full shadow-none' : 'translate-y-0'
-        } ${
+        onMouseEnter={() => setIsHeaderHovered(true)}
+        onMouseLeave={() => setIsHeaderHovered(false)}
+        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-200 ease-out backdrop-blur-md ${
           isFloating 
-            ? 'bg-[#802334]/90 shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
-            : 'bg-[#802334]/90 border-white/5 shadow-none'
-        }`}
+            ? 'shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
+            : 'border-white/5 shadow-none'
+        } bg-[#802334]/90`}
+        style={{
+          opacity: showNavbar 
+            ? (isHeaderHovered 
+                ? 1.0 
+                : Math.max(0, 1.0 - scrollY / Math.max(100, Math.min(400, maxScroll)))) 
+            : 0,
+          pointerEvents: showNavbar ? 'auto' : 'none',
+        }}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
           
