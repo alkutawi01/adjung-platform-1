@@ -2790,14 +2790,50 @@ Editorial Board of Adjung`;
               <span className="text-xs">↓</span>
             </div>
 
-            {/* Platform Description Block */}
-            <div id="platform-description-block" className="bg-white border border-stone-200/80 p-6 md:p-8 rounded-sm shadow-sm font-serif text-stone-700 space-y-4 leading-relaxed text-[13.5px] text-center max-w-3xl mx-auto border-t-2 border-t-[#802334]">
-              <p>
-                Welcome to the unified digital repository of {BRAND.shortName}. {BRAND.description} Our architecture separates platform editorial governance from individual writing folios, preserving the sanctity, focus, and quiet authority of the printed word on modern screens.
-              </p>
-              <p className="text-stone-500 italic text-[12.5px] font-mono uppercase tracking-wider">
-                Platform Governance — {systemSettings.academicAffiliation}
-              </p>
+            {/* FASA 2: WHY ADJUNG EXISTS */}
+            <div 
+              id="platform-description-block" 
+              className="max-w-5xl mx-auto pt-16 pb-24 text-left border-t border-stone-200/60 mt-12 px-4"
+            >
+              {/* Eyebrow Label */}
+              <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold mb-8">
+                Why Adjung Exists
+              </span>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start font-serif">
+                
+                {/* Left Column (60-65% width) */}
+                <div className="lg:col-span-7 space-y-6">
+                  <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-light text-stone-900 leading-tight">
+                    Why does Adjung exist?
+                  </h3>
+                  
+                  <div className="text-stone-600 text-sm md:text-[14.5px] leading-relaxed space-y-5">
+                    <p>
+                      We live in an age of endless scrolling and digital noise, where the depth of human expression is often flattened into streams of immediate attention. Valuable ideas, which require time to formulate and reflect upon, are frequently buried beneath the temporary consensus of the feed.
+                    </p>
+                    <p>
+                      Adjung was created to preserve meaningful knowledge. It is built as a quiet home for writing that deserves to endure—unhurried, deliberate, and designed to outlive the immediate news cycle. We believe that structured, thoughtful reflections should be accessible to anyone, not just confined to formal academic institutions.
+                    </p>
+                    <p>
+                      By separating the administrative curation of the press from individual scholarly folios, we protect the sanctity and focus of the written word. Here, the value of an idea is measured by its substance and contribution to the long-term human archive, rather than its alignment with immediate trends.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column (35-40% width) */}
+                <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-stone-200/80 pt-8 lg:pt-2 pl-0 lg:pl-10 space-y-6 text-stone-500 italic text-xs md:text-sm leading-relaxed font-serif text-left">
+                  <div className="space-y-1">
+                    <p>"There is a reason libraries ask for silence."</p>
+                    <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">— On Editorial Authority</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p>"The value of knowledge is measured by what remains, not by what trends."</p>
+                    <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">— On Preservation</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         )}
