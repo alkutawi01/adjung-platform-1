@@ -1,5 +1,5 @@
-import React from 'react';
-import { ListOrdered, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { ListOrdered, Info, Search } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../types';
 import { isArabicText, stripMarkdown, parseInlineFormatting } from '../utils';
 
@@ -16,6 +16,30 @@ export function EditorialIndex({
   setSelectedEntry,
   systemSettings,
 }: EditorialIndexProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Article' | 'Essay' | 'Note'>('All');
+
+  // Filter entries based on search query and type filter
+  const filteredEntries = entries.filter(e => {
+    // Only published entries should be visible in the catalog
+    if (e.status !== 'Published') return false;
+
+    const matchesType = typeFilter === 'All' || e.contentType === typeFilter;
+
+    const query = searchQuery.trim().toLowerCase();
+    const author = users.find(u => u.id === e.authorId);
+    const authorName = author?.penName || 'Anonymous';
+
+    const matchesSearch = !query ||
+      e.title.toLowerCase().includes(query) ||
+      authorName.toLowerCase().includes(query) ||
+      e.contentType.toLowerCase().includes(query) ||
+      (e.slug && e.slug.toLowerCase().includes(query)) ||
+      e.id.toLowerCase().includes(query);
+
+    return matchesType && matchesSearch;
+  });
+
   return (
     <div className="space-y-8">
       <div className="space-y-1 border-b border-[#111111]/10 pb-5">
@@ -28,6 +52,7 @@ export function EditorialIndex({
         </p>
       </div>
 
+      {/* Info Card */}
       <div className="p-4 bg-[#802334]/5 border border-[#802334]/20 rounded flex gap-3 text-xs text-[#111111]/70 leading-relaxed font-sans select-none text-left">
         <Info className="w-4 h-4 text-[#802334] flex-shrink-0 mt-0.5" />
         <div>
@@ -35,6 +60,41 @@ export function EditorialIndex({
         </div>
       </div>
 
+      {/* Search and Filters Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/50 pb-4">
+        {/* Search Input */}
+        <div className="relative w-full md:max-w-xs">
+          <input
+            type="text"
+            placeholder="Search entries by title, author, slug..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white"
+          />
+          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
+        </div>
+
+        {/* Type Filters */}
+        <div className="flex flex-wrap items-center gap-1 text-xs font-mono select-none">
+          <span className="text-stone-400 uppercase tracking-wider mr-2 text-[10px]">Filter Type:</span>
+          {(['All', 'Article', 'Essay', 'Note'] as const).map(type => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setTypeFilter(type)}
+              className={`px-2.5 py-1 rounded text-[11px] transition cursor-pointer ${
+                typeFilter === type
+                  ? 'bg-[#802334]/10 text-[#802334] font-semibold border border-[#802334]/20'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 bg-transparent border border-transparent'
+              }`}
+            >
+              {type === 'All' ? 'All Types' : type}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Database Table */}
       <div className="bg-white border border-[#111111]/10 rounded overflow-hidden shadow-sm font-sans text-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
@@ -50,7 +110,7 @@ export function EditorialIndex({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
-              {entries.filter(e => e.status === 'Published').map((item) => {
+              {filteredEntries.map((item) => {
                 const author = users.find(u => u.id === item.authorId);
                 const isAr = isArabicText(item.title);
                 return (
@@ -80,10 +140,10 @@ export function EditorialIndex({
                   </tr>
                 );
               })}
-              {entries.filter(e => e.status === 'Published').length === 0 && (
+              {filteredEntries.length === 0 && (
                 <tr>
                   <td colSpan={7} className="p-8 text-center italic text-stone-400 font-sans">
-                    No published articles are indexed in the shared database yet.
+                    No matching published entries are indexed in the shared database.
                   </td>
                 </tr>
               )}
