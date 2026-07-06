@@ -1810,7 +1810,7 @@ Editorial Board of Adjung`;
                 
                 {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
                 <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-8 py-1.5 select-none">
-                  <div className="h-16 w-64 flex items-center justify-center my-1 mix-blend-multiply">
+                  <div className="h-16 w-64 flex items-center justify-center -mb-3.5 z-10 relative mix-blend-multiply">
                     {currentAuthor && (
                       <SignatureRenderer
                         strokes={resolveDigitalSignature(currentAuthor.id)?.strokes || []}
@@ -1825,7 +1825,7 @@ Editorial Board of Adjung`;
                       />
                     )}
                   </div>
-                  <span className="font-serif text-[10px] font-semibold uppercase tracking-wider text-stone-600 block mt-1">
+                  <span className="font-serif text-[10px] font-semibold uppercase tracking-wider text-stone-600 block relative z-0 pt-0.5">
                     {currentAuthor?.penName}
                   </span>
                 </div>
@@ -2647,7 +2647,7 @@ Editorial Board of Adjung`;
                     <div className="h-px w-12 bg-stone-200"></div>
                   </div>
                   <h2 className="font-serif text-3xl md:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-[#802334] transition-colors px-4">
-                    {featuredEntry.title}
+                    {parseInlineFormatting(featuredEntry.title)}
                   </h2>
                   <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
                     {featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...'}
@@ -2662,7 +2662,7 @@ Editorial Board of Adjung`;
                   setActiveTab('institutional-view');
                 }}>
                   <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-4">Editor's Note</span>
-                  <h3 className="font-serif text-2xl text-stone-900 mb-4 group-hover:text-[#802334] transition">{editorNote.title}</h3>
+                  <h3 className="font-serif text-2xl text-stone-900 mb-4 group-hover:text-[#802334] transition">{parseInlineFormatting(editorNote.title)}</h3>
                   <p className="font-serif italic text-stone-600 line-clamp-2">{editorNote.excerpt || editorNote.content.substring(0, 150) + '...'}</p>
                 </div>
               )}
@@ -2685,7 +2685,7 @@ Editorial Board of Adjung`;
                         }}>
                           <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-2">{item.contentType}</span>
                           <h4 className="font-serif text-xl text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2">
-                            {item.title}
+                            {parseInlineFormatting(item.title)}
                           </h4>
                           <span className="font-sans text-[11px] text-stone-500">{author?.penName || 'Writer'}</span>
                         </div>
@@ -2715,7 +2715,7 @@ Editorial Board of Adjung`;
                         }}
                       >
                         <h4 className="font-serif text-2xl text-stone-900 group-hover:text-[#802334] transition mb-3">
-                          {currentLatestEntry.title}
+                          {parseInlineFormatting(currentLatestEntry.title)}
                         </h4>
                         <div className="flex items-center justify-center gap-3">
                           <span className="font-sans text-[11px] text-stone-500">

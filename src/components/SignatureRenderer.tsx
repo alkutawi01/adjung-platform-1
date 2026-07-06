@@ -14,6 +14,7 @@ interface SignatureRendererProps {
     letterSpacing?: number;
     fontWeight?: number;
     slantAngle?: number;
+    scale?: number;
   };
 }
 
@@ -73,12 +74,14 @@ export function SignatureRenderer({
           dominantBaseline="middle" 
           textAnchor="middle" 
           fill={color}
+          textLength={typedText.length > 18 ? "370" : undefined}
+          lengthAdjust={typedText.length > 18 ? "spacingAndGlyphs" : undefined}
           style={{ 
             fontFamily: fontFamily || 'Mistrully, Dancing Script, cursive', 
             fontSize: '64px',
             letterSpacing: typographyStyle?.letterSpacing ? `${typographyStyle.letterSpacing}px` : 'normal',
             fontWeight: typographyStyle?.fontWeight || 'normal',
-            transform: typographyStyle?.slantAngle ? `rotate(${typographyStyle.slantAngle}deg)` : 'none',
+            transform: `rotate(${typographyStyle?.slantAngle || 0}deg) scale(${typographyStyle?.scale !== undefined ? typographyStyle.scale : 1})`,
             transformOrigin: 'center center'
           }}
         >
@@ -153,7 +156,7 @@ export function SignatureRenderer({
       )}
 
       <g style={{
-        transform: typographyStyle?.slantAngle ? `rotate(${typographyStyle.slantAngle}deg)` : 'none',
+        transform: `rotate(${typographyStyle?.slantAngle || 0}deg) scale(${typographyStyle?.scale !== undefined ? typographyStyle.scale : 1})`,
         transformOrigin: 'center center'
       }}>
         {strokes.map((stroke, strokeIdx) => {

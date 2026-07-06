@@ -24,6 +24,8 @@ export interface DigitalSignature {
   typographyStyle?: {
     letterSpacing?: number;
     fontWeight?: number;
+    slantAngle?: number;
+    scale?: number;
   };
 }
 
