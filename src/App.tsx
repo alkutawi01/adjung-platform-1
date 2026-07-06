@@ -1553,7 +1553,7 @@ Editorial Board of Adjung`;
                   )}
 
                   {/* Directory */}
-                  {hasPermission('viewDirectory') && (
+                  {currentUser && hasPermission('viewDirectory') && (
                     <button
                       type="button"
                       onClick={() => {
