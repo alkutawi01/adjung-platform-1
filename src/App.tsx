@@ -1406,14 +1406,14 @@ Editorial Board of Adjung`;
 
       {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
       <nav 
-        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-300 ease-in-out ${
+        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-300 ease-in-out backdrop-blur-md ${
           !showNavbar ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         } ${
           !navVisible ? '-translate-y-full shadow-none' : 'translate-y-0'
         } ${
           isFloating 
-            ? 'bg-[#FDFDFD]/90 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.03),0_1px_3px_rgba(0,0,0,0.02)] border-stone-200/60' 
-            : 'bg-[#FDFDFD] border-stone-200/30 shadow-none'
+            ? 'bg-[#802334]/90 shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
+            : 'bg-[#802334]/90 border-white/5 shadow-none'
         }`}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
@@ -1430,7 +1430,7 @@ Editorial Board of Adjung`;
                 setActiveTab('landing');
               }
             }}
-            className="flex items-center cursor-pointer group text-[#802334] hover:opacity-85 transition-opacity"
+            className="flex items-center cursor-pointer group text-white hover:opacity-85 transition-opacity"
           >
             <span className="font-serif text-[15px] font-semibold tracking-wider">
               {BRAND.logoText}
@@ -1452,7 +1452,7 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition-colors text-stone-500 hover:text-[#802334]"
+                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition-colors text-white/70 hover:text-white cursor-pointer"
                     >
                       Frontpage
                     </button>
@@ -1467,10 +1467,10 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                         activeTab === 'directory'
-                          ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
-                          : 'text-stone-500 hover:text-[#802334]'
+                          ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
+                          : 'text-white/70 hover:text-white'
                       }`}
                     >
                       Directory
@@ -1486,10 +1486,10 @@ Editorial Board of Adjung`;
                         setSelectedEntry(null);
                         setEditingEntry(null);
                       }}
-                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                         activeTab === 'index'
-                          ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
-                          : 'text-stone-500 hover:text-[#802334]'
+                          ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
+                          : 'text-white/70 hover:text-white'
                       }`}
                     >
                       Index
@@ -1506,10 +1506,10 @@ Editorial Board of Adjung`;
                       setSelectedEntry(null);
                       setEditingEntry(null);
                     }}
-                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                       activeTab === 'folio'
-                        ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
-                        : 'text-stone-500 hover:text-[#802334]'
+                        ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
+                        : 'text-white/70 hover:text-white'
                     }`}
                   >
                     Folio
@@ -1522,10 +1522,10 @@ Editorial Board of Adjung`;
                       setSelectedEntry(null);
                       setEditingEntry(null);
                     }}
-                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition ${
+                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                       activeTab === 'bio'
-                        ? 'text-[#802334] font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-[#802334]'
-                        : 'text-stone-500 hover:text-[#802334]'
+                        ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
+                        : 'text-white/70 hover:text-white'
                     }`}
                   >
                     Biography
@@ -1534,7 +1534,7 @@ Editorial Board of Adjung`;
                   {/* Desk: Only if the authenticated user is the owner of this author site */}
                   {currentUser?.id === selectedAuthorId && (
                     <>
-                      <span className="text-stone-200 text-[10px] select-none font-mono">|</span>
+                      <span className="text-white/20 text-[10px] select-none font-mono">|</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1542,10 +1542,10 @@ Editorial Board of Adjung`;
                           setSelectedEntry(null);
                           setEditingEntry(null);
                         }}
-                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border border-stone-200 rounded-sm ${
+                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border rounded-sm cursor-pointer ${
                           activeTab === 'desk'
-                            ? 'bg-[#802334] border-[#802334] text-white font-semibold'
-                            : 'text-stone-500 hover:bg-stone-50 font-medium'
+                            ? 'bg-white border-white text-[#802334] font-semibold'
+                            : 'text-white/80 border-white/20 hover:bg-white/10 font-medium'
                         }`}
                         title="Your private workspace"
                       >
@@ -1557,7 +1557,7 @@ Editorial Board of Adjung`;
               )}
             </div>
 
-            <div className="h-4 w-px bg-stone-200" />
+            <div className="h-4 w-px bg-white/20" />
 
             {/* Right: Authentication or User menu */}
             {currentUser ? (
@@ -1565,7 +1565,7 @@ Editorial Board of Adjung`;
                 <button
                   type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-stone-600 hover:text-[#802334] transition uppercase cursor-pointer"
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white transition uppercase cursor-pointer"
                 >
                   <span>{currentUser.penName}</span>
                   <span className="text-[10px] opacity-60">▾</span>
@@ -1597,7 +1597,7 @@ Editorial Board of Adjung`;
                               setSelectedEntry(null);
                               setEditingEntry(null);
                             }}
-                            className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1"
+                            className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1 cursor-pointer"
                           >
                             My Site
                           </button>
@@ -1609,7 +1609,7 @@ Editorial Board of Adjung`;
                             setShowUserMenu(false);
                             setShowAccountModal(true);
                           }}
-                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors"
+                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
                         >
                           Account
                         </button>
@@ -1624,7 +1624,7 @@ Editorial Board of Adjung`;
                               setSelectedEntry(null);
                               setEditingEntry(null);
                             }}
-                            className={`w-full text-left px-4 py-1.5 transition-colors ${
+                            className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
                               activeTab === 'editorium'
                                 ? 'text-[#802334] bg-stone-50/60 font-semibold'
                                 : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
@@ -1642,7 +1642,7 @@ Editorial Board of Adjung`;
                             setShowUserMenu(false);
                             handleLogout();
                           }}
-                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-medium"
+                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-medium cursor-pointer"
                         >
                           Sign Out
                         </button>
@@ -1659,7 +1659,7 @@ Editorial Board of Adjung`;
                   setLoginError('');
                   setShowLoginModal(true);
                 }}
-                className="px-1.5 py-1 text-xs font-mono tracking-wider text-stone-600 hover:text-[#802334] font-semibold transition uppercase cursor-pointer"
+                className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
               >
                 Sign In
               </button>

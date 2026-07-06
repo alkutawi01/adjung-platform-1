@@ -99,7 +99,7 @@ export function EditorialIndex({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="bg-[#111111]/5 border-b border-[#111111]/10 font-sans text-[9px] uppercase tracking-widest text-[#111111]/50 font-semibold">
+              <tr className="bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
                 <th className="p-3 pl-4">UUID</th>
                 <th className="p-3">Author</th>
                 <th className="p-3">Title</th>
