@@ -2728,33 +2728,34 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
         {activeTab === 'landing' && (
-          <div className="max-w-4xl mx-auto space-y-12 py-10 select-none animate-fade-in text-center">
+          <div className="max-w-3xl mx-auto space-y-16 py-16 px-4 select-none animate-fade-in text-center">
             {/* Elegant Hero Introduction */}
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold">
-                Knowledge Publishing & Preservation Ecosystem
+            <div className="space-y-6 max-w-2xl mx-auto">
+              <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-[#802334] font-bold">
+                A Quiet Home for Knowledge
               </span>
-              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight">
-                An Independent Scriptorium for Human Knowledge
+              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-stone-900 leading-tight tracking-tight">
+                Where Ideas Outlive the Noise
               </h2>
-              <div className="h-px w-24 bg-[#802334]/30 mx-auto my-5" />
-              <p className="font-serif italic text-stone-600 text-[14px] md:text-[15px] leading-relaxed">
-                "{systemSettings.editorialPolicy}"
+              <div className="h-px w-16 bg-[#802334]/20 mx-auto my-6" />
+              
+              <div className="space-y-4 font-serif text-stone-600 text-[15px] md:text-[16px] leading-relaxed max-w-lg mx-auto">
+                <p className="italic">There is a reason libraries ask for silence.</p>
+                <p className="font-semibold text-stone-900">
+                  Knowledge was never meant to compete for attention.
+                </p>
+                <p className="text-stone-500 text-sm">
+                  It deserves a place where anyone can write, read, preserve, and discover ideas that truly matter.
+                </p>
+              </div>
+              
+              <p className="font-serif italic text-stone-400 text-xs pt-4">
+                "{systemSettings.editorialPolicy || 'Rebuilding the civilization'}"
               </p>
             </div>
 
-            {/* Action Buttons: Sign In & Frontpage Enter */}
+            {/* Swapped CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto py-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginError('');
-                  setShowLoginModal(true);
-                }}
-                className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-[#802334] hover:bg-[#9c2c41] text-[#FDFDFD] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer shadow-md font-semibold text-center"
-              >
-                Sign In
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -2762,14 +2763,35 @@ Editorial Board of Adjung`;
                   setSelectedEntry(null);
                   setEditingEntry(null);
                 }}
-                className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-white border border-stone-200 hover:border-[#802334] text-stone-700 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold text-center"
+                className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-[#802334] hover:bg-[#9c2c41] text-[#FDFDFD] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer shadow-md font-semibold text-center"
               >
                 Enter Frontpage
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginError('');
+                  setShowLoginModal(true);
+                }}
+                className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-white border border-stone-200 hover:border-[#802334] text-stone-700 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold text-center"
+              >
+                Sign In
+              </button>
+            </div>
+
+            {/* Scroll Hint */}
+            <div 
+              className="pt-4 animate-bounce flex flex-col items-center gap-1 text-stone-400 font-mono text-[9px] uppercase tracking-wider cursor-pointer select-none"
+              onClick={() => {
+                document.getElementById('platform-description-block')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <span>Begin Reading</span>
+              <span className="text-xs">↓</span>
             </div>
 
             {/* Platform Description Block */}
-            <div className="bg-white border border-stone-200/80 p-6 md:p-8 rounded-sm shadow-sm font-serif text-stone-700 space-y-4 leading-relaxed text-[13.5px] text-center max-w-3xl mx-auto border-t-2 border-t-[#802334]">
+            <div id="platform-description-block" className="bg-white border border-stone-200/80 p-6 md:p-8 rounded-sm shadow-sm font-serif text-stone-700 space-y-4 leading-relaxed text-[13.5px] text-center max-w-3xl mx-auto border-t-2 border-t-[#802334]">
               <p>
                 Welcome to the unified digital repository of {BRAND.shortName}. {BRAND.description} Our architecture separates platform editorial governance from individual writing folios, preserving the sanctity, focus, and quiet authority of the printed word on modern screens.
               </p>
