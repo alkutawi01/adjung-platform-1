@@ -64,7 +64,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
     setVisibility(ident.publicVisibility || 'Public');
   }, [currentUser]);
 
-  if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity Studio...</div>;
+  if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +160,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
             <Layout className="w-6 h-6 text-Adjung-maroon" />
-            Identity Studio
+            Identity
           </h2>
           <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
             Decoupled authorship, signature, and verification management.

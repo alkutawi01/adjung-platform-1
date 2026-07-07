@@ -1507,7 +1507,9 @@ Editorial Board of Adjung`;
       <nav 
         onMouseEnter={() => setIsHeaderHovered(true)}
         onMouseLeave={() => setIsHeaderHovered(false)}
-        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-200 ease-out backdrop-blur-md ${
+        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
+          isHeaderHovered ? 'duration-200' : 'duration-[1500ms]'
+        } ${
           isFloating 
             ? 'shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
             : 'border-white/5 shadow-none'
@@ -1548,21 +1550,6 @@ Editorial Board of Adjung`;
               {selectedAuthorId === '' ? (
                 /* PLATFORM PORTAL NAVIGATION (DIRECTORY, INDEX) */
                 <>
-                  {/* Curated Frontpage - Only visible if not already on Frontpage or Landing */}
-                  {activeTab !== 'frontpage' && activeTab !== 'landing' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('frontpage');
-                        setSelectedEntry(null);
-                        setEditingEntry(null);
-                      }}
-                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition-colors text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Frontpage
-                    </button>
-                  )}
-
                   {/* Directory */}
                   {currentUser && hasPermission('viewDirectory') && (
                     <button
@@ -1717,6 +1704,24 @@ Editorial Board of Adjung`;
                           className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
                         >
                           Account
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setSelectedAuthorId('');
+                            setActiveTab('identity');
+                            setSelectedEntry(null);
+                            setEditingEntry(null);
+                          }}
+                          className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
+                            activeTab === 'identity'
+                              ? 'text-[#802334] bg-stone-50/60 font-semibold'
+                              : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
+                          }`}
+                        >
+                          Identity
                         </button>
 
                         {hasPermission('curateFrontpage') && (
@@ -2523,16 +2528,16 @@ Editorial Board of Adjung`;
                 {/* Right side: Folio Customizer & Pen Name controls */}
                 <div className="lg:col-span-4 bg-white border border-stone-200 rounded p-6 shadow-sm text-center space-y-4">
                   <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-[#802334] border-b pb-3 mb-4 flex items-center justify-center gap-1.5">
-                    Identity Studio
+                    Identity
                   </h3>
                   <p className="font-sans text-xs text-stone-500">
-                    Author identity, biography, and signatures are now securely managed in the decoupled Identity Studio.
+                    Author identity, biography, and signatures are now securely managed in the decoupled Identity module.
                   </p>
                   <button
                     onClick={() => setActiveTab('identity')}
-                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition"
+                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition cursor-pointer"
                   >
-                    Open Identity Studio
+                    Open Identity
                   </button>
                 </div>
 
@@ -2611,7 +2616,7 @@ Editorial Board of Adjung`;
                         <time className="font-mono text-[10px] text-stone-400">{new Date(notice.publishedDate || notice.createdDate).toLocaleDateString()}</time>
                       </div>
                       <h3 className="font-serif text-2xl text-stone-900 group-hover:text-[#802334] transition mb-3">{parseInlineFormatting(notice.title)}</h3>
-                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">{notice.excerpt || notice.content.substring(0, 200) + '...'}</p>
+                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">{parseInlineFormatting(notice.excerpt || notice.content.substring(0, 200) + '...')}</p>
                       <span className="text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">Read Announcement →</span>
                     </article>
                   ))
@@ -2739,7 +2744,7 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
         {activeTab === 'landing' && (
-          <div className="w-full max-w-5xl mx-auto space-y-8 py-6 px-4 select-none animate-fade-in text-center">
+          <div className="w-full max-w-5xl mx-auto space-y-8 pt-24 pb-12 px-4 select-none animate-fade-in text-center">
             {/* Elegant Hero Introduction */}
             <div className="space-y-4 max-w-2xl mx-auto">
               <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-[#802334] font-bold">
@@ -2782,7 +2787,7 @@ Editorial Board of Adjung`;
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="py-6 max-w-xl mx-auto text-center border-t border-b border-stone-200/40 my-4"
+              className="py-6 max-w-xl mx-auto text-center my-4 bg-transparent"
             >
               <PhilosophyCarousel />
             </motion.div>
@@ -3060,7 +3065,7 @@ Editorial Board of Adjung`;
 
               {/* 5. Latest Entries (Auto-Rotate) */}
               {currentLatestEntry && (
-                <div className="bg-stone-50/50 border border-stone-200/50 p-12 text-center rounded-sm">
+                <div className="p-12 text-center">
                   <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-8">Latest Transmissions</span>
                   <div className="h-24 flex items-center justify-center">
                     <AnimatePresence mode="wait">
@@ -3102,8 +3107,8 @@ Editorial Board of Adjung`;
                   <div className="max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left bg-[#802334]/5 p-6 rounded border border-[#802334]/10 hover:bg-[#802334]/10 transition">
                     <span className="w-2 h-2 bg-[#802334] rotate-45 flex-shrink-0"></span>
                     <div>
-                      <h4 className="font-serif text-lg text-[#802334] mb-1">{notice.title}</h4>
-                      <p className="font-sans text-[13px] text-stone-600 line-clamp-2">{notice.excerpt || notice.content}</p>
+                      <h4 className="font-serif text-lg text-[#802334] mb-1">{parseInlineFormatting(notice.title)}</h4>
+                      <p className="font-sans text-[13px] text-stone-600 line-clamp-2">{parseInlineFormatting(notice.excerpt || notice.content)}</p>
                     </div>
                   </div>
                 </div>

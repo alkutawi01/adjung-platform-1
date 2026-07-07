@@ -876,7 +876,7 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   editorialPolicy: BRAND.tagline,
   accentColor: '#802334',
   allowSelfRegistration: false,
-  editorialSelectionIds: ['entry-1', 'entry-2', 'entry-3'],
+  editorialSelectionIds: ['entry-zayd-1', 'entry-amina-1', 'entry-sarah-1'],
   featuredScholarId: 'user-zayd-ghazali',
   featuredEntryId: 'entry-zayd-1',
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
@@ -1064,20 +1064,11 @@ class AdjungDb {
           });
         });
         
-        // Always force update entry-manifesto content on initialization to get updated inline badges
+        // Only insert entry-manifesto if it is completely missing from the loaded entries
         const manifestoIndex = this.entries.findIndex(e => e.id === 'entry-manifesto');
         const updatedManifesto = INITIAL_ENTRIES.find(e => e.id === 'entry-manifesto');
-        if (updatedManifesto) {
-          if (manifestoIndex > -1) {
-            this.entries[manifestoIndex] = {
-              ...this.entries[manifestoIndex],
-              content: updatedManifesto.content,
-              footnotesData: updatedManifesto.footnotesData,
-              marginNotesData: updatedManifesto.marginNotesData
-            };
-          } else {
-            this.entries.push(updatedManifesto);
-          }
+        if (updatedManifesto && manifestoIndex === -1) {
+          this.entries.push(updatedManifesto);
         }
         this.saveEntriesToStorage();
       } else {
@@ -1105,6 +1096,13 @@ class AdjungDb {
 
       if (storedSettings) {
         this.systemSettings = JSON.parse(storedSettings);
+        if (
+          !this.systemSettings.editorialSelectionIds ||
+          this.systemSettings.editorialSelectionIds.length === 0 ||
+          this.systemSettings.editorialSelectionIds.includes('entry-1')
+        ) {
+          this.systemSettings.editorialSelectionIds = [...INITIAL_SYSTEM_SETTINGS.editorialSelectionIds];
+        }
         if (!this.systemSettings.allowedSignatureFonts || this.systemSettings.allowedSignatureFonts.length === 0 || this.systemSettings.allowedSignatureFonts.includes('Outfit') || this.systemSettings.allowedSignatureFonts.includes('Sacramento')) {
           this.systemSettings.allowedSignatureFonts = [...(INITIAL_SYSTEM_SETTINGS.allowedSignatureFonts || [])];
         }

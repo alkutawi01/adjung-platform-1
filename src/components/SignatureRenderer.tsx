@@ -42,16 +42,21 @@ export function SignatureRenderer({
       );
     }
     
+    const textScale = typographyStyle?.scale !== undefined ? typographyStyle.scale : 1;
     return (
       <svg 
         viewBox="0 0 400 150" 
         className={`${className} overflow-visible`}
         preserveAspectRatio="xMidYMid meet"
-        style={{ filter: enableBleed ? `url(#${filterId})` : 'none' }}
+        style={{ 
+          filter: enableBleed ? `url(#${filterId})` : 'none',
+          transform: `rotate(${typographyStyle?.slantAngle || 0}deg)`,
+          transformOrigin: 'center center'
+        }}
       >
         {enableBleed && (
           <defs>
-            <filter id={filterId} x="-10%" y="-10%" width="120%" height="120%">
+            <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
               <feTurbulence 
                 type="fractalNoise" 
                 baseFrequency="0.22" 
@@ -78,11 +83,9 @@ export function SignatureRenderer({
           lengthAdjust={typedText.length > 18 ? "spacingAndGlyphs" : undefined}
           style={{ 
             fontFamily: fontFamily || 'Mistrully, Dancing Script, cursive', 
-            fontSize: '64px',
+            fontSize: `${64 * textScale}px`,
             letterSpacing: typographyStyle?.letterSpacing ? `${typographyStyle.letterSpacing}px` : 'normal',
-            fontWeight: typographyStyle?.fontWeight || 'normal',
-            transform: `rotate(${typographyStyle?.slantAngle || 0}deg) scale(${typographyStyle?.scale !== undefined ? typographyStyle.scale : 1})`,
-            transformOrigin: 'center center'
+            fontWeight: typographyStyle?.fontWeight || 'normal'
           }}
         >
           {typedText}
@@ -131,11 +134,15 @@ export function SignatureRenderer({
       viewBox={`0 0 ${width} ${height}`} 
       className={`${className} overflow-visible`}
       preserveAspectRatio="xMidYMid meet"
-      style={{ filter: enableBleed ? `url(#${filterId})` : 'none' }}
+      style={{ 
+        filter: enableBleed ? `url(#${filterId})` : 'none',
+        transform: `rotate(${typographyStyle?.slantAngle || 0}deg)`,
+        transformOrigin: 'center center'
+      }}
     >
       {enableBleed && (
         <defs>
-          <filter id={filterId} x="-10%" y="-10%" width="120%" height="120%">
+          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
             {/* Create dynamic organic texture boundary mapping */}
             <feTurbulence 
               type="fractalNoise" 
@@ -156,7 +163,7 @@ export function SignatureRenderer({
       )}
 
       <g style={{
-        transform: `rotate(${typographyStyle?.slantAngle || 0}deg) scale(${typographyStyle?.scale !== undefined ? typographyStyle.scale : 1})`,
+        transform: `scale(${typographyStyle?.scale !== undefined ? typographyStyle.scale : 1})`,
         transformOrigin: 'center center'
       }}>
         {strokes.map((stroke, strokeIdx) => {
