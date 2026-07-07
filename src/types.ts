@@ -154,7 +154,7 @@ export interface Revision {
 
 export interface Entry {
   id: string;
-  publicationClass: PublicationClass;
+  publicationClass?: PublicationClass;
   authorId: string | null;
   publisher?: string;
   contentType: EntryType;

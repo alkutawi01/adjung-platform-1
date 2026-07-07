@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke, Footnote, DigitalSignature } from '../types';
 import { SignatureRenderer } from './SignatureRenderer';
 import { SignatureLayout } from './SignatureLayout';
+import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount } from '../utils';
 import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
@@ -119,6 +120,9 @@ export function EntryRenderer({
   });
   const [marginNotes, setMarginNotes] = useState<{ [key: number]: string }>(entry.marginNotes || {});
   const [prevEntryId, setPrevEntryId] = useState(entry.id);
+  const [showInterlinearLocal, setShowInterlinearLocal] = useState(true);
+  const [showGlossInput, setShowGlossInput] = useState(false);
+  const [glossText, setGlossText] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
@@ -825,6 +829,30 @@ export function EntryRenderer({
 
     setShowLinkInput(false);
     setLinkUrl('');
+    setSelectionState(null);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 1, start + 1 + text.length);
+    }, 50);
+  };
+
+  const applyInterlinear = (gloss: string) => {
+    if (!selectionState || !gloss) return;
+    const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const val = textarea.value;
+    const { start, end, text } = selectionState;
+    
+    const cleanGloss = gloss.trim().toLowerCase();
+    const wrapped = `[${text}](gloss:${cleanGloss})`;
+    const newValue = val.substring(0, start) + wrapped + val.substring(end);
+
+    handleValueChange(selectionState.textareaId, newValue);
+
+    setShowGlossInput(false);
+    setGlossText('');
     setSelectionState(null);
 
     setTimeout(() => {
@@ -3083,7 +3111,7 @@ export function EntryRenderer({
         style={{ left: `${selectionState.x}px`, top: `${selectionState.y}px` }}
         className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/45 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
       >
-        {!showLinkInput ? (
+        {!showLinkInput && !showGlossInput ? (
           <>
             <button
               type="button"
@@ -3120,6 +3148,14 @@ export function EntryRenderer({
             </button>
             <button
               type="button"
+              onClick={() => setShowGlossInput(true)}
+              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
+              title="Insert Interlinear Note (Gloss)"
+            >
+              Gloss
+            </button>
+            <button
+              type="button"
               onClick={applyFootnote}
               className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
               title="Insert Footnote (Auto Number)"
@@ -3127,7 +3163,7 @@ export function EntryRenderer({
               FN
             </button>
           </>
-        ) : (
+        ) : showLinkInput ? (
           <div className="flex items-center gap-1.5 px-1 font-sans">
             <input
               type="text"
@@ -3154,6 +3190,39 @@ export function EntryRenderer({
               onClick={() => {
                 setShowLinkInput(false);
                 setLinkUrl('');
+              }}
+              className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-1 font-sans">
+            <input
+              type="text"
+              placeholder="Gloss word/translation..."
+              value={glossText}
+              onChange={(e) => setGlossText(e.target.value)}
+              className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-Adjung-maroon w-36 font-sans"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  applyInterlinear(glossText);
+                }
+              }}
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => applyInterlinear(glossText)}
+              className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
+            >
+              Apply
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowGlossInput(false);
+                setGlossText('');
               }}
               className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
             >
@@ -3278,10 +3347,10 @@ export function EntryRenderer({
         {renderTableOfContents()}
 
         {/* Content Area Grid */}
-        <div id="article-container-grid" className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+        <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : (contentType === 'Article' ? 'max-w-5xl mx-auto' : 'max-w-3xl mx-auto')} relative`}>
           
           {/* Main content body */}
-          <div className={`${contentType === 'Article' ? 'lg:col-span-8' : 'lg:col-span-12'} space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif relative`}>
+          <div className={`${mode === 'edit' ? (contentType === 'Article' ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-[15px] md:text-base leading-relaxed tracking-normal font-serif relative`}>
             
             {/* Custom context menu trigger in edit mode */}
             {mode === 'edit' && contextCoords && (
@@ -3357,7 +3426,7 @@ export function EntryRenderer({
                 />
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {(() => {
                   const citeMap = getCitationsMap();
                   const fMap = getFootnotesReadingOrderMap().map;
@@ -3366,7 +3435,34 @@ export function EntryRenderer({
                   const viewParagraphs = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
                   return viewParagraphs.map((para, index) => {
                     const block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
-                    return renderBlock(block, index, undefined, undefined);
+                    
+                    const mnMatches = [...para.matchAll(/\[\^(mn-[a-zA-Z0-9-]+)\]/g)];
+                    if (mnMatches.length > 0) {
+                      const firstMatchId = mnMatches[0][1];
+                      const noteText = marginNotesData[firstMatchId] || '';
+                      const romanNum = mOrderMap[firstMatchId] !== undefined ? toRoman(mOrderMap[firstMatchId]).toLowerCase() : '';
+                      
+                      const parsedNoteContent = parseInlineFormatting(noteText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap);
+                      
+                      return (
+                        <ElasticMarginRow
+                          key={index}
+                          noteLabel="Margin Note"
+                          noteContent={parsedNoteContent}
+                          noteIndexRoman={romanNum}
+                        >
+                          {renderBlock(block, index, undefined, undefined)}
+                        </ElasticMarginRow>
+                      );
+                    }
+                    
+                    return (
+                      <ElasticMarginRow
+                        key={index}
+                      >
+                        {renderBlock(block, index, undefined, undefined)}
+                      </ElasticMarginRow>
+                    );
                   });
                 })()}
               </div>
@@ -3375,7 +3471,7 @@ export function EntryRenderer({
           </div>
 
           {/* Right margin notes sidebar */}
-          {contentType === 'Article' && (
+          {contentType === 'Article' && mode === 'edit' && (
             <div className="hidden lg:block lg:col-span-4 relative">
               {(() => {
                 const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
@@ -3618,9 +3714,23 @@ export function EntryRenderer({
                       <li 
                         key={idx} 
                         id={item.originalId.startsWith('fn-') ? `footnote-dest-${item.originalId}` : `footnote-dest-legacy-${item.originalId}`} 
-                        className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition"
+                        className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700"
                       >
-                        <span className="font-sans text-[10px] font-medium align-super text-Adjung-maroon w-4 flex-shrink-0 select-none">
+                        <span 
+                          className="font-sans text-[10px] font-medium align-super text-Adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-Adjung-maroon/80"
+                          title="Go back to citation"
+                          onClick={() => {
+                            const refId = item.originalId.startsWith('fn-') ? `fnref-${item.originalId}` : `fnref-legacy-${item.originalId}`;
+                            const refEl = document.getElementById(refId);
+                            if (refEl) {
+                              refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              refEl.classList.remove('citation-flash');
+                              void refEl.offsetWidth; // Trigger reflow
+                              refEl.classList.add('citation-flash');
+                              setTimeout(() => refEl.classList.remove('citation-flash'), 2500);
+                            }
+                          }}
+                        >
                           ({item.displayNum})
                         </span>
                         
