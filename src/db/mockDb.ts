@@ -1110,6 +1110,13 @@ class AdjungDb {
           this.systemSettings.editorialPolicy = BRAND.tagline;
         }
 
+        if (!this.systemSettings.featuredEntryId) {
+          this.systemSettings.featuredEntryId = INITIAL_SYSTEM_SETTINGS.featuredEntryId;
+        }
+        if (!this.systemSettings.featuredScholarId) {
+          this.systemSettings.featuredScholarId = INITIAL_SYSTEM_SETTINGS.featuredScholarId;
+        }
+
         // Robustly ensure all roles and permission keys are populated
         if (!this.systemSettings.rolePermissions) {
           this.systemSettings.rolePermissions = { ...INITIAL_SYSTEM_SETTINGS.rolePermissions };

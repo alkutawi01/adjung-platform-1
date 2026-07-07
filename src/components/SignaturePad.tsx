@@ -5,7 +5,8 @@ import { db } from '../db/mockDb';
 
 interface SignaturePadProps {
   onSave: (data: Partial<DigitalSignature>) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  defaultName?: string;
 }
 
 type PaperTexture = 'Smooth' | 'Laid' | 'Vintage';
@@ -51,7 +52,7 @@ const PAPER_STYLES = {
   }
 };
 
-export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
+export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -71,7 +72,7 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
   ];
   const dynamicFontOptions = allowedFonts.map(f => ({ name: f, value: `${f}, cursive` }));
   const [signatureMode, setSignatureMode] = useState<'draw' | 'type'>('draw');
-  const [typedText, setTypedText] = useState('');
+  const [typedText, setTypedText] = useState(defaultName || '');
   const [selectedFont, setSelectedFont] = useState(dynamicFontOptions[0]?.value || 'cursive');
   const [inkFlowWeight, setInkFlowWeight] = useState<number>(7.5);
   const [nibAngle, setNibAngle] = useState<number>(45); // 0 (round), 30, 45, 60

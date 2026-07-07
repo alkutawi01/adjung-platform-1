@@ -1,0 +1,23 @@
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+            ) : (              <>
+                onClick={() => {
+                  setLoginError('');
+                  setShowLoginModal(true);
+                }}
+                className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
+              >                Sign In              </button>              <button                type="button"                onClick={() => setShowSignUpWizard(true</><                className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer ml-4"              >                Apply for Membership              </button>            )}
+              </button>            </>)}
+
+        </div>
+      </nav>
+
+      {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
+      {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
+        <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
+          <div className="max-w-6xl mx-auto text-center relative">
+            

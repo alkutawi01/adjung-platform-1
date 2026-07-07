@@ -71,7 +71,11 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
       </div>
 
       {showPad && (
-        <SignaturePad onSave={handleSaveNewSignature} onCancel={() => setShowPad(false)} />
+        <SignaturePad 
+          onSave={handleSaveNewSignature} 
+          onCancel={() => setShowPad(false)} 
+          defaultName={identity.displayName || identity.penName}
+        />
       )}
 
       {!showPad && (!activeSig ? (

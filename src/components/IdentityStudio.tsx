@@ -90,7 +90,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
       penName,
       biography,
       publicVisibility: visibility,
-      signatures: updatedSignatures,
+      signatures: updatedSignatures
     };
 
     db.updateIdentity(updatedIdentity);
@@ -231,12 +231,12 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
               </div>
 
               <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Author Biography</label>
+                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">About You</label>
                 <textarea
                   value={biography}
                   onChange={(e) => setBiography(e.target.value)}
-                  className="w-full border border-stone-200 p-3 rounded focus:outline-none focus:border-Adjung-maroon min-h-[160px] font-serif leading-relaxed text-sm resize-y"
-                  placeholder="Enter scholarly biography..."
+                  className="w-full border border-stone-200 p-3 rounded focus:outline-none focus:border-Adjung-maroon min-h-[120px] font-serif leading-relaxed text-sm resize-y"
+                  placeholder="Enter a description of yourself, your intellectual background, or interests..."
                 />
               </div>
             </div>
