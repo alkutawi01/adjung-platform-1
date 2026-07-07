@@ -831,11 +831,13 @@ We invite our writers to continue pushing the boundaries of what a digital manus
     tags: ['Manifesto', 'Philosophy', 'Core'],
     canonicalUrl: 'https://adjung.com/editorial/why-adjung-exists',
     excerpt: 'Knowledge was never meant to compete for attention.',
-    content: `The internet has made it possible for ideas to travel farther than at any other time in history. Yet many of the most thoughtful contributions are quietly buried beneath an endless stream<span class="footnote-badge" data-id="fn-1"></span> of new content<span class="margin-note-badge" data-id="mn-1"></span>, before they have the opportunity to be read, questioned, and understood.
+    content: `The internet has made it possible for <span class="interlinear-word"><span class="interlinear-gloss">thought</span>ideas</span> to travel farther than at any other time in history. Yet many of the most thoughtful contributions are quietly buried beneath an endless stream<span class="footnote-badge" data-id="fn-1"></span> of new content,<span class="margin-note-badge" data-id="mn-1"></span> before they have the opportunity to be read, questioned, and understood.
 
-We created Adjung as a quiet home for knowledge<span class="footnote-badge" data-id="fn-2"></span> where anyone, regardless of profession or background, can write, preserve, and discover work that deserves to remain meaningful for generations<span class="margin-note-badge" data-id="mn-2"></span>, rather than only for today's conversations.
+We created Adjung as a quiet home for <span class="interlinear-word"><span class="interlinear-gloss">wisdom</span>knowledge</span><span class="footnote-badge" data-id="fn-2"></span> where anyone, regardless of profession or background, can write, preserve, and discover work that deserves to remain meaningful for generations,<span class="margin-note-badge" data-id="mn-2"></span> rather than only for today's conversations.
 
-Here, ideas are valued by their substance<span class="footnote-badge" data-id="fn-3"></span>, not by popularity, appearance<span class="margin-note-badge" data-id="mn-3"></span>, or algorithms. Every publication is treated as a lasting contribution to humanity's shared record of knowledge.`,
+Here, ideas are valued by their <span class="interlinear-word"><span class="interlinear-gloss">essence</span>substance</span>,<span class="footnote-badge" data-id="fn-3"></span> not by popularity, appearance,<span class="margin-note-badge" data-id="mn-3"></span> or algorithms. There are no like buttons to chase, no notifications to distract—only the quiet clarity of reasoned thought.
+
+To preserve the depth of scholarship, Adjung integrates three distinct dimensions of notation:<span class="margin-note-badge" data-id="mn-4"></span> <span class="interlinear-word"><span class="interlinear-gloss">translation</span>interlinear notes</span> for instant semantic clarity, margin notes for context-rich commentary, and footnotes for source citations.<span class="footnote-badge" data-id="fn-4"></span> Every publication is treated as a lasting contribution to humanity's shared record of knowledge.`,
     isInstitutional: true,
     isPinned: true,
     footnotesData: [
@@ -853,12 +855,18 @@ Here, ideas are valued by their substance<span class="footnote-badge" data-id="f
         id: 'fn-3',
         label: 'Editorial Principle',
         content: 'Ideas are evaluated by their intellectual contribution rather than popularity or visibility.'
+      },
+      {
+        id: 'fn-4',
+        label: 'authoritative sources',
+        content: 'Authoritative citations are preserved at the base of each document to anchor its arguments in established research.'
       }
     ],
     marginNotesData: {
       'mn-1': "EDITORIAL NOTE\nEndless feeds reward immediacy. Knowledge requires continuity.",
       'mn-2': "PRESERVATION\nPreservation begins when a work is expected to outlive its author.",
-      'mn-3': "EDITORIAL PRINCIPLE\nReaders should encounter ideas before personalities."
+      'mn-3': "EDITORIAL PRINCIPLE\nReaders should encounter ideas before personalities.",
+      'mn-4': "THREE-LAYER NOTE SYSTEM\nBy separating translation, active dialogue, and structured citations, we maintain absolute textual purity."
     }
   }
 ];
@@ -868,7 +876,7 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   editorialPolicy: BRAND.tagline,
   accentColor: '#802334',
   allowSelfRegistration: false,
-  editorialSelectionIds: ['entry-1', 'entry-2', 'entry-3'],
+  editorialSelectionIds: ['entry-zayd-1', 'entry-amina-1', 'entry-sarah-1'],
   featuredScholarId: 'user-zayd-ghazali',
   featuredEntryId: 'entry-zayd-1',
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
@@ -1055,7 +1063,6 @@ class AdjungDb {
             if (r.referenceSortOrder === undefined) r.referenceSortOrder = 'alphabetical';
           });
         });
-        
         // Always force update entry-manifesto content on initialization to get updated inline badges
         const manifestoIndex = this.entries.findIndex(e => e.id === 'entry-manifesto');
         const updatedManifesto = INITIAL_ENTRIES.find(e => e.id === 'entry-manifesto');
@@ -1097,11 +1104,25 @@ class AdjungDb {
 
       if (storedSettings) {
         this.systemSettings = JSON.parse(storedSettings);
+        if (
+          !this.systemSettings.editorialSelectionIds ||
+          this.systemSettings.editorialSelectionIds.length === 0 ||
+          this.systemSettings.editorialSelectionIds.includes('entry-1')
+        ) {
+          this.systemSettings.editorialSelectionIds = [...INITIAL_SYSTEM_SETTINGS.editorialSelectionIds];
+        }
         if (!this.systemSettings.allowedSignatureFonts || this.systemSettings.allowedSignatureFonts.length === 0 || this.systemSettings.allowedSignatureFonts.includes('Outfit') || this.systemSettings.allowedSignatureFonts.includes('Sacramento')) {
           this.systemSettings.allowedSignatureFonts = [...(INITIAL_SYSTEM_SETTINGS.allowedSignatureFonts || [])];
         }
         if (this.systemSettings.editorialPolicy === 'Adjung maintains a text-first, classical layout discipline inspired by early European university journals and Arabic calligraphic treatises.') {
           this.systemSettings.editorialPolicy = BRAND.tagline;
+        }
+
+        if (!this.systemSettings.featuredEntryId) {
+          this.systemSettings.featuredEntryId = INITIAL_SYSTEM_SETTINGS.featuredEntryId;
+        }
+        if (!this.systemSettings.featuredScholarId) {
+          this.systemSettings.featuredScholarId = INITIAL_SYSTEM_SETTINGS.featuredScholarId;
         }
 
         // Robustly ensure all roles and permission keys are populated

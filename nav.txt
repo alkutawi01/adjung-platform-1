@@ -1,0 +1,131 @@
+                <button
+                  type="button"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white transition uppercase cursor-pointer"
+                >
+                  <span>{currentUser.penName}</span>
+                  <span className="text-[10px] opacity-60">▾</span>
+                </button>
+
+                {showUserMenu && (
+                  <>
+                    <div className="absolute right-0 mt-2 w-52 bg-[#FDFDFD] border border-stone-200 shadow-md rounded-sm py-2 z-50 animate-fade-in font-sans text-left">
+                      <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/40 select-none">
+                        <div className="font-serif text-[13px] font-semibold text-stone-950 leading-tight">
+                          {currentUser.penName}
+                        </div>
+                        <div className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider mt-1">
+                          {currentUser.role}
+                        </div>
+                        <div className="font-mono text-[9px] text-stone-400 mt-0.5">
+                          {currentUser.username}
+                        </div>
+                      </div>
+
+                      <div className="py-1 font-mono uppercase tracking-wider text-[11px]">
+                        {selectedAuthorId !== currentUser.id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              setSelectedAuthorId(currentUser.id);
+                              setActiveTab('folio');
+                              setSelectedEntry(null);
+                              setEditingEntry(null);
+                            }}
+                            className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1 cursor-pointer"
+                          >
+                            My Site
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setShowAccountModal(true);
+                          }}
+                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
+                        >
+                          Account
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setSelectedAuthorId('');
+                            setActiveTab('identity');
+                            setSelectedEntry(null);
+                            setEditingEntry(null);
+                          }}
+                          className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
+                            activeTab === 'identity'
+                              ? 'text-[#802334] bg-stone-50/60 font-semibold'
+                              : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
+                          }`}
+                        >
+                          Identity
+                        </button>
+
+                        {hasPermission('curateFrontpage') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              setSelectedAuthorId('');
+                              setActiveTab('editorium');
+                              setSelectedEntry(null);
+                              setEditingEntry(null);
+                            }}
+                            className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
+                              activeTab === 'editorium'
+                                ? 'text-[#802334] bg-stone-50/60 font-semibold'
+                                : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
+                            }`}
+                          >
+                            Editorium
+                          </button>
+                        )}
+
+                        <div className="h-px bg-stone-100 my-1" />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            handleLogout();
+                          }}
+                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-medium cursor-pointer"
+                        >
+                          Sign Out
+                        </button>
+
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginError('');
+                    setShowLoginModal(true);
+                  }}
+                  className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSignUpWizard(true)}
+                  className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer ml-4"
+                >
+                  Apply for Membership
+                </button>
+              </>
+            )}
+          </div>        </div>      </nav>
+      {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}

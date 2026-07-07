@@ -170,12 +170,13 @@ export function htmlToMarkdown(html: string): string {
   return md.trim();
 }
 
-type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'LINK';
+type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'LINK' | 'INTERLINEAR';
 
 interface Token {
   type: TokenType;
   text: string;
   url?: string;
+  gloss?: string;
 }
 
 function tokenize(text: string): Token[] {
@@ -240,7 +241,12 @@ function tokenize(text: string): Token[] {
           flushText();
           const label = text.substring(i + 1, closeBracket);
           const url = text.substring(closeBracket + 2, closeParen);
-          tokens.push({ type: 'LINK', text: label, url: url });
+          if (url.startsWith('gloss:')) {
+            const glossVal = url.substring(6);
+            tokens.push({ type: 'INTERLINEAR', text: label, gloss: glossVal });
+          } else {
+            tokens.push({ type: 'LINK', text: label, url: url });
+          }
           i = closeParen + 1;
           continue;
         }
@@ -288,6 +294,18 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
         <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-Adjung-maroon hover:underline cursor-pointer">
           {token.text}
         </a>
+      );
+      i++;
+      continue;
+    }
+
+    if (token.type === 'INTERLINEAR') {
+      const elementKey = `${keyPrefix}-${keyIdx++}`;
+      result.push(
+        <span key={elementKey} className="interlinear-word">
+          <span className="interlinear-gloss">{token.gloss}</span>
+          {token.text}
+        </span>
       );
       i++;
       continue;
@@ -441,14 +459,21 @@ export function parseInlineFormatting(
       return (
         <span
           key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
           id={`fnref-${part.content}`}
           title={`Jump to footnote ${num}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             const target = document.getElementById(`footnote-dest-${part.content}`);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.classList.remove('footnote-dest-flash');
+              // Trigger reflow to restart animation if clicked repeatedly
+              void target.offsetWidth;
+              target.classList.add('footnote-dest-flash');
+              setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
+            }
           }}
         >
           ({num})
@@ -461,14 +486,21 @@ export function parseInlineFormatting(
       return (
         <span
           key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer"
+          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
           id={`fnref-legacy-${part.content}`}
           title={`Jump to footnote ${num}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             const target = document.getElementById(`footnote-dest-legacy-${part.content}`);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.classList.remove('footnote-dest-flash');
+              // Trigger reflow to restart animation if clicked repeatedly
+              void target.offsetWidth;
+              target.classList.add('footnote-dest-flash');
+              setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
+            }
           }}
         >
           ({num})

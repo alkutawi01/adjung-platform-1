@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260707-05-f6eb95b"}');</script><script src="/_sdk/f432b76fb310b513.telemetry_sdk.js" integrity="sha512-9FJQ55EKmmqhyyik8BhrMVfm0+iYYfb8uOlRsjtkxJMEI97qOVEI4PnHohDjQAtvAep0IOEpdQ64eki0sz62ug=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adjung</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..72,400;0,8..72,500;0,8..72,600;1,8..72,400&amp;family=Source+Sans+Pro:wght@300;400;600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ivory: '#FDFBF7',
+            charcoal: '#1C1917',
+            slate: '#44403C',
+            maroon: '#802334',
+            warmgrey: '#A8A29E',
+            bordergrey: '#E7E5E4',
+          },
+          fontFamily: {
+            serif: ['Source Serif 4', 'serif'],
+            sans: ['Source Sans Pro', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Source Sans Pro', sans-serif; }
+    .page { display: none; opacity: 0; }
+    .page.active { display: flex; }
+    .page.visible { opacity: 1; }
+    #overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: #802334;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #overlay.show { opacity: 1; pointer-events: all; }
+    #overlay h2 { opacity: 0; transition: opacity 0.5s ease; }
+    #overlay h2.reveal { opacity: 1; }
+    .avail-line { height: 1px; background: #802334; width: 0; transition: width 1.2s ease; }
+    .avail-line.loading { width: 100%; }
+    .domain-result { opacity: 0; transition: opacity 0.5s ease; }
+    .domain-result.show { opacity: 1; }
+    .sig-canvas { touch-action: none; }
+    #completion-lines p { opacity: 0; transition: opacity 0.7s ease; }
+    #completion-lines p.show { opacity: 1; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" type="text/javascript"></script>
+  <script src="/_sdk/0179d719c431a79e.data_sdk.js" type="text/javascript" integrity="sha512-OsRvJkI5GkC3MJQcgotQYotpzrMSX415GiKKgvYdxQEEkzD/fdchShO2FMSy0PJr/tiINMXOk5Vl2zAgg6bUiA=="></script>
+  <script src="/_sdk/0b3af1c300e720aa.resizing_sdk.js" type="text/javascript" integrity="sha512-nX1P6oXZmEY5wCI2lUVg3BwKu1cr0yi+ZpXgZ0Yn90vkSwvpmyzBMvOyD6VLJUtBwFI2dSrw1b6OvORxSggw3w=="></script>
+ </head>
+ <body  className="min-h-screen flex flex-col items-center" >
+  <!-- Overlay -->
+  <div id="overlay">
+   <h2 id="overlay-title" className="font-serif text-4xl md:text-5xl text-ivory font-light"></h2>
+  </div><!-- Wordmark -->
+  <header className="w-full pt-8 pb-4 text-center">
+   <p  className=" font-serif text-sm tracking-widest text-charcoal" >Adjung</p>
+  </header>
+  <main className="flex-1 w-full flex items-center justify-center px-6 pb-12">
+   <!-- 1: Welcome -->
+   <section id="page-1" className="page active flex-col items-center text-center max-w-xl" role="region" aria-label="Welcome">
+    <div className="mb-12">
+     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mx-auto">
+      <rect x="8" y="6" width="32" height="36" rx="2" stroke="#111111" stroke-width="1.5"></rect> <line x1="14" y1="14" x2="34" y2="14" stroke="#111111" stroke-width="1"></line> <line x1="14" y1="20" x2="34" y2="20" stroke="#111111" stroke-width="1"></line> <line x1="14" y1="26" x2="28" y2="26" stroke="#111111" stroke-width="1"></line>
+     </svg>
+    </div>
+    <h1  className=" font-serif text-4xl md:text-5xl font-light text-charcoal mb-6" >Welcome to Adjung</h1>
+    <p  className=" text-slate text-lg mb-16 max-w-md leading-relaxed" >A place where knowledge is written to endure.</p><button  className=" px-10 py-3 border border-maroon text-maroon font-sans text-sm tracking-wider uppercase hover:bg-maroon hover:text-white transition-colors duration-300"  >Begin</button>
+   </section><!-- 2: The Philosophy -->
+   <section id="page-2" className="page flex-col items-center max-w-xl" role="region" aria-label="The Philosophy">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-12 text-center" >The Philosophy</h2>
+    <div className="space-y-5 text-slate leading-relaxed mb-14">
+     <p  className="" >Adjung values knowledge over popularity. Every work published here is meant to endure beyond the moment of its creation.</p>
+     <p  className="" >We honour human authorship. Every word carries the weight of its author's intellectual commitment.</p>
+     <p  className="" >Editorial integrity is paramount. We do not optimise for engagement—we optimise for truth and clarity.</p>
+     <p  className="" >Long-term preservation is our promise. What you write here becomes part of an enduring record.</p>
+     <p  className="" >Respectful discourse is expected. Adjung is a place for serious intellectual exchange.</p>
+    </div><button  className=" px-10 py-3 border border-maroon text-maroon font-sans text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300"  >Continue</button>
+   </section><!-- 3: The Membership -->
+   <section id="page-3" className="page flex-col items-center max-w-2xl w-full px-6" role="region" aria-label="The Membership">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-4 text-center" >The Membership Charter</h2>
+    <p className="text-warmgrey text-sm text-center mb-8">≈ 5–7 minutes</p><!-- Document container -->
+    <div id="charter-container" className="w-full max-w-xl border border-bordergrey bg-ivory p-12 md:p-16 flex flex-col" >
+     <div id="charter-content" className="text-slate font-serif leading-relaxed text-justify space-y-6">
+      <p  className=" italic text-center mb-8" >This Charter establishes the principles, rights, and responsibilities of all Adjung members. Adjung is a serious intellectual community dedicated to the creation and preservation of knowledge. By enrolling, you join a tradition of scholarly discourse and authorial integrity.</p>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >The Philosophy of Adjung</h3>
+       <p  className="" >Adjung values knowledge over popularity. We do not optimize for engagement metrics or algorithmic virality. Every contribution is considered for its intellectual merit, clarity, and potential to endure beyond the moment of its creation. We believe that serious thinking requires serious infrastructure—one that prizes substance over spectacle.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Rights of Members</h3>
+       <p  className=" mb-3" >As an Adjung member, you retain full authorship of your works. Your intellectual property is protected. You have the right to publish, unpublish, or modify your contributions within the guidelines of this Charter. You have the right to a respectful intellectual community free from harassment or bad-faith engagement.</p>
+       <p  className="" >You may request the deletion of your account and associated data in compliance with applicable law. You have the right to appeal editorial decisions through established channels.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Responsibilities of Members</h3>
+       <p  className=" mb-3" >You commit to intellectual honesty in all published works. You will not intentionally publish false or misleading information. You respect the authorship and intellectual property of others. When referencing external sources, you provide proper attribution.</p>
+       <p  className="" >You engage in discourse with respect and scholarly rigour. You acknowledge that published works become part of your intellectual record and may be preserved indefinitely, even if later removed from public view.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Editorial Standards</h3>
+       <p  className=" mb-3" >Adjung maintains editorial standards across all public contributions. While we do not censor private notes or drafts, published works may be subject to review for clarity, coherence, and alignment with scholarly conventions.</p>
+       <p  className="" >Editorial decisions are made transparently and may be appealed. We do not remove content solely because it is controversial or challenges mainstream opinion. We remove content that is demonstrably false, harmful, or violates the terms of this Charter.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Personal Sites</h3>
+       <p  className="" >Personal Sites represent permanent intellectual addresses for established members. Access to a Personal Site is earned through demonstrated commitment to the Adjung community and completion of publishing milestones. Personal Sites cannot be transferred, sold, or used for commercial purposes without explicit permission.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Publication Ethics</h3>
+       <p  className=" mb-3" >All published works must represent original thought or properly credited research. Plagiarism, whether intentional or negligent, violates the Charter. If plagiarism is discovered, the offending work will be removed and the member will be subject to sanctions.</p>
+       <p  className="" >Members agree to disclose conflicts of interest when relevant to their published work. Funded research or compensated advocacy must be clearly labeled.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Long-Term Preservation</h3>
+       <p  className="" >Adjung commits to preserving published works for the long term. We do not monetize member content through advertising or third-party sales. Your intellectual legacy is protected as part of Adjung's enduring record.</p>
+      </div>
+      <div>
+       <h3  className=" font-serif text-lg font-semibold text-charcoal mb-4" >Final Declaration</h3>
+       <p  className="" >By joining Adjung, you commit to building an intellectual identity with integrity. You understand that this is not social media. You embrace the responsibility of authorship in a scholarly community. You accept that your words may influence others and carry weight accordingly. Welcome to Adjung.</p>
+      </div>
+      <p id="charter-end" className="domain-result text-center text-slate text-sm italic mt-8 pt-8 border-t border-bordergrey"></p>
+     </div>
+    </div><!-- Divider (hidden until scroll) -->
+    <div id="charter-divider" className="domain-result w-24 h-px bg-maroon mt-8"></div><!-- Checkbox (hidden until scroll) --> <label id="charter-checkbox-wrapper" className="domain-result flex items-start gap-3 mt-8 mb-8 cursor-pointer"> <input type="checkbox" id="agree-check" className="w-4 h-4 accent-maroon mt-0.5 flex-shrink-0" > <span  className=" text-slate text-sm" >I understand and accept the responsibilities of Adjung membership.</span> </label> <!-- Button (disabled until scroll + checkbox) --> <button id="agree-btn"  className=" px-10 py-3 border border-bordergrey text-warmgrey text-sm tracking-wider uppercase cursor-not-allowed" disabled=""  >Continue</button>
+   </section><!-- 4: Your Identity -->
+   <section id="page-4" className="page flex-col items-center max-w-md w-full" role="region" aria-label="Your Identity">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-12 text-center" >Your Identity</h2>
+    <form id="identity-form" className="space-y-6 w-full" >
+     <div>
+      <label for="id-display"  className=" block text-sm text-slate mb-2 font-inter" >Display Name</label> <input id="id-display" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors" >
+     </div>
+     <div>
+      <label for="id-username"  className=" block text-sm text-slate mb-2 font-inter" >Username</label> <input id="id-username" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div>
+      <label for="id-email"  className=" block text-sm text-slate mb-2 font-inter" >Email</label> <input id="id-email" type="email" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div className="pt-6">
+      <button type="submit"  className=" px-10 py-3 border border-maroon text-maroon text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300 font-inter" >Continue</button>
+     </div>
+    </form>
+   </section><!-- 5: Your Biography -->
+   <section id="page-5" className="page flex-col items-center max-w-md w-full" role="region" aria-label="Your Biography">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-12 text-center" >Your Biography</h2>
+    <form id="bio-form" className="space-y-6 w-full" >
+     <div>
+      <label for="bio-title-field"  className=" block text-sm text-slate mb-2 font-inter" >Professional Title</label> <input id="bio-title-field" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div>
+      <label for="bio-text"  className=" block text-sm text-slate mb-2 font-inter" >Biography</label> <textarea id="bio-text" rows="3" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors resize-none"></textarea>
+     </div>
+     <div>
+      <label for="bio-inst"  className=" block text-sm text-slate mb-2 font-inter" >Institution (optional)</label> <input id="bio-inst" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div>
+      <label for="bio-country"  className=" block text-sm text-slate mb-2 font-inter" >Country</label> <input id="bio-country" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div>
+      <label for="bio-interests"  className=" block text-sm text-slate mb-2 font-inter" >Areas of Interest</label> <input id="bio-interests" type="text" className="w-full border-b border-bordergrey bg-transparent px-0 py-2 text-charcoal font-inter focus:outline-none focus:border-maroon transition-colors">
+     </div>
+     <div className="pt-6">
+      <button type="submit"  className=" px-10 py-3 border border-maroon text-maroon text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300 font-inter" >Continue</button>
+     </div>
+    </form>
+   </section><!-- 6: Your Personal Site -->
+   <section id="page-6" className="page flex-col items-center max-w-lg w-full" role="region" aria-label="Your Personal Site">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-6 text-center" >Your Personal Site</h2>
+    <p  className=" text-slate text-center mb-14 max-w-md leading-relaxed" >Every Personal Site represents a permanent intellectual address — the home of your Biography, Folio, Publications and intellectual legacy.</p>
+    <p  className=" font-serif text-3xl md:text-4xl text-charcoal tracking-tight mb-14 text-center" >yourname.adjung.com</p>
+    <p  className=" text-slate text-sm text-center mb-10 max-w-sm leading-relaxed" >Personal Sites are granted only after eligibility has been fulfilled. To preserve meaningful addresses, they are not activated immediately.</p><!-- Domain input -->
+    <div className="w-full max-w-sm mb-4">
+     <div className="flex items-baseline">
+      <input id="domain-input" type="text" placeholder="yourname" className="flex-1 bg-transparent font-serif text-2xl text-charcoal focus:outline-none placeholder:text-warmgrey" > <span className="font-serif text-2xl text-warmgrey">.adjung.com</span>
+     </div>
+     <div className="avail-line mt-2" id="domain-line"></div>
+     <p id="domain-feedback" className="domain-result text-sm mt-4 text-center"></p>
+    </div><!-- Recorded section -->
+    <div id="domain-recorded" className="hidden w-full max-w-sm text-center mt-6 mb-10">
+     <p  className=" font-serif text-lg text-charcoal mb-3" >Preferred Address Recorded</p>
+     <div className="border border-bordergrey p-5 mt-3">
+      <p className="text-xs text-warmgrey uppercase tracking-widest mb-1">Status</p>
+      <p  className=" font-serif text-base text-charcoal" >Reserved Preference</p>
+     </div>
+     <p  className=" text-slate text-sm mt-5 leading-relaxed" >This address is not reserved yet. It will only become available when you become eligible. If another member claims it first, you will be invited to choose another.</p>
+    </div><!-- Eligibility -->
+    <div className="w-full max-w-sm border border-bordergrey p-6 mb-10">
+     <h3  className=" font-serif text-xl text-charcoal mb-5 text-center" >Eligibility</h3>
+     <ul className="space-y-3 text-slate text-sm">
+      <li  className="" >✓  Member for at least 30 days</li>
+      <li  className="" >✓  Publish one Note</li>
+      <li  className="" >✓  Publish one Essay</li>
+      <li  className="" >✓  Publish one Article</li>
+     </ul>
+     <div className="mt-5 pt-4 border-t border-bordergrey text-center">
+      <p className="text-xs text-warmgrey uppercase tracking-widest mb-1">Current Status</p>
+      <p  className=" font-serif text-base text-charcoal" >Not Yet Eligible</p>
+     </div>
+     <p  className=" text-slate text-xs mt-4 text-center leading-relaxed" >When all requirements have been fulfilled, Adjung will invite you to establish your permanent Personal Site.</p>
+    </div><button  className=" px-10 py-3 border border-maroon text-maroon text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300"  >Continue</button>
+   </section><!-- 7: Your Signature -->
+   <section id="page-7" className="page flex-col items-center max-w-md w-full" role="region" aria-label="Your Signature">
+    <h2  className=" font-serif text-3xl md:text-4xl font-light text-charcoal mb-4 text-center" >Your Signature</h2>
+    <p  className=" text-slate text-center mb-12 max-w-sm leading-relaxed" >Your signature accompanies your published works as a mark of authorship.</p>
+    <div className="w-full space-y-3 mb-10">
+     <button type="button" className="w-full border border-bordergrey p-4 text-left hover:border-maroon transition-colors duration-300" > <span className="text-sm text-charcoal">Draw signature</span> <span className="block text-xs text-warmgrey mt-1">Use touch or mouse</span> </button> <button type="button" className="w-full border border-bordergrey p-4 text-left hover:border-maroon transition-colors duration-300" > <span className="text-sm text-charcoal">Typographic signature</span> <span className="block text-xs text-warmgrey mt-1">Generate from your display name</span> </button>
+    </div>
+    <div id="sig-preview" className="w-full h-28 border border-bordergrey flex items-center justify-center mb-12 bg-white">
+     <span id="sig-placeholder" className="text-warmgrey text-sm">Your signature will appear here</span>
+     <canvas id="sig-canvas" className="sig-canvas w-full h-full hidden"></canvas><span id="sig-typo" className="font-serif text-2xl text-charcoal italic hidden"></span>
+    </div><button  className=" px-10 py-3 border border-maroon text-maroon text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300"  >Continue</button>
+   </section><!-- 8: Welcome to Adjung -->
+   <section id="page-8" className="page flex-col items-center text-center max-w-xl" role="region" aria-label="Completion">
+    <div id="completion-lines" className="mb-10">
+     <p className="font-serif text-xl text-slate mb-4">Your membership has been established.</p>
+     <p className="font-serif text-xl text-slate mb-4">Your intellectual identity has been created.</p>
+     <p className="font-serif text-xl text-slate mb-4">Your Writing Desk is now ready.</p>
+    </div>
+    <div id="completion-final" className="hidden">
+     <div className="mb-10">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mx-auto">
+       <rect x="8" y="6" width="32" height="36" rx="2" stroke="#111111" stroke-width="1.5"></rect> <line x1="14" y1="14" x2="34" y2="14" stroke="#111111" stroke-width="1"></line> <line x1="14" y1="20" x2="34" y2="20" stroke="#111111" stroke-width="1"></line> <line x1="14" y1="26" x2="28" y2="26" stroke="#111111" stroke-width="1"></line>
+      </svg>
+     </div>
+     <h1  className=" font-serif text-4xl md:text-5xl font-light text-charcoal mb-6" >Welcome to Adjung.</h1>
+     <p  className=" text-slate text-lg mb-2" >Your membership has been established.</p>
+     <p  className=" text-slate text-lg mb-4" >Your intellectual identity has been created.</p>
+     <p  className=" text-slate text-lg mb-14" >Your Desk is now ready.</p><button  className=" px-10 py-3 bg-maroon text-ivory text-sm tracking-wider uppercase hover:bg-charcoal transition-colors duration-300" >Enter Writing Desk</button>
+    </div>
+   </section>
+  </main><!-- Back button --> <button id="back-btn" className="fixed left-8 top-1/2 -translate-y-1/2 text-charcoal hover:text-maroon transition-colors duration-300 hidden z-40"  aria-label="Back"> <i data-lucide="chevron-left" ></i> </button>
+  <script src="/_sdk/e063511df281944a.editing_sdk.js" integrity="sha512-Xa8p4aPfoMxVnzxQE2WAG0FfoaPLxdjOJMfUZGm1yZosJTYmnNDvgLkJ2EoN0i3zxjeQVAzUMSXNvTKQVqbXyQ=="></script>
+  <script>
+    let current = 1;
+    const total = 8;
+    const titles = ['','Welcome','The Philosophy','The Membership','Your Identity','Your Biography','Your Personal Site','Your Signature','Welcome to Adjung'];
+
+    // Show first page
+    requestAnimationFrame(() => {
+      document.getElementById('page-1').classList.add('visible');
+      updateProgressBar();
+      updateBackButton();
+    });
+
+    function updateBackButton() {
+      const btn = document.getElementById('back-btn');
+      if (current > 1 && current < 8) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    function goBack() {
+      if (current > 1) goTo(current - 1);
+    }
+
+    function goTo(step) {
+      if (step < 1 || step > total) return;
+      const prev = document.getElementById('page-' + current);
+      prev.style.transition = 'opacity 0.4s ease';
+      prev.classList.remove('visible');
+      document.getElementById('back-btn').classList.add('hidden');
+
+      setTimeout(() => {
+        prev.classList.remove('active');
+        current = step;
+        updateProgressBar();
+        showOverlay(titles[step], () => {
+          const next = document.getElementById('page-' + current);
+          next.classList.add('active');
+          requestAnimationFrame(() => {
+            setTimeout(() => next.classList.add('visible'), 50);
+          });
+          updateBackButton();
+          if (step === 3) {
+            charterScrollListenerAdded = false;
+            charterBottomReached = false;
+            setTimeout(() => setupCharterScroll(), 100);
+          }
+          if (step === 8) runCompletion();
+        });
+      }, 400);
+    }
+
+    function updateProgressBar() {
+      // Update dot indicators
+      document.querySelectorAll('.dot').forEach(dot => {
+        const page = parseInt(dot.getAttribute('data-page'));
+        if (page === current) {
+          dot.classList.remove('bg-bordergrey');
+          dot.classList.add('bg-maroon');
+        } else {
+          dot.classList.remove('bg-maroon');
+          dot.classList.add('bg-bordergrey');
+        }
+      });
+    }
+
+    function showOverlay(title, cb) {
+      const overlay = document.getElementById('overlay');
+      const h2 = document.getElementById('overlay-title');
+      
+      // Set initial title with superscript 1
+      h2.innerHTML = title + '<sup >1</sup>';
+      const sup = h2.querySelector('sup');
+      
+      overlay.classList.add('show');
+      
+      // Show title
+      setTimeout(() => h2.classList.add('reveal'), 150);
+      
+      // Animate superscript counts: 1 → 2 → 3
+      setTimeout(() => {
+        sup.style.opacity = '1';
+      }, 300);
+      
+      setTimeout(() => {
+        sup.style.opacity = '0';
+        setTimeout(() => {
+          sup.textContent = '2';
+          sup.style.opacity = '1';
+        }, 100);
+      }, 800);
+      
+      setTimeout(() => {
+        sup.style.opacity = '0';
+        setTimeout(() => {
+          sup.textContent = '3';
+          sup.style.opacity = '1';
+        }, 100);
+      }, 1400);
+      
+      // Fade out and proceed
+      setTimeout(() => {
+        h2.classList.remove('reveal');
+        sup.style.opacity = '0';
+        setTimeout(() => {
+          overlay.classList.remove('show');
+          cb();
+        }, 400);
+      }, 2000);
+    }
+
+    function toggleAgree() {
+      const btn = document.getElementById('agree-btn');
+      const checked = document.getElementById('agree-check').checked;
+      if (checked) {
+        btn.disabled = false;
+        btn.className = 'canva-button px-10 py-3 border border-maroon text-maroon text-sm tracking-wider uppercase hover:bg-maroon hover:text-ivory transition-colors duration-300 cursor-pointer';
+      } else {
+        btn.disabled = true;
+        btn.className = 'canva-button px-10 py-3 border border-bordergrey text-warmgrey text-sm tracking-wider uppercase cursor-not-allowed';
+      }
+    }
+
+    // Charter scroll-to-reveal
+    let charterScrollListenerAdded = false;
+    let charterBottomReached = false;
+
+    function setupCharterScroll() {
+      if (charterScrollListenerAdded) return;
+      charterScrollListenerAdded = true;
+      const container = document.getElementById('charter-container');
+      container.addEventListener('scroll', () => {
+        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
+        if (isAtBottom && !charterBottomReached) {
+          charterBottomReached = true;
+          document.getElementById('charter-end').textContent = 'You have reached the end of the Adjung Membership Charter.';
+          setTimeout(() => {
+            document.getElementById('charter-divider').classList.add('show');
+          }, 300);
+          setTimeout(() => {
+            document.getElementById('charter-checkbox-wrapper').classList.add('show');
+          }, 600);
+        }
+      });
+    }
+
+    function updatePreview() {}
+
+    let domainTimeout = null;
+    function checkDomain() {
+      const input = document.getElementById('domain-input').value.trim();
+      const line = document.getElementById('domain-line');
+      const feedback = document.getElementById('domain-feedback');
+      const recorded = document.getElementById('domain-recorded');
+      feedback.classList.remove('show');
+      recorded.classList.add('hidden');
+      line.classList.remove('loading');
+      if (!input) return;
+      if (!/^[a-z0-9\-]+$/i.test(input)) {
+        feedback.textContent = 'Contains invalid characters';
+        feedback.style.color = '#A8A29E';
+        feedback.classList.add('show');
+        return;
+      }
+      line.classList.add('loading');
+      clearTimeout(domainTimeout);
+      domainTimeout = setTimeout(() => {
+        line.classList.remove('loading');
+        const reserved = ['admin','adjung','support','help'];
+        if (reserved.includes(input.toLowerCase())) {
+          feedback.textContent = 'Already reserved';
+          feedback.style.color = '#A8A29E';
+        } else {
+          feedback.innerHTML = '✓ Available';
+          feedback.style.color = '#44403C';
+          recorded.classList.remove('hidden');
+        }
+        feedback.classList.add('show');
+      }, 1400);
+    }
+
+    let sigDrawing = false, sigCtx = null;
+    function showSigCanvas() {
+      document.getElementById('sig-placeholder').classList.add('hidden');
+      document.getElementById('sig-typo').classList.add('hidden');
+      const canvas = document.getElementById('sig-canvas');
+      canvas.classList.remove('hidden');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      sigCtx = canvas.getContext('2d');
+      sigCtx.strokeStyle = '#111111';
+      sigCtx.lineWidth = 1.5;
+      sigCtx.lineCap = 'round';
+      canvas.onpointerdown = e => { sigDrawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
+      canvas.onpointermove = e => { if (sigDrawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
+      canvas.onpointerup = () => { sigDrawing = false; };
+    }
+
+    function generateTypoSig() {
+      const name = document.getElementById('id-display').value || 'Your Name';
+      document.getElementById('sig-placeholder').classList.add('hidden');
+      document.getElementById('sig-canvas').classList.add('hidden');
+      const typo = document.getElementById('sig-typo');
+      typo.textContent = name;
+      typo.classList.remove('hidden');
+    }
+
+    function runCompletion() {
+      const lines = document.querySelectorAll('#completion-lines p');
+      lines.forEach((p, i) => {
+        setTimeout(() => p.classList.add('show'), i * 1200);
+      });
+      setTimeout(() => {
+        document.getElementById('completion-lines').style.display = 'none';
+        document.getElementById('completion-final').classList.remove('hidden');
+      }, lines.length * 1200 + 800);
+    }
+
+    // Initialize Lucide icons
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+  <div id="dot-sidebar" className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-40 pr-2">
+   <div className="dot w-2 h-2 rounded-full bg-maroon transition-all duration-300" data-page="1"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="2"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="3"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="4"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="5"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="6"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="7"></div>
+   <div className="dot w-2 h-2 rounded-full bg-bordergrey transition-all duration-300" data-page="8"></div>
+  </div>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a176d8c3c3345664',t:'MTc4MzQyNzI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body><!-- Right sidebar with dot indicators --></html>

@@ -7,6 +7,7 @@ import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollaps
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
 import { SignatureLayout } from './components/SignatureLayout';
 import { SignatureRenderer } from './components/SignatureRenderer';
+import SignUpWizard from './components/SignUpWizard';
 import { 
   Compass,
   User as UserIcon,
@@ -39,6 +40,9 @@ import { Editorium } from './components/Editorium';
 import { Directory } from './components/Directory';
 import { IdentityStudio } from './components/IdentityStudio';
 import { LoadingScreen } from './components/LoadingScreen';
+import { PhilosophyCarousel } from './components/PhilosophyCarousel';
+import { ElasticMarginRow } from './components/ElasticMarginRow';
+import { AnimatedSignature } from './components/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
 
@@ -317,6 +321,7 @@ export default function App() {
   const [scrollY, setScrollY] = useState(0);
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   const [maxScroll, setMaxScroll] = useState(400);
+  const [showInterlinear, setShowInterlinear] = useState(true);
   const lastScrollY = useRef(0);
 
   // App Navigation & Session States
@@ -427,6 +432,7 @@ export default function App() {
 
   // Authentication Fields
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignUpWizard, setShowSignUpWizard] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -1409,6 +1415,67 @@ Editorial Board of Adjung`;
     showToast(`Folio Initialized! Welcome to Adjung, ${penName.trim()}!`, 'success');
   };
 
+  const handleWizardComplete = (data: any) => {
+    const { username, displayName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
+
+    const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
+    
+    // Check for duplicate username
+    const exists = users.some(u => u.username.toLowerCase() === formattedUsername);
+    if (exists) {
+      showToast(`Self-Administration Safety: '${formattedUsername}' is already taken. Please select a unique username.`, 'error');
+      return;
+    }
+
+    const newUserId = `user-${formattedUsername.replace(/\./g, '-')}`;
+    const newUser: User = {
+      id: newUserId,
+      username: formattedUsername,
+      email: email.trim(),
+      role: 'Writer',
+      penName: displayName.trim(),
+      signature: typeof signatureData === 'string' ? signatureData.trim() : displayName.trim(),
+      avatarColor: 'bg-stone-800 text-stone-100',
+      bioSummary: `Newly registered independent scholar on Adjung.`
+    };
+
+    // Create the User in the mockDb
+    db.createUser(newUser);
+
+    // Update associated empty profile
+    const profile = db.getProfileByAuthorId(newUserId);
+    const updatedProfile: WriterProfile = {
+      ...profile,
+      heroTitle: `${displayName.trim()}'s Folio`,
+      heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
+    };
+    db.updateProfile(updatedProfile);
+    
+    const identity = db.getIdentityByAccountId(newUserId);
+    if (identity) {
+      // bioContent removed
+
+
+
+
+
+
+
+      db.updateIdentity({
+        ...identity,
+        biography: biography ? biography.trim() : `Biography of ${displayName.trim()}.`
+      });
+    }
+
+    // Sync state
+    refreshDbState();
+    setCurrentUser(newUser);
+    setSelectedAuthorId(newUserId);
+    setActiveTab('desk');
+    setShowSignUpWizard(false);
+    showToast(`Membership established! Welcome to Adjung, ${displayName.trim()}!`, 'success');
+  };
+
   // Editorium: Reset Database
   const handleResetDatabase = () => {
     if (window.confirm('WARNING: This will restore the database to the initial academic seed data, erasing all custom local modifications. Proceed?')) {
@@ -1474,8 +1541,15 @@ Editorial Board of Adjung`;
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 pb-16"
+          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900"
         >
+          {/* Top Thin Reading Progress Bar */}
+          <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-[#802334]/5 z-50 pointer-events-none">
+            <div 
+              className="h-full bg-[#802334] transition-all duration-75 ease-out"
+              style={{ width: `${maxScroll > 0 ? Math.min(100, Math.max(0, (scrollY / maxScroll) * 100)) : 0}%` }}
+            />
+          </div>
       
       {/* Elegant Editorial Toast Notification */}
       {toast && (
@@ -1496,7 +1570,9 @@ Editorial Board of Adjung`;
       <nav 
         onMouseEnter={() => setIsHeaderHovered(true)}
         onMouseLeave={() => setIsHeaderHovered(false)}
-        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all duration-200 ease-out backdrop-blur-md ${
+        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
+          isHeaderHovered ? 'duration-200' : 'duration-[1500ms]'
+        } ${
           isFloating 
             ? 'shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
             : 'border-white/5 shadow-none'
@@ -1537,21 +1613,6 @@ Editorial Board of Adjung`;
               {selectedAuthorId === '' ? (
                 /* PLATFORM PORTAL NAVIGATION (DIRECTORY, INDEX) */
                 <>
-                  {/* Curated Frontpage - Only visible if not already on Frontpage or Landing */}
-                  {activeTab !== 'frontpage' && activeTab !== 'landing' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('frontpage');
-                        setSelectedEntry(null);
-                        setEditingEntry(null);
-                      }}
-                      className="px-2 py-1 text-xs font-mono tracking-wider uppercase transition-colors text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Frontpage
-                    </button>
-                  )}
-
                   {/* Directory */}
                   {currentUser && hasPermission('viewDirectory') && (
                     <button
@@ -1708,6 +1769,24 @@ Editorial Board of Adjung`;
                           Account
                         </button>
 
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setSelectedAuthorId('');
+                            setActiveTab('identity');
+                            setSelectedEntry(null);
+                            setEditingEntry(null);
+                          }}
+                          className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
+                            activeTab === 'identity'
+                              ? 'text-[#802334] bg-stone-50/60 font-semibold'
+                              : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
+                          }`}
+                        >
+                          Identity
+                        </button>
+
                         {hasPermission('curateFrontpage') && (
                           <button
                             type="button"
@@ -1747,28 +1826,25 @@ Editorial Board of Adjung`;
                 )}
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginError('');
-                  setShowLoginModal(true);
-                }}
-                className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
-              >
-                Sign In
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginError('');
+                    setShowLoginModal(true);
+                  }}
+                  className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
+                >
+                  Sign In
+                </button>
+              </>
             )}
-          </div>
-
-        </div>
-      </nav>
-
+          </div>        </div>      </nav>
       {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
       {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
         <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
           <div className="max-w-6xl mx-auto text-center relative">
-            
-            {/* Main classical visual focus: The Author's Identity with refined lines */}
+                        {/* Main classical visual focus: The Author's Identity with refined lines */}
             <div className="border-t border-b border-stone-200/50 py-5 my-1 max-w-3xl mx-auto">
               <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
                 PERSONAL SITE
@@ -1867,8 +1943,8 @@ Editorial Board of Adjung`;
                   Independent Folios
                 </h2>
                 <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
-                <p className="font-serif italic text-stone-600 text-sm md:text-base leading-relaxed max-w-lg mx-auto">
-                  "{systemSettings.editorialPolicy}"
+                <p className="font-serif text-stone-600 text-sm md:text-base leading-loose max-w-lg mx-auto">
+                  {systemSettings.editorialPolicy}
                 </p>
               </div>
 
@@ -1876,7 +1952,6 @@ Editorial Board of Adjung`;
                 <p className="font-sans text-xs text-stone-500 max-w-md mx-auto">
                   To view individual timelines, articles, essays, and writer profiles, please select a registered writer from our directory or sign in if you are an editor.
                 </p>
-
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                   {hasPermission('viewDirectory') && (
                     <button
@@ -1902,7 +1977,6 @@ Editorial Board of Adjung`;
             </div>
           ) : (
             <div className="space-y-10 max-w-4xl mx-auto">
-              
               {/* Writer Hero Block */}
               <div className="text-center md:text-left border-b border-stone-200/40 pb-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
                 <div className="space-y-3 max-w-2xl">
@@ -1913,7 +1987,6 @@ Editorial Board of Adjung`;
                     {authorProfile?.heroSubtitle}
                   </p>
                 </div>
-                
                 {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
                 <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-8 py-1.5 select-none">
                   <div className="h-16 w-64 flex items-center justify-center -mb-3.5 z-10 relative mix-blend-multiply">
@@ -1971,7 +2044,7 @@ Editorial Board of Adjung`;
 
             {/* Grouped timeline list */}
             {sortedYears.length === 0 ? (
-              <div className="text-center py-16 border border-dashed border-stone-200 rounded max-w-xl mx-auto">
+              <div className="text-center py-20 bg-transparent border-none max-w-xl mx-auto">
                 <FileText className="w-10 h-10 text-stone-300 mx-auto mb-3" />
                 <h3 className="font-serif text-stone-700 text-lg">Folio Archives Empty</h3>
                 <p className="font-serif text-xs text-stone-500 mt-1">This writer has not yet cataloged any public publications in this category.</p>
@@ -2512,16 +2585,16 @@ Editorial Board of Adjung`;
                 {/* Right side: Folio Customizer & Pen Name controls */}
                 <div className="lg:col-span-4 bg-white border border-stone-200 rounded p-6 shadow-sm text-center space-y-4">
                   <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-[#802334] border-b pb-3 mb-4 flex items-center justify-center gap-1.5">
-                    Identity Studio
+                    Identity
                   </h3>
                   <p className="font-sans text-xs text-stone-500">
-                    Author identity, biography, and signatures are now securely managed in the decoupled Identity Studio.
+                    Author identity, biography, and signatures are now securely managed in the decoupled Identity module.
                   </p>
                   <button
                     onClick={() => setActiveTab('identity')}
-                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition"
+                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition cursor-pointer"
                   >
-                    Open Identity Studio
+                    Open Identity
                   </button>
                 </div>
 
@@ -2600,7 +2673,7 @@ Editorial Board of Adjung`;
                         <time className="font-mono text-[10px] text-stone-400">{new Date(notice.publishedDate || notice.createdDate).toLocaleDateString()}</time>
                       </div>
                       <h3 className="font-serif text-2xl text-stone-900 group-hover:text-[#802334] transition mb-3">{parseInlineFormatting(notice.title)}</h3>
-                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">{notice.excerpt || notice.content.substring(0, 200) + '...'}</p>
+                      <p className="font-serif text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">{parseInlineFormatting(notice.excerpt || notice.content.substring(0, 200) + '...')}</p>
                       <span className="text-[#802334] hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">Read Announcement →</span>
                     </article>
                   ))
@@ -2728,30 +2801,16 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
         {activeTab === 'landing' && (
-          <div className="max-w-3xl mx-auto space-y-12 py-10 px-4 select-none animate-fade-in text-center">
+          <div className="w-full max-w-5xl mx-auto space-y-8 pt-24 pb-12 px-4 select-none animate-fade-in text-center">
             {/* Elegant Hero Introduction */}
             <div className="space-y-4 max-w-2xl mx-auto">
               <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-[#802334] font-bold">
-                A Quiet Home for Knowledge
+                A Better Place for Knowledge
               </span>
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-stone-900 leading-tight tracking-tight">
-                Where Ideas Outlive the Noise
+              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-stone-900 leading-tight tracking-tight animate-fade-in">
+                Libraries Ask for Silence for a Reason.
               </h2>
               <div className="h-px w-16 bg-[#802334]/20 mx-auto my-4" />
-              
-              <div className="space-y-3 font-serif text-stone-600 text-[15px] md:text-[16px] leading-relaxed max-w-lg mx-auto">
-                <p className="italic">There is a reason libraries ask for silence.</p>
-                <p className="font-semibold text-stone-900">
-                  Knowledge was never meant to compete for attention.
-                </p>
-                <p className="text-stone-500 text-sm">
-                  It deserves a place where anyone can write, read, preserve, and discover ideas that truly matter.
-                </p>
-              </div>
-              
-              <p className="font-serif italic text-stone-400 text-xs pt-2">
-                "{systemSettings.editorialPolicy || 'Rebuilding the civilization'}"
-              </p>
             </div>
 
             {/* Swapped CTA Buttons */}
@@ -2778,7 +2837,42 @@ Editorial Board of Adjung`;
                 Sign In
               </button>
             </div>
+            {/* Scroll-Revealed Philosophy Quote Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="py-6 max-w-xl mx-auto text-center my-4 bg-transparent"
+            >
+              <PhilosophyCarousel />
+            </motion.div>
 
+
+            {/* FASA 1.5: FEATURED ENTRY HERO */}
+            {(() => {
+              const featuredEntry = entries.find(e => e.id === systemSettings.featuredEntryId && e.status === 'Published');
+              if (!featuredEntry) return null;
+              return (
+                <div className="py-12 text-center group cursor-pointer max-w-3xl mx-auto" onClick={() => {
+                  setSelectedEntry(featuredEntry);
+                  setSelectedAuthorId(featuredEntry.authorId);
+                  setActiveTab('folio');
+                }}>
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="h-px w-12 bg-stone-200"></div>
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-[#802334] font-bold">Featured Entry</span>
+                    <div className="h-px w-12 bg-stone-200"></div>
+                  </div>
+                  <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-[#802334] transition-colors px-4">
+                    {parseInlineFormatting(featuredEntry.title)}
+                  </h2>
+                  <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
+                    {featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...'}
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* FASA 2 & 3: THE MANIFESTO & THE FIRST PROOF */}
             {(() => {
@@ -2797,6 +2891,14 @@ Editorial Board of Adjung`;
               const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
               // Helper to render first paragraph with drop cap
+              const wrapBadgesWithWords = (html: string) => {
+                // Wrap the preceding word/punctuation/interlinear-word + the badge in a non-breaking container
+                return html.replace(
+                  /((?:<span class="interlinear-word"><span class="interlinear-gloss">[^<]*<\/span>[^<]*<\/span>|[^\s<>]+)[,.;:!?]?(?:<span class="(?:footnote|margin-note)-badge"[^>]*><\/span>)+)/g,
+                  '<span class="whitespace-nowrap">$1</span>'
+                );
+              };
+
               const renderManifestoParagraph = (text: string, idx: number) => {
                 const cleanText = text.replace(/<[^>]*>/g, '');
                 if (idx === 0 && cleanText.length > 0) {
@@ -2807,11 +2909,11 @@ Editorial Board of Adjung`;
                       <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
                         {firstLetter}
                       </span>
-                      <span dangerouslySetInnerHTML={{ __html: rest }} />
+                      <span dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(rest) }} />
                     </p>
                   );
                 }
-                return <p key={idx} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: text }} />;
+                return <p key={idx} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(text) }} />;
               };
 
               // Featured Entry & Selections
@@ -2823,21 +2925,46 @@ Editorial Board of Adjung`;
               );
 
               return (
-                <div id="platform-description-block" className="manifesto-container max-w-5xl mx-auto pt-16 pb-36 px-4 text-left mt-12 border-t border-stone-200/60 space-y-16">
+                <div id="platform-description-block" className="manifesto-container max-w-5xl mx-auto pt-8 pb-20 px-4 text-left mt-6 border-t border-stone-200/40 space-y-10">
                   
                   {/* FASA 2: THE MANIFESTO */}
-                  <div className="space-y-8 font-serif">
-                    <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold">
-                      Why Adjung Exists
-                    </span>
+                  <div className="space-y-6 font-serif">
+                    <div className="flex justify-between items-center select-none border-b border-stone-100 pb-2">
+                      <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold">
+                        The Manifesto
+                      </span>
+                    </div>
                     
                     <h3 className="text-2xl md:text-3xl lg:text-4xl font-light text-stone-900 leading-tight max-w-xl">
-                      Knowledge was never meant to compete for attention.
+                      {manifestoEntry.title}
                     </h3>
                     
-                    <div className="h-px w-16 bg-[#802334]/20 my-6" />
+                    <div className="h-px w-16 bg-[#802334]/20 my-4" />
 
-                    <div className="space-y-8">
+                    <div 
+                      className="space-y-4"
+                      onClick={(e) => {
+                        const target = e.target as HTMLElement;
+                        const badge = target.closest('.footnote-badge');
+                        if (badge) {
+                          const dataId = badge.getAttribute('data-id');
+                          if (dataId) {
+                            const destEl = document.getElementById(`manifesto-footnote-dest-${dataId}`);
+                            if (destEl) {
+                              destEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              // Flash highlight effect
+                              destEl.classList.add('bg-stone-200/60');
+                              setTimeout(() => destEl.classList.remove('bg-stone-200/60'), 2000);
+                              return;
+                            }
+                          }
+                          const footnotesEl = document.getElementById('manifesto-footnotes');
+                          if (footnotesEl) {
+                            footnotesEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        }
+                      }}
+                    >
                       {paragraphs.map((p, idx) => {
                         const noteKey = `mn-${idx + 1}`;
                         const noteRaw = mnData[noteKey] || '';
@@ -2846,40 +2973,50 @@ Editorial Board of Adjung`;
                         const noteContent = noteParts.slice(1).join('\n') || '';
 
                         return (
-                          <div key={idx} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start py-2">
-                            <div className="lg:col-span-8 text-stone-600 text-[15px] md:text-[16px] leading-relaxed">
+                          <ElasticMarginRow
+                            key={idx}
+                            noteLabel={noteLabel}
+                            noteContent={noteContent}
+                            noteIndexRoman={toRoman(idx + 1).toLowerCase()}
+                          >
+                            <div className="text-stone-600 text-[15px] md:text-[16px] leading-relaxed">
                               {renderManifestoParagraph(p, idx)}
                             </div>
-                            <div className="lg:col-span-4 lg:pl-8 text-left">
-                              {noteContent && (
-                                <div className="border-l border-[#802334]/20 pl-4 py-0.5 space-y-1 transition-all">
-                                  <div className="flex items-center gap-1.5 select-none">
-                                    <span className="font-sans text-[10px] font-medium align-super text-[#802334]">
-                                      ({toRoman(idx + 1).toLowerCase()})
-                                    </span>
-                                    <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 font-semibold">
-                                      {noteLabel}
-                                    </span>
-                                  </div>
-                                  <p className="text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed font-serif">
-                                    {noteContent}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          </ElasticMarginRow>
                         );
                       })}
+                    </div>
+                    
+                    {/* Animated Signature - Centered and positioned above footnotes */}
+                    <div className="pt-10 pb-4 flex justify-center">
+                      <AnimatedSignature />
                     </div>
 
                     {/* Footnotes */}
                     {fnData.length > 0 && (
-                      <div className="pt-12">
-                        <div className="border-t border-stone-200/50 w-24 my-6" />
-                        <div className="space-y-3 max-w-xl">
+                      <div id="manifesto-footnotes" className="pt-8 scroll-mt-20">
+                        <div className="border-t border-stone-200/50 w-24 my-4 mx-auto" />
+                        <div className="space-y-3 max-w-xl mx-auto">
                           {fnData.map((fn, idx) => (
-                            <div key={fn.id} className="group flex gap-3 hover:bg-stone-50/50 p-1.5 rounded transition">
-                              <span className="font-sans text-[10px] font-medium align-super text-[#802334] w-4 flex-shrink-0 select-none mr-1">
+                            <div 
+                              key={fn.id} 
+                              id={`manifesto-footnote-dest-${fn.id}`} 
+                              className="group flex gap-3 hover:bg-stone-50/50 p-1.5 rounded transition scroll-mt-24 duration-700"
+                            >
+                              <span 
+                                className="font-sans text-[10px] font-medium align-super text-[#802334] w-4 flex-shrink-0 select-none mr-1 cursor-pointer hover:underline hover:text-[#611522]"
+                                title="Go back to citation"
+                                onClick={() => {
+                                  const refBadge = document.querySelector(`.footnote-badge[data-id="${fn.id}"]`);
+                                  if (refBadge) {
+                                    refBadge.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    refBadge.classList.remove('citation-flash');
+                                    void (refBadge as HTMLElement).offsetWidth; // Trigger reflow
+                                    refBadge.classList.add('citation-flash');
+                                    setTimeout(() => refBadge.classList.remove('citation-flash'), 2500);
+                                  }
+                                }}
+                              >
                                 ({idx + 1})
                               </span>
                               <div className="flex-grow text-left text-stone-500 text-xs">
@@ -2918,7 +3055,7 @@ Editorial Board of Adjung`;
         )}
 
         {/* ACTIVE MODULE 0B: CURATED FRONTPAGE (Platform public index of publications & scholars) */}
-        {activeTab === 'frontpage' && (() => {
+        {activeTab === 'frontpage' && !selectedEntry && (() => {
           const featuredEntry = entries.find(e => e.id === systemSettings.featuredEntryId && e.status === 'Published');
           const notice = entries
             .filter(e => e.contentType === 'Notice' && e.status === 'Published')
@@ -3009,7 +3146,7 @@ Editorial Board of Adjung`;
 
               {/* 5. Latest Entries (Auto-Rotate) */}
               {currentLatestEntry && (
-                <div className="bg-stone-50/50 border border-stone-200/50 p-12 text-center rounded-sm">
+                <div className="p-12 text-center">
                   <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-8">Latest Transmissions</span>
                   <div className="h-24 flex items-center justify-center">
                     <AnimatePresence mode="wait">
@@ -3051,8 +3188,8 @@ Editorial Board of Adjung`;
                   <div className="max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left bg-[#802334]/5 p-6 rounded border border-[#802334]/10 hover:bg-[#802334]/10 transition">
                     <span className="w-2 h-2 bg-[#802334] rotate-45 flex-shrink-0"></span>
                     <div>
-                      <h4 className="font-serif text-lg text-[#802334] mb-1">{notice.title}</h4>
-                      <p className="font-sans text-[13px] text-stone-600 line-clamp-2">{notice.excerpt || notice.content}</p>
+                      <h4 className="font-serif text-lg text-[#802334] mb-1">{parseInlineFormatting(notice.title)}</h4>
+                      <p className="font-sans text-[13px] text-stone-600 line-clamp-2">{parseInlineFormatting(notice.excerpt || notice.content)}</p>
                     </div>
                   </div>
                 </div>
@@ -3151,6 +3288,23 @@ Editorial Board of Adjung`;
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Registration Prompt */}
+              <div className="border-t border-stone-200/50 pt-4 mt-4 text-center select-none">
+                <p className="font-sans text-xs text-stone-500">
+                  Not registered as a Member yet?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginModal(false);
+                      setShowSignUpWizard(true);
+                    }}
+                    className="text-adjung-maroon hover:underline font-semibold cursor-pointer ml-1 font-serif italic text-[13px]"
+                  >
+                    Register here
+                  </button>
+                </p>
               </div>
 
             </form>
@@ -3436,169 +3590,16 @@ Editorial Board of Adjung`;
         </div>
       )}
 
-      {/* ==================== ACADEMIC REGISTRATION FORM MODAL ==================== */}
-      {invitedRegistrationData && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-lg w-full overflow-hidden scholarly-border my-8">
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-2xl text-adjung-maroon">Accept Invitation</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Initialize your personal scholarly Folio</p>
-            </div>
-
-            <form onSubmit={handleCompleteRegistration} className="p-6 space-y-4 text-xs font-sans">
-              
-              <div className="p-4 bg-[#FBF9F4] border border-amber-200/50 rounded text-left text-stone-700 leading-relaxed font-serif flex gap-3">
-                <Info className="w-5 h-5 text-adjung-maroon flex-shrink-0 mt-0.5" />
-                <div>
-                  Welcome, <span className="font-bold text-stone-900">{invitedRegistrationData.name}</span>. You have been invited to Adjung. Choose your public pen name, custom handwritten signature, and configure your personal subdomain to activate your folio database.
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Username input with subdomain preview */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Subdomain Username</label>
-                  <input
-                    type="text"
-                    value={invitedRegistrationData.username}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      username: e.target.value.toLowerCase().replace(/[^a-z0-9.]/g, '')
-                    })}
-                    className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono"
-                    placeholder="e.g. cordoba.scribe"
-                    required
-                  />
-                  <span className="block font-mono text-[9px] text-stone-400 mt-1">
-                    Your personal domain: <strong className="text-stone-600 select-all">{invitedRegistrationData.username || 'username'}.adjung.com</strong>
-                  </span>
-                </div>
-
-                {/* Public Pen Name */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Public Pen Name</label>
-                  <input
-                    type="text"
-                    value={invitedRegistrationData.penName}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      penName: e.target.value
-                    })}
-                    className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-serif"
-                    placeholder="e.g. Al-Qurtubi"
-                    required
-                  />
-                  <span className="block font-mono text-[9px] text-stone-400 mt-1">Used on your biography, hero, and books.</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Handwritten Signature Stamp */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Handwritten Signature</label>
-                  <input
-                    type="text"
-                    value={invitedRegistrationData.signature}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      signature: e.target.value
-                    })}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-signature text-xl text-adjung-maroon"
-                    placeholder="e.g. Ibn Rushd"
-                    required
-                  />
-                  <span className="block font-mono text-[9px] text-stone-400 mt-1">Renders in script font as your identity seal.</span>
-                </div>
-
-                {/* Email Address */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Contact Email</label>
-                  <input
-                    type="email"
-                    value={invitedRegistrationData.email}
-                    disabled
-                    className="w-full border border-stone-200 bg-stone-100 text-stone-500 p-2.5 rounded cursor-not-allowed font-mono"
-                  />
-                  <span className="block font-mono text-[9px] text-stone-400 mt-1">Linked to your invitation.</span>
-                </div>
-              </div>
-
-              <div className="border-t border-stone-200/60 pt-4 mt-2 space-y-3">
-                <h4 className="font-serif font-semibold text-stone-900 text-sm text-left">Initial Folio Styling</h4>
-
-                {/* Folio Hero Title */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Hero Title</label>
-                  <input
-                    type="text"
-                    value={invitedRegistrationData.heroTitle}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      heroTitle: e.target.value
-                    })}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm"
-                    required
-                  />
-                </div>
-
-                {/* Folio Hero Subtitle */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Hero Subtitle</label>
-                  <textarea
-                    value={invitedRegistrationData.heroSubtitle}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      heroSubtitle: e.target.value
-                    })}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[50px] font-serif text-stone-600 italic"
-                    required
-                  />
-                </div>
-
-                {/* Initial Biography Text */}
-                <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Biography</label>
-                  <textarea
-                    value={invitedRegistrationData.bioText}
-                    onChange={(e) => setInvitedRegistrationData({
-                      ...invitedRegistrationData,
-                      bioText: e.target.value
-                    })}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[80px] font-serif leading-relaxed"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setInvitedRegistrationData(null)}
-                  className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-3 rounded text-xs font-mono uppercase tracking-wider transition cursor-pointer"
-                >
-                  Decline
-                </button>
-                <button
-                  type="submit"
-                  className="w-2/3 bg-adjung-maroon text-[#FDFDFD] py-3 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition font-semibold cursor-pointer"
-                >
-                  Activate Folio & Sign In
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {/* ==================== ACADEMIC REGISTRATION WIZARD ==================== */}      {showSignUpWizard && (        <SignUpWizard          onClose={() => setShowSignUpWizard(false)}          onComplete={handleWizardComplete}        />      )}
       {/* ==================== 6. ACADEMIC FOOTER ==================== */}
       <footer className="w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
-        <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
-          <div className="space-y-4 lg:col-span-2">
+        <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center items-start">
+          <div className="space-y-4 flex flex-col items-center text-center">
             <h1 className="font-serif text-2xl font-semibold tracking-wider text-[#802334]">{BRAND.logoText}</h1>
-            <p className="font-serif italic text-stone-600 text-sm max-w-sm">"{systemSettings.editorialPolicy}"</p>
+            <p className="font-serif italic text-stone-600 text-sm max-w-sm mx-auto">{systemSettings.editorialPolicy}</p>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col items-center text-center">
             <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Institutional</h4>
             <ul className="space-y-2 font-sans text-xs text-stone-600">
               <li><button onClick={() => { setActiveTab('editorial'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editor's Notes</button></li>
@@ -3608,7 +3609,7 @@ Editorial Board of Adjung`;
             </ul>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col items-center text-center">
             <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Network</h4>
             <ul className="space-y-2 font-sans text-xs text-stone-600">
               <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">About Adjung</button></li>

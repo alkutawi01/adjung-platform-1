@@ -64,7 +64,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
     setVisibility(ident.publicVisibility || 'Public');
   }, [currentUser]);
 
-  if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity Studio...</div>;
+  if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
       penName,
       biography,
       publicVisibility: visibility,
-      signatures: updatedSignatures,
+      signatures: updatedSignatures
     };
 
     db.updateIdentity(updatedIdentity);
@@ -160,7 +160,7 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
             <Layout className="w-6 h-6 text-Adjung-maroon" />
-            Identity Studio
+            Identity
           </h2>
           <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
             Decoupled authorship, signature, and verification management.
@@ -231,12 +231,12 @@ export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: Ide
               </div>
 
               <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Author Biography</label>
+                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">About You</label>
                 <textarea
                   value={biography}
                   onChange={(e) => setBiography(e.target.value)}
-                  className="w-full border border-stone-200 p-3 rounded focus:outline-none focus:border-Adjung-maroon min-h-[160px] font-serif leading-relaxed text-sm resize-y"
-                  placeholder="Enter scholarly biography..."
+                  className="w-full border border-stone-200 p-3 rounded focus:outline-none focus:border-Adjung-maroon min-h-[120px] font-serif leading-relaxed text-sm resize-y"
+                  placeholder="Enter a description of yourself, your intellectual background, or interests..."
                 />
               </div>
             </div>
