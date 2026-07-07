@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Pinyon+Script&family=Alex+Brush&family=Great+Vibes&family=Sacramento&family=Parisienne&family=Allura&family=Herr+Von+Muellerhoff&family=Birthstone:wght@400&family=Birthstone+Bounce:wght@400;500&family=Mrs+Saint+Delafield&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Pinyon+Script&family=Alex+Brush&family=Great+Vibes&family=Sacramento&family=Parisienne&family=Allura&family=Herr+Von+Muellerhoff&family=Birthstone:wght@400&family=Birthstone+Bounce:wght@400;500&family=Mrs+Saint+Delafield&family=Caveat:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -181,10 +181,10 @@ blockquote {
 .interlinear-gloss {
   position: absolute;
   left: 50%;
-  top: -0.48em;
+  top: -0.58em;
   transform: translate(-50%, 0) scale(1);
-  font-family: var(--font-signature), "Mrs Saint Delafield", cursive;
-  font-size: 0.94rem;
+  font-family: "Caveat", cursive;
+  font-size: 0.85rem;
   color: rgba(128, 35, 52, 0.92);
   line-height: 1;
   white-space: nowrap;
@@ -192,7 +192,7 @@ blockquote {
   opacity: 1;
   visibility: visible;
   letter-spacing: 0.01em;
-  font-weight: 500;
+  font-weight: 600;
   user-select: none;
   text-transform: lowercase;
   transition: color 0.2s ease, transform 0.2s ease;
