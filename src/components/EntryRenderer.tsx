@@ -4093,6 +4093,21 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
+                  const url = window.prompt("Sila masukkan URL (contoh: https://google.com):", "https://");
+                  if (url === null) return;
+                  const text = window.prompt("Sila masukkan teks pautan (Anchor Text):", "Pautan Rujukan");
+                  if (text === null) return;
+                  insertMarkdownText(`[${text}](${url})`);
+                  setShowInsertMenu(false);
+                }}
+                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+              >
+                <span className="font-medium font-sans text-stone-100">+ Hyperlink</span>
+                <span className="text-[9px] text-stone-450 font-mono">External link anchor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   insertMarkdownText('\n---\n');
                   setShowInsertMenu(false);
                 }}
