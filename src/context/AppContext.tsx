@@ -121,15 +121,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toastVisible, setToastVisible] = useState(false);
 
   const refreshDbState = () => {
-    setUsers(db.getUsers());
-    setProfiles(db.getProfiles());
-    setEntries(db.getEntries());
-    setSystemSettings(db.getSystemSettings());
+    const sessionId = localStorage.getItem('Adjung_session_user_id') || '';
+    fetch('/api/db-state', {
+      headers: { 'x-session-id': sessionId }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setUsers(data.users);
+        setProfiles(data.profiles);
+        setEntries(data.entries);
+        setSystemSettings(data.systemSettings);
+        if (data.currentUser) {
+          setCurrentUser(data.currentUser);
+          localStorage.setItem('Adjung_session_user_data', JSON.stringify(data.currentUser));
+        } else if (sessionId) {
+          setCurrentUser(null);
+          setSelectedAuthorId('');
+          setActiveTab('landing');
+          localStorage.removeItem('Adjung_session_user_id');
+          localStorage.removeItem('Adjung_session_user_data');
+        }
+      })
+      .catch(err => console.error('Failed to sync state from database:', err));
   };
 
   const updateSystemSettingsState = (settings: SystemSettings) => {
-    db.updateSystemSettings(settings);
-    setSystemSettings(settings);
+    fetch('/api/system/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    })
+      .then(res => {
+        if (res.ok) {
+          refreshDbState();
+          showToast('System settings saved', 'success');
+        }
+      })
+      .catch(err => console.error('Failed to save system settings:', err));
   };
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -159,6 +187,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveTab('landing');
     }
     
+    refreshDbState();
     setTimeout(() => {
       setInitializing(false);
     }, 1000);
@@ -225,18 +254,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // DB actions
   const saveEntry = (updatedEntry: Entry) => {
-    db.saveEntry(updatedEntry);
-    refreshDbState();
-    if (editingEntry?.id === updatedEntry.id) {
-      setEditingEntry(updatedEntry);
-    }
+    fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedEntry)
+    })
+      .then(res => {
+        if (res.ok) {
+          refreshDbState();
+          if (editingEntry?.id === updatedEntry.id) {
+            setEditingEntry(updatedEntry);
+          }
+        }
+      })
+      .catch(err => console.error('Failed to save entry:', err));
   };
 
   const deleteEntry = (entryId: string) => {
-    db.deleteEntry(entryId);
-    refreshDbState();
-    setEditingEntry(null);
-    setSelectedEntry(null);
+    fetch(`/api/entries/${entryId}`, { method: 'DELETE' })
+      .then(res => {
+        if (res.ok) {
+          refreshDbState();
+          setEditingEntry(null);
+          setSelectedEntry(null);
+        }
+      })
+      .catch(err => console.error('Failed to delete entry:', err));
   };
 
   const createNewEntry = (type: EntryType) => {
@@ -273,20 +316,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       marginNotes: type === 'Article' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
     };
 
-    db.saveEntry(newEntry);
-    refreshDbState();
-    setEditingEntry(newEntry);
+    fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newEntry)
+    })
+      .then(res => {
+        if (res.ok) {
+          refreshDbState();
+          setEditingEntry(newEntry);
+        }
+      })
+      .catch(err => console.error('Failed to create entry:', err));
   };
 
   const resetDatabase = () => {
-    db.resetToDefaults();
-    AuthService.signOut();
-    refreshDbState();
-    setCurrentUser(null);
-    setSelectedAuthorId('');
-    setActiveTab('folio');
-    setEditingEntry(null);
-    setSelectedEntry(null);
+    fetch('/api/system/reset', { method: 'POST' })
+      .then(res => {
+        if (res.ok) {
+          AuthService.signOut();
+          refreshDbState();
+          setCurrentUser(null);
+          setSelectedAuthorId('');
+          setActiveTab('folio');
+          setEditingEntry(null);
+          setSelectedEntry(null);
+        }
+      })
+      .catch(err => console.error('Failed to reset database:', err));
   };
 
   const toggleUserSuspension = (targetUserId: string) => {
@@ -315,11 +372,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...targetUser,
       suspended: !targetUser.suspended
     };
-    db.updateUser(updatedUser);
-    db.addLog(`${updatedUser.suspended ? 'Suspended' : 'Reactivated'} account of ${targetUser.penName} (@${targetUser.username}).`, currentUser.penName, currentUser.role);
-    refreshDbState();
 
-    showToast(`${targetUser.penName}'s account has been ${updatedUser.suspended ? 'suspended' : 'reactivated'}.`, 'success');
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedUser)
+    })
+      .then(res => {
+        if (res.ok) {
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: `log-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              operator: currentUser.penName,
+              role: currentUser.role,
+              action: `${updatedUser.suspended ? 'Suspended' : 'Reactivated'} account of ${targetUser.penName} (@${targetUser.username}).`
+            })
+          }).then(() => {
+            refreshDbState();
+            showToast(`${targetUser.penName}'s account has been ${updatedUser.suspended ? 'suspended' : 'reactivated'}.`, 'success');
+          });
+        }
+      })
+      .catch(err => console.error('Failed to suspend user:', err));
   };
 
   const changeUserRole = (targetUserId: string, newRole: User['role']) => {
@@ -348,11 +425,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...targetUser,
       role: newRole
     };
-    db.updateUser(updatedUser);
-    db.addLog(`Modified role of ${targetUser.penName} (@${targetUser.username}) from '${targetUser.role}' to '${newRole}'.`, currentUser.penName, currentUser.role);
-    refreshDbState();
 
-    showToast(`${targetUser.penName}'s role changed to ${newRole}.`, 'success');
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedUser)
+    })
+      .then(res => {
+        if (res.ok) {
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: `log-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              operator: currentUser.penName,
+              role: currentUser.role,
+              action: `Modified role of ${targetUser.penName} (@${targetUser.username}) from '${targetUser.role}' to '${newRole}'.`
+            })
+          }).then(() => {
+            refreshDbState();
+            showToast(`${targetUser.penName}'s role changed to ${newRole}.`, 'success');
+          });
+        }
+      })
+      .catch(err => console.error('Failed to change role:', err));
   };
 
   const saveWriterFromEditorium = (writerData: {
@@ -376,26 +473,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       signature,
       bioSummary,
     };
-    db.updateUser(updatedUser);
 
-    const profile = db.getProfileByAuthorId(writer.id);
+    const profile = profiles.find(p => p.authorId === id) || { authorId: id, heroTitle: '', heroSubtitle: '' };
     const updatedProfile: WriterProfile = {
       ...profile,
       heroTitle,
       heroSubtitle,
     };
-    db.updateProfile(updatedProfile);
-    
-    const identity = db.getIdentityByAccountId(writer.id);
-    if (identity) {
-      db.updateIdentity({
-        ...identity,
-        biography: bioText,
-      });
-    }
 
-    refreshDbState();
-    showToast('Settings updated', 'success');
+    fetch('/api/db-state')
+      .then(res => res.json())
+      .then(data => {
+        const identitiesList: IdentityProfile[] = data.identities;
+        const identity = identitiesList.find(i => i.accountId === id);
+        const updatedIdentity = identity ? {
+          ...identity,
+          biography: bioText,
+        } : {
+          identityId: `id-${id}`,
+          accountId: id,
+          username,
+          displayName: penName,
+          penName,
+          biography: bioText,
+          publicVisibility: 'Public',
+          lifeTimeline: [],
+          signatures: []
+        };
+
+        Promise.all([
+          fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedUser)
+          }),
+          fetch('/api/profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedProfile)
+          }),
+          fetch('/api/identities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedIdentity)
+          })
+        ]).then(() => {
+          refreshDbState();
+          showToast('Settings updated', 'success');
+        });
+      })
+      .catch(err => console.error('Failed to update writer settings:', err));
   };
 
   return (

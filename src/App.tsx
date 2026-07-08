@@ -1011,12 +1011,12 @@ export default function App() {
 
 
   // Login handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
     try {
-      const authenticatedUser = AuthService.signIn(usernameInput, passwordInput);
+      const authenticatedUser = await AuthService.signIn(usernameInput, passwordInput);
       setCurrentUser(authenticatedUser);
       setSelectedAuthorId(authenticatedUser.id);
       setUsernameInput('');
@@ -1034,9 +1034,9 @@ export default function App() {
   };
 
   // Fast direct simulation switcher (helps evaluators easily test different roles)
-  const handleFastLogin = (username: string) => {
+  const handleFastLogin = async (username: string) => {
     try {
-      const authenticatedUser = AuthService.signInWithPreset(username);
+      const authenticatedUser = await AuthService.signInWithPreset(username);
       setCurrentUser(authenticatedUser);
       setSelectedAuthorId(authenticatedUser.id);
       setActiveTab('folio');

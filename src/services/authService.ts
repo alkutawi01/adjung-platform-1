@@ -60,10 +60,11 @@ export class SessionService {
   private static SESSION_KEY = 'Adjung_session_user_id';
 
   /**
-   * Starts a persistent session by storing the user ID.
+   * Starts a persistent session by storing the user ID and user data.
    */
-  static createSession(userId: string): void {
-    localStorage.setItem(this.SESSION_KEY, userId);
+  static createSession(user: User): void {
+    localStorage.setItem(this.SESSION_KEY, user.id);
+    localStorage.setItem('Adjung_session_user_data', JSON.stringify(user));
   }
 
   /**
@@ -71,32 +72,31 @@ export class SessionService {
    */
   static destroySession(): void {
     localStorage.removeItem(this.SESSION_KEY);
+    localStorage.removeItem('Adjung_session_user_data');
   }
 
   /**
    * Retrieves and automatically audits the current session.
-   * If the session is stale, refers to a deleted user, or refers to a suspended user,
-   * it discards the session safely.
-   * If the user's role, username, or other metadata changed, it returns the fresh user record.
    */
   static validateAndRetrieveSession(): User | null {
     const userId = localStorage.getItem(this.SESSION_KEY);
     if (!userId) return null;
 
-    const freshUser = UserRepository.getUserById(userId);
-    if (!freshUser) {
-      console.warn('Stale session detected: User no longer exists. Discarding session.');
-      this.destroySession();
-      return null;
+    const cachedUserStr = localStorage.getItem('Adjung_session_user_data');
+    if (cachedUserStr) {
+      try {
+        const cachedUser = JSON.parse(cachedUserStr);
+        if (cachedUser.suspended) {
+          this.destroySession();
+          return null;
+        }
+        return cachedUser;
+      } catch (e) {
+        this.destroySession();
+        return null;
+      }
     }
-
-    if (freshUser.suspended) {
-      console.warn('Session audit: User account is suspended. Terminating session.');
-      this.destroySession();
-      return null;
-    }
-
-    return freshUser;
+    return null;
   }
 }
 
@@ -114,42 +114,33 @@ export class AuthError extends Error {
 
 export class AuthService {
   /**
-   * Standard sign-in pipeline.
-   * Pipeline: Normalize Input -> Resolve User -> Verify Password -> Check Account Status -> Create Session
+   * Standard sign-in pipeline calling Express backend.
    */
-  static signIn(usernameOrEmailInput: string, passwordInput: string): User {
-    // 1. Normalize Input
-    const normalizedIdentifier = usernameOrEmailInput.trim().toLowerCase();
-    
-    // 2. Resolve User
-    const user = UserRepository.getUserByUsernameOrEmail(normalizedIdentifier);
-    if (!user) {
-      throw new AuthError('UserNotFound', 'User not found. (Please check your username or email)');
+  static async signIn(usernameOrEmailInput: string, passwordInput: string): Promise<User> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        usernameOrEmail: usernameOrEmailInput,
+        password: passwordInput
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new AuthError(data.error || 'UserNotFound', data.message || 'Authentication failed.');
     }
 
-    // 3. Verify Password (checks localStorage for custom user password, falling back to 'password')
-    const userPassword = localStorage.getItem(`Adjung_password_${user.id}`) || 'password';
-    if (passwordInput !== userPassword) {
-      throw new AuthError('IncorrectPassword', `Incorrect password. (Note: use the active password for this user; default is "password")`);
-    }
-
-    // 4. Check Account Status
-    if (user.suspended) {
-      throw new AuthError('AccountSuspended', 'This account has been suspended by the editorial board.');
-    }
-
-    // 5. Create Session
-    SessionService.createSession(user.id);
-
-    return user;
+    SessionService.createSession(data.user);
+    return data.user;
   }
 
   /**
    * Sign-in via Fast-Login Preset.
-   * Uses the identical authentication pipeline but bypasses manual password entry (simulates automatic 'password' verification).
    */
-  static signInWithPreset(username: string): User {
-    // Uses the identical pipeline for robustness, but provides the preset password automatically.
+  static async signInWithPreset(username: string): Promise<User> {
     return this.signIn(username, 'password');
   }
 
