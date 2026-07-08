@@ -8,6 +8,7 @@ import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks
 import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 import { db } from '../db/mockDb';
+import { useAppContext } from '../context/AppContext';
 
 interface EntryRendererProps {
   entry: Entry;
