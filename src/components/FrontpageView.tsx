@@ -152,9 +152,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       ? 'bg-[#FAF8F5] border-stone-200/50 hover:border-stone-300 hover:shadow-sm' 
                       : 'bg-transparent border-transparent hover:bg-stone-50/40'
                   } ${isAr ? 'text-right' : 'text-left'}`}
-                  style={isNote 
-                    ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
-                    : undefined}
                   onClick={() => {
                     setSelectedEntry(item);
                     setSelectedAuthorId(item.authorId);
@@ -164,14 +161,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-2">
                     {item.contentType}
                   </span>
-                  <h4 className={`text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2 ${
-                    isNote 
-                      ? (isAr ? 'text-xl font-bold font-arabic-handwritten' : 'text-lg md:text-xl font-bold font-handwritten') 
-                      : 'font-serif text-xl'
-                  }`}>
+                  <h4 className="text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2 font-serif text-xl">
                     {parseInlineFormatting(item.title)}
                   </h4>
-                  <span className={`text-[11px] text-stone-500 ${isNote ? (isAr ? 'font-arabic-handwritten' : 'font-handwritten') : 'font-sans'}`}>
+                  <span className="text-[11px] text-stone-500 font-sans">
                     {author?.penName || 'Writer'}
                   </span>
                 </div>

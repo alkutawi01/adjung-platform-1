@@ -2333,14 +2333,10 @@ export function EntryRenderer({
         dir={isAr ? 'rtl' : 'ltr'}
         className={`leading-relaxed text-[15px] md:text-base whitespace-pre-wrap relative overflow-visible ${
           isAr 
-            ? (isNote 
-                ? 'font-arabic-handwritten text-right text-lg md:text-xl text-stone-900 leading-loose' 
-                : 'font-arabic text-right text-lg leading-loose')
-            : (isNote 
-                ? 'font-handwritten text-left text-lg md:text-xl text-stone-900 font-medium' 
-                : 'font-serif text-left text-[#111111]')
+            ? 'font-arabic text-right text-lg leading-loose' 
+            : 'font-serif text-left text-[#111111]'
         }`}
-        style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
+        style={undefined}
       >
         {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
         {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
@@ -3332,9 +3328,6 @@ export function EntryRenderer({
         dragElastic={isMobile && isArticle ? 0.15 : 0}
         dragSnapToOrigin={true}
         className={containerClass}
-        style={isNote 
-          ? { fontFamily: isArContent ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
-          : undefined}
       >
         {entry.underReview && (
           <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded text-amber-900 text-xs font-sans flex items-center gap-3 select-none animate-pulse">
@@ -3975,9 +3968,8 @@ export function EntryRenderer({
         {isNote && (
           <footer 
             className={`mt-8 pt-4 border-t border-stone-200/40 flex items-center justify-between text-base text-stone-500 select-none ${
-              isArContent ? 'flex-row-reverse text-right' : 'flex-row text-left font-handwritten'
+              isArContent ? 'flex-row-reverse text-right' : 'flex-row text-left font-sans'
             }`}
-            style={isArContent ? { fontFamily: 'var(--font-arabic-handwritten)' } : undefined}
           >
             <span>— {authorName}</span>
             {authorSignature && (

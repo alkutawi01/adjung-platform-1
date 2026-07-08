@@ -140,15 +140,12 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 return (
                   <div 
                     className={`bg-[#FAF8F5] border border-stone-200/50 p-6 rounded-lg shadow-md mx-auto max-w-xs relative overflow-hidden ${
-                      isAr ? 'text-right' : 'text-left font-handwritten'
+                      isAr ? 'text-right' : 'text-left'
                     }`} 
-                    style={{ fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' }}
                   >
                     <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1 select-none">Note</span>
-                    <h4 className={`font-bold leading-tight mb-2 select-all text-stone-900 ${
-                      isAr ? 'text-xl font-arabic-handwritten' : 'text-lg font-handwritten'
-                    }`}>{selectedEntry.title}</h4>
-                    <p className="text-sm line-clamp-3 leading-relaxed mb-3 select-all text-stone-850">{selectedEntry.content}</p>
+                    <h4 className="font-bold leading-tight mb-2 select-all text-stone-900 text-lg font-serif">{selectedEntry.title}</h4>
+                    <p className={`text-sm line-clamp-3 leading-relaxed mb-3 select-all text-stone-850 ${isAr ? 'font-arabic' : 'font-serif'}`}>{selectedEntry.content}</p>
                     <span className="text-[11px] text-stone-500">— {authorInfo.name}</span>
                   </div>
                 );

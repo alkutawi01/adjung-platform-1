@@ -55,7 +55,6 @@ export function TimelineEntryCollapseRenderer({
   }, [item.content, maxHeight, contentBlocks.length]);
 
   const renderSingleBlock = (block: any, pIdx: number) => {
-    const isNote = item.contentType === 'Note';
     if (block.type === 'heading') {
       const isAr = isArabicText(block.text);
       const textNode = parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
@@ -64,12 +63,9 @@ export function TimelineEntryCollapseRenderer({
           <h3 
             key={pIdx} 
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`text-stone-900 font-semibold my-2.5 ${
-              isAr 
-                ? (isNote ? 'font-arabic-handwritten text-right text-[15px] leading-loose' : 'font-arabic text-right text-[15px] leading-loose') 
-                : (isNote ? 'font-handwritten text-left text-[16px] md:text-[18px]' : 'font-serif text-left text-[14px] tracking-tight')
+            className={`font-serif text-stone-900 font-semibold my-2.5 ${
+              isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
             }`}
-            style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
           >
             {textNode}
           </h3>
@@ -79,12 +75,9 @@ export function TimelineEntryCollapseRenderer({
           <h4 
             key={pIdx} 
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`text-stone-850 font-medium my-2 ${
-              isAr 
-                ? (isNote ? 'font-arabic-handwritten text-right text-[13px] leading-loose' : 'font-arabic text-right text-[13px] leading-loose') 
-                : (isNote ? 'font-handwritten text-left text-[14px] md:text-[16px]' : 'font-serif text-left text-[12px]')
+            className={`font-serif text-stone-850 font-medium my-2 ${
+              isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
             }`}
-            style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
           >
             {textNode}
           </h4>
@@ -93,40 +86,25 @@ export function TimelineEntryCollapseRenderer({
     }
 
     if (block.type === 'list') {
-      const listItems = block.items.slice(0, 3).map((listItem: any, itemIdx: number) => {
-        const isAr = isArabicText(listItem.text);
-        const isChecklist = listItem.checked !== undefined;
-        const textNode = parseInlineFormatting(listItem.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
+      const listItems = block.items.slice(0, 3).map((item: any, itemIdx: number) => {
+        const isAr = isArabicText(item.text);
+        const isChecklist = item.checked !== undefined;
+        const textNode = parseInlineFormatting(item.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
         if (isChecklist) {
           return (
             <li 
               key={itemIdx} 
               className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
             >
-              <input type="checkbox" checked={listItem.checked} disabled className="h-3 w-3 rounded text-Adjung-maroon cursor-default" />
-              <span 
-                className={`${listItem.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${
-                  isAr 
-                    ? (isNote ? 'font-arabic-handwritten text-sm leading-loose' : 'font-arabic') 
-                    : (isNote ? 'font-handwritten text-sm font-semibold' : 'font-serif')
-                }`}
-                style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
-              >
+              <input type="checkbox" checked={item.checked} disabled className="h-3 w-3 rounded text-Adjung-maroon cursor-default" />
+              <span className={`text-[12px] ${item.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-serif'}`}>
                 {textNode}
               </span>
             </li>
           );
         }
         return (
-          <li 
-            key={itemIdx} 
-            className={`text-stone-650 ${
-              isAr 
-                ? (isNote ? 'font-arabic-handwritten text-right text-sm leading-loose' : 'font-arabic text-right text-[12px]') 
-                : (isNote ? 'font-handwritten text-left text-sm font-semibold' : 'font-serif text-left text-[12px]')
-            }`}
-            style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
-          >
+          <li key={itemIdx} className={`text-[12px] text-stone-600 ${isAr ? 'font-arabic text-right' : 'font-serif text-left'}`}>
             {textNode}
           </li>
         );
@@ -218,12 +196,11 @@ export function TimelineEntryCollapseRenderer({
       <p 
         key={pIdx}
         dir={isParaAr ? 'rtl' : 'ltr'}
-        className={`leading-relaxed ${
+        className={`${
           isParaAr 
-            ? (isNote ? 'font-arabic-handwritten text-right text-stone-900 text-sm md:text-base leading-loose' : 'font-arabic text-right text-stone-900 text-sm md:text-base leading-loose') 
-            : (isNote ? 'font-handwritten text-left text-sm md:text-base text-stone-900 font-medium' : 'font-serif text-left text-xs md:text-sm text-stone-650')
+            ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base' 
+            : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
         }`}
-        style={isNote ? { fontFamily: isParaAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
       >
         {parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
       </p>

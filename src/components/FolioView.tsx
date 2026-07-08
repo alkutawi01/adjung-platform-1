@@ -205,9 +205,6 @@ export const FolioView: React.FC<FolioViewProps> = ({
                             ? 'bg-[#FAF8F5] border-stone-200/50 hover:border-stone-300 hover:shadow-sm text-stone-850' 
                             : 'bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] border-stone-200/40 text-stone-900'
                         } ${isAr && isNote ? 'text-right' : 'text-left'}`}
-                        style={isNote 
-                          ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
-                          : undefined}
                       >
                         
                         <div className="space-y-2 flex-grow text-left w-full">
