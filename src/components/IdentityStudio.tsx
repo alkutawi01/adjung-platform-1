@@ -4,13 +4,12 @@ import { db } from '../db/mockDb';
 import { SignatureManager } from './SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Layout } from 'lucide-react';
 
-interface IdentityStudioProps {
-  currentUser: User;
-  onClose: () => void;
-  refreshGlobalState: () => void;
-}
+import { useAppContext } from '../context/AppContext';
 
-export function IdentityStudio({ currentUser, onClose, refreshGlobalState }: IdentityStudioProps) {
+export function IdentityStudio() {
+  const { currentUser, setActiveTab, refreshDbState: refreshGlobalState } = useAppContext();
+  
+  const onClose = () => setActiveTab('desk');
   const [identity, setIdentity] = useState<IdentityProfile | null>(null);
   
   // Form states

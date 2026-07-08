@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature, PolicyDocument } from './types';
 import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
+import { useAppContext } from './context/AppContext';
 import { EntryRenderer } from './components/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollapseRenderer';
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
@@ -254,12 +255,43 @@ function renderFrontpageBlock(block: any, pIdx: number) {
 
 
 export default function App() {
-  // Database States
-  const [users, setUsers] = useState<User[]>(db.getUsers());
-  const [profiles, setProfiles] = useState<WriterProfile[]>(db.getProfiles());
-  const [entries, setEntries] = useState<Entry[]>(db.getEntries());
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>(db.getSystemSettings());
-  const [initializing, setInitializing] = useState(true);
+  const {
+    users,
+    profiles,
+    entries,
+    systemSettings,
+    setSystemSettings,
+    initializing,
+    currentUser,
+    setCurrentUser,
+    selectedAuthorId,
+    setSelectedAuthorId,
+    activeTab,
+    setActiveTab,
+    selectedEntry,
+    setSelectedEntry,
+    editingEntry,
+    setEditingEntry,
+    editoriumActiveTab,
+    setEditoriumActiveTab,
+    expandedNoteIds,
+    setExpandedNoteIds,
+    toggleNote,
+    toast,
+    toastVisible,
+    showToast,
+    setToastVisible,
+    refreshDbState,
+    resetDatabase,
+    saveEntry,
+    deleteEntry,
+    createNewEntry,
+    toggleUserSuspension,
+    changeUserRole,
+    saveWriterFromEditorium,
+    hasPermission
+  } = useAppContext();
+
   const [showNavbar, setShowNavbar] = useState(true);
   const [navVisible, setNavVisible] = useState(true);
   const [isFloating, setIsFloating] = useState(false);
@@ -268,97 +300,10 @@ export default function App() {
   const [maxScroll, setMaxScroll] = useState(400);
   const [showInterlinear, setShowInterlinear] = useState(true);
   const lastScrollY = useRef(0);
-
-  // App Navigation & Session States
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies'>('landing');
-  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
-  
-  // Note inline expansion state
-  const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
   const [expandedFrontpageNotes, setExpandedFrontpageNotes] = useState<string[]>([]);
-
-
-  const toggleNote = (id: string) => {
-    setExpandedNoteIds(prev =>
-      prev.includes(id) ? prev.filter(noteId => noteId !== id) : [...prev, id]
-    );
-  };
-
-  // Intercept Note selection to prevent dedicated page rendering, expanding inline instead
-  useEffect(() => {
-    if (selectedEntry && selectedEntry.contentType === 'Note') {
-      const noteId = selectedEntry.id;
-      setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
-      setSelectedEntry(null);
-      setActiveTab('folio');
-      
-      // scroll to the note in the timeline after a short delay
-      setTimeout(() => {
-        const element = document.getElementById(`note-card-${noteId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 150);
-    }
-  }, [selectedEntry]);
-
-  // Scroll to the top of the page when activeTab or selectedEntry changes (except for Notes, which scroll inline)
-  useEffect(() => {
-    if (selectedEntry) {
-      if (selectedEntry.contentType !== 'Note') {
-        window.scrollTo(0, 0);
-      }
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [activeTab, selectedEntry]);
   
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
-
-  // Editing state in Desk
-  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-
-  // Toast notifications state:
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
-  const [toastVisible, setToastVisible] = useState(false);
-
-  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    setToast({ message, type });
-    setToastVisible(true);
-  };
-
-  useEffect(() => {
-    if (toastVisible) {
-      const timer = setTimeout(() => {
-        setToastVisible(false);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [toastVisible]);
-
-
-
-  // Startup Session Restore & Verification (no silent seeded fallbacks!)
-  useEffect(() => {
-    const activeSessionUser = SessionService.validateAndRetrieveSession();
-    if (activeSessionUser) {
-      setCurrentUser(activeSessionUser);
-      setSelectedAuthorId(activeSessionUser.id);
-      setActiveTab('folio');
-    } else {
-      setCurrentUser(null);
-      setSelectedAuthorId('');
-      setActiveTab('landing');
-    }
-    
-    // Ensure loading screen is visible for at least 1 second
-    setTimeout(() => {
-      setInitializing(false);
-    }, 1000);
-  }, [users]);
 
   // Synchronize browser title with central brand identity on mount
   useEffect(() => {
@@ -462,8 +407,6 @@ export default function App() {
   } | null>(null);
 
   // Editorium Sub-navigation and Search States
-  const [editoriumActiveTab, setEditoriumActiveTab] = useState<'platform' | 'frontpage' | 'directory' | 'index' | 'editorial' | 'users' | 'roles' | 'moderation' | 'system' | 'dangerZone' | 'architecture' | 'reference-library'>('platform');
-  
   const [editoriumSearchQuery, setEditoriumSearchQuery] = useState('');
   const [frontpageSearchQuery, setFrontpageSearchQuery] = useState('');
   const [editoriumSelectedWriterId, setEditoriumSelectedWriterId] = useState<string | null>(null);
@@ -484,29 +427,6 @@ export default function App() {
   const [editWriterHeroTitle, setEditWriterHeroTitle] = useState('');
   const [editWriterHeroSubtitle, setEditWriterHeroSubtitle] = useState('');
   const [editWriterBioText, setEditWriterBioText] = useState('');
-
-  // Enforce private environment, Scholar views require scholar, and Directory access controls
-  useEffect(() => {
-    // Authenticated users never see the Landing page
-    if (currentUser && activeTab === 'landing') {
-      setActiveTab('frontpage');
-    }
-
-    // If not logged in and trying to access private platform pages:
-    if (!currentUser && (activeTab === 'desk' || activeTab === 'index' || activeTab === 'editorium')) {
-      setActiveTab('landing');
-    }
-    
-    // Scholar pages (folio, bio) require a selected scholar
-    if ((activeTab === 'folio' || activeTab === 'bio') && !selectedAuthorId) {
-      setActiveTab('landing');
-    }
-
-    // Deny route access to Directory if disabled by Access Policy
-    if (activeTab === 'directory' && !hasPermission('viewDirectory')) {
-      setActiveTab('landing');
-    }
-  }, [currentUser, activeTab, systemSettings, selectedAuthorId]);
 
   // Editorial Top Navbar scroll behavior
   useEffect(() => {
@@ -768,10 +688,7 @@ export default function App() {
     showToast('Settings updated', 'success');
   };
 
-  // Permission helper
-  const hasPermission = (permissionKey: keyof RolePermissions) => {
-    return RbacService.hasPermission(currentUser, permissionKey, systemSettings);
-  };
+
 
   // Dynamic navigation generation matching Access Policy
   const getNavigationItems = () => {
@@ -999,13 +916,7 @@ export default function App() {
     }
   }, [currentUser, activeTab]);
 
-  // Synchronize internal state with database updates
-  const refreshDbState = () => {
-    setUsers(db.getUsers());
-    setProfiles(db.getProfiles());
-    setEntries(db.getEntries());
-    setSystemSettings(db.getSystemSettings());
-  };
+
 
   // Login handler
   const handleLogin = (e: React.FormEvent) => {
@@ -1944,288 +1855,7 @@ Editorial Board of Adjung`;
         {/* ACTIVE MODULE 3: WRITING DESK (Owner-only canonical editing/draft workspace) */}
         {activeTab === 'desk' && currentUser && (
           <div className="max-w-5xl mx-auto space-y-12">
-            
-            {/* Header / Sub-selector bar */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-stone-200 pb-5">
-              <div className="space-y-1">
-                <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
-                  <PenTool className="w-6 h-6 text-adjung-maroon" />
-                  Writing Desk
-                </h2>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
-                  Write, edit and manage your publications.
-                </p>
-              </div>
-
-              {/* Create buttons */}
-              {!editingEntry && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCreateNewEntry('Note')}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-adjung-maroon/20 hover:bg-adjung-maroon/5 text-adjung-maroon rounded text-xs font-mono tracking-wider uppercase transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Note
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCreateNewEntry('Essay')}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-adjung-maroon/20 hover:bg-adjung-maroon/5 text-adjung-maroon rounded text-xs font-mono tracking-wider uppercase transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Essay
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCreateNewEntry('Article')}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-adjung-maroon/20 hover:bg-adjung-maroon/5 text-adjung-maroon rounded text-xs font-mono tracking-wider uppercase transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Article
-                  </button>
-                    {(currentUser.role === 'Chief Editor' || currentUser.role === 'Editor') && (
-                      <>
-                        <div className="w-px h-6 bg-stone-300 mx-1 self-center" />
-                        <button
-                          type="button"
-                          onClick={() => handleCreateNewEntry('Notice')}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-stone-300 hover:bg-stone-100 text-stone-700 rounded text-xs font-mono tracking-wider uppercase transition"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Notice
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCreateNewEntry("Editor's Note")}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#FDFDFD] border border-stone-300 hover:bg-stone-100 text-stone-700 rounded text-xs font-mono tracking-wider uppercase transition"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Ed. Note
-                        </button>
-                      </>
-                    )}
-                </div>
-              )}
-            </div>
-
-            {/* WYSIWYG ACTUAL EDITING ENGINE */}
-            {editingEntry ? (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-stone-50 p-2 border rounded max-w-4xl mx-auto">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingEntry(null);
-                      refreshDbState();
-                    }}
-                    className="inline-flex items-center gap-1 text-stone-600 hover:text-adjung-maroon font-mono text-xs uppercase"
-                  >
-                    <ChevronLeft className="w-4 h-4" /> Close Composer
-                  </button>
-                  <div className="flex items-center gap-4">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-stone-400">View</span>
-                    <div className="flex items-center border border-stone-200 rounded overflow-hidden bg-white p-0.5 shadow-sm">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          deskLastScrollY.current = window.scrollY;
-                          setDeskViewMode('preview');
-                          setTimeout(() => {
-                            window.scrollTo({
-                              top: deskLastScrollY.current,
-                              behavior: 'auto'
-                            });
-                          }, 0);
-                        }}
-                        className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
-                          deskViewMode === 'preview'
-                            ? 'bg-[#802334] text-white font-medium shadow-sm'
-                            : 'text-stone-600 hover:text-adjung-maroon'
-                        }`}
-                      >
-                        ● Visual
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          deskLastScrollY.current = window.scrollY;
-                          setDeskViewMode('editor');
-                          setTimeout(() => {
-                            window.scrollTo({
-                              top: deskLastScrollY.current,
-                              behavior: 'auto'
-                            });
-                          }, 0);
-                        }}
-                        className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
-                          deskViewMode === 'editor'
-                            ? 'bg-[#802334] text-white font-medium shadow-sm'
-                            : 'text-stone-600 hover:text-adjung-maroon'
-                        }`}
-                      >
-                        ○ Source
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <EntryRenderer
-                  entry={editingEntry}
-                  mode="edit"
-                  viewMode={deskViewMode}
-                  onSave={handleSaveEntry}
-                  onDelete={handleDeleteEntry}
-                  authorName={currentUser.penName}
-                  authorSignature={resolveSignatureText(currentUser.id, currentUser.signature)}
-                  authorSignatureStrokes={resolveSignatureStrokes(editingEntry, currentUser.id)}
-                  authorSignatureFont={resolveSignatureFont(currentUser.id)}
-                  authorDigitalSignature={resolveDigitalSignature(currentUser.id, editingEntry)}
-                />
-              </div>
-            ) : (
-              // GENERAL DESK LAYOUT (List of entries & Settings)
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                
-                {/* Left side: Registered entries lists */}
-                <div className="lg:col-span-8 space-y-10">
-                  
-                  {/* Drafts Section */}
-                  <div className="space-y-4">
-                    <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-500 flex items-center gap-2 border-b pb-2">
-                      <span>Drafts</span>
-                      <span className="bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded text-[10px]">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').length}
-                      </span>
-                    </h3>
-
-                    {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').length === 0 ? (
-                      <p className="text-xs text-stone-400 italic py-3">No pending drafts. Your mind is quiet.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Draft').map(draft => (
-                          <div 
-                            key={draft.id} 
-                            onClick={() => setEditingEntry(draft)}
-                            className="bg-white hover:bg-stone-50 border border-stone-200/80 p-4 rounded flex items-center justify-between cursor-pointer group transition hover:shadow-sm"
-                          >
-                            <div className="space-y-1 pr-4">
-                              <div className="flex items-center gap-2 text-[10px] font-mono text-stone-400">
-                                <span className="text-adjung-maroon font-semibold">{draft.contentType}</span>
-                                <span>•</span>
-                                <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
-                              </div>
-                              <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {draft.contentType === 'Note' ? (parseInlineFormatting(draft.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(draft.title || '')}
-                              </h4>
-                            </div>
-                            <FileEdit className="w-4 h-4 text-stone-400 group-hover:text-adjung-maroon flex-shrink-0" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Published Section */}
-                  <div className="space-y-4">
-                    <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-500 flex items-center gap-2 border-b pb-2">
-                      <span>Published</span>
-                      <span className="bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded text-[10px]">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').length}
-                      </span>
-                    </h3>
-
-                    {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').length === 0 ? (
-                      <p className="text-xs text-stone-400 italic py-3">No published records on file.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Published').map(pub => (
-                          <div 
-                            key={pub.id} 
-                            onClick={() => setEditingEntry(pub)}
-                            className="bg-white hover:bg-stone-50 border border-stone-200/80 p-4 rounded flex items-center justify-between cursor-pointer group transition hover:shadow-sm"
-                          >
-                            <div className="space-y-1 pr-4">
-                              <div className="flex items-center gap-2 text-[10px] font-mono text-stone-400">
-                                <span className="text-adjung-maroon font-semibold">{pub.contentType}</span>
-                                <span>•</span>
-                                <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
-                              </div>
-                              <h4 className="font-serif font-semibold text-stone-800 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {pub.contentType === 'Note' ? (parseInlineFormatting(pub.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(pub.title || '')}
-                              </h4>
-                            </div>
-                            <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">
-                              {pub.visibility === 'Private' ? (
-                                <Lock className="w-3.5 h-3.5 text-red-600" title="Private" />
-                              ) : (
-                                <Globe className="w-3.5 h-3.5 text-stone-400" title="Public" />
-                              )}
-                              <FileEdit className="w-4 h-4 group-hover:text-adjung-maroon" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Archived Section */}
-                  <div className="space-y-4">
-                    <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-500 flex items-center gap-2 border-b pb-2">
-                      <span>Archive</span>
-                      <span className="bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded text-[10px]">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Archived').length}
-                      </span>
-                    </h3>
-
-                    {entries.filter(e => e.authorId === currentUser.id && e.status === 'Archived').length === 0 ? (
-                      <p className="text-xs text-stone-400 italic py-3">No archived entries.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {entries.filter(e => e.authorId === currentUser.id && e.status === 'Archived').map(arch => (
-                          <div 
-                            key={arch.id} 
-                            onClick={() => setEditingEntry(arch)}
-                            className="bg-stone-50 hover:bg-stone-100/85 border border-stone-200/60 p-4 rounded flex items-center justify-between cursor-pointer group transition hover:shadow-sm opacity-75"
-                          >
-                            <div className="space-y-1 pr-4">
-                              <div className="flex items-center gap-2 text-[10px] font-mono text-stone-400">
-                                <span className="text-stone-500 font-semibold">{arch.contentType}</span>
-                                <span>•</span>
-                                <span>Archived {new Date(arch.updatedDate).toLocaleDateString()}</span>
-                              </div>
-                              <h4 className="font-serif font-semibold text-stone-700 text-sm md:text-base group-hover:text-adjung-maroon transition-colors text-left line-clamp-1">
-                                {arch.contentType === 'Note' ? (parseInlineFormatting(arch.content.split('\n')[0] || '(Empty Note)')) : parseInlineFormatting(arch.title || '')}
-                              </h4>
-                            </div>
-                            <div className="flex items-center gap-3 text-stone-450 flex-shrink-0">
-                              <span className="font-mono text-[9px] uppercase tracking-wider bg-stone-200 text-stone-600 px-1.5 py-0.5 rounded">Archived</span>
-                              <FileEdit className="w-4 h-4 group-hover:text-adjung-maroon" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
-                
-                {/* Right side: Folio Customizer & Pen Name controls */}
-                <div className="lg:col-span-4 bg-white border border-stone-200 rounded p-6 shadow-sm text-center space-y-4">
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-[#802334] border-b pb-3 mb-4 flex items-center justify-center gap-1.5">
-                    Identity
-                  </h3>
-                  <p className="font-sans text-xs text-stone-500">
-                    Author identity, biography, and signatures are now securely managed in the decoupled Identity module.
-                  </p>
-                  <button
-                    onClick={() => setActiveTab('identity')}
-                    className="bg-stone-900 text-white px-4 py-2 rounded text-[10px] font-mono uppercase tracking-wider hover:bg-stone-800 transition cursor-pointer"
-                  >
-                    Open Identity
-                  </button>
-                </div>
-
-
-              </div>
-            )}
-
+            <WritingDesk />
           </div>
         )}
 
@@ -2256,24 +1886,7 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 5: EDITORIUM (Editor settings and administrative workspace) */}
         {activeTab === 'editorium' && currentUser && hasPermission('curateFrontpage') && (
-          <Editorium
-            currentUser={currentUser}
-            users={users}
-            entries={entries}
-            systemSettings={systemSettings}
-            setSystemSettings={setSystemSettings}
-            handleResetDatabase={handleResetDatabase}
-            handleChangeUserRole={handleChangeUserRole}
-            handleToggleUserSuspension={handleToggleUserSuspension}
-            showToast={showToast}
-            refreshDbState={refreshDbState}
-            setSelectedAuthorId={setSelectedAuthorId}
-            setActiveTab={setActiveTab}
-            setSelectedEntry={setSelectedEntry}
-            setEditingEntry={setEditingEntry}
-            editoriumActiveTab={editoriumActiveTab}
-            setEditoriumActiveTab={setEditoriumActiveTab}
-          />
+          <Editorium />
         )}
 
         {/* ACTIVE MODULE: INSTITUTIONAL NOTICES */}
@@ -2301,11 +1914,7 @@ Editorial Board of Adjung`;
         {/* ACTIVE MODULE: IDENTITY STUDIO */}
         {activeTab === 'identity' && currentUser && (
           <div className="py-8">
-            <IdentityStudio 
-              currentUser={currentUser} 
-              onClose={() => setActiveTab('desk')}
-              refreshGlobalState={refreshDbState}
-            />
+            <IdentityStudio />
           </div>
         )}
 

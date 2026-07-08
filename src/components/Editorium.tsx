@@ -64,24 +64,27 @@ type EditoriumTab =
   | 'architecture'
   | 'reference-library';
 
-export function Editorium({
-  currentUser,
-  users,
-  entries,
-  systemSettings,
-  setSystemSettings,
-  handleResetDatabase,
-  handleChangeUserRole,
-  handleToggleUserSuspension,
-  showToast,
-  refreshDbState,
-  setSelectedAuthorId,
-  setActiveTab,
-  setSelectedEntry,
-  setEditingEntry,
-  editoriumActiveTab,
-  setEditoriumActiveTab
-}: EditoriumProps) {
+import { useAppContext } from '../context/AppContext';
+
+export function Editorium() {
+  const {
+    currentUser,
+    users,
+    entries,
+    systemSettings,
+    setSystemSettings,
+    resetDatabase: handleResetDatabase,
+    changeUserRole: handleChangeUserRole,
+    toggleUserSuspension: handleToggleUserSuspension,
+    showToast,
+    refreshDbState,
+    setSelectedAuthorId,
+    setActiveTab,
+    setSelectedEntry,
+    setEditingEntry,
+    editoriumActiveTab,
+    setEditoriumActiveTab
+  } = useAppContext();
 
   const hasPermission = (permissionKey: keyof RolePermissions) => {
     return systemSettings.rolePermissions?.[currentUser.role]?.[permissionKey] ?? false;

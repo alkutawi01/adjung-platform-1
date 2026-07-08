@@ -4,62 +4,87 @@ import { Entry, User, EntryType } from '../types';
 import { EntryRenderer } from './EntryRenderer';
 import { parseInlineFormatting, stripMarkdown } from '../utils';
 import { db } from '../db/mockDb';
+import { useAppContext } from '../context/AppContext';
 
-interface WritingDeskProps {
-  currentUser: User;
-  entries: Entry[];
-  editingEntry: Entry | null;
-  setEditingEntry: (entry: Entry | null) => void;
-  refreshDbState: () => void;
-  handleCreateNewEntry: (type: EntryType) => void;
-  handleSaveEntry: (entry: Entry) => void;
-  handleDeleteEntry: (id: string) => void;
-  handleSaveFolioSettings: (e: React.FormEvent) => void;
-  deskUsername: string;
-  setDeskUsername: (val: string) => void;
-  deskPenName: string;
-  setDeskPenName: (val: string) => void;
-  deskSignature: string;
-  setDeskSignature: (val: string) => void;
-  deskHeroTitle: string;
-  setDeskHeroTitle: (val: string) => void;
-  deskHeroSubtitle: string;
-  setDeskHeroSubtitle: (val: string) => void;
-  deskBioText: string;
-  setDeskBioText: (val: string) => void;
-}
+export function WritingDesk() {
+  const {
+    currentUser,
+    setCurrentUser,
+    entries,
+    editingEntry,
+    setEditingEntry,
+    refreshDbState,
+    createNewEntry,
+    saveEntry,
+    deleteEntry,
+    showToast
+  } = useAppContext();
 
-export function WritingDesk({
-  currentUser,
-  entries,
-  editingEntry,
-  setEditingEntry,
-  refreshDbState,
-  handleCreateNewEntry,
-  handleSaveEntry,
-  handleDeleteEntry,
-  handleSaveFolioSettings,
-  deskUsername,
-  setDeskUsername,
-  deskPenName,
-  setDeskPenName,
-  deskSignature,
-  setDeskSignature,
-  deskHeroTitle,
-  setDeskHeroTitle,
-  deskHeroSubtitle,
-  setDeskHeroSubtitle,
-  deskBioText,
-  setDeskBioText,
-}: WritingDeskProps) {
   const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
   const lastScrollY = useRef<number>(0);
+
+  // Settings states
+  const [deskUsername, setDeskUsername] = useState('');
+  const [deskPenName, setDeskPenName] = useState('');
+  const [deskSignature, setDeskSignature] = useState('');
+  const [deskBioText, setDeskBioText] = useState('');
+  const [deskHeroTitle, setDeskHeroTitle] = useState('');
+  const [deskHeroSubtitle, setDeskHeroSubtitle] = useState('');
+
+  useEffect(() => {
+    if (currentUser) {
+      const userProfile = db.getProfileByAuthorId(currentUser.id);
+      const identity = db.getIdentityByAccountId(currentUser.id);
+      setDeskUsername(currentUser.username);
+      setDeskPenName(currentUser.penName);
+      setDeskSignature(currentUser.signature);
+      setDeskBioText(identity ? identity.biography : '');
+      setDeskHeroTitle(userProfile.heroTitle);
+      setDeskHeroSubtitle(userProfile.heroSubtitle);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (editingEntry) {
       setViewMode('preview');
     }
   }, [editingEntry?.id]);
+
+  const handleSaveFolioSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    // 1. Update user's public identity metadata
+    const updatedUser: User = {
+      ...currentUser,
+      penName: deskPenName,
+      signature: deskSignature
+    };
+    db.updateUser(updatedUser);
+    setCurrentUser(updatedUser);
+
+    // 2. Update writer profile info
+    const profile = db.getProfileByAuthorId(currentUser.id);
+    const updatedProfile = {
+      ...profile,
+      heroTitle: deskHeroTitle,
+      heroSubtitle: deskHeroSubtitle,
+    };
+    db.updateProfile(updatedProfile);
+
+    const identity = db.getIdentityByAccountId(currentUser.id);
+    if (identity) {
+      db.updateIdentity({
+        ...identity,
+        biography: deskBioText
+      });
+    }
+    
+    refreshDbState();
+    showToast('Writing profile updated successfully', 'success');
+  };
+
+  if (!currentUser) return null;
 
   return (
     <div className="space-y-12">
@@ -78,21 +103,21 @@ export function WritingDesk({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => handleCreateNewEntry('Note')}
+              onClick={() => createNewEntry('Note')}
               className="px-3 py-1.5 bg-[#802334] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
             >
               + Note
             </button>
             <button
               type="button"
-              onClick={() => handleCreateNewEntry('Essay')}
+              onClick={() => createNewEntry('Essay')}
               className="px-3 py-1.5 bg-[#802334] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
             >
               + Essay
             </button>
             <button
               type="button"
-              onClick={() => handleCreateNewEntry('Article')}
+              onClick={() => createNewEntry('Article')}
               className="px-3 py-1.5 bg-[#802334] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
             >
               + Article
@@ -101,14 +126,14 @@ export function WritingDesk({
               <>
                 <button
                   type="button"
-                  onClick={() => handleCreateNewEntry('Notice')}
+                  onClick={() => createNewEntry('Notice')}
                   className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
                 >
                   + Notice
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCreateNewEntry("Editor's Note")}
+                  onClick={() => createNewEntry("Editor's Note")}
                   className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
                 >
                   + Editor's Note
@@ -183,8 +208,8 @@ export function WritingDesk({
             entry={editingEntry}
             mode="edit"
             viewMode={viewMode}
-            onSave={handleSaveEntry}
-            onDelete={handleDeleteEntry}
+            onSave={saveEntry}
+            onDelete={deleteEntry}
             authorName={currentUser.penName}
             authorSignature={currentUser.signature}
             authorDigitalSignature={(() => {
