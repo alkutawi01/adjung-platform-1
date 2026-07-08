@@ -72,6 +72,7 @@ export function EntryRenderer({
   authorSignatureFont,
   authorDigitalSignature
 }: EntryRendererProps) {
+  const { currentUser, refreshDbState } = useAppContext();
   const [title, setTitle] = useState(entry.title || '');
   const [contentType, setContentType] = useState<EntryType>(entry.contentType);
   const [status, setStatus] = useState<EntryStatus>(entry.status);
@@ -98,6 +99,34 @@ export function EntryRenderer({
       const username = author ? author.username : 'scholar';
       return `https://${username}.adjung.com/${entry.contentType.toLowerCase()}/${entry.slug}`;
     }
+  };
+
+  const handleReportEntry = () => {
+    const confirmReport = window.confirm("Adakah anda pasti ingin melaporkan penulisan ini untuk semakan Editorial Board?");
+    if (!confirmReport) return;
+    
+    fetch(`/api/entries/${entry.id}/report`, { method: 'POST' })
+      .then(res => {
+        if (res.ok) {
+          if (currentUser) {
+            fetch('/api/logs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: `log-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                operator: currentUser.penName,
+                role: currentUser.role,
+                action: `Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`
+              })
+            }).then(() => refreshDbState());
+          } else {
+            refreshDbState();
+          }
+          showToast('Laporan dihantar. Artikel kini di bawah semakan Editorial Board.', 'info');
+        }
+      })
+      .catch(err => console.error('Failed to report entry:', err));
   };
 
   // Editor tab and validation states
@@ -3302,6 +3331,15 @@ export function EntryRenderer({
           ? { fontFamily: isArContent ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
           : undefined}
       >
+        {entry.underReview && (
+          <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded text-amber-900 text-xs font-sans flex items-center gap-3 select-none animate-pulse">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div>
+              <strong className="font-semibold">Under Review / Dalam Semakan:</strong> This entry has been flagged and is currently being evaluated by the Editorial Board.
+            </div>
+          </div>
+        )}
+
         {/* Header Block */}
         {!isNote ? (
           <header className="mb-10 border-b border-stone-200/70 pb-6">
@@ -3338,18 +3376,30 @@ export function EntryRenderer({
                       <Globe className="w-3 h-3" /> canonical public
                     </span>
                     {mode === 'view' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const url = getCanonicalUrl();
-                          navigator.clipboard.writeText(url);
-                          showToast('Canonical link copied to clipboard!', 'success');
-                        }}
-                        className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[10px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-2 py-0.5 rounded transition bg-white"
-                        title="Copy permanent canonical URL"
-                      >
-                        <Copy className="w-3 h-3" /> Copy Address
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = getCanonicalUrl();
+                            navigator.clipboard.writeText(url);
+                            showToast('Canonical link copied to clipboard!', 'success');
+                          }}
+                          className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[10px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-2 py-0.5 rounded transition bg-white"
+                          title="Copy permanent canonical URL"
+                        >
+                          <Copy className="w-3 h-3" /> Copy Address
+                        </button>
+                        {currentUser?.id !== entry.authorId && !entry.underReview && (
+                          <button
+                            type="button"
+                            onClick={handleReportEntry}
+                            className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 text-[10px] font-mono uppercase tracking-wider cursor-pointer border border-amber-600/20 hover:border-amber-600/40 px-2 py-0.5 rounded transition bg-white"
+                            title="Laporkan penulisan ini kepada Editorial Board"
+                          >
+                            <AlertTriangle className="w-3 h-3" /> Report
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -3404,9 +3454,37 @@ export function EntryRenderer({
             </div>
           </header>
         ) : (
-          <header className="mb-6 pb-4 border-b border-stone-200/40 text-stone-400 font-mono text-[9px] uppercase tracking-widest flex items-center justify-between select-none">
+          <header className="mb-6 pb-4 border-b border-stone-200/40 text-stone-400 font-mono text-[9px] uppercase tracking-widest flex items-center justify-between select-none font-sans">
             <span>Note</span>
-            <span>{formatDate(entry.publishedDate || entry.createdDate)}</span>
+            <div className="flex items-center gap-2">
+              <span>{formatDate(entry.publishedDate || entry.createdDate)}</span>
+              {mode === 'view' && visibility === 'Public' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = getCanonicalUrl();
+                      navigator.clipboard.writeText(url);
+                      showToast('Canonical link copied to clipboard!', 'success');
+                    }}
+                    className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
+                    title="Copy permanent canonical URL"
+                  >
+                    <Copy className="w-2.5 h-2.5" /> Copy
+                  </button>
+                  {currentUser?.id !== entry.authorId && !entry.underReview && (
+                    <button
+                      type="button"
+                      onClick={handleReportEntry}
+                      className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-amber-600/20 hover:border-amber-600/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
+                      title="Laporkan penulisan ini kepada Editorial Board"
+                    >
+                      <AlertTriangle className="w-2.5 h-2.5" /> Report
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </header>
         )}
 

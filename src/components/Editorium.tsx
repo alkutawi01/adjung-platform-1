@@ -1565,15 +1565,109 @@ export function Editorium() {
       {/* ========================================================= */}
       {editoriumActiveTab === 'moderation' && (
         <div className="space-y-6">
-          <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
-            <EyeOff className="w-12 h-12 text-adjung-maroon mx-auto mb-3" />
-            <span className="font-serif italic text-stone-700 block text-lg font-semibold">Content Moderation & Press Compliance</span>
-            <p className="text-stone-500 text-xs font-sans max-w-lg mx-auto leading-relaxed mt-2">
-              The Adjung publishing platform enforces high scholarly standards. Intellectual works undergo peer evaluation, and there are currently <strong>0 active content infractions or reports</strong> on file.
-            </p>
-            <div className="mt-4 font-mono text-[10px] text-stone-400 uppercase tracking-widest bg-stone-50 py-2 px-4 rounded inline-block">
-              State: Clean Compliance / Safe
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
+            <div className="border-b border-stone-100 pb-4 mb-5 text-left space-y-1">
+              <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5">
+                <ShieldAlert className="w-5 h-5 text-adjung-maroon" />
+                Content Moderation Board
+              </h3>
+              <p className="font-mono text-[10px] text-stone-400 uppercase tracking-wider">
+                Review reported entries and enforce academic and community policy guidelines
+              </p>
             </div>
+
+            {entries.filter(e => e.underReview).length === 0 ? (
+              <div className="py-12 text-center select-none">
+                <EyeOff className="w-12 h-12 text-adjung-maroon mx-auto mb-3" />
+                <span className="font-serif italic text-stone-700 block text-base font-semibold">Clean Compliance / Safe</span>
+                <p className="text-stone-500 text-xs font-sans max-w-lg mx-auto leading-relaxed mt-2">
+                  There are currently no active content infractions, reports, or entries under review.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {entries.filter(e => e.underReview).map(entry => {
+                  const author = users.find(u => u.id === entry.authorId);
+                  return (
+                    <div key={entry.id} className="p-4 border border-amber-200 bg-amber-50/20 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono uppercase bg-amber-100 border border-amber-300 text-amber-900 px-2 py-0.5 rounded">
+                            {entry.contentType}
+                          </span>
+                          <span className="text-xs font-mono text-stone-400">
+                            ID: {entry.id}
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-bold text-stone-900 text-sm">
+                          {entry.title || '(Untitled Note)'}
+                        </h4>
+                        <div className="text-xs text-stone-500 font-serif">
+                          Oleh: <strong className="text-stone-700 font-sans">{author?.penName || entry.publisher || 'Unknown'}</strong> (@{author?.username || 'anonymous'})
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const confirmRestore = window.confirm("Adakah anda pasti ingin memulihkan artikel ini?");
+                            if (!confirmRestore) return;
+                            fetch(`/api/entries/${entry.id}/dismiss-report`, { method: 'POST' })
+                              .then(res => {
+                                if (res.ok) {
+                                  fetch('/api/logs', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      id: `log-${Date.now()}`,
+                                      timestamp: new Date().toISOString(),
+                                      operator: currentUser.penName,
+                                      role: currentUser.role,
+                                      action: `Dismissed report and restored entry "${entry.title}" (ID: ${entry.id}).`
+                                    })
+                                  }).then(() => refreshDbState());
+                                  showToast('Laporan ditolak. Artikel dikembalikan ke status normal.', 'success');
+                                }
+                              });
+                          }}
+                          className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-mono uppercase rounded transition cursor-pointer border border-stone-200"
+                        >
+                          Restore Entry
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const confirmUnlist = window.confirm("Adakah anda pasti ingin memadam (unlist) artikel ini daripada paparan umum?");
+                            if (!confirmUnlist) return;
+                            fetch(`/api/entries/${entry.id}/unlist`, { method: 'POST' })
+                              .then(res => {
+                                if (res.ok) {
+                                  fetch('/api/logs', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      id: `log-${Date.now()}`,
+                                      timestamp: new Date().toISOString(),
+                                      operator: currentUser.penName,
+                                      role: currentUser.role,
+                                      action: `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`
+                                    })
+                                  }).then(() => refreshDbState());
+                                  showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
+                                }
+                              });
+                          }}
+                          className="px-3 py-1.5 bg-adjung-maroon hover:bg-[#962e41] text-white text-xs font-mono uppercase rounded transition cursor-pointer"
+                        >
+                          Unlist & Hide
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

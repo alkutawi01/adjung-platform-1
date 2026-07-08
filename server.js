@@ -95,7 +95,8 @@ const initializeSchema = () => {
           marginNotes TEXT,
           marginNotesData TEXT,
           citations TEXT,
-          revisions TEXT
+          revisions TEXT,
+          underReview INTEGER DEFAULT 0
         )
       `);
 
@@ -141,7 +142,10 @@ const initializeSchema = () => {
         )
       `, (err) => {
         if (err) reject(err);
-        else resolve();
+        else {
+          db.run("ALTER TABLE entries ADD COLUMN underReview INTEGER DEFAULT 0;", () => {});
+          resolve();
+        }
       });
     });
   });
@@ -340,7 +344,8 @@ app.get('/api/db-state', async (req, res) => {
       marginNotesData: JSON.parse(e.marginNotesData || '{}'),
       citations: JSON.parse(e.citations || '[]'),
       revisions: JSON.parse(e.revisions || '[]'),
-      isInstitutional: e.publicationClass === 'Institutional'
+      isInstitutional: e.publicationClass === 'Institutional',
+      underReview: e.underReview === 1
     }));
 
     const identities = identitiesRows.map((i) => ({
@@ -630,6 +635,42 @@ app.post('/api/logs', async (req, res) => {
   } catch (err) {
     console.error('Add log error:', err);
     res.status(500).json({ error: 'Failed to add log.' });
+  }
+});
+
+// 11. Moderation: Report Entry
+app.post('/api/entries/:id/report', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dbRun("UPDATE entries SET underReview = 1 WHERE id = ?", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Report entry error:', err);
+    res.status(500).json({ error: 'Failed to report entry.' });
+  }
+});
+
+// 12. Moderation: Dismiss Report
+app.post('/api/entries/:id/dismiss-report', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dbRun("UPDATE entries SET underReview = 0 WHERE id = ?", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Dismiss report error:', err);
+    res.status(500).json({ error: 'Failed to dismiss report.' });
+  }
+});
+
+// 13. Moderation: Unlist Entry
+app.post('/api/entries/:id/unlist', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dbRun("UPDATE entries SET underReview = 0, visibility = 'Private' WHERE id = ?", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Unlist entry error:', err);
+    res.status(500).json({ error: 'Failed to unlist entry.' });
   }
 });
 

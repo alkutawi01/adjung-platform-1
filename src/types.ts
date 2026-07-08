@@ -189,6 +189,7 @@ export interface Entry {
   editorialCategory?: string;
   isInstitutional?: boolean;
   discipline?: string;
+  underReview?: boolean;
 }
 
 export interface BiographyItem {
