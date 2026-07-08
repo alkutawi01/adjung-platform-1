@@ -41,6 +41,7 @@ import { LandingView } from './components/LandingView';
 import { NoticesView } from './components/NoticesView';
 import { EditorialNotesView } from './components/EditorialNotesView';
 import { ChangelogView } from './components/ChangelogView';
+import { ArchitectureStudio } from './components/ArchitectureStudio';
 
 import { WritingDesk } from './components/WritingDesk';
 import { EditorialIndex } from './components/EditorialIndex';
@@ -272,7 +273,7 @@ export default function App() {
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies'>('landing');
+  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies' | 'architecture'>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   
   // Note inline expansion state
@@ -562,6 +563,7 @@ export default function App() {
       else if (activeTab === 'editorial') newHash = '#/editorial';
       else if (activeTab === 'changelog') newHash = '#/changelog';
       else if (activeTab === 'policies') newHash = '#/policies';
+      else if (activeTab === 'architecture') newHash = '#/architecture';
     }
 
     if (window.location.hash !== newHash) {
@@ -670,6 +672,10 @@ export default function App() {
         setEditingEntry(null);
       } else if (route === 'policies') {
         setActiveTab('policies');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'architecture') {
+        setActiveTab('architecture');
         setSelectedEntry(null);
         setEditingEntry(null);
       } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
@@ -2284,6 +2290,13 @@ Editorial Board of Adjung`;
           <ChangelogView />
         )}
 
+        {/* ACTIVE MODULE: ARCHITECTURE STUDIO */}
+        {activeTab === 'architecture' && (
+          <div className="py-8 w-full max-w-7xl mx-auto px-4">
+             <ArchitectureStudio />
+          </div>
+        )}
+
         {/* ACTIVE MODULE: POLICIES */}
         {activeTab === 'policies' && (
           <PoliciesView policies={db.getPolicies()} />
@@ -2740,6 +2753,7 @@ Editorial Board of Adjung`;
             <ul className="space-y-2 font-sans text-xs text-stone-600">
               <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">About Adjung</button></li>
               <li><button onClick={() => { setActiveTab('directory'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
+              <li><button onClick={() => { setActiveTab('architecture'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Architecture Studio</button></li>
             </ul>
           </div>
         </div>
