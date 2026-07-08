@@ -1,9 +1,62 @@
 import React, { useState } from 'react';
-import { Entry, User } from '../types';
+import { Entry, User, Footnote } from '../types';
 import { EntryRenderer } from './EntryRenderer';
 import { db } from '../db/mockDb';
 import { isArabicText } from '../utils';
 import { BookOpen, FileText, Layers, CheckCircle, Monitor, Eye, Layout, Calendar, Search } from 'lucide-react';
+
+const archetypeLanguageVersions: Record<string, { LTR: Partial<Entry>; RTL: Partial<Entry> }> = {
+  'entry-canonical-note': {
+    LTR: {
+      content: 'This is the Canonical Note. Note publications are short, casual observations designed without massive titles or abstract summaries. They rely on hand-written letterforms like Caveat to deliver an intimate reading experience. By utilizing [direct](gloss:clear) notation, they offer immediate clarity.',
+      title: 'Canonical Note on Classical Scholarship',
+      tags: ['Canonical', 'Note', 'Standard']
+    },
+    RTL: {
+      content: 'هذه هي الملاحظة المعيارية المكتوبة بخط الرقعة العربي التقليدي. تُعرض الملاحظات دائمًا بدون عناوين ضخمة، لتوفير تجربة قراءة حميمية ومريحة للباحث الكلاسيكي.',
+      title: 'Canonical Arabic Note (الترميز العربي)',
+      tags: ['Canonical', 'Arabic', 'Note']
+    }
+  },
+  'entry-canonical-essay': {
+    LTR: {
+      content: 'The art of typography is not merely the selection of letterforms; it is the curation of visual silence. In the scholastic tradition, the text occupies a sacred geography on the page [^1]. The margins are not empty space, but the structural frame that allows the text to breathe and command authority. By studying the early printed sheets of the fifteenth century, we discover that alignment and proportion were treated as geometry, reflecting the harmony of the cosmic order.\n\n### The Sacred Geometry of Margins\n\nHistorically, the page margins followed strict ratios such as the golden section [^2]. These proportions ensured that the reader\'s thumb would never obscure the text, and that the balance between ink and white space remained constant. In modern digital rendering, we must preserve this structural restraint to avoid chaotic visual overload.',
+      title: 'Canonical Essay: The Art of Traditional Academic Typography',
+      tags: ['Canonical', 'Essay', 'Typography'],
+      footnotes: ['[^1]', '[^2]'],
+      footnotesData: [
+        { id: '1', displayNum: 1, originalId: '1', content: 'This visual silence is equivalent to the musical pause, which gives meaning to the note.' },
+        { id: '2', displayNum: 2, originalId: '2', content: 'See Jan Tschichold, "The Form of the Book" (1975) for historical margin ratios.' }
+      ]
+    },
+    RTL: {
+      content: 'إن فن الطباعة وهندسة الحروف ليس مجرد اختيار أشكال الحروف، بل هو تهيئة الفراغ البصري المحيط بالنص [^1]. في التقاليد العلمية الكلاسيكية، يحتل النص مساحة مقدسة على الصفحة. الهوامش ليست فراغًا مهملًا، بل هي الإطار الهيكلي الذي يتيح للنص التنفس وفرض هيبته العلمية. من خلال دراسة المخطوطات القديمة وأوائل المطبوعات في القرن الخامس عشر، نكتشف أن المحاذاة والتناسب كانا يعاملان كهندسة مقدسة تعكس تناغم النظام الكوني.\n\n### الهندسة المقدسة للهوامش\n\nتاريخيًا، اتبعت هوامش الصفحة نسبًا صارمة مثل النسبة الذهبية [^2]. وضمنت هذه النسب ألا تغطي إبهام القارئ النص أبدًا، وأن يظل التوازن بين الحبر والفراغ ثابتًا. في التنسيق الرقمي الحديث، يجب علينا الحفاظ على هذا القيد الهيكلي لتجنب الفوضى البصرية.',
+      title: 'المقالة النموذجية: فن الطباعة الأكاديمية التقليدية',
+      tags: ['نموذجي', 'مقالة', 'خط'],
+      footnotes: ['[^1]', '[^2]'],
+      footnotesData: [
+        { id: '1', displayNum: 1, originalId: '1', content: 'هذا الفراغ البصري يعادل الصمت الموسيقي الذي يمنح النغمة معناها وقيمتها.' },
+        { id: '2', displayNum: 2, originalId: '2', content: 'انظر كتاب يان تشيشولد "شكل الكتاب" (1975) لمعرفة نسب الهوامش التاريخية.' }
+      ]
+    }
+  },
+  'entry-canonical-article': {
+    LTR: {
+      content: 'This article presents the digital press layout model, a robust design system engineered for high-performance reading experiences. The system utilizes CSS grids to achieve pixel-perfect alignment across multiple viewport brackets. By combining flexible flexbox structures with explicit grid controls, we establish a responsive workspace that dynamically adjusts to reading behaviors.\n\n### Grid Architecture\n\nThe layout is divided into three primary zones: the global sidebar for platform navigation, the central canvas for text composition, and the elastic margin for annotations and metadata. This spatial segregation ensures that readers can consume core arguments without distracting peripheral noise.',
+      title: 'Canonical Article: The Digital Press Layout Model',
+      tags: ['Canonical', 'Article', 'Grid'],
+      marginNotes: {'0': 'mn-1'},
+      marginNotesData: {'mn-1': 'The elastic margin expands dynamically on viewports wider than 1280px to prevent layout shifting.'}
+    },
+    RTL: {
+      content: 'تقدم هذه المقالة نموذج تخطيط الصحافة الرقمية، وهو نظام تصميم متين تم هندسته لتوفير تجارب قراءة عالية الأداء. يعتمد النظام على شبكات CSS لتحقيق محاذاة دقيقة عبر مختلف أبعاد الشاشات. من خلال دمج مرونة التصميم مع عناصر التحكم في الشبكة، ننشئ مساحة عمل تستجيب ديناميكيًا لسلوكيات القراءة.\n\n### بنية الشبكة\n\nينقسم التخطيط إلى ثلاث مناطق رئيسية: الشريط الجانبي للتنقل، والمساحة المركزية لكتابة النصوص، والهامش المرن للملاحظات والبيانات الوصفية. يضمن هذا الفصل المكاني تمكين القراء من استيعاب الحجج الأساسية دون تشتيت.',
+      title: 'المقالة النموذجية: نموذج تخطيط الصحافة الرقمية',
+      tags: ['نموذجي', 'مقالة', 'شبكة'],
+      marginNotes: {'0': 'mn-1'},
+      marginNotesData: {'mn-1': 'يتسع الهامش المرن ديناميكياً على الشاشات التي يزيد عرضها عن 1280 بكسل لمنع انزياح التخطيط.'}
+    }
+  }
+};
 
 interface ReferenceLibraryProps {
   entries: Entry[];
@@ -13,11 +66,17 @@ interface ReferenceLibraryProps {
 type PreviewContext = 'publication' | 'editor' | 'frontpage' | 'folio' | 'search';
 
 export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
-  const canonicalEntries = entries.filter(e => e.id.startsWith('entry-canonical-'));
+  const canonicalEntries = entries.filter(e => e.id.startsWith('entry-canonical-') && !e.id.endsWith('-ar'));
   const [selectedEntryId, setSelectedEntryId] = useState<string>(canonicalEntries[0]?.id || '');
   const [previewContext, setPreviewContext] = useState<PreviewContext>('publication');
+  const [language, setLanguage] = useState<'LTR' | 'RTL'>('LTR');
   
-  const selectedEntry = entries.find(e => e.id === selectedEntryId);
+  const baseEntry = entries.find(e => e.id === selectedEntryId);
+  const selectedEntry = baseEntry ? {
+    ...baseEntry,
+    ...(archetypeLanguageVersions[baseEntry.id]?.[language] || {})
+  } as Entry : undefined;
+
 
   const getAuthorInfo = (authorId: string | null) => {
     const author = users.find(u => u.id === authorId);
@@ -59,9 +118,10 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               </div>
             </div>
             <div className="p-6 bg-stone-50/20">
-              <EntryRenderer
+               <EntryRenderer
                 entry={selectedEntry}
                 mode="edit"
+                preventScrollToTop={true}
                 authorName={authorInfo.name}
                 authorSignature={authorInfo.signature}
                 authorSignatureFont={authorInfo.signatureFont}
@@ -166,9 +226,10 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       default:
         return (
           <div className="border border-stone-200 rounded p-6 bg-stone-50/50 shadow-inner">
-            <EntryRenderer
+             <EntryRenderer
               entry={selectedEntry}
               mode="view"
+              preventScrollToTop={true}
               authorName={authorInfo.name}
               authorSignature={authorInfo.signature}
               authorSignatureFont={authorInfo.signatureFont}
@@ -305,7 +366,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
         {/* Live Preview Panel */}
         <div className="lg:col-span-3 space-y-4">
-          <div className="flex flex-col gap-4 border-b border-stone-200 pb-3">
+           <div className="flex flex-col gap-4 border-b border-stone-200 pb-3">
             <div className="flex items-center justify-between">
               <h4 className="font-serif text-base font-semibold text-stone-900">Live Contextual Presentation</h4>
               <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-250 rounded font-semibold select-none">
@@ -313,63 +374,92 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               </span>
             </div>
 
-            {/* PRESENTATION CONTEXT SWITCHER TABS */}
-            <div className="flex border border-stone-200/80 rounded bg-stone-50/50 p-1 font-mono text-[9px] uppercase tracking-wider select-none overflow-x-auto whitespace-nowrap">
-              <button
-                type="button"
-                onClick={() => setPreviewContext('publication')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                  previewContext === 'publication'
-                    ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                    : 'text-stone-605 hover:text-stone-800'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" /> 📖 Publication Page
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewContext('editor')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                  previewContext === 'editor'
-                    ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                    : 'text-stone-605 hover:text-stone-800'
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" /> 📝 Writing Desk (Editor)
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewContext('frontpage')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                  previewContext === 'frontpage'
-                    ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                    : 'text-stone-605 hover:text-stone-800'
-                }`}
-              >
-                <Layout className="w-3.5 h-3.5" /> 🏠 Frontpage Card
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewContext('folio')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                  previewContext === 'folio'
-                    ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                    : 'text-stone-605 hover:text-stone-800'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" /> 🗂️ Folio Timeline
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewContext('search')}
-                className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                  previewContext === 'search'
-                    ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                    : 'text-stone-605 hover:text-stone-800'
-                }`}
-              >
-                <Search className="w-3.5 h-3.5" /> 🔍 Search Result
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* PRESENTATION CONTEXT SWITCHER TABS */}
+              <div className="flex border border-stone-200/80 rounded bg-stone-50/50 p-1 font-mono text-[9px] uppercase tracking-wider select-none overflow-x-auto whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => setPreviewContext('publication')}
+                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                    previewContext === 'publication'
+                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
+                      : 'text-stone-605 hover:text-stone-800'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" /> 📖 Publication Page
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewContext('editor')}
+                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                    previewContext === 'editor'
+                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
+                      : 'text-stone-605 hover:text-stone-800'
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" /> 📝 Writing Desk (Editor)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewContext('frontpage')}
+                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                    previewContext === 'frontpage'
+                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
+                      : 'text-stone-605 hover:text-stone-800'
+                  }`}
+                >
+                  <Layout className="w-3.5 h-3.5" /> 🏠 Frontpage Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewContext('folio')}
+                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                    previewContext === 'folio'
+                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
+                      : 'text-stone-605 hover:text-stone-800'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" /> 🗂️ Folio Timeline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewContext('search')}
+                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                    previewContext === 'search'
+                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
+                      : 'text-stone-605 hover:text-stone-800'
+                  }`}
+                >
+                  <Search className="w-3.5 h-3.5" /> 🔍 Search Result
+                </button>
+              </div>
+
+              {/* LANGUAGE SWITCHER */}
+              <div className="flex items-center gap-1.5 border border-stone-200/80 rounded bg-stone-50/50 p-1 font-mono text-[9px] uppercase tracking-wider select-none">
+                <span className="text-stone-400 font-bold px-2">Language:</span>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('LTR')}
+                  className={`px-3 py-1 rounded transition cursor-pointer font-semibold ${
+                    language === 'LTR'
+                      ? 'bg-stone-700 text-white shadow-sm'
+                      : 'text-stone-605 hover:text-stone-850'
+                  }`}
+                >
+                  English (LTR)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('RTL')}
+                  className={`px-3 py-1 rounded transition cursor-pointer font-semibold ${
+                    language === 'RTL'
+                      ? 'bg-stone-700 text-white shadow-sm'
+                      : 'text-stone-605 hover:text-stone-850'
+                  }`}
+                >
+                  العربية (RTL)
+                </button>
+              </div>
             </div>
           </div>
 

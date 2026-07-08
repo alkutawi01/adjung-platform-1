@@ -21,6 +21,7 @@ interface EntryRendererProps {
   authorSignatureStrokes?: VectorStroke[][];
   authorSignatureFont?: string;
   authorDigitalSignature?: DigitalSignature;
+  preventScrollToTop?: boolean;
 }
 
 function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir, id, onContextMenu }: any) {
@@ -71,7 +72,8 @@ export function EntryRenderer({
   authorSignature,
   authorSignatureStrokes,
   authorSignatureFont,
-  authorDigitalSignature
+  authorDigitalSignature,
+  preventScrollToTop
 }: EntryRendererProps) {
   const { currentUser, refreshDbState } = useAppContext();
   const [title, setTitle] = useState(entry.title || '');
@@ -275,14 +277,14 @@ export function EntryRenderer({
 
   // Scroll to the absolute top of the page immediately when mounting or switching entries in view mode
   useEffect(() => {
-    if (mode === 'view') {
+    if (mode === 'view' && !preventScrollToTop) {
       window.scrollTo(0, 0);
       const handle = requestAnimationFrame(() => {
         window.scrollTo(0, 0);
       });
       return () => cancelAnimationFrame(handle);
     }
-  }, [entry.id, mode]);
+  }, [entry.id, mode, preventScrollToTop]);
 
   // Toast notifications for action feedback:
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
