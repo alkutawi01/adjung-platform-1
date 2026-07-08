@@ -308,9 +308,15 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
 
     if (token.type === 'INTERLINEAR') {
       const elementKey = `${keyPrefix}-${keyIdx++}`;
+      const isGlossAr = isArabicText(token.gloss);
       result.push(
         <span key={elementKey} className="interlinear-word">
-          <span className="interlinear-gloss">{token.gloss}</span>
+          <span 
+            className={`interlinear-gloss ${isGlossAr ? 'font-arabic-handwritten text-xs' : ''}`}
+            style={isGlossAr ? { fontFamily: 'var(--font-arabic-handwritten)' } : undefined}
+          >
+            {token.gloss}
+          </span>
           {token.text}
         </span>
       );
