@@ -139,8 +139,10 @@ export function markdownToHtml(md: string): string {
 export function htmlToMarkdown(html: string): string {
   if (!html) return '';
   let md = html
-    .replace(/<span[^>]*class="footnote-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
-    .replace(/<span[^>]*class="margin-note-badge"[^>]*data-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[^$1]')
+    .replace(/<span[^>]+class="[^"]*(footnote-badge|margin-note-badge)[^"]*"[^>]*>([\s\S]*?)<\/span>/gi, (match) => {
+      const idMatch = match.match(/data-id="([^"]+)"/i);
+      return idMatch ? `[^${idMatch[1]}]` : '';
+    })
     .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, p1) => {
       const lines = p1.split(/<br\s*\/?>|<\/?p[^>]*>|<\/?div[^>]*>/i)
         .map((line: string) => line.trim())

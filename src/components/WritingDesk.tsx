@@ -6,21 +6,43 @@ import { parseInlineFormatting, stripMarkdown } from '../utils';
 import { db } from '../db/mockDb';
 import { useAppContext } from '../context/AppContext';
 
-export function WritingDesk() {
+interface WritingDeskProps {
+  entry?: Entry | null;
+  onSave?: (entry: Entry) => void;
+  onClose?: () => void;
+  mode?: 'production' | 'laboratory';
+  viewModeOverride?: 'preview' | 'editor';
+  authorName?: string;
+  authorSignature?: string;
+  authorSignatureFont?: string;
+}
+
+export function WritingDesk({
+  entry,
+  onSave,
+  onClose,
+  mode = 'production',
+  viewModeOverride,
+  authorName,
+  authorSignature,
+  authorSignatureFont
+}: WritingDeskProps = {}) {
   const {
     currentUser,
     setCurrentUser,
     entries,
-    editingEntry,
-    setEditingEntry,
+    editingEntry: contextEditingEntry,
+    setEditingEntry: contextSetEditingEntry,
     refreshDbState,
     createNewEntry,
-    saveEntry,
-    deleteEntry,
+    saveEntry: contextSaveEntry,
+    deleteEntry: contextDeleteEntry,
     showToast
   } = useAppContext();
 
-  const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
+  const activeEntry = mode === 'laboratory' ? entry : contextEditingEntry;
+
+  const [viewMode, setViewMode] = useState<'preview' | 'editor'>(viewModeOverride || 'preview');
   const lastScrollY = useRef<number>(0);
 
   // Settings states
@@ -30,6 +52,12 @@ export function WritingDesk() {
   const [deskBioText, setDeskBioText] = useState('');
   const [deskHeroTitle, setDeskHeroTitle] = useState('');
   const [deskHeroSubtitle, setDeskHeroSubtitle] = useState('');
+
+  useEffect(() => {
+    if (viewModeOverride) {
+      setViewMode(viewModeOverride);
+    }
+  }, [viewModeOverride]);
 
   useEffect(() => {
     if (currentUser) {
@@ -45,10 +73,10 @@ export function WritingDesk() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (editingEntry) {
+    if (activeEntry && mode !== 'laboratory') {
       setViewMode('preview');
     }
-  }, [editingEntry?.id]);
+  }, [activeEntry?.id, mode]);
 
   const handleSaveFolioSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +112,135 @@ export function WritingDesk() {
     showToast('Writing profile updated successfully', 'success');
   };
 
+  const handleSave = (updatedEntry: Entry) => {
+    if (mode === 'laboratory') {
+      if (onSave) onSave(updatedEntry);
+    } else {
+      contextSaveEntry(updatedEntry);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (mode === 'laboratory') {
+      // no op
+    } else {
+      contextDeleteEntry(id);
+    }
+  };
+
+  const handleClose = () => {
+    if (mode === 'laboratory') {
+      if (onClose) onClose();
+    } else {
+      contextSetEditingEntry(null);
+      refreshDbState();
+    }
+  };
+
+  const renderComposer = () => {
+    if (!activeEntry) return null;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between bg-[#111111]/5 p-2 border border-[#111111]/10 rounded">
+          {mode !== 'laboratory' ? (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="inline-flex items-center gap-1 text-[#111111]/60 hover:text-[#802334] font-mono text-xs uppercase cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" /> Close Composer
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#111111]/40">View</span>
+            <div className="flex items-center border border-[#111111]/10 rounded overflow-hidden bg-white p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  lastScrollY.current = window.scrollY;
+                  setViewMode('preview');
+                  setTimeout(() => {
+                    window.scrollTo({
+                      top: lastScrollY.current,
+                      behavior: 'auto'
+                    });
+                  }, 0);
+                }}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                  viewMode === 'preview'
+                    ? 'bg-[#802334] text-white font-medium shadow-sm'
+                    : 'text-[#111111]/60 hover:text-[#802334]'
+                }`}
+              >
+                ● Visual
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  lastScrollY.current = window.scrollY;
+                  setViewMode('editor');
+                  setTimeout(() => {
+                    window.scrollTo({
+                      top: lastScrollY.current,
+                      behavior: 'auto'
+                    });
+                  }, 0);
+                }}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
+                  viewMode === 'editor'
+                    ? 'bg-[#802334] text-white font-medium shadow-sm'
+                    : 'text-[#111111]/60 hover:text-[#802334]'
+                }`}
+              >
+                ○ Source
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <EntryRenderer
+          entry={activeEntry}
+          mode="edit"
+          viewMode={viewMode}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          authorName={authorName || currentUser.penName}
+          authorSignature={authorSignature || currentUser.signature}
+          authorSignatureFont={authorSignatureFont || undefined}
+          authorDigitalSignature={(() => {
+            if (mode === 'laboratory' && authorName) {
+              return {
+                id: 'sig-sandbox',
+                label: 'Sandbox Signature',
+                accountId: activeEntry?.authorId || '',
+                type: 'typed',
+                fontFamily: authorSignatureFont || 'Mrs Saint Delafield',
+                typedText: authorSignature || '',
+                status: 'Default',
+                strokes: [],
+                createdAt: new Date().toISOString()
+              };
+            }
+            const identity = db.getIdentityByAccountId(currentUser.id);
+            if (!identity) return undefined;
+            if (activeEntry?.signatureVersionId) {
+              const sig = identity.signatures.find(s => s.id === activeEntry.signatureVersionId);
+              if (sig) return sig;
+            }
+            return identity.signatures.find(s => s.status === 'Default');
+          })()}
+        />
+      </div>
+    );
+  };
+
   if (!currentUser) return null;
+
+  if (mode === 'laboratory') {
+    return renderComposer();
+  }
 
   return (
     <div className="space-y-12">
@@ -99,7 +255,7 @@ export function WritingDesk() {
           </p>
         </div>
 
-        {!editingEntry && (
+        {!contextEditingEntry && (
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -144,85 +300,8 @@ export function WritingDesk() {
         )}
       </div>
 
-      {editingEntry ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between bg-[#111111]/5 p-2 border border-[#111111]/10 rounded">
-            <button
-              type="button"
-              onClick={() => {
-                setEditingEntry(null);
-                refreshDbState();
-              }}
-              className="inline-flex items-center gap-1 text-[#111111]/60 hover:text-[#802334] font-mono text-xs uppercase cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Close Composer
-            </button>
-            <div className="flex items-center gap-4">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[#111111]/40">View</span>
-              <div className="flex items-center border border-[#111111]/10 rounded overflow-hidden bg-white p-0.5 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    lastScrollY.current = window.scrollY;
-                    setViewMode('preview');
-                    setTimeout(() => {
-                      window.scrollTo({
-                        top: lastScrollY.current,
-                        behavior: 'auto'
-                      });
-                    }, 0);
-                  }}
-                  className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
-                    viewMode === 'preview'
-                      ? 'bg-[#802334] text-white font-medium shadow-sm'
-                      : 'text-[#111111]/60 hover:text-[#802334]'
-                  }`}
-                >
-                  ● Visual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    lastScrollY.current = window.scrollY;
-                    setViewMode('editor');
-                    setTimeout(() => {
-                      window.scrollTo({
-                        top: lastScrollY.current,
-                        behavior: 'auto'
-                      });
-                    }, 0);
-                  }}
-                  className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
-                    viewMode === 'editor'
-                      ? 'bg-[#802334] text-white font-medium shadow-sm'
-                      : 'text-[#111111]/60 hover:text-[#802334]'
-                  }`}
-                >
-                  ○ Source
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <EntryRenderer
-            entry={editingEntry}
-            mode="edit"
-            viewMode={viewMode}
-            onSave={saveEntry}
-            onDelete={deleteEntry}
-            authorName={currentUser.penName}
-            authorSignature={currentUser.signature}
-            authorDigitalSignature={(() => {
-              const identity = db.getIdentityByAccountId(currentUser.id);
-              if (!identity) return undefined;
-              if (editingEntry?.signatureVersionId) {
-                const sig = identity.signatures.find(s => s.id === editingEntry.signatureVersionId);
-                if (sig) return sig;
-              }
-              return identity.signatures.find(s => s.status === 'Default');
-            })()}
-          />
-        </div>
+      {activeEntry ? (
+        renderComposer()
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left column: drafts & published */}
@@ -256,7 +335,7 @@ export function WritingDesk() {
                   }).map(draft => (
                     <div 
                       key={draft.id} 
-                      onClick={() => setEditingEntry(draft)}
+                      onClick={() => contextSetEditingEntry(draft)}
                       className="bg-white hover:bg-[#FDFDFD] border border-[#111111]/10 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
                     >
                       <div className="space-y-1 pr-4">
@@ -304,7 +383,7 @@ export function WritingDesk() {
                   }).map(pub => (
                     <div 
                       key={pub.id} 
-                      onClick={() => setEditingEntry(pub)}
+                      onClick={() => contextSetEditingEntry(pub)}
                       className="bg-white hover:bg-[#FDFDFD] border border-[#111111]/10 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
                     >
                       <div className="space-y-1 pr-4">

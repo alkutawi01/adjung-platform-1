@@ -64,25 +64,42 @@ Optional metadata may include:
 - Extensible
 - Backward compatible
 
-# 7. Validation
+# 7. Single Source of Truth (SSoT) Metadata Architecture
 
-Required metadata should be validated before publication whenever
-possible.
+Adjung strictly maintains that the Database/XML content serves as the Single Source of Truth (SSoT) for all metadata attributes. For example, a `Note` archetype may have a `title` property populated in the database. 
 
-# 8. Future Expansion
+However, rendering contexts must select and apply metadata attributes according to their presentation specifications without duplicating, altering, or omitting fields in the database schema:
 
-Future versions may support:
+```
+                  +--------------------------------+
+                  |         DATABASE SSoT          |
+                  |  - Note: { id, title: "..." }  |
+                  +--------------------------------+
+                                  |
+                                  | (Read same canonical entry)
+                                  v
+           +---------------------------------------------+
+           |           PRESENTATION LAYER SPECS          |
+           |   Determines canvas visibility policies     |
+           +---------------------------------------------+
+             /                     |                   \
+            /                      |                    \
+           v                       v                     v
+  +-----------------+     +-----------------+     +-----------------+
+  |   Publication   |     |    Frontpage    |     |  Search Result  |
+  |  `showTitle: F` |     |  `showTitle: T` |     |  `showTitle: T` |
+  | (Hidden canvas) |     |  (Teaser card)  |     | (Results index) |
+  +-----------------+     +-----------------+     +-----------------+
+```
 
-- Preservation metadata
-- AI-generated metadata
-- Semantic metadata
-- Linked data
-- Cross-platform synchronization
+### 7.1 Metadata Rendering Decoupling
+To prevent architectural drift:
+1. **Canvas View**: The main document reading canvas applies `PresentationSpec.visibility` constraints (e.g. hiding the title for a `Note` to preserve an intimate reading experience).
+2. **Directory / Index Views**: List directories, search results, and feed cards must render identifying properties (e.g. title) to facilitate discovery.
+3. **No Context-Specific Hacks**: Components must never hardcode structural exclusions (e.g. `!isNote && title`). Instead, they must query `activeSpec.visibility` or the respective Presentation Spec parameters.
 
 ------------------------------------------------------------------------
 
 End of Draft.
 
-The final edition will define metadata schemas, required and optional
-fields, validation rules, inheritance, interoperability mappings, and
-relationships with XML Schema, Index, and Publication Model.
+The final edition defines metadata schemas, validation rules, inheritance, interoperability mappings, and integration with the Presentation Layer and XML Schema configurations.

@@ -94,20 +94,64 @@ governance and preservation policies.
 
 Every publication shall have a permanent identifier and canonical URL.
 
-# 10. Future Expansion
+# 11. Presentation Specifications (Universal Rendering Architecture)
 
-Future versions may support:
+To decouple content storage from presentation rendering contexts, Adjung utilizes a layered rendering architecture. Every publication type (Note, Essay, Article) is governed by an explicit `PresentationSpec` that defines its layout, typography, spacing, and visibility rules across all presentation contexts.
 
-- Peer review
-- Editorial workflow
-- Translation
-- Collaborative writing
-- Collections
-- Digital preservation
+```
++-------------------------------------------------------------+
+|                        CONTENT LAYER                        |
+|   (Canonical Entry: Note, Essay, Article - Markdown/XML)   |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                     PRESENTATION LAYER                      |
+| (Concrete Specifications: noteSpec, essaySpec, articleSpec) |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                       RENDERING LAYER                       |
+|   (Production components: EntryRenderer, BiographyView)     |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                    APPLICATION CONTEXTS                     |
+|  (Publication Canvas, Folio Card, Frontpage, Search Result) |
++-------------------------------------------------------------+
+```
+
+### 11.1 Note Specification (`noteSpec`)
+* **Typography**: Serif body font (`font-serif`), distinct from standard interlinear notes.
+* **Canvas Spacing**: Max-width `max-w-2xl` with a compact margins (`py-8 px-4 md:px-8`).
+* **Visibility Rules**: 
+  - `showTitle`: `false` (Canvas hides title to enforce compact note layout).
+  - `showSignatureClosure`: `false` (Disable large formal signature stamp block).
+  - `showNoteFooter`: `true` (Enable inline signature footer).
+  - `showCitations`: `true`
+
+### 11.2 Essay Specification (`essaySpec`)
+* **Typography**: Serif body font with large signature scribble stamp style.
+* **Canvas Spacing**: Max-width `max-w-3xl` with standard margins (`py-10 px-4 md:px-8`).
+* **Visibility Rules**:
+  - `showTitle`: `true`
+  - `showSignatureClosure`: `true`
+  - `showNoteFooter`: `false`
+
+### 11.3 Article Specification (`articleSpec`)
+* **Typography**: Serif body font with scholarly margins.
+* **Canvas Spacing**: Max-width `max-w-4xl` with extra padding (`py-10 px-4 md:px-12`).
+* **Visibility Rules**:
+  - `showTitle`: `true`
+  - `showSignatureClosure`: `true`
+  - `showNoteFooter`: `false`
+  - `showCitations`: `true`
+  - `showFootnotes`: `true`
 
 ------------------------------------------------------------------------
 
 End of Draft.
 
-This version supersedes the previous skeleton by recognising Note,
-Essay, and Article as the official publication types of Adjung.
+This version supersedes the previous skeleton by introducing the Layered Universal Rendering Architecture and official Presentation Specifications for Note, Essay, and Article archetypes.

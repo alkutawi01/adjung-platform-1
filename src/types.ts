@@ -173,6 +173,7 @@ export interface Entry {
   marginNotes?: { [key: number]: string }; // Map of paragraph index to margin note text for Article
   marginNotesData?: Record<string, string>; // Map of block ID to margin note text
   excerpt?: string;
+  subtitle?: string;
   featuredImage?: string;
   revisions?: Revision[];
   citations?: Citation[];

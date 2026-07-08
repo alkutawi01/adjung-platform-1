@@ -2,6 +2,7 @@ import React from 'react';
 import { BiographyItem, IdentityProfile, User } from '../types';
 import { stripMarkdown, parseInlineFormatting } from '../utils';
 import { SignatureRenderer } from './SignatureRenderer';
+import { PresentationSpec, getPresentationSpec } from '../presentation';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -11,6 +12,7 @@ interface BiographyViewProps {
   setEditingBioItem: (item: BiographyItem | null) => void;
   setShowAddBioModal: (show: boolean) => void;
   handleRemoveBioItem: (itemId: string) => void;
+  presentationSpec?: PresentationSpec;
 }
 
 export function BiographyView({
@@ -21,7 +23,9 @@ export function BiographyView({
   setEditingBioItem,
   setShowAddBioModal,
   handleRemoveBioItem,
+  presentationSpec,
 }: BiographyViewProps) {
+  const activeSpec = presentationSpec || getPresentationSpec('Essay');
   return (
     <div className="space-y-16">
       {/* Intro Profile */}
@@ -35,7 +39,7 @@ export function BiographyView({
             Biography
           </h2>
           
-          <div className="font-serif text-base text-[#111111]/80 leading-relaxed space-y-4 whitespace-pre-line text-justify pr-2">
+          <div className={`${activeSpec.typography.bodyFont} text-base text-[#111111]/80 leading-relaxed space-y-4 whitespace-pre-line text-justify pr-2`}>
             {authorProfile.biography}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
 import { Entry } from '../types';
 import { parseContentToBlocks, isArabicText, parseInlineFormatting, getFootnotesReadingOrderMap, getMarginNotesReadingOrderMap } from '../utils';
+import { PresentationSpec, getPresentationSpec } from '../presentation';
 
 interface TimelineEntryCollapseRendererProps {
   item: Entry;
@@ -8,6 +9,7 @@ interface TimelineEntryCollapseRendererProps {
   onToggle: () => void;
   maxHeight?: number;
   onOpenText?: () => void;
+  presentationSpec?: PresentationSpec;
 }
 
 export function TimelineEntryCollapseRenderer({
@@ -16,7 +18,9 @@ export function TimelineEntryCollapseRenderer({
   onToggle,
   maxHeight = 220,
   onOpenText,
+  presentationSpec,
 }: TimelineEntryCollapseRendererProps) {
+  const activeSpec = presentationSpec || getPresentationSpec(item.contentType);
   const [visibleCount, setVisibleCount] = useState<number>(9999);
   const [exceedsLimit, setExceedsLimit] = useState<boolean>(false);
   const measureContainerRef = useRef<HTMLDivElement | null>(null);
@@ -199,7 +203,7 @@ export function TimelineEntryCollapseRenderer({
         className={`${
           isParaAr 
             ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base' 
-            : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
+            : `${activeSpec.typography.bodyFont} text-left text-xs md:text-sm text-stone-650 leading-relaxed`
         }`}
       >
         {parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
@@ -223,7 +227,7 @@ export function TimelineEntryCollapseRenderer({
         {isExpanded ? (
           <div className="space-y-3 animate-fade-in">
             {contentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
-            {item.citations && item.citations.length > 0 && (
+            {activeSpec.visibility.showCitations && item.citations && item.citations.length > 0 && (
               <div className="mt-4 pt-3 border-t border-stone-200/50 text-[10px] text-stone-500 font-sans text-left">
                 <span className="font-semibold uppercase tracking-wider block mb-1">References & Bibliography:</span>
                 <ul className="list-disc pl-4 space-y-1">

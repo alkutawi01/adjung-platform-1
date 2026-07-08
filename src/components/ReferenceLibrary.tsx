@@ -1,236 +1,390 @@
-import React, { useState } from 'react';
-import { Entry, User, Footnote } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Entry, User, IdentityProfile } from '../types';
+import { WritingDesk } from './WritingDesk';
 import { EntryRenderer } from './EntryRenderer';
-import { db } from '../db/mockDb';
+import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
+import { getPresentationSpec, PresentationSpec } from '../presentation';
 import { isArabicText } from '../utils';
-import { BookOpen, FileText, Layers, CheckCircle, Monitor, Eye, Layout, Calendar, Search } from 'lucide-react';
-
-const archetypeLanguageVersions: Record<string, { LTR: Partial<Entry>; RTL: Partial<Entry> }> = {
-  'entry-canonical-note': {
-    LTR: {
-      content: 'This is the Canonical Note. Note publications are short, casual observations designed without massive titles or abstract summaries. They rely on hand-written letterforms like Caveat to deliver an intimate reading experience. By utilizing [direct](gloss:clear) notation, they offer immediate clarity.',
-      title: 'Canonical Note on Classical Scholarship',
-      tags: ['Canonical', 'Note', 'Standard']
-    },
-    RTL: {
-      content: 'هذه هي الملاحظة المعيارية المكتوبة بخط الرقعة العربي التقليدي. تُعرض الملاحظات دائمًا بدون عناوين ضخمة، لتوفير تجربة قراءة حميمية ومريحة للباحث الكلاسيكي.',
-      title: 'Canonical Arabic Note (الترميز العربي)',
-      tags: ['Canonical', 'Arabic', 'Note']
-    }
-  },
-  'entry-canonical-essay': {
-    LTR: {
-      content: 'The art of typography is not merely the selection of letterforms; it is the curation of visual silence. In the scholastic tradition, the text occupies a sacred geography on the page [^1]. The margins are not empty space, but the structural frame that allows the text to breathe and command authority. By studying the early printed sheets of the fifteenth century, we discover that alignment and proportion were treated as geometry, reflecting the harmony of the cosmic order.\n\n### The Sacred Geometry of Margins\n\nHistorically, the page margins followed strict ratios such as the golden section [^2]. These proportions ensured that the reader\'s thumb would never obscure the text, and that the balance between ink and white space remained constant. In modern digital rendering, we must preserve this structural restraint to avoid chaotic visual overload.',
-      title: 'Canonical Essay: The Art of Traditional Academic Typography',
-      tags: ['Canonical', 'Essay', 'Typography'],
-      footnotes: ['[^1]', '[^2]'],
-      footnotesData: [
-        { id: '1', content: 'This visual silence is equivalent to the musical pause, which gives meaning to the note.' },
-        { id: '2', content: 'See Jan Tschichold, "The Form of the Book" (1975) for historical margin ratios.' }
-      ]
-    },
-    RTL: {
-      content: 'إن فن الطباعة وهندسة الحروف ليس مجرد اختيار أشكال الحروف، بل هو تهيئة الفراغ البصري المحيط بالنص [^1]. في التقاليد العلمية الكلاسيكية، يحتل النص مساحة مقدسة على الصفحة. الهوامش ليست فراغًا مهملًا، بل هي الإطار الهيكلي الذي يتيح للنص التنفس وفرض هيبته العلمية. من خلال دراسة المخطوطات القديمة وأوائل المطبوعات في القرن الخامس عشر، نكتشف أن المحاذاة والتناسب كانا يعاملان كهندسة مقدسة تعكس تناغم النظام الكوني.\n\n### الهندسة المقدسة للهوامش\n\nتاريخيًا، اتبعت هوامش الصفحة نسبًا صارمة مثل النسبة الذهبية [^2]. وضمنت هذه النسب ألا تغطي إبهام القارئ النص أبدًا، وأن يظل التوازن بين الحبر والفراغ ثابتًا. في التنسيق الرقمي الحديث، يجب علينا الحفاظ على هذا القيد الهيكلي لتجنب الفوضى البصرية.',
-      title: 'المقالة النموذجية: فن الطباعة الأكاديمية التقليدية',
-      tags: ['نموذجي', 'مقالة', 'خط'],
-      footnotes: ['[^1]', '[^2]'],
-      footnotesData: [
-        { id: '1', content: 'هذا الفراغ البصري يعادل الصمت الموسيقي الذي يمنح النغمة معناها وقيمتها.' },
-        { id: '2', content: 'انظر كتاب يان تشيشولد "شكل الكتاب" (1975) لمعرفة نسب الهوامش التاريخية.' }
-      ]
-    }
-  },
-  'entry-canonical-article': {
-    LTR: {
-      content: 'This article presents the digital press layout model, a robust design system engineered for high-performance reading experiences. The system utilizes CSS grids to achieve pixel-perfect alignment across multiple viewport brackets. By combining flexible flexbox structures with explicit grid controls, we establish a responsive workspace that dynamically adjusts to reading behaviors.\n\n### Grid Architecture\n\nThe layout is divided into three primary zones: the global sidebar for platform navigation, the central canvas for text composition, and the elastic margin for annotations and metadata. This spatial segregation ensures that readers can consume core arguments without distracting peripheral noise.',
-      title: 'Canonical Article: The Digital Press Layout Model',
-      tags: ['Canonical', 'Article', 'Grid'],
-      marginNotes: {'0': 'mn-1'},
-      marginNotesData: {'mn-1': 'The elastic margin expands dynamically on viewports wider than 1280px to prevent layout shifting.'}
-    },
-    RTL: {
-      content: 'تقدم هذه المقالة نموذج تخطيط الصحافة الرقمية، وهو نظام تصميم متين تم هندسته لتوفير تجارب قراءة عالية الأداء. يعتمد النظام على شبكات CSS لتحقيق محاذاة دقيقة عبر مختلف أبعاد الشاشات. من خلال دمج مرونة التصميم مع عناصر التحكم في الشبكة، ننشئ مساحة عمل تستجيب ديناميكيًا لسلوكيات القراءة.\n\n### بنية الشبكة\n\nينقسم التخطيط إلى ثلاث مناطق رئيسية: الشريط الجانبي للتنقل، والمساحة المركزية لكتابة النصوص، والهامش المرن للملاحظات والبيانات الوصفية. يضمن هذا الفصل المكاني تمكين القراء من استيعاب الحجج الأساسية دون تشتيت.',
-      title: 'المقالة النموذجية: نموذج تخطيط الصحافة الرقمية',
-      tags: ['نموذجي', 'مقالة', 'شبكة'],
-      marginNotes: {'0': 'mn-1'},
-      marginNotesData: {'mn-1': 'يتسع الهامش المرن ديناميكياً على الشاشات التي يزيد عرضها عن 1280 بكسل لمنع انزياح التخطيط.'}
-    }
-  }
-};
+import { 
+  BookOpen, FileText, Layers, CheckCircle, Monitor, Layout, 
+  Calendar, Search, RefreshCw, Copy, ShieldAlert, Award, FileCode,
+  Undo2, UserCheck, AlertCircle, Sparkles, Check, ChevronDown, ChevronUp
+} from 'lucide-react';
 
 interface ReferenceLibraryProps {
   entries: Entry[];
   users: User[];
 }
 
-type PreviewContext = 'publication' | 'editor' | 'frontpage' | 'folio' | 'search';
+type ContextType = 'publication' | 'frontpage' | 'folio' | 'search' | 'archive';
+
+interface ContextVariant {
+  id: string;
+  name: string;
+}
+
+interface PublicationContext {
+  id: ContextType;
+  name: string;
+  variants: ContextVariant[];
+}
+
+const PUBLICATION_CONTEXTS: PublicationContext[] = [
+  {
+    id: 'publication',
+    name: 'Publication Page',
+    variants: [
+      { id: 'standard', name: 'Standard Canvas Layout' }
+    ]
+  },
+  {
+    id: 'frontpage',
+    name: 'Frontpage',
+    variants: [
+      { id: 'standard', name: 'Standard Card' },
+      { id: 'featured', name: 'Featured Card (Future)' },
+      { id: 'hero', name: 'Hero Layout (Future)' }
+    ]
+  },
+  {
+    id: 'folio',
+    name: 'Folio',
+    variants: [
+      { id: 'timeline', name: 'Timeline Item' },
+      { id: 'card', name: 'Card (Future)' }
+    ]
+  },
+  {
+    id: 'search',
+    name: 'Search',
+    variants: [
+      { id: 'standard', name: 'Search Result' }
+    ]
+  },
+  {
+    id: 'archive',
+    name: 'Archive',
+    variants: [
+      { id: 'row', name: 'Archive Row' }
+    ]
+  }
+];
 
 export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
-  const canonicalEntries = entries.filter(e => e.id.startsWith('entry-canonical-') && !e.id.endsWith('-ar'));
-  const [selectedEntryId, setSelectedEntryId] = useState<string>(canonicalEntries[0]?.id || '');
-  const [previewContext, setPreviewContext] = useState<PreviewContext>('publication');
+  // 1. Template & Sandbox state
+  const canonicalTemplates = entries.filter(e => e.id.startsWith('entry-canonical-') && !e.id.endsWith('-ar'));
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(canonicalTemplates[0]?.id || '');
   const [language, setLanguage] = useState<'LTR' | 'RTL'>('LTR');
-  
-  const baseEntry = entries.find(e => e.id === selectedEntryId);
-  const selectedEntry = baseEntry ? {
-    ...baseEntry,
-    ...(archetypeLanguageVersions[baseEntry.id]?.[language] || {})
-  } as Entry : undefined;
 
+  const [tempEntry, setTempEntry] = useState<Entry | null>(null);
+  const [originalEntry, setOriginalEntry] = useState<Entry | null>(null);
 
-  const getAuthorInfo = (authorId: string | null) => {
-    const author = users.find(u => u.id === authorId);
-    let signatureFont = 'Mrs Saint Delafield';
-    if (authorId) {
-      const identity = db.getIdentityByAccountId(authorId);
-      const defaultSig = identity?.signatures?.find(s => s.status === 'Default');
-      if (defaultSig && defaultSig.type === 'typed' && defaultSig.fontFamily) {
-        const rawFamily = defaultSig.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-        signatureFont = `"${rawFamily}", cursive`;
+  // 2. Author/Identity customization state
+  const [authorName, setAuthorName] = useState('Zayd Al-Ghazali');
+  const [authorSignature, setAuthorSignature] = useState('Zayd Al-Ghazali');
+  const [authorSignatureFont, setAuthorSignatureFont] = useState('Mrs Saint Delafield');
+  const [authorBiography, setAuthorBiography] = useState(
+    'Preservation begins when a work is expected to outlive its author. In the scholastic tradition, the text occupies a sacred geography.'
+  );
+
+  // 3. Selection of Active Context and Variant
+  const [selectedContextId, setSelectedContextId] = useState<ContextType>('publication');
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('standard');
+
+  // Accordion status in the top metadata grid
+  const [openSection, setOpenSection] = useState<'pub' | 'author' | 'metadata' | 'editorial' | null>(null);
+
+  // Auto-sync variant when context changes
+  useEffect(() => {
+    const ctx = PUBLICATION_CONTEXTS.find(c => c.id === selectedContextId);
+    if (ctx && ctx.variants.length > 0) {
+      const hasVariant = ctx.variants.some(v => v.id === selectedVariantId);
+      if (!hasVariant) {
+        setSelectedVariantId(ctx.variants[0].id);
       }
     }
-    return {
-      name: author?.penName || 'Adjung Editorial Board',
-      signature: author?.signature || 'Adjung Editorial Board',
-      signatureFont
-    };
+  }, [selectedContextId, selectedVariantId]);
+
+  // Sync sandbox with canonical archetypes or language changes
+  useEffect(() => {
+    const template = entries.find(e => e.id === selectedTemplateId);
+    if (template) {
+      const overrideObj = language === 'RTL' ? {
+        content: template.id === 'entry-canonical-note' 
+          ? 'هذه هي الملاحظة المعيارية المكتوبة بخط الرقعة العربي التقليدي. تُعرض الملاحظات دائمًا بدون عناوين ضخمة، لتوفير تجربة قراءة حميمية ومريحة للباحث الكلاسيكي.'
+          : template.id === 'entry-canonical-essay'
+          ? 'إن فن الطباعة وهندسة الحروف ليس مجرد اختيار أشكال الحروف، بل هو تهيئة الفراغ البصري المحيط بالنص [^1]. في التقاليد العلمية الكلاسيكية، يحتل النص مساحة مقدسة على الصفحة.'
+          : 'تقدم هذه المقالة نموذج تخطيط الصحافة الرقمية، وهو نظام تصميم متين تم هندسته لتوفير تجارب قراءة عالية الأداء. يعتمد النظام على شبكات CSS لتحقيق محاذاة دقيقة عبر مختلف أبعاد الشاشات.',
+        title: template.id === 'entry-canonical-note'
+          ? 'الملاحظة النموذجية (الترميز العربي)'
+          : template.id === 'entry-canonical-essay'
+          ? 'المقالة النموذجية: فن الطباعة الأكاديمية التقليدية'
+          : 'المقالة النموذجية: نموذج تخطيط الصحافة الرقمية',
+        tags: ['نموذجي', 'عربي']
+      } : {};
+
+      const mergedEntry: Entry = {
+        ...template,
+        ...overrideObj,
+        publishedDate: template.publishedDate || new Date().toISOString()
+      };
+
+      setTempEntry(mergedEntry);
+      setOriginalEntry(JSON.parse(JSON.stringify(mergedEntry)));
+    }
+  }, [selectedTemplateId, language, entries]);
+
+  if (!tempEntry) {
+    return <div className="p-8 text-center text-stone-500 font-sans">Initializing Sandbox Environment...</div>;
+  }
+
+  const activeSpec = getPresentationSpec(tempEntry.contentType);
+
+  const updateTempEntry = (fields: Partial<Entry>) => {
+    setTempEntry(prev => prev ? { ...prev, ...fields } : null);
   };
 
-  const authorInfo = selectedEntry ? getAuthorInfo(selectedEntry.authorId) : { name: '', signature: '', signatureFont: '' };
+  const handleReset = () => {
+    if (originalEntry) {
+      setTempEntry(JSON.parse(JSON.stringify(originalEntry)));
+    }
+  };
 
-  const renderContextPreview = () => {
-    if (!selectedEntry) return null;
+  const handleClone = () => {
+    if (tempEntry) {
+      const cloned: Entry = {
+        ...tempEntry,
+        id: `sandbox-${Math.random().toString(36).substr(2, 9)}`,
+        title: `${tempEntry.title} (Clone)`,
+        slug: `${tempEntry.slug}-clone`
+      };
+      setTempEntry(cloned);
+    }
+  };
 
-    switch (previewContext) {
-      case 'editor':
+  // Live Diagnostics Rule Engine
+  const getDiagnostics = () => {
+    const list: { type: 'success' | 'warning' | 'error' | 'info'; msg: string; spec: string }[] = [];
+    const isNote = tempEntry.contentType === 'Note';
+
+    if (isNote) {
+      if (tempEntry.title) {
+        list.push({
+          type: 'info',
+          msg: `Title "${tempEntry.title}" is defined for indexing but hidden on the Publication Page canvas.`,
+          spec: 'SPEC-007 (Note Layout)'
+        });
+      }
+      if (tempEntry.subtitle) {
+        list.push({
+          type: 'warning',
+          msg: `Subtitle "${tempEntry.subtitle}" is populated but ignored in Note layouts.`,
+          spec: 'SPEC-017 (Metadata Policy)'
+        });
+      }
+      if (tempEntry.excerpt) {
+        list.push({
+          type: 'warning',
+          msg: `Abstract/Excerpt is populated but ignored in Note layouts.`,
+          spec: 'SPEC-017 (Metadata Policy)'
+        });
+      }
+      if (tempEntry.featuredImage) {
+        list.push({
+          type: 'warning',
+          msg: 'Cover Image is populated but ignored in Note layouts.',
+          spec: 'SPEC-017 (Metadata Policy)'
+        });
+      }
+    } else {
+      if (!tempEntry.title) {
+        list.push({
+          type: 'error',
+          msg: `${tempEntry.contentType} requires a title for indexing.`,
+          spec: 'SPEC-017 (Core Metadata)'
+        });
+      }
+    }
+
+    const slugRegex = /^[a-z0-9-_]+$/;
+    if (tempEntry.slug && !slugRegex.test(tempEntry.slug)) {
+      list.push({
+        type: 'error',
+        msg: `Slug "${tempEntry.slug}" contains invalid characters. Use lowercase alphanumeric and hyphens.`,
+        spec: 'SPEC-005 (URL Routing)'
+      });
+    }
+
+    if (!tempEntry.tags || tempEntry.tags.length === 0) {
+      list.push({
+        type: 'warning',
+        msg: 'No tags provided. Discovery in the directory may fail.',
+        spec: 'SPEC-012 (Index)'
+      });
+    }
+
+    if (list.length === 0) {
+      list.push({
+        type: 'success',
+        msg: 'All metadata properties are 100% compliant with Adjung presentation rules.',
+        spec: 'SPEC-007 / SPEC-017'
+      });
+    }
+
+    return list;
+  };
+
+  const renderSelectedContext = () => {
+    switch (selectedContextId) {
+      case 'publication':
         return (
-          <div className="bg-[#FDFDFD] border border-stone-250 rounded shadow-sm overflow-hidden text-left font-sans">
-            {/* Simulated editor header / toolbar */}
-            <div className="bg-stone-50 border-b border-stone-200 px-4 py-2 flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold select-none">
-              <div className="flex items-center gap-3">
-                <span className="text-stone-700 font-bold">Writing Desk (Simulated Editor)</span>
-                <span className="text-stone-300">|</span>
-                <span>Words: {selectedEntry.content.split(/\s+/).filter(Boolean).length}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Auto-saved</span>
-              </div>
-            </div>
-            <div className="p-6 bg-stone-50/20">
-               <EntryRenderer
-                entry={selectedEntry}
-                mode="edit"
+          <div className="bg-stone-50/40 border border-stone-200/60 rounded-md p-6 md:p-8">
+            <div className="max-w-4xl mx-auto shadow-sm">
+              <EntryRenderer
+                entry={tempEntry}
+                mode="view"
                 preventScrollToTop={true}
-                authorName={authorInfo.name}
-                authorSignature={authorInfo.signature}
-                authorSignatureFont={authorInfo.signatureFont}
+                authorName={authorName}
+                authorSignature={authorSignature}
+                authorSignatureFont={authorSignatureFont}
+                presentationSpec={activeSpec}
               />
             </div>
           </div>
         );
 
       case 'frontpage':
+        const isAr = isArabicText(tempEntry.content);
+        const isHero = selectedVariantId === 'hero';
+        const isFeatured = selectedVariantId === 'featured';
+
+        if (isHero) {
+          return (
+            <div className="bg-stone-900 text-stone-100 p-8 md:p-12 rounded-md max-w-5xl mx-auto flex flex-col justify-between min-h-[350px] shadow-lg relative overflow-hidden border border-stone-850">
+              <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-[#802334] tracking-widest uppercase font-bold select-none">
+                Hero Publication Feature
+              </div>
+              <div className="space-y-4 max-w-2xl text-left">
+                <span className="bg-[#802334] text-white font-mono text-[8px] tracking-widest px-2.5 py-0.5 uppercase font-bold rounded">
+                  {tempEntry.contentType}
+                </span>
+                <h2 className="text-3xl md:text-4xl font-serif font-light leading-tight">
+                  {tempEntry.title || 'Untitled Sandbox Entry'}
+                </h2>
+                {tempEntry.subtitle && (
+                  <p className="text-stone-400 text-sm font-serif italic">{tempEntry.subtitle}</p>
+                )}
+                <p className="text-stone-300 text-sm leading-relaxed font-serif line-clamp-3">
+                  {tempEntry.excerpt || tempEntry.content.substring(0, 200) + '...'}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-stone-400 font-sans border-t border-stone-800 pt-4 mt-6">
+                <span>By <strong className="text-stone-200">{authorName}</strong></span>
+                <span>•</span>
+                <span>{new Date(tempEntry.publishedDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+          );
+        }
+
+        if (isFeatured) {
+          return (
+            <div className="bg-[#FAF8F5] border-y-2 border-[#802334] p-8 rounded-sm max-w-3xl mx-auto shadow-md text-left flex flex-col md:flex-row gap-6 items-start">
+              {tempEntry.featuredImage && (
+                <div className="w-full md:w-1/3 flex-shrink-0">
+                  <img src={tempEntry.featuredImage} className="w-full h-32 object-cover rounded-sm border border-stone-200/80" alt="" />
+                </div>
+              )}
+              <div className="flex-1 space-y-3">
+                <span className="font-mono text-[8px] uppercase tracking-widest text-[#802334] font-bold">Featured {tempEntry.contentType}</span>
+                <h3 className="font-serif text-xl font-bold text-stone-900 leading-tight">
+                  {tempEntry.title || 'Untitled Featured Archetype'}
+                </h3>
+                <p className="font-serif text-stone-750 text-xs leading-relaxed line-clamp-3">
+                  {tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...'}
+                </p>
+                <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-250/20">
+                  By {authorName} • {new Date(tempEntry.publishedDate).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Default: Standard card representation
         return (
-          <div className="max-w-md mx-auto p-8 border border-stone-200 rounded-md bg-stone-50/50 shadow-inner flex flex-col justify-center font-sans">
-            <div className="text-center font-mono text-[8px] uppercase tracking-widest text-stone-400 mb-6 select-none">— Frontpage Preview Context —</div>
-            {selectedEntry.contentType === 'Note' ? (
-              (() => {
-                const isAr = isArabicText(selectedEntry.content);
-                return (
-                  <div 
-                    className={`bg-[#FAF8F5] border border-stone-200/50 p-6 rounded-lg shadow-md mx-auto max-w-xs relative overflow-hidden ${
-                      isAr ? 'text-right' : 'text-left'
-                    }`} 
-                  >
-                    <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1 select-none">Note</span>
-                    <h4 className="font-bold leading-tight mb-2 select-all text-stone-900 text-lg font-serif">{selectedEntry.title}</h4>
-                    <p className={`text-sm line-clamp-3 leading-relaxed mb-3 select-all text-stone-850 ${isAr ? 'font-arabic' : 'font-serif'}`}>{selectedEntry.content}</p>
-                    <span className="text-[11px] text-stone-500">— {authorInfo.name}</span>
-                  </div>
-                );
-              })()
-            ) : selectedEntry.contentType === 'Essay' ? (
-              <div className="bg-white border border-stone-200 p-6 rounded shadow-sm text-left font-serif text-[#111111] mx-auto max-w-sm">
-                <span className="block font-mono text-[8px] uppercase tracking-widest text-[#802334] font-bold mb-2 select-none">Featured Essay</span>
-                <h3 className="text-xl font-light mb-3 leading-tight hover:text-[#802334] transition select-all">{selectedEntry.title}</h3>
-                <p className="text-stone-500 italic text-xs leading-relaxed line-clamp-3 mb-4 select-all">{selectedEntry.excerpt}</p>
-                <span className="text-[11px] font-sans text-stone-400">By {authorInfo.name}</span>
-              </div>
-            ) : (
-              <div className="bg-white border border-stone-250/70 p-5 rounded shadow-sm text-left mx-auto max-w-sm">
-                <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1 select-none">Article</span>
-                <h4 className="font-serif text-base font-bold text-stone-900 leading-tight mb-2 line-clamp-2 select-all">{selectedEntry.title}</h4>
-                <p className="font-serif text-stone-500 text-xs line-clamp-3 leading-relaxed mb-3 select-all">{selectedEntry.excerpt}</p>
-                <span className="font-sans text-[11px] text-stone-400">By {authorInfo.name}</span>
-              </div>
+          <div className="max-w-md mx-auto p-5 rounded border bg-white border-stone-200/70 shadow-sm text-left">
+            <span className="block font-mono text-[9px] uppercase tracking-wider text-[#802334] mb-2">{tempEntry.contentType}</span>
+            {activeSpec.visibility.showTitle && tempEntry.title && (
+              <h4 className="text-stone-900 leading-tight mb-2 font-serif text-base font-bold">{tempEntry.title}</h4>
             )}
+            <p className={`text-stone-600 text-xs leading-relaxed mb-4 line-clamp-3 ${isAr ? 'font-arabic' : 'font-serif'}`}>
+              {tempEntry.excerpt || tempEntry.content.substring(0, 150) + '...'}
+            </p>
+            <div className="flex items-center justify-between text-[10px] text-stone-500 font-sans border-t border-stone-100 pt-2">
+              <span>By {authorName}</span>
+              <span>{new Date(tempEntry.publishedDate).toLocaleDateString()}</span>
+            </div>
           </div>
         );
 
       case 'folio':
         return (
-          <div className="max-w-xl mx-auto p-6 border border-stone-200 bg-white rounded shadow-sm text-left relative overflow-hidden font-sans">
-            <div className="absolute top-0 right-0 p-3 bg-stone-50 border-l border-b border-stone-200 font-mono text-[8px] uppercase tracking-widest text-stone-400 select-none">
-              Folio Feed Item
-            </div>
-            
-            <div className="flex gap-4 items-start text-xs mt-4">
-              {/* Year marker */}
-              <div className="flex flex-col items-center">
-                <span className="font-mono text-xs font-semibold text-[#802334] tracking-wider select-none">2026</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#802334] my-2 select-none" />
-                <div className="w-px h-16 bg-stone-200 select-none" />
+          <div className="max-w-2xl mx-auto p-6 bg-stone-50 border border-stone-200/60 rounded">
+            <div className="relative border-l border-stone-250 pl-4 py-2 text-left">
+              <span className="absolute left-0 w-2.5 h-2.5 rounded-full bg-[#802334] -ml-[5.5px] mt-1.5" />
+              <div className="font-mono text-[9px] text-stone-400 uppercase tracking-widest mb-1.5">
+                {new Date(tempEntry.publishedDate).getFullYear()} • {tempEntry.contentType}
               </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-wider text-stone-405 select-none">
-                  <span>{selectedEntry.contentType}</span>
-                  <span>•</span>
-                  <span>Published</span>
-                </div>
-                <h4 className="font-serif text-base font-semibold text-stone-900 leading-snug select-all">{selectedEntry.title}</h4>
-                <p className="font-serif text-stone-550 leading-relaxed text-[13px] line-clamp-2 select-all">
-                  {selectedEntry.excerpt || selectedEntry.content.substring(0, 150) + '...'}
-                </p>
-              </div>
+              <TimelineEntryCollapseRenderer
+                item={tempEntry}
+                isExpanded={true}
+                onToggle={() => {}}
+                presentationSpec={activeSpec}
+              />
             </div>
           </div>
         );
 
       case 'search':
         return (
-          <div className="max-w-2xl mx-auto p-5 border border-stone-200 bg-[#FDFDFD] rounded shadow-sm hover:border-[#802334]/30 transition text-left space-y-2 font-sans">
-            <div className="flex items-center justify-between font-mono text-[8px] uppercase tracking-wider text-stone-400 select-none">
+          <div className="max-w-3xl mx-auto p-6 bg-white border border-stone-200 rounded text-left space-y-2 font-sans shadow-sm">
+            <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-400 select-none">
               <span>Match Score: 98%</span>
-              <span>Archived</span>
+              <span>INDEXED</span>
             </div>
-            <h4 className="font-serif text-base font-semibold text-[#802334] hover:underline cursor-pointer select-all">{selectedEntry.title}</h4>
-            <p className="font-sans text-stone-600 text-xs line-clamp-2 leading-relaxed select-all">
-              ... {selectedEntry.content.substring(0, 150)} ...
+            <h4 className="font-serif text-base font-semibold text-[#802334] hover:underline cursor-pointer">
+              {tempEntry.title || 'Untitled Sandbox Entry'}
+            </h4>
+            <p className="font-sans text-stone-605 text-xs line-clamp-2 leading-relaxed">
+              ... {tempEntry.content.substring(0, 150)} ...
             </p>
-            <div className="flex items-center justify-between text-[10px] text-stone-500 pt-1 select-none">
-              <span>By {authorInfo.name}</span>
+            <div className="flex items-center justify-between text-[10px] text-stone-500 pt-2 border-t border-stone-100/50">
+              <span>By {authorName}</span>
               <div className="flex gap-1.5">
-                {selectedEntry.tags.map(t => (
-                  <span key={t} className="px-1.5 py-0.5 bg-stone-100 border border-stone-200/50 rounded font-mono text-[9px]">#{t}</span>
+                {tempEntry.tags.map(t => (
+                  <span key={t} className="px-1.5 py-0.5 bg-stone-100 border border-stone-200/60 rounded font-mono text-[9px]">#{t}</span>
                 ))}
               </div>
             </div>
           </div>
         );
 
-      case 'publication':
-      default:
+      case 'archive':
         return (
-          <div className="border border-stone-200 rounded p-6 bg-stone-50/50 shadow-inner">
-             <EntryRenderer
-              entry={selectedEntry}
-              mode="view"
-              preventScrollToTop={true}
-              authorName={authorInfo.name}
-              authorSignature={authorInfo.signature}
-              authorSignatureFont={authorInfo.signatureFont}
-            />
+          <div className="max-w-4xl mx-auto p-4 bg-white border border-stone-200/60 rounded font-sans text-xs flex items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="bg-[#802334]/5 text-[#802334] font-mono text-[9px] font-bold px-2 py-0.5 border border-[#802334]/15 rounded uppercase">
+                {tempEntry.contentType}
+              </span>
+              <div className="text-left">
+                <div className="font-serif font-bold text-stone-900 text-sm">{tempEntry.title || '(Untitled)'}</div>
+                <div className="font-mono text-[9px] text-stone-400">Slug: {tempEntry.slug}</div>
+              </div>
+            </div>
+            <div className="text-right font-mono text-[10px] text-stone-400">
+              Published: {new Date(tempEntry.publishedDate).toLocaleDateString()}
+            </div>
           </div>
         );
     }
@@ -238,237 +392,406 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
   return (
     <div className="space-y-8 animate-fade-in text-left">
-      {/* Presentation Matrix Section */}
-      <div className="bg-[#FDFDFD] border border-stone-200 rounded p-6 shadow-sm">
-        <div className="border-b border-stone-100 pb-3 mb-4">
-          <h4 className="font-serif text-base font-semibold text-stone-900">Adjung Presentation Matrix</h4>
-          <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Canonical rendering contexts for each publication archetype</p>
+      {/* Universal Laboratory Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
+        <div className="space-y-1">
+          <h2 className="font-serif text-2xl font-light text-stone-950 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-[#802334]" />
+            Universal Rendering Laboratory
+          </h2>
+          <p className="font-sans text-[10px] uppercase tracking-widest text-stone-400">
+            Authoritative, specification-first presentation workspace operating on in-memory sandbox data
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse font-sans text-xs border border-stone-200 rounded">
-            <thead>
-              <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500">
-                <th className="p-3 pl-4">Archetype</th>
-                <th className="p-3">Writing Desk</th>
-                <th className="p-3">Publication Page</th>
-                <th className="p-3">Frontpage</th>
-                <th className="p-3">Folio</th>
-                <th className="p-3">Biography</th>
-                <th className="p-3">Search Index</th>
-                <th className="p-3">PDF/Print</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-150 text-stone-700 font-sans text-xs">
-              <tr className="hover:bg-stone-50/30 transition">
-                <td className="p-3 pl-4 font-serif font-bold text-[#802334]">Note</td>
-                <td className="p-3">Full Text Canvas</td>
-                <td className="p-3">Index Card View</td>
-                <td className="p-3">Compact Card</td>
-                <td className="p-3">Compact Card</td>
-                <td className="p-3">List Entry</td>
-                <td className="p-3">Full Result</td>
-                <td className="p-3 font-mono text-[10px] text-emerald-700">✓ Supported</td>
-              </tr>
-              <tr className="hover:bg-stone-50/30 transition">
-                <td className="p-3 pl-4 font-serif font-bold text-[#802334]">Essay</td>
-                <td className="p-3">Full Text Canvas</td>
-                <td className="p-3">Book Layout (Footnotes)</td>
-                <td className="p-3">Featured Card</td>
-                <td className="p-3">Featured Card</td>
-                <td className="p-3">List Entry</td>
-                <td className="p-3">Full Result</td>
-                <td className="p-3 font-mono text-[10px] text-emerald-700">✓ Supported</td>
-              </tr>
-              <tr className="hover:bg-stone-50/30 transition">
-                <td className="p-3 pl-4 font-serif font-bold text-[#802334]">Article</td>
-                <td className="p-3">Split Block Editor</td>
-                <td className="p-3">Multi-Column (Margin Notes)</td>
-                <td className="p-3">Standard Card</td>
-                <td className="p-3">Grid Card</td>
-                <td className="p-3">List Entry</td>
-                <td className="p-3">Full Result</td>
-                <td className="p-3 font-mono text-[10px] text-emerald-700">✓ Supported</td>
-              </tr>
-              <tr className="hover:bg-stone-50/30 transition">
-                <td className="p-3 pl-4 font-serif font-bold text-stone-500">Notice</td>
-                <td className="p-3">Rich Document Editor</td>
-                <td className="p-3">Full Announcement Page</td>
-                <td className="p-3">Banner Header</td>
-                <td className="p-3 text-stone-400 font-mono text-[10px]">No</td>
-                <td className="p-3 text-stone-400 font-mono text-[10px]">No</td>
-                <td className="p-3">Short Result</td>
-                <td className="p-3 font-mono text-[10px] text-stone-400">Unsupported</td>
-              </tr>
-              <tr className="hover:bg-stone-50/30 transition">
-                <td className="p-3 pl-4 font-serif font-bold text-stone-500">Editor's Note</td>
-                <td className="p-3">Rich Document Editor</td>
-                <td className="p-3">Editorial Column View</td>
-                <td className="p-3">Excerpt Highlight</td>
-                <td className="p-3 text-stone-400 font-mono text-[10px]">No</td>
-                <td className="p-3 text-stone-400 font-mono text-[10px]">No</td>
-                <td className="p-3">Short Result</td>
-                <td className="p-3 font-mono text-[10px] text-stone-400">Unsupported</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200/80 border border-stone-250/70 text-stone-700 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
+          >
+            <Undo2 className="w-3.5 h-3.5" /> Reset Template
+          </button>
+          <button
+            type="button"
+            onClick={handleClone}
+            className="px-3 py-1.5 bg-[#802334] hover:bg-[#6c1d2c] text-white font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
+          >
+            <Copy className="w-3.5 h-3.5" /> Clone Sandbox
+          </button>
         </div>
       </div>
 
-      {/* Select Archetype & Interactive Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        {/* Selector Panel */}
-        <div className="lg:col-span-1 bg-[#FDFDFD] border border-stone-200 rounded p-4 shadow-sm space-y-4">
-          <div className="border-b border-stone-100 pb-2">
-            <h5 className="font-mono text-[10px] uppercase tracking-wider text-stone-400 font-bold">Archetypes</h5>
-          </div>
+      {/* ================= SECTION 1: CANONICAL LIBRARY & METADATA WORKSPACE (TOP PANEL) ================= */}
+      <div className="bg-[#FAF9F6] border border-stone-200 rounded-lg p-5 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Left card: Canonical Archetype Selector & Language toggle */}
+          <div className="md:col-span-4 bg-white border border-stone-200 rounded p-4 shadow-sm space-y-3">
+            <h5 className="font-mono text-[10px] uppercase tracking-wider text-stone-405 font-bold border-b border-stone-100 pb-1.5 flex items-center gap-1 select-none">
+              <Award className="w-3.5 h-3.5" /> Canonical Library
+            </h5>
+            
+            <div className="flex flex-col gap-1.5">
+              {canonicalTemplates.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedTemplateId(t.id)}
+                  className={`w-full text-left px-3 py-2 rounded font-serif text-sm transition flex items-center gap-2 select-none cursor-pointer ${
+                    selectedTemplateId === t.id
+                      ? 'bg-[#802334]/10 text-[#802334] font-semibold border-l-2 border-[#802334]'
+                      : 'text-stone-700 hover:bg-stone-50 border-l-2 border-transparent'
+                  }`}
+                >
+                  {t.contentType === 'Note' && <FileText className="w-4 h-4 text-stone-450" />}
+                  {t.contentType === 'Essay' && <BookOpen className="w-4 h-4 text-stone-450" />}
+                  {t.contentType === 'Article' && <Layers className="w-4 h-4 text-stone-450" />}
+                  {t.title.replace('Canonical ', '')}
+                </button>
+              ))}
+            </div>
 
-          <div className="flex flex-col gap-1">
-            {canonicalEntries.map(e => (
+            <div className="flex border border-stone-200/80 rounded bg-stone-50/50 p-0.5 font-mono text-[8px] uppercase tracking-wider select-none mt-2">
               <button
-                key={e.id}
                 type="button"
-                onClick={() => setSelectedEntryId(e.id)}
-                className={`w-full text-left px-3 py-2.5 rounded font-serif text-sm transition flex items-center gap-2 select-none cursor-pointer ${
-                  selectedEntryId === e.id
-                    ? 'bg-[#802334]/10 text-[#802334] font-semibold border-l-4 border-[#802334]'
-                    : 'text-stone-700 hover:bg-stone-50 border-l-4 border-transparent'
+                onClick={() => setLanguage('LTR')}
+                className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
+                  language === 'LTR' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-605 hover:text-stone-850'
                 }`}
               >
-                {e.contentType === 'Note' && <FileText className="w-4 h-4 text-stone-455" />}
-                {e.contentType === 'Essay' && <BookOpen className="w-4 h-4 text-stone-455" />}
-                {e.contentType === 'Article' && <Layers className="w-4 h-4 text-stone-455" />}
-                {e.title.replace('Canonical ', '')}
+                English LTR
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('RTL')}
+                className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
+                  language === 'RTL' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-605 hover:text-stone-850'
+                }`}
+              >
+                العربية RTL
+              </button>
+            </div>
+          </div>
+
+          {/* Right card: Metadata configuration accordions */}
+          <div className="md:col-span-8 bg-white border border-stone-200 rounded shadow-sm divide-y divide-stone-200 font-sans text-xs">
+            {/* 1. Publication Context */}
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={() => setOpenSection(openSection === 'pub' ? null : 'pub')}
+                className="w-full flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-500 font-bold select-none cursor-pointer"
+              >
+                <span>1. Publication Context</span>
+                {openSection === 'pub' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+              
+              {openSection === 'pub' && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Content Type</label>
+                    <select
+                      value={tempEntry.contentType}
+                      onChange={(e) => updateTempEntry({ contentType: e.target.value as any })}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                    >
+                      <option value="Note">Note</option>
+                      <option value="Essay">Essay</option>
+                      <option value="Article">Article</option>
+                      <option value="Notice">Notice</option>
+                      <option value="Editor's Note">Editor's Note</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Status</label>
+                    <select
+                      value={tempEntry.status}
+                      onChange={(e) => updateTempEntry({ status: e.target.value as any })}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                    >
+                      <option value="Published">Published</option>
+                      <option value="Draft">Draft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Visibility</label>
+                    <select
+                      value={tempEntry.visibility}
+                      onChange={(e) => updateTempEntry({ visibility: e.target.value as any })}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                    >
+                      <option value="Public">Public</option>
+                      <option value="Private">Private</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Author Identity */}
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={() => setOpenSection(openSection === 'author' ? null : 'author')}
+                className="w-full flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-500 font-bold select-none cursor-pointer"
+              >
+                <span>2. Author Identity</span>
+                {openSection === 'author' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {openSection === 'author' && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        value={authorName}
+                        onChange={(e) => setAuthorName(e.target.value)}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Signature Scribble</label>
+                      <input
+                        type="text"
+                        value={authorSignature}
+                        onChange={(e) => setAuthorSignature(e.target.value)}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-[#802334] font-signature text-xl focus:outline-none focus:border-[#802334]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Signature Font</label>
+                      <select
+                        value={authorSignatureFont}
+                        onChange={(e) => setAuthorSignatureFont(e.target.value)}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-850 focus:outline-none focus:border-[#802334]"
+                      >
+                        <option value="Mrs Saint Delafield">Mrs Saint Delafield</option>
+                        <option value="Alex Brush">Alex Brush</option>
+                        <option value="Monsieur La Doulaise">Monsieur La Doulaise</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Biography Context</label>
+                    <textarea
+                      value={authorBiography}
+                      onChange={(e) => setAuthorBiography(e.target.value)}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] h-28 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Publication Metadata */}
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={() => setOpenSection(openSection === 'metadata' ? null : 'metadata')}
+                className="w-full flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-500 font-bold select-none cursor-pointer"
+              >
+                <span>3. Publication Metadata</span>
+                {openSection === 'metadata' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {openSection === 'metadata' && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={tempEntry.title}
+                        onChange={(e) => updateTempEntry({ title: e.target.value })}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] font-serif"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Subtitle</label>
+                      <input
+                        type="text"
+                        value={tempEntry.subtitle || ''}
+                        onChange={(e) => updateTempEntry({ subtitle: e.target.value })}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] font-serif"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Slug</label>
+                      <input
+                        type="text"
+                        value={tempEntry.slug}
+                        onChange={(e) => updateTempEntry({ slug: e.target.value })}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 font-mono text-[11px] focus:outline-none focus:border-[#802334]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Tags (Comma Sep)</label>
+                      <input
+                        type="text"
+                        value={tempEntry.tags.join(', ')}
+                        onChange={(e) => updateTempEntry({ tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Editorial Settings */}
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={() => setOpenSection(openSection === 'editorial' ? null : 'editorial')}
+                className="w-full flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-stone-500 font-bold select-none cursor-pointer"
+              >
+                <span>4. Editorial Settings</span>
+                {openSection === 'editorial' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {openSection === 'editorial' && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Access Policy Class</label>
+                    <select
+                      value={tempEntry.publicationClass || 'Personal'}
+                      onChange={(e) => updateTempEntry({ publicationClass: e.target.value as any })}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                    >
+                      <option value="Personal">Personal (Scholar Folio)</option>
+                      <option value="Institutional">Institutional (Editorial Board)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Under Review</label>
+                    <select
+                      value={tempEntry.underReview ? 'yes' : 'no'}
+                      onChange={(e) => updateTempEntry({ underReview: e.target.value === 'yes' })}
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                    >
+                      <option value="no">Active / Normal</option>
+                      <option value="yes">Flagged / Under Review</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= SECTION 2: PRODUCTION WRITING DESK (LARGE) ================= */}
+      <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+        <div className="border-b border-stone-100 pb-3 mb-6 flex items-center justify-between">
+          <div>
+            <h4 className="font-serif text-lg font-semibold text-stone-905">Authoring Workspace</h4>
+            <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Instantiating production WritingDesk in sandbox isolation</p>
+          </div>
+          <span className="bg-[#802334]/5 text-[#802334] font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-[#802334]/25 rounded select-none font-bold">
+            Interactive Editor
+          </span>
+        </div>
+
+        <div className="w-full max-w-full">
+          <WritingDesk 
+            mode="laboratory" 
+            entry={tempEntry} 
+            onSave={(updated) => setTempEntry(updated)}
+            viewModeOverride="editor"
+            authorName={authorName}
+            authorSignature={authorSignature}
+            authorSignatureFont={authorSignatureFont}
+          />
+        </div>
+      </div>
+
+      {/* ================= SECTION 3: LIVE CONTEXT VIEWPORTS ================= */}
+      <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
+        <div className="border-b border-stone-100 pb-3 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h4 className="font-serif text-lg font-semibold text-stone-900">Live Context Viewports</h4>
+            <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Production rendering adapters for actual publication contexts</p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
+            {PUBLICATION_CONTEXTS.map(ctx => (
+              <button
+                key={ctx.id}
+                type="button"
+                onClick={() => setSelectedContextId(ctx.id)}
+                className={`px-3 py-1.5 rounded uppercase tracking-wider font-semibold border transition cursor-pointer ${
+                  selectedContextId === ctx.id
+                    ? 'bg-[#802334] text-white border-[#802334] shadow-sm'
+                    : 'bg-stone-50 text-stone-605 border-stone-200 hover:text-[#802334] hover:bg-stone-100/50'
+                }`}
+              >
+                {ctx.name}
               </button>
             ))}
           </div>
-
-          {selectedEntry && (
-            <div className="pt-2 border-t border-stone-100 space-y-3 font-sans text-xs">
-              <div>
-                <span className="block font-mono text-[8px] uppercase tracking-widest text-stone-400">Mock Scope</span>
-                <span className="font-medium text-stone-850 mt-1 block">{selectedEntry.contentType} Template</span>
-              </div>
-              <div>
-                <span className="block font-mono text-[8px] uppercase tracking-widest text-stone-400">Tags Featured</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedEntry.tags.map(t => (
-                    <span key={t} className="px-1.5 py-0.5 bg-stone-100 border border-stone-200/50 rounded text-[9px] text-stone-500 font-mono">{t}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Live Preview Panel */}
-        <div className="lg:col-span-3 space-y-4">
-           <div className="flex flex-col gap-4 border-b border-stone-200 pb-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-serif text-base font-semibold text-stone-900">Live Contextual Presentation</h4>
-              <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-250 rounded font-semibold select-none">
-                <CheckCircle className="w-3 h-3" /> Standard Conformant
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              {/* PRESENTATION CONTEXT SWITCHER TABS */}
-              <div className="flex border border-stone-200/80 rounded bg-stone-50/50 p-1 font-mono text-[9px] uppercase tracking-wider select-none overflow-x-auto whitespace-nowrap">
-                <button
-                  type="button"
-                  onClick={() => setPreviewContext('publication')}
-                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                    previewContext === 'publication'
-                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                      : 'text-stone-605 hover:text-stone-800'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5" /> 📖 Publication Page
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewContext('editor')}
-                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                    previewContext === 'editor'
-                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                      : 'text-stone-605 hover:text-stone-800'
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" /> 📝 Writing Desk (Editor)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewContext('frontpage')}
-                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                    previewContext === 'frontpage'
-                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                      : 'text-stone-605 hover:text-stone-800'
-                  }`}
-                >
-                  <Layout className="w-3.5 h-3.5" /> 🏠 Frontpage Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewContext('folio')}
-                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                    previewContext === 'folio'
-                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                      : 'text-stone-605 hover:text-stone-800'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5" /> 🗂️ Folio Timeline
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewContext('search')}
-                  className={`px-3 py-1.5 rounded transition flex items-center gap-1.5 cursor-pointer ${
-                    previewContext === 'search'
-                      ? 'bg-[#802334] text-white font-semibold shadow-sm'
-                      : 'text-stone-605 hover:text-stone-800'
-                  }`}
-                >
-                  <Search className="w-3.5 h-3.5" /> 🔍 Search Result
-                </button>
+        {/* Variant Selector Bar (If context has multiple variants) */}
+        {(() => {
+          const currentCtx = PUBLICATION_CONTEXTS.find(c => c.id === selectedContextId);
+          if (currentCtx && currentCtx.variants.length > 1) {
+            return (
+              <div className="flex items-center gap-2 mb-4 p-2 bg-stone-50 border border-stone-200/60 rounded font-sans text-xs">
+                <span className="font-mono text-[9px] text-stone-400 uppercase tracking-widest pl-1">Presentation Variant:</span>
+                {currentCtx.variants.map(v => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setSelectedVariantId(v.id)}
+                    className={`px-2.5 py-1 rounded text-xs transition cursor-pointer ${
+                      selectedVariantId === v.id
+                        ? 'bg-stone-700 text-white font-semibold'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
+                    }`}
+                  >
+                    {v.name}
+                  </button>
+                ))}
               </div>
+            );
+          }
+          return null;
+        })()}
 
-              {/* LANGUAGE SWITCHER */}
-              <div className="flex items-center gap-1.5 border border-stone-200/80 rounded bg-stone-50/50 p-1 font-mono text-[9px] uppercase tracking-wider select-none">
-                <span className="text-stone-400 font-bold px-2">Language:</span>
-                <button
-                  type="button"
-                  onClick={() => setLanguage('LTR')}
-                  className={`px-3 py-1 rounded transition cursor-pointer font-semibold ${
-                    language === 'LTR'
-                      ? 'bg-stone-700 text-white shadow-sm'
-                      : 'text-stone-605 hover:text-stone-850'
-                  }`}
-                >
-                  English (LTR)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguage('RTL')}
-                  className={`px-3 py-1 rounded transition cursor-pointer font-semibold ${
-                    language === 'RTL'
-                      ? 'bg-stone-700 text-white shadow-sm'
-                      : 'text-stone-605 hover:text-stone-850'
-                  }`}
-                >
-                  العربية (RTL)
-                </button>
+        {/* Live Viewport Output Grid Container */}
+        <div className="w-full relative mt-4">
+          {renderSelectedContext()}
+        </div>
+      </div>
+
+      {/* ================= SECTION 4: RENDERING DIAGNOSTICS ================= */}
+      <div className="bg-[#FAF8F5] border border-stone-250/75 rounded-lg p-5 shadow-sm text-left">
+        <h5 className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold border-b border-stone-200 pb-1.5 mb-3 flex items-center gap-1 select-none">
+          <ShieldAlert className="w-3.5 h-3.5" /> Rendering Diagnostics
+        </h5>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {getDiagnostics().map((d, dIdx) => (
+            <div key={dIdx} className="flex gap-2.5 items-start text-xs leading-relaxed animate-fade-in font-sans p-2.5 bg-white border border-stone-200/60 rounded">
+              {d.type === 'success' && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />}
+              {d.type === 'info' && <Check className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />}
+              {d.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />}
+              {d.type === 'error' && <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />}
+              <div>
+                <div className="font-semibold text-stone-850 flex items-center gap-1.5 select-none">
+                  {d.type.toUpperCase()}
+                  <span className="text-[9px] font-mono text-stone-400 bg-stone-100 border border-stone-200/50 px-1 rounded">
+                    {d.spec}
+                  </span>
+                </div>
+                <div className="text-stone-605 text-[11px] mt-0.5">{d.msg}</div>
               </div>
             </div>
-          </div>
-
-          {selectedEntry ? (
-            <div className="animate-fade-in">
-              {renderContextPreview()}
-            </div>
-          ) : (
-            <div className="p-12 text-center text-stone-400 italic font-serif">
-              Select a canonical template to view its live presentation.
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </div>

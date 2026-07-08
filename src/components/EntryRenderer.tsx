@@ -9,6 +9,7 @@ import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 import { db } from '../db/mockDb';
 import { useAppContext } from '../context/AppContext';
+import { PresentationSpec, getPresentationSpec } from '../presentation';
 
 interface EntryRendererProps {
   entry: Entry;
@@ -22,6 +23,7 @@ interface EntryRendererProps {
   authorSignatureFont?: string;
   authorDigitalSignature?: DigitalSignature;
   preventScrollToTop?: boolean;
+  presentationSpec?: PresentationSpec;
 }
 
 function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir, id, onContextMenu }: any) {
@@ -73,7 +75,8 @@ export function EntryRenderer({
   authorSignatureStrokes,
   authorSignatureFont,
   authorDigitalSignature,
-  preventScrollToTop
+  preventScrollToTop,
+  presentationSpec
 }: EntryRendererProps) {
   const { currentUser, refreshDbState } = useAppContext();
   const [title, setTitle] = useState(entry.title || '');
@@ -90,6 +93,7 @@ export function EntryRenderer({
   const [featuredImage, setFeaturedImage] = useState(entry.featuredImage || '');
   const [revisions, setRevisions] = useState<Revision[]>(entry.revisions || []);
   const [showXmlView, setShowXmlView] = useState(false);
+  const activeSpec = presentationSpec || getPresentationSpec(contentType);
   const [citations, setCitations] = useState<Citation[]>(entry.citations || []);
   const [referenceSortOrder, setReferenceSortOrder] = useState<'alphabetical' | 'appearance'>(entry.referenceSortOrder || 'alphabetical');
 
@@ -171,6 +175,7 @@ export function EntryRenderer({
 
   const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
   const [marginOffsets, setMarginOffsets] = useState<Record<string, number>>({});
+  const [activeMarginNoteId, setActiveMarginNoteId] = useState<string | null>(null);
   const [selectionRange, setSelectionRange] = useState<Range | null>(null);
   const [toolbarCoords, setToolbarCoords] = useState<{ x: number; y: number } | null>(null);
   const [contextCoords, setContextCoords] = useState<{ x: number; y: number } | null>(null);
@@ -406,6 +411,7 @@ export function EntryRenderer({
     } else {
       updatedMarginNotesData = { ...marginNotesData, [id]: 'New margin note content.' };
       setMarginNotesData(updatedMarginNotesData);
+      setActiveMarginNoteId(id);
     }
 
     setContextRange(null);
@@ -550,11 +556,11 @@ export function EntryRenderer({
     }
   }, [content, mode]);
 
-  // Update margin offsets dynamically
+  // Update margin offsets dynamically with collision avoidance
   useEffect(() => {
     const updateOffsets = () => {
       const { occurrences } = getMarginNotesReadingOrderMap();
-      const offsets: Record<string, number> = {};
+      const rawOffsets: Record<string, number> = {};
       const containerEl = document.getElementById('article-container-grid');
       if (!containerEl) return;
       const containerRect = containerEl.getBoundingClientRect();
@@ -563,10 +569,36 @@ export function EntryRenderer({
         const markerEl = document.getElementById(`mn-marker-${id}`) || document.querySelector(`.margin-note-badge[data-id="${id}"]`);
         if (markerEl) {
           const markerRect = markerEl.getBoundingClientRect();
-          offsets[id] = markerRect.top - containerRect.top;
+          rawOffsets[id] = markerRect.top - containerRect.top;
         }
       });
-      setMarginOffsets(offsets);
+
+      // Sort occurrences by natural top position
+      const sortedIds = [...occurrences].sort((a, b) => (rawOffsets[a] || 0) - (rawOffsets[b] || 0));
+      
+      const resolvedOffsets: Record<string, number> = {};
+      let lastBottom = 0;
+      
+      sortedIds.forEach((id) => {
+        const naturalTop = rawOffsets[id] || 0;
+        const noteEl = document.getElementById(`mn-note-card-${id}`);
+        let noteHeight = 45; // Default view mode estimate
+        
+        if (noteEl) {
+          noteHeight = noteEl.getBoundingClientRect().height;
+        } else if (mode === 'edit') {
+          noteHeight = id === activeMarginNoteId ? 130 : 38;
+        }
+        
+        let resolvedTop = naturalTop;
+        if (resolvedTop < lastBottom) {
+          resolvedTop = lastBottom + 8; // Collapsible spacing
+        }
+        resolvedOffsets[id] = resolvedTop;
+        lastBottom = resolvedTop + noteHeight;
+      });
+
+      setMarginOffsets(resolvedOffsets);
     };
 
     updateOffsets();
@@ -578,7 +610,7 @@ export function EntryRenderer({
       clearTimeout(timeout2);
       window.removeEventListener('resize', updateOffsets);
     };
-  }, [content, marginNotesData, mode]);
+  }, [content, marginNotesData, mode, activeMarginNoteId]);
 
   // Floating selection-formatting toolbar states
   const [selectionState, setSelectionState] = useState<{
@@ -2315,7 +2347,7 @@ export function EntryRenderer({
         return (
           <p
             key={idx}
-            className="leading-relaxed text-left text-[15.5px] md:text-[16.5px] text-[#111111] whitespace-pre-wrap relative overflow-visible font-serif"
+            className={`leading-relaxed text-left text-[15.5px] md:text-[16.5px] whitespace-pre-wrap relative overflow-visible ${activeSpec.typography.bodyFont}`}
           >
             <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
               {firstLetter}
@@ -2331,10 +2363,10 @@ export function EntryRenderer({
       <p
         key={idx}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`leading-relaxed text-[15px] md:text-base whitespace-pre-wrap relative overflow-visible ${
+        className={`leading-relaxed whitespace-pre-wrap relative overflow-visible ${
           isAr 
             ? 'font-arabic text-right text-lg leading-loose' 
-            : 'font-serif text-left text-[#111111]'
+            : `${activeSpec.typography.bodyFont} text-left text-[15px] md:text-base`
         }`}
         style={undefined}
       >
@@ -3073,7 +3105,7 @@ export function EntryRenderer({
               triggerSave(val, footnotes, marginNotes);
             }}
             placeholder="Write your raw Markdown or structured XML markup here..."
-            className="w-full min-h-[550px] bg-stone-50/40 hover:bg-stone-50/70 focus:bg-white border border-stone-200/85 focus:border-Adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
+            className="w-full min-h-[180px] bg-stone-50/40 hover:bg-stone-50/70 focus:bg-white border border-stone-200/85 focus:border-Adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
           />
 
           {contentType === 'Article' && (
@@ -3081,33 +3113,40 @@ export function EntryRenderer({
               <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-4">
                 Article Margin Notes Registry (Source Mode)
               </h4>
-              <div className="space-y-4">
-                {paragraphs.map((para, index) => {
-                  const previewText = para.substring(0, 80) + (para.length > 80 ? '...' : '');
-                  return (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
-                      <div className="md:col-span-4 font-mono text-[10px] text-stone-500">
-                        <span className="font-bold text-Adjung-maroon">Block #{index + 1}</span>
-                        <p className="font-serif italic text-stone-400 mt-1 line-clamp-2">{previewText}</p>
-                      </div>
-                      <div className="md:col-span-8">
-                        <textarea
-                          value={marginNotes[index] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updatedNotes = { ...marginNotes, [index]: val };
-                            setMarginNotes(updatedNotes);
-                            triggerSave(content, footnotes, updatedNotes);
-                          }}
-                          placeholder="Side note for this block..."
-                          rows={1}
-                          className="w-full bg-white border border-stone-200 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
+                if (occurrences.length === 0) {
+                  return <p className="text-xs text-stone-400 italic select-none">No margin notes registered yet. Insert [^mn-1], [^mn-2], etc. inside the source text.</p>;
+                }
+                return (
+                  <div className="space-y-4">
+                    {occurrences.map((id) => {
+                      return (
+                        <div key={id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
+                          <div className="md:col-span-4 font-mono text-[10px] text-stone-500 select-none">
+                            <span className="font-bold text-Adjung-maroon">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
+                            <p className="font-mono text-stone-400 mt-1 select-all">[^ {id}]</p>
+                          </div>
+                          <div className="md:col-span-8">
+                            <textarea
+                              value={marginNotesData[id] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = { ...marginNotesData, [id]: val };
+                                setMarginNotesData(updated);
+                                triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
+                              }}
+                              placeholder="Side note description text..."
+                              rows={2}
+                              className="w-full bg-white border border-stone-200 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-750"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -3308,18 +3347,15 @@ export function EntryRenderer({
   const renderPublishedContent = () => {
     const isArticle = contentType === 'Article';
     const isNote = contentType === 'Note';
-    const isEssay = contentType === 'Essay';
 
     const isArContent = isArabicText(entry.content);
-    const containerClass = isNote
-      ? `max-w-2xl mx-auto px-6 py-8 md:px-10 md:py-10 bg-[#FAF8F5] border border-stone-200/60 rounded-lg shadow-md relative overflow-visible text-[#3D2E2B] ${
-          isArContent ? 'text-right' : 'text-left'
-        }`
-      : (isEssay
-          ? 'max-w-3xl mx-auto px-6 py-10 md:px-12 md:py-14 bg-white border border-[#EAE8E3] rounded-md shadow-sm text-left font-serif relative overflow-visible text-[#111111]'
-          : `max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible ${
-              isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
-            }`);
+    const containerClass = `${activeSpec.spacing.canvasMaxWidth} mx-auto ${activeSpec.spacing.canvasPadding} bg-white border border-stone-200/50 rounded-md shadow-sm relative overflow-visible ${
+      isArContent ? 'text-right' : 'text-left'
+    } ${
+      contentType === 'Note' ? 'bg-[#FAF8F5] text-[#3D2E2B]' : 'text-[#111111]'
+    } ${
+      isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
+    }`;
 
     return (
       <motion.article
@@ -3339,8 +3375,8 @@ export function EntryRenderer({
         )}
 
         {/* Header Block */}
-        {!isNote ? (
-          <header className="mb-10 border-b border-stone-200/70 pb-6">
+        {activeSpec.visibility.showTitle ? (
+          <header className={activeSpec.spacing.headerBottomMargin}>
             {/* Metadata Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
               <div className="flex items-center gap-1.5">
@@ -3487,7 +3523,7 @@ export function EntryRenderer({
         )}
 
         {/* Excerpt Abstract Block */}
-        {contentType !== 'Note' && excerpt && (
+        {activeSpec.visibility.showAbstract && excerpt && (
           <div className="mb-8 border-l-2 border-Adjung-maroon/20 pl-4 py-1 text-stone-500 font-serif italic text-sm md:text-[15px] leading-relaxed text-left animate-fade-in">
             {excerpt}
           </div>
@@ -3571,7 +3607,7 @@ export function EntryRenderer({
                   }}
                   placeholder="Begin writing your manuscript here... Right-click to insert Footnotes and Margin Notes."
                   onContextMenu={handleContextMenu}
-                  className="w-full min-h-[450px] bg-transparent border-none focus:outline-none resize-none font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111] outline-none"
+                  className="w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-none font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111] outline-none"
                 />
               </div>
             ) : (
@@ -3630,17 +3666,43 @@ export function EntryRenderer({
                 if (mode === 'edit') {
                   return occurrences.map((id) => {
                     const top = marginOffsets[id] !== undefined ? marginOffsets[id] : 0;
+                    const isExpanded = id === activeMarginNoteId;
+                    
+                    if (!isExpanded) {
+                      return (
+                        <div 
+                          id={`mn-note-card-${id}`}
+                          key={id}
+                          style={{ position: 'absolute', top: `${top}px`, left: 0 }}
+                          onClick={() => setActiveMarginNoteId(id)}
+                          className="border-l-2 border-stone-250 hover:border-Adjung-maroon/50 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center justify-between text-[8px] font-mono text-stone-400">
+                            <span className="uppercase font-semibold text-stone-500">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
+                            <span className="text-[7.5px] uppercase tracking-wider text-Adjung-maroon font-medium font-mono animate-pulse opacity-75">● click to edit</span>
+                          </div>
+                          <p className="text-xs font-serif text-stone-500 truncate pr-2 mt-0.5 italic">
+                            {marginNotesData[id] || 'Empty side note...'}
+                          </p>
+                        </div>
+                      );
+                    }
+                    
                     return (
                       <div 
+                        id={`mn-note-card-${id}`}
                         key={id}
                         style={{ position: 'absolute', top: `${top}px`, left: 0 }}
-                        className="border-l-2 border-Adjung-maroon/20 pl-4 py-1 text-left w-full space-y-1 transition-all duration-300 animate-fade-in"
+                        className="border-l-2 border-Adjung-maroon pl-4 py-1 text-left w-full space-y-1 transition-all duration-300 animate-fade-in bg-[#802334]/5 rounded-r"
                       >
                         <div className="flex items-center justify-between text-[8px] font-mono text-stone-400 select-none">
-                          <span className="uppercase">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
+                          <span className="uppercase text-Adjung-maroon font-bold">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
                           <button 
                             type="button" 
-                            onClick={() => deleteNote(id, 'margin-note')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNote(id, 'margin-note');
+                            }}
                             className="hover:text-red-650 text-[10px]"
                           >
                             × delete
@@ -3648,6 +3710,7 @@ export function EntryRenderer({
                         </div>
                         <textarea
                           value={marginNotesData[id] || ''}
+                          onFocus={() => setActiveMarginNoteId(id)}
                           onChange={(e) => {
                             const val = e.target.value;
                             const updated = { ...marginNotesData, [id]: val };
@@ -3655,8 +3718,9 @@ export function EntryRenderer({
                             triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
                           }}
                           placeholder="Add side margin note here..."
-                          rows={2}
-                          className="w-full bg-white border border-stone-200 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
+                          rows={3}
+                          autoFocus
+                          className="w-full bg-white border border-Adjung-maroon/20 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed shadow-sm"
                         />
                       </div>
                     );
@@ -3666,6 +3730,7 @@ export function EntryRenderer({
                     const top = marginOffsets[id] !== undefined ? marginOffsets[id] : 0;
                     return (
                       <div 
+                        id={`mn-note-card-${id}`}
                         key={id}
                         style={{ position: 'absolute', top: `${top}px`, left: 0 }}
                         className="border-l border-stone-300 pl-4 py-0.5 text-left text-stone-600 font-serif text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in"
@@ -3685,7 +3750,7 @@ export function EntryRenderer({
         
         {/* Signature Closure */}
         {/* Signature Closure */}
-        {status === 'Published' && entry.isInstitutional && !isNote && (
+        {status === 'Published' && entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 border-t border-stone-200 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
              <span className="w-2 h-2 bg-[#802334] rotate-45 mb-4"></span>
              <div className="font-serif text-stone-900 tracking-wide text-lg">Adjung Editorial Board</div>
@@ -3694,7 +3759,7 @@ export function EntryRenderer({
              </div>
           </div>
         )}
-        {status === 'Published' && !entry.isInstitutional && !isNote && (
+        {status === 'Published' && !entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
             <div className="w-16 h-[1px] bg-stone-300 absolute top-0 mt-[-1px] mb-8"></div>
             
@@ -3799,7 +3864,7 @@ export function EntryRenderer({
         )}
 
         {/* Footnotes Section */}
-        {(contentType === 'Essay' || contentType === 'Article') && (
+        {activeSpec.visibility.showFootnotes && (
           <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
@@ -3896,7 +3961,7 @@ export function EntryRenderer({
         )}
 
         {/* References & Bibliography */}
-        {citations.length > 0 && (
+        {activeSpec.visibility.showCitations && citations.length > 0 && (
           <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
@@ -3965,7 +4030,7 @@ export function EntryRenderer({
           </div>
         )}
 
-        {isNote && (
+        {activeSpec.visibility.showNoteFooter && (
           <footer 
             className={`mt-8 pt-4 border-t border-stone-200/40 flex items-center justify-between text-base text-stone-500 select-none ${
               isArContent ? 'flex-row-reverse text-right' : 'flex-row text-left font-sans'
@@ -4728,7 +4793,7 @@ export function EntryRenderer({
                     triggerSave(val, footnotes, marginNotes);
                   }}
                   placeholder="Begin writing your manuscript here... Standard markdown markers are fully compiled in-canvas."
-                  className="w-full min-h-[450px] bg-transparent border-none focus:outline-none resize-y font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111]"
+                  className="w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-y font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111]"
                 />
 
                 {/* Lightweight insert popover trigger at the bottom of the textarea */}
