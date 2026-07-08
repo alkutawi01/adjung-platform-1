@@ -322,6 +322,7 @@ export default function App() {
   
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
+  const [isRouteSynced, setIsRouteSynced] = useState(false);
 
   // Synchronize browser title with central brand identity on mount
   useEffect(() => {
@@ -472,9 +473,9 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeTab, selectedEntry, selectedAuthorId]);
 
-  // Two-way browser URL path Synchronization
+  // Synchronize state-to-URL (pushState adapter)
   useEffect(() => {
-    if (initializing) return;
+    if (initializing || !isRouteSynced) return;
 
     // Handle subdomain override logic
     if (authorFromSubdomain) {
@@ -723,6 +724,7 @@ export default function App() {
         }
       }
     }
+    setIsRouteSynced(true);
   }, [location.pathname, currentUser, entries, initializing, authorFromSubdomain]);
 
   // Initialize selected writer edit fields when selection changes
