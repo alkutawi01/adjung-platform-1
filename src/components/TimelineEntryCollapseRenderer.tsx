@@ -57,7 +57,7 @@ export function TimelineEntryCollapseRenderer({
   const renderSingleBlock = (block: any, pIdx: number) => {
     if (block.type === 'heading') {
       const isAr = isArabicText(block.text);
-      const textNode = parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
+      const textNode = parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
       if (block.level === 1) {
         return (
           <h3 
@@ -89,7 +89,7 @@ export function TimelineEntryCollapseRenderer({
       const listItems = block.items.slice(0, 3).map((item: any, itemIdx: number) => {
         const isAr = isArabicText(item.text);
         const isChecklist = item.checked !== undefined;
-        const textNode = parseInlineFormatting(item.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
+        const textNode = parseInlineFormatting(item.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap);
         if (isChecklist) {
           return (
             <li 
@@ -178,12 +178,12 @@ export function TimelineEntryCollapseRenderer({
       return (
         <blockquote key={pIdx} className="my-4 pr-4 border-r border-Adjung-maroon/20 text-right bg-transparent">
           <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
-            {parseInlineFormatting(block.arabic, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
+            {parseInlineFormatting(block.arabic, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
           {block.translation && (
             <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
               <p className="font-serif italic text-xs text-stone-500">
-                {parseInlineFormatting(block.translation, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
+                {parseInlineFormatting(block.translation, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
               </p>
             </div>
           )}
@@ -202,7 +202,7 @@ export function TimelineEntryCollapseRenderer({
             : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
         }`}
       >
-        {parseInlineFormatting(block.text, [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
+        {parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
       </p>
     );
   };
@@ -223,6 +223,18 @@ export function TimelineEntryCollapseRenderer({
         {isExpanded ? (
           <div className="space-y-3 animate-fade-in">
             {contentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
+            {item.citations && item.citations.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-stone-200/50 text-[10px] text-stone-500 font-sans text-left">
+                <span className="font-semibold uppercase tracking-wider block mb-1">References & Bibliography:</span>
+                <ul className="list-disc pl-4 space-y-1">
+                  {item.citations.map((cit) => (
+                    <li key={cit.id} className="text-left font-serif">
+                      <strong className="font-sans font-medium text-stone-700">{cit.author}</strong> ({cit.year}). "{cit.title}." <em>{cit.publisher}</em>.
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {exceedsLimit && (
               <button
                 type="button"
