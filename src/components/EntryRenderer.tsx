@@ -2331,12 +2331,14 @@ export function EntryRenderer({
         dir={isAr ? 'rtl' : 'ltr'}
         className={`leading-relaxed text-[15px] md:text-base whitespace-pre-wrap relative overflow-visible ${
           isAr 
-            ? 'font-arabic text-right text-lg leading-loose' 
+            ? (isNote 
+                ? 'font-arabic-handwritten text-right text-lg md:text-xl text-stone-900 leading-loose' 
+                : 'font-arabic text-right text-lg leading-loose')
             : (isNote 
                 ? 'font-handwritten text-left text-lg md:text-xl text-stone-900 font-medium' 
                 : 'font-serif text-left text-[#111111]')
         }`}
-        style={isNote && !isAr ? { fontFamily: 'var(--font-handwritten)' } : undefined}
+        style={isNote ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } : undefined}
       >
         {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
         {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
