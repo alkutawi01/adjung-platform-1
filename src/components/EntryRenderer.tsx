@@ -3685,7 +3685,7 @@ export function EntryRenderer({
         
         {/* Signature Closure */}
         {/* Signature Closure */}
-        {status === 'Published' && entry.isInstitutional && (
+        {status === 'Published' && entry.isInstitutional && !isNote && (
           <div className="mt-16 pt-12 border-t border-stone-200 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
              <span className="w-2 h-2 bg-[#802334] rotate-45 mb-4"></span>
              <div className="font-serif text-stone-900 tracking-wide text-lg">Adjung Editorial Board</div>
@@ -3694,7 +3694,7 @@ export function EntryRenderer({
              </div>
           </div>
         )}
-        {status === 'Published' && !entry.isInstitutional && (
+        {status === 'Published' && !entry.isInstitutional && !isNote && (
           <div className="mt-16 pt-12 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
             <div className="w-16 h-[1px] bg-stone-300 absolute top-0 mt-[-1px] mb-8"></div>
             
