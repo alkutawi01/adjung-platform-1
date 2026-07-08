@@ -127,7 +127,13 @@ export function markdownToHtml(md: string): string {
     .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '<a href="$2">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+      if (url.startsWith('gloss:')) {
+        const glossVal = url.substring(6);
+        return `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span>${label}</span>`;
+      }
+      return `<a href="${url}">${label}</a>`;
+    });
 }
 
 export function htmlToMarkdown(html: string): string {
@@ -158,6 +164,7 @@ export function htmlToMarkdown(html: string): string {
     .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
     .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
     .replace(/<u[^>]*>(.*?)<\/u>/gi, '++$1++')
+    .replace(/<span[^>]*class="interlinear-word"[^>]*><span[^>]*class="interlinear-gloss"[^>]*>(.*?)<\/span>(.*?)<\/span>/gi, '[$2](gloss:$1)')
     .replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
     .replace(/<[^>]+>/g, '')
     .replace(/\n\n\n+/g, '\n\n')
@@ -391,6 +398,143 @@ export function toRoman(num: number): string {
  * Replaces Markdown styles with clean inline HTML/React elements without leakage.
  * Processes footers, citations and inline elements recursively and safely.
  */
+function renderPartNode(
+  part: any,
+  citations: Citation[],
+  sortOrder: 'alphabetical' | 'appearance',
+  citationsMap: { [id: string]: number },
+  footnotesMap: Record<string, number>,
+  crossRefMap: Record<string, string>,
+  citationStyle: string,
+  marginNotesMap: Record<string, number>
+): React.ReactNode {
+  if (part.type === 'fn-stable') {
+    let num: number | string | undefined = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`];
+    if (!num) {
+      num = part.content.startsWith('fn-legacy-') ? part.content.replace('fn-legacy-', '') : '?';
+    }
+    return (
+      <span
+        key={part.key}
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        id={`fnref-${part.content}`}
+        title={`Jump to footnote ${num}`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = document.getElementById(`footnote-dest-${part.content}`);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.remove('footnote-dest-flash');
+            void target.offsetWidth;
+            target.classList.add('footnote-dest-flash');
+            setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
+          }
+        }}
+      >
+        ({num})
+      </span>
+    );
+  }
+
+  if (part.type === 'fn-legacy') {
+    const num = footnotesMap[part.content] || part.content;
+    return (
+      <span
+        key={part.key}
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        id={`fnref-legacy-${part.content}`}
+        title={`Jump to footnote ${num}`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = document.getElementById(`footnote-dest-legacy-${part.content}`);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.remove('footnote-dest-flash');
+            void target.offsetWidth;
+            target.classList.add('footnote-dest-flash');
+            setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
+          }
+        }}
+      >
+        ({num})
+      </span>
+    );
+  }
+
+  if (part.type === 'mn-stable') {
+    const num = marginNotesMap[part.content] || '?';
+    const roman = typeof num === 'number' ? toRoman(num).toLowerCase() : num;
+    return (
+      <span 
+        key={part.key}
+        id={`mn-marker-${part.content}`}
+        className="margin-note-ref text-[10px] font-medium align-super select-none text-Adjung-maroon font-sans px-0.5 cursor-default"
+        title={`Margin Note ${roman}`}
+      >
+        ({roman})
+      </span>
+    );
+  }
+
+  if (part.type === 'cite') {
+    const citation = citations.find(c => c.id === part.content);
+    if (!citation) {
+      return <span key={part.key} className="text-red-500 font-mono text-xs">[cite-error]</span>;
+    }
+    
+    const stylePlugin = citationStyleRegistry.get(citationStyle) || HarvardStylePlugin;
+    const index = citationsMap[citation.id] || 1;
+    const label = stylePlugin.formatCitation(citation, index, sortOrder);
+    
+    return (
+      <span
+        key={part.key}
+        className="citation-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
+        title={`${citation.author} (${citation.year}) - ${citation.title}`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = document.getElementById(`reference-${citation.id}`);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }}
+      >
+        {label}
+      </span>
+    );
+  }
+
+  if (part.type === 'cross-ref') {
+    const [refType, refId] = part.content.split(':');
+    let label = '';
+    if (refType === 'fn') {
+      const num = footnotesMap[refId] || footnotesMap[`fn-${refId}`] || '?';
+      label = `Footnote ${num}`;
+    } else {
+      label = crossRefMap[refId] || `${refType.charAt(0).toUpperCase() + refType.slice(1)} ?`;
+    }
+    return (
+      <span
+        key={part.key}
+        className="cross-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 cursor-pointer"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = document.getElementById(`ref-${refId}`);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }}
+      >
+        {label}
+      </span>
+    );
+  }
+
+  const subText = part.content;
+  const tokens = tokenize(subText);
+  return parseTokens(tokens, part.key);
+}
+
 export function parseInlineFormatting(
   text: string,
   citations: Citation[] = [],
@@ -408,7 +552,6 @@ export function parseInlineFormatting(
   let match;
   let keyIdx = 0;
 
-  // reset regex state
   UNIFIED_REGEX.lastIndex = 0;
   while ((match = UNIFIED_REGEX.exec(text)) !== null) {
     const index = match.index;
@@ -447,138 +590,58 @@ export function parseInlineFormatting(
     parts.push({ type: 'text', content: text, key: 'txt-all' });
   }
 
-  return parts.map((part) => {
+  const nodes: React.ReactNode[] = [];
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    
     if (part.type === 'text') {
-      return <React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>;
-    }
-    if (part.type === 'fn-stable') {
-      let num: number | string | undefined = footnotesMap[part.content] || footnotesMap[`fn-${part.content}`];
-      if (!num) {
-        num = part.content.startsWith('fn-legacy-') ? part.content.replace('fn-legacy-', '') : '?';
-      }
-      return (
-        <span
-          key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
-          id={`fnref-${part.content}`}
-          title={`Jump to footnote ${num}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = document.getElementById(`footnote-dest-${part.content}`);
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              target.classList.remove('footnote-dest-flash');
-              // Trigger reflow to restart animation if clicked repeatedly
-              void target.offsetWidth;
-              target.classList.add('footnote-dest-flash');
-              setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
-            }
-          }}
-        >
-          ({num})
-        </span>
-      );
-    }
-
-    if (part.type === 'fn-legacy') {
-      const num = footnotesMap[part.content] || part.content;
-      return (
-        <span
-          key={part.key}
-          className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
-          id={`fnref-legacy-${part.content}`}
-          title={`Jump to footnote ${num}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = document.getElementById(`footnote-dest-legacy-${part.content}`);
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              target.classList.remove('footnote-dest-flash');
-              // Trigger reflow to restart animation if clicked repeatedly
-              void target.offsetWidth;
-              target.classList.add('footnote-dest-flash');
-              setTimeout(() => target.classList.remove('footnote-dest-flash'), 2500);
-            }
-          }}
-        >
-          ({num})
-        </span>
-      );
-    }
-
-    if (part.type === 'mn-stable') {
-      const num = marginNotesMap[part.content] || '?';
-      const roman = typeof num === 'number' ? toRoman(num).toLowerCase() : num;
-      return (
-        <span 
-          key={part.key}
-          id={`mn-marker-${part.content}`}
-          className="margin-note-ref text-[10px] font-medium align-super select-none text-Adjung-maroon font-sans px-0.5 cursor-default"
-          title={`Margin Note ${roman}`}
-        >
-          ({roman})
-        </span>
-      );
-    }
-
-    if (part.type === 'cite') {
-      const citation = citations.find(c => c.id === part.content);
-      if (!citation) {
-        return <span key={part.key} className="text-red-500 font-mono text-xs">[cite-error]</span>;
-      }
+      const nextPart = parts[i + 1];
+      const isNextBadge = nextPart && (nextPart.type === 'fn-stable' || nextPart.type === 'fn-legacy' || nextPart.type === 'mn-stable');
       
-      const stylePlugin = citationStyleRegistry.get(citationStyle) || HarvardStylePlugin;
-      const index = citationsMap[citation.id] || 1;
-      const label = stylePlugin.formatCitation(citation, index, sortOrder);
-      
-      return (
-        <span
-          key={part.key}
-          className="citation-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
-          title={`${citation.author} (${citation.year}) - ${citation.title}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = document.getElementById(`reference-${citation.id}`);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-        >
-          {label}
-        </span>
-      );
-    }
-
-    if (part.type === 'cross-ref') {
-      const [refType, refId] = part.content.split(':');
-      let label = '';
-      if (refType === 'fn') {
-        const num = footnotesMap[refId] || footnotesMap[`fn-${refId}`] || '?';
-        label = `Footnote ${num}`;
+      if (isNextBadge) {
+        const textContent = part.content;
+        const lastWordMatch = textContent.match(/(\s+)([^\s]+)\s*$/);
+        
+        if (lastWordMatch) {
+          const lastWord = lastWordMatch[2];
+          const lastWordIndex = textContent.lastIndexOf(lastWord);
+          const mainText = textContent.substring(0, lastWordIndex);
+          
+          nodes.push(
+            <React.Fragment key={part.key}>
+              {parseTokens(tokenize(mainText))}
+            </React.Fragment>
+          );
+          
+          const badgeNode = renderPartNode(nextPart, citations, sortOrder, citationsMap, footnotesMap, crossRefMap, citationStyle, marginNotesMap);
+          nodes.push(
+            <span key={`nowrap-${part.key}`} className="inline-block whitespace-nowrap">
+              {parseTokens(tokenize(lastWord))}
+              {badgeNode}
+            </span>
+          );
+          
+          i++;
+        } else {
+          const badgeNode = renderPartNode(nextPart, citations, sortOrder, citationsMap, footnotesMap, crossRefMap, citationStyle, marginNotesMap);
+          nodes.push(
+            <span key={`nowrap-${part.key}`} className="inline-block whitespace-nowrap">
+              {parseTokens(tokenize(textContent))}
+              {badgeNode}
+            </span>
+          );
+          i++;
+        }
       } else {
-        label = crossRefMap[refId] || `${refType.charAt(0).toUpperCase() + refType.slice(1)} ?`;
+        nodes.push(<React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>);
       }
-      return (
-        <span
-          key={part.key}
-          className="cross-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = document.getElementById(`ref-${refId}`);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-        >
-          {label}
-        </span>
-      );
+    } else {
+      nodes.push(renderPartNode(part, citations, sortOrder, citationsMap, footnotesMap, crossRefMap, citationStyle, marginNotesMap));
     }
+  }
 
-    const subText = part.content;
-    const tokens = tokenize(subText);
-    return parseTokens(tokens, part.key);
-  });
+  return nodes;
 }
 
 /**

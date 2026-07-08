@@ -41,7 +41,7 @@ import { LandingView } from './components/LandingView';
 import { NoticesView } from './components/NoticesView';
 import { EditorialNotesView } from './components/EditorialNotesView';
 import { ChangelogView } from './components/ChangelogView';
-import { ArchitectureStudio } from './components/ArchitectureStudio';
+import { PhilosophyCarousel } from './components/PhilosophyCarousel';
 
 import { WritingDesk } from './components/WritingDesk';
 import { EditorialIndex } from './components/EditorialIndex';
@@ -49,7 +49,6 @@ import { Editorium } from './components/Editorium';
 import { Directory } from './components/Directory';
 import { IdentityStudio } from './components/IdentityStudio';
 import { LoadingScreen } from './components/LoadingScreen';
-import { PhilosophyCarousel } from './components/PhilosophyCarousel';
 import { ElasticMarginRow } from './components/ElasticMarginRow';
 import { AnimatedSignature } from './components/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
@@ -273,7 +272,7 @@ export default function App() {
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies' | 'architecture'>('landing');
+  const [activeTab, setActiveTab] = useState<'landing' | 'frontpage' | 'folio' | 'bio' | 'directory' | 'desk' | 'index' | 'editorium' | 'identity' | 'notices' | 'editorial' | 'changelog' | 'policies'>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   
   // Note inline expansion state
@@ -463,7 +462,7 @@ export default function App() {
   } | null>(null);
 
   // Editorium Sub-navigation and Search States
-  const [editoriumActiveTab, setEditoriumActiveTab] = useState<'settings' | 'writers'>('writers');
+  const [editoriumActiveTab, setEditoriumActiveTab] = useState<'platform' | 'frontpage' | 'directory' | 'index' | 'editorial' | 'users' | 'roles' | 'moderation' | 'system' | 'dangerZone' | 'architecture' | 'reference-library'>('platform');
   
   const [editoriumSearchQuery, setEditoriumSearchQuery] = useState('');
   const [frontpageSearchQuery, setFrontpageSearchQuery] = useState('');
@@ -554,7 +553,7 @@ export default function App() {
       else if (activeTab === 'frontpage') newHash = '#/frontpage';
       else if (activeTab === 'directory') newHash = '#/directory';
       else if (activeTab === 'index') newHash = '#/index';
-      else if (activeTab === 'editorium') newHash = '#/editorium';
+      else if (activeTab === 'editorium') newHash = `#/editorium/${editoriumActiveTab}`;
       else if (activeTab === 'desk') newHash = '#/desk';
       else if (activeTab === 'folio') newHash = `#/folio/${selectedAuthorId || ''}`;
       else if (activeTab === 'bio') newHash = `#/bio/${selectedAuthorId || ''}`;
@@ -563,13 +562,12 @@ export default function App() {
       else if (activeTab === 'editorial') newHash = '#/editorial';
       else if (activeTab === 'changelog') newHash = '#/changelog';
       else if (activeTab === 'policies') newHash = '#/policies';
-      else if (activeTab === 'architecture') newHash = '#/architecture';
     }
 
     if (window.location.hash !== newHash) {
       window.location.hash = newHash;
     }
-  }, [activeTab, selectedAuthorId, selectedEntry, editingEntry, initializing]);
+  }, [activeTab, selectedAuthorId, selectedEntry, editingEntry, initializing, editoriumActiveTab]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -616,6 +614,11 @@ export default function App() {
         setActiveTab('editorium');
         setSelectedEntry(null);
         setEditingEntry(null);
+        if (parts[1]) {
+          setEditoriumActiveTab(parts[1] as any);
+        } else {
+          setEditoriumActiveTab('platform');
+        }
       } else if (route === 'desk') {
         setActiveTab('desk');
         setSelectedEntry(null);
@@ -672,10 +675,6 @@ export default function App() {
         setEditingEntry(null);
       } else if (route === 'policies') {
         setActiveTab('policies');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'architecture') {
-        setActiveTab('architecture');
         setSelectedEntry(null);
         setEditingEntry(null);
       } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
@@ -2272,6 +2271,8 @@ Editorial Board of Adjung`;
             setActiveTab={setActiveTab}
             setSelectedEntry={setSelectedEntry}
             setEditingEntry={setEditingEntry}
+            editoriumActiveTab={editoriumActiveTab}
+            setEditoriumActiveTab={setEditoriumActiveTab}
           />
         )}
 
@@ -2290,12 +2291,7 @@ Editorial Board of Adjung`;
           <ChangelogView />
         )}
 
-        {/* ACTIVE MODULE: ARCHITECTURE STUDIO */}
-        {activeTab === 'architecture' && (
-          <div className="py-8 w-full max-w-7xl mx-auto px-4">
-             <ArchitectureStudio />
-          </div>
-        )}
+
 
         {/* ACTIVE MODULE: POLICIES */}
         {activeTab === 'policies' && (
@@ -2753,7 +2749,6 @@ Editorial Board of Adjung`;
             <ul className="space-y-2 font-sans text-xs text-stone-600">
               <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">About Adjung</button></li>
               <li><button onClick={() => { setActiveTab('directory'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
-              <li><button onClick={() => { setActiveTab('architecture'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Architecture Studio</button></li>
             </ul>
           </div>
         </div>

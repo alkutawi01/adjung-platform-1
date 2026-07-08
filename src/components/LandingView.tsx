@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry, SystemSettings } from '../types';
-import { parseInlineFormatting, toRoman } from '../utils';
+import { parseInlineFormatting, toRoman, markdownToHtml } from '../utils';
 import { PhilosophyCarousel } from './PhilosophyCarousel';
 import { ElasticMarginRow } from './ElasticMarginRow';
 import { AnimatedSignature } from './AnimatedSignature';
@@ -27,11 +27,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
 }) => {
   const manifestoEntry = entries.find((e) => e.id === 'entry-manifesto');
 
-  const renderManifestoParagraph = (text: string, idx: number) => {
-    const cleanText = text.replace(/<[^>]*>/g, '');
+  const renderManifestoParagraph = (markdownText: string, idx: number) => {
+    const htmlContent = markdownToHtml(markdownText).replace(/^<p>/, '').replace(/<\/p>$/, '');
+    const cleanText = htmlContent.replace(/<[^>]*>/g, '');
     if (idx === 0 && cleanText.length > 0) {
       const firstLetter = cleanText.charAt(0);
-      const rest = text.substring(text.indexOf(firstLetter) + 1);
+      const firstLetterPos = htmlContent.indexOf(firstLetter);
+      const rest = htmlContent.substring(firstLetterPos + 1);
       return (
         <p key={idx} className="leading-relaxed">
           <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
@@ -45,7 +47,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <p
         key={idx}
         className="leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(text) }}
+        dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(htmlContent) }}
       />
     );
   };

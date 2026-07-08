@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings } from '../types';
 import { BRAND } from '../config/brand';
-import { parseInlineFormatting } from '../utils';
+import { parseInlineFormatting, isArabicText } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FrontpageViewProps {
@@ -142,10 +142,19 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
             {editorialSelections.map((item) => {
               const author = users.find((u) => u.id === item.authorId);
+              const isNote = item.contentType === 'Note';
+              const isAr = isArabicText(item.content);
               return (
                 <div
                   key={item.id}
-                  className="group cursor-pointer text-left"
+                  className={`group cursor-pointer transition-all p-4 rounded border ${
+                    isNote 
+                      ? 'bg-[#FAF8F5] border-stone-200/50 hover:border-stone-300 hover:shadow-sm' 
+                      : 'bg-transparent border-transparent hover:bg-stone-50/40'
+                  } ${isAr ? 'text-right' : 'text-left'}`}
+                  style={isNote 
+                    ? { fontFamily: isAr ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
+                    : undefined}
                   onClick={() => {
                     setSelectedEntry(item);
                     setSelectedAuthorId(item.authorId);
@@ -155,10 +164,14 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-2">
                     {item.contentType}
                   </span>
-                  <h4 className="font-serif text-xl text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2">
+                  <h4 className={`text-stone-900 group-hover:text-[#802334] transition leading-tight mb-2 ${
+                    isNote 
+                      ? (isAr ? 'text-xl font-bold font-arabic-handwritten' : 'text-lg md:text-xl font-bold font-handwritten') 
+                      : 'font-serif text-xl'
+                  }`}>
                     {parseInlineFormatting(item.title)}
                   </h4>
-                  <span className="font-sans text-[11px] text-stone-500">
+                  <span className={`text-[11px] text-stone-500 ${isNote ? (isAr ? 'font-arabic-handwritten' : 'font-handwritten') : 'font-sans'}`}>
                     {author?.penName || 'Writer'}
                   </span>
                 </div>

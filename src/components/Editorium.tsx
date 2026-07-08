@@ -28,6 +28,8 @@ import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocu
 import { db } from '../db/mockDb';
 import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown } from '../utils';
 import { SignatureRenderer } from './SignatureRenderer';
+import { ArchitectureStudio } from './ArchitectureStudio';
+import { ReferenceLibrary } from './ReferenceLibrary';
 
 interface EditoriumProps {
   currentUser: User;
@@ -44,6 +46,8 @@ interface EditoriumProps {
   setActiveTab: (tab: any) => void;
   setSelectedEntry: (entry: Entry | null) => void;
   setEditingEntry: (entry: Entry | null) => void;
+  editoriumActiveTab: 'platform' | 'frontpage' | 'directory' | 'index' | 'editorial' | 'users' | 'roles' | 'moderation' | 'system' | 'dangerZone' | 'architecture' | 'reference-library';
+  setEditoriumActiveTab: (tab: any) => void;
 }
 
 type EditoriumTab = 
@@ -56,7 +60,9 @@ type EditoriumTab =
   | 'roles' 
   | 'moderation' 
   | 'system' 
-  | 'dangerZone';
+  | 'dangerZone'
+  | 'architecture'
+  | 'reference-library';
 
 export function Editorium({
   currentUser,
@@ -72,10 +78,10 @@ export function Editorium({
   setSelectedAuthorId,
   setActiveTab,
   setSelectedEntry,
-  setEditingEntry
+  setEditingEntry,
+  editoriumActiveTab,
+  setEditoriumActiveTab
 }: EditoriumProps) {
-  // Main administrative active tab - 10-tab architecture
-  const [editoriumActiveTab, setEditoriumActiveTab] = useState<EditoriumTab>('platform');
 
   const hasPermission = (permissionKey: keyof RolePermissions) => {
     return systemSettings.rolePermissions?.[currentUser.role]?.[permissionKey] ?? false;
@@ -258,6 +264,8 @@ export function Editorium({
         {renderTabButton('roles', 'Roles', <Lock className="w-3.5 h-3.5" />)}
         {renderTabButton('moderation', 'Moderation', <EyeOff className="w-3.5 h-3.5" />)}
         {renderTabButton('system', 'System', <FileText className="w-3.5 h-3.5" />)}
+        {renderTabButton('architecture', 'Architecture', <Sliders className="w-3.5 h-3.5" />)}
+        {renderTabButton('reference-library', 'Reference Library', <BookOpen className="w-3.5 h-3.5" />)}
         {renderTabButton('dangerZone', 'Danger Zone', <ShieldAlert className="w-3.5 h-3.5 text-red-700" />)}
       </div>
 
@@ -1673,6 +1681,38 @@ export function Editorium({
             </div>
           </div>
         )
+      )}
+
+      {/* ========================================================= */}
+      {/* 9.5. ARCHITECTURE STUDIO WORKSPACE                        */}
+      {/* ========================================================= */}
+      {editoriumActiveTab === 'architecture' && (
+        <div className="space-y-6">
+          <div className="bg-[#FDFDFD] border border-stone-200 rounded p-6 shadow-sm">
+            <div className="border-b border-stone-100 pb-3 mb-6">
+              <h3 className="font-serif text-lg font-semibold text-stone-950">Architecture Studio</h3>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Platform topology blueprint and digital twin workspace</p>
+            </div>
+            <div className="w-full">
+              <ArchitectureStudio />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 9.6. REFERENCE LIBRARY                                    */}
+      {/* ========================================================= */}
+      {editoriumActiveTab === 'reference-library' && (
+        <div className="space-y-6">
+          <div className="bg-[#FDFDFD] border border-stone-200 rounded p-6 shadow-sm">
+            <div className="border-b border-stone-100 pb-3 mb-6">
+              <h3 className="font-serif text-lg font-semibold text-stone-950">Reference Library</h3>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Canonical publications standards and layout specifications</p>
+            </div>
+            <ReferenceLibrary entries={entries} users={users} />
+          </div>
+        </div>
       )}
 
       {/* ========================================================= */}

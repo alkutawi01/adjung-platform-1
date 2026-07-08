@@ -2261,15 +2261,40 @@ export function EntryRenderer({
     }
 
     const isAr = isArabicText(block.text);
+    const isNote = contentType === 'Note';
+
+    if (contentType === 'Essay' && idx === 0 && !isAr) {
+      const plainText = block.text;
+      if (plainText.length > 0) {
+        const firstLetter = plainText.charAt(0);
+        const restText = plainText.substring(1);
+        return (
+          <p
+            key={idx}
+            className="leading-relaxed text-left text-[15.5px] md:text-[16.5px] text-[#111111] whitespace-pre-wrap relative overflow-visible font-serif"
+          >
+            <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
+              {firstLetter}
+            </span>
+            {parseInlineFormatting(restText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
+            {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
+          </p>
+        );
+      }
+    }
+
     return (
       <p
         key={idx}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`leading-relaxed text-[15px] md:text-base text-[#111111] whitespace-pre-wrap relative overflow-visible ${
+        className={`leading-relaxed text-[15px] md:text-base whitespace-pre-wrap relative overflow-visible ${
           isAr 
             ? 'font-arabic text-right text-lg leading-loose' 
-            : 'font-serif text-left'
+            : (isNote 
+                ? 'font-handwritten text-left text-lg md:text-xl text-stone-900 font-medium' 
+                : 'font-serif text-left text-[#111111]')
         }`}
+        style={isNote && !isAr ? { fontFamily: 'var(--font-handwritten)' } : undefined}
       >
         {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
         {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
@@ -3240,68 +3265,83 @@ export function EntryRenderer({
    */
   const renderPublishedContent = () => {
     const isArticle = contentType === 'Article';
+    const isNote = contentType === 'Note';
+    const isEssay = contentType === 'Essay';
+
+    const isArContent = isArabicText(entry.content);
+    const containerClass = isNote
+      ? `max-w-2xl mx-auto px-6 py-8 md:px-10 md:py-10 bg-[#FAF8F5] border border-stone-200/60 rounded-lg shadow-md relative overflow-visible text-[#3D2E2B] ${
+          isArContent ? 'text-right' : 'text-left'
+        }`
+      : (isEssay
+          ? 'max-w-3xl mx-auto px-6 py-10 md:px-12 md:py-14 bg-white border border-[#EAE8E3] rounded-md shadow-sm text-left font-serif relative overflow-visible text-[#111111]'
+          : `max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible ${
+              isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
+            }`);
+
     return (
       <motion.article
         drag={isMobile && isArticle ? "x" : false}
         dragConstraints={isMobile && isArticle ? { left: -240, right: 0 } : undefined}
         dragElastic={isMobile && isArticle ? 0.15 : 0}
         dragSnapToOrigin={true}
-        className={`max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible ${
-          isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
-        }`}
+        className={containerClass}
+        style={isNote 
+          ? { fontFamily: isArContent ? 'var(--font-arabic-handwritten)' : 'var(--font-handwritten)' } 
+          : undefined}
       >
         {/* Header Block */}
-        <header className="mb-10 border-b border-stone-200/70 pb-6">
-          {/* Metadata Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-Adjung-maroon">{contentType}</span>
-              <span className="text-stone-300">|</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {formatDate(entry.publishedDate || entry.createdDate)}
-              </span>
-              <span className="text-stone-300">|</span>
-              <span className="flex items-center gap-1">
-                <BookOpen className="w-3 h-3 text-stone-400" />
-                {getReadingTime(getFullContentString())}
-              </span>
+        {!isNote ? (
+          <header className="mb-10 border-b border-stone-200/70 pb-6">
+            {/* Metadata Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-Adjung-maroon">{contentType}</span>
+                <span className="text-stone-300">|</span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {formatDate(entry.publishedDate || entry.createdDate)}
+                </span>
+                <span className="text-stone-300">|</span>
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3 h-3 text-stone-400" />
+                  {getReadingTime(getFullContentString())}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {status === 'Draft' && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[9px] font-medium lowercase">
+                    draft
+                  </span>
+                )}
+                {visibility === 'Private' && (
+                  <span className="inline-flex items-center gap-1 text-red-800 text-[10px]">
+                    <Lock className="w-3 h-3" /> private
+                  </span>
+                )}
+                {visibility === 'Public' && (
+                  <span className="inline-flex items-center gap-1 text-stone-400 text-[10px]">
+                    <Globe className="w-3 h-3" /> canonical public
+                  </span>
+                )}
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              {status === 'Draft' && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[9px] font-medium lowercase">
-                  draft
-                </span>
-              )}
-              {visibility === 'Private' && (
-                <span className="inline-flex items-center gap-1 text-red-800 text-[10px]">
-                  <Lock className="w-3 h-3" /> private
-                </span>
-              )}
-              {visibility === 'Public' && (
-                <span className="inline-flex items-center gap-1 text-stone-400 text-[10px]">
-                  <Globe className="w-3 h-3" /> canonical public
-                </span>
-              )}
-            </div>
-          </div>
 
-          {/* Featured Image */}
-          {contentType !== 'Note' && featuredImage && (
-            <div className="mb-6 w-full text-center bg-transparent animate-fade-in">
-              <img 
-                src={featuredImage} 
-                alt={title || 'Featured Image'} 
-                className="max-w-full h-auto mx-auto border border-stone-200/50 p-2 bg-white shadow-sm rounded-sm max-h-[300px] object-cover"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            </div>
-          )}
+            {/* Featured Image */}
+            {featuredImage && (
+              <div className="mb-6 w-full text-center bg-transparent animate-fade-in">
+                <img 
+                  src={featuredImage} 
+                  alt={title || 'Featured Image'} 
+                  className="max-w-full h-auto mx-auto border border-stone-200/50 p-2 bg-white shadow-sm rounded-sm max-h-[300px] object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+            )}
 
-          {/* Title Area */}
-          {contentType !== 'Note' && (
-            isEditingWorkspace ? (
+            {/* Title Area */}
+            {isEditingWorkspace ? (
               <RichTextEditable
                 tagName="h1"
                 html={markdownToHtml(title)}
@@ -3325,17 +3365,22 @@ export function EntryRenderer({
                   {parseInlineFormatting(title)}
                 </h1>
               )
-            )
-          )}
+            )}
 
-          {/* Author / Signature Stamp Block */}
-          <div className="mt-4 flex items-center gap-4 text-xs font-serif text-stone-600">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">Published by</span>
-            <div className="flex items-center gap-1.5 h-10">
-              <span className="font-sans font-medium text-stone-900 border-b border-stone-200 pb-0.5 mt-2">{authorName}</span>
+            {/* Author / Signature Stamp Block */}
+            <div className="mt-4 flex items-center gap-4 text-xs font-serif text-stone-600">
+              <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">Published by</span>
+              <div className="flex items-center gap-1.5 h-10">
+                <span className="font-sans font-medium text-stone-900 border-b border-stone-200 pb-0.5 mt-2">{authorName}</span>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        ) : (
+          <header className="mb-6 pb-4 border-b border-stone-200/40 text-stone-400 font-mono text-[9px] uppercase tracking-widest flex items-center justify-between select-none">
+            <span>Note</span>
+            <span>{formatDate(entry.publishedDate || entry.createdDate)}</span>
+          </header>
+        )}
 
         {/* Excerpt Abstract Block */}
         {contentType !== 'Note' && excerpt && (
@@ -3814,6 +3859,22 @@ export function EntryRenderer({
               </span>
             ))}
           </div>
+        )}
+
+        {isNote && (
+          <footer 
+            className={`mt-8 pt-4 border-t border-stone-200/40 flex items-center justify-between text-base text-stone-500 select-none ${
+              isArContent ? 'flex-row-reverse text-right' : 'flex-row text-left font-handwritten'
+            }`}
+            style={isArContent ? { fontFamily: 'var(--font-arabic-handwritten)' } : undefined}
+          >
+            <span>— {authorName}</span>
+            {authorSignature && (
+              <span className="font-signature text-2xl" style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
+                {authorSignature}
+              </span>
+            )}
+          </footer>
         )}
 
         {mode === 'edit' && renderFloatingToolbar()}

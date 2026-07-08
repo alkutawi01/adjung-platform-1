@@ -831,13 +831,13 @@ We invite our writers to continue pushing the boundaries of what a digital manus
     tags: ['Manifesto', 'Philosophy', 'Core'],
     canonicalUrl: 'https://adjung.com/editorial/why-adjung-exists',
     excerpt: 'Knowledge was never meant to compete for attention.',
-    content: `The internet has made it possible for <span class="interlinear-word"><span class="interlinear-gloss">thought</span>ideas</span> to travel farther than at any other time in history. Yet many of the most thoughtful contributions are quietly buried beneath an endless stream<span class="footnote-badge" data-id="fn-1"></span> of new content,<span class="margin-note-badge" data-id="mn-1"></span> before they have the opportunity to be read, questioned, and understood.
+    content: `The internet has made it possible for [ideas](gloss:thought) to travel farther than at any other time in history. Yet many of the most thoughtful contributions are quietly buried beneath an endless stream[^fn-1] of new content,[^mn-1] before they have the opportunity to be read, questioned, and understood.
 
-We created Adjung as a quiet home for <span class="interlinear-word"><span class="interlinear-gloss">wisdom</span>knowledge</span><span class="footnote-badge" data-id="fn-2"></span> where anyone, regardless of profession or background, can write, preserve, and discover work that deserves to remain meaningful for generations,<span class="margin-note-badge" data-id="mn-2"></span> rather than only for today's conversations.
+We created Adjung as a quiet home for [knowledge](gloss:wisdom)[^fn-2] where anyone, regardless of profession or background, can write, preserve, and discover work that deserves to remain meaningful for generations,[^mn-2] rather than only for today's conversations.
 
-Here, ideas are valued by their <span class="interlinear-word"><span class="interlinear-gloss">essence</span>substance</span>,<span class="footnote-badge" data-id="fn-3"></span> not by popularity, appearance,<span class="margin-note-badge" data-id="mn-3"></span> or algorithms. There are no like buttons to chase, no notifications to distract—only the quiet clarity of reasoned thought.
+Here, ideas are valued by their [substance](gloss:essence),[^fn-3] not by popularity, appearance,[^mn-3] or algorithms. There are no like buttons to chase, no notifications to distract—only the quiet clarity of reasoned thought.
 
-To preserve the depth of scholarship, Adjung integrates three distinct dimensions of notation:<span class="margin-note-badge" data-id="mn-4"></span> <span class="interlinear-word"><span class="interlinear-gloss">translation</span>interlinear notes</span> for instant semantic clarity, margin notes for context-rich commentary, and footnotes for source citations.<span class="footnote-badge" data-id="fn-4"></span> Every publication is treated as a lasting contribution to humanity's shared record of knowledge.`,
+To preserve the depth of scholarship, Adjung integrates three distinct dimensions of notation:[^mn-4] [interlinear notes](gloss:translation) for instant semantic clarity, margin notes for context-rich commentary, and footnotes for source citations.[^fn-4] Every publication is treated as a lasting contribution to humanity's shared record of knowledge.`,
     isInstitutional: true,
     isPinned: true,
     footnotesData: [
@@ -867,6 +867,84 @@ To preserve the depth of scholarship, Adjung integrates three distinct dimension
       'mn-2': "PRESERVATION\nPreservation begins when a work is expected to outlive its author.",
       'mn-3': "EDITORIAL PRINCIPLE\nReaders should encounter ideas before personalities.",
       'mn-4': "THREE-LAYER NOTE SYSTEM\nBy separating translation, active dialogue, and structured citations, we maintain absolute textual purity."
+    }
+  },
+  {
+    id: 'entry-canonical-note',
+    authorId: 'user-zayd-ghazali',
+    contentType: 'Note',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-07-07T12:00:00Z',
+    updatedDate: '2026-07-07T12:00:00Z',
+    publishedDate: '2026-07-07T12:00:00Z',
+    title: 'Canonical Note on Classical Scholarship',
+    slug: 'canonical-note-classical-scholarship',
+    tags: ['Canonical', 'Note', 'Standard'],
+    canonicalUrl: 'https://zayd.adjung.com/note/canonical-note-classical-scholarship',
+    content: 'This is the Canonical Note. Note publications are short, casual observations designed without massive titles or abstract summaries. They rely on hand-written letterforms like Caveat to deliver an intimate reading experience. By utilizing [direct](gloss:clear) notation, they offer immediate clarity.'
+  },
+  {
+    id: 'entry-canonical-note-ar',
+    authorId: 'user-zayd-ghazali',
+    contentType: 'Note',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-07-07T12:00:00Z',
+    updatedDate: '2026-07-07T12:00:00Z',
+    publishedDate: '2026-07-07T12:00:00Z',
+    title: 'Canonical Arabic Note (الترميز العربي)',
+    slug: 'canonical-note-ar',
+    tags: ['Canonical', 'Arabic', 'Note'],
+    canonicalUrl: 'https://zayd.adjung.com/note/canonical-note-ar',
+    content: 'هذه هي الملاحظة المعيارية المكتوبة بخط الرقعة العربي التقليدي. تُعرض الملاحظات دائمًا بدون عناوين ضخمة، لتوفير تجربة قراءة حميمية ومريحة للباحث الكلاسيكي.'
+  },
+  {
+    id: 'entry-canonical-essay',
+    authorId: 'user-zayd-ghazali',
+    contentType: 'Essay',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-07-07T12:00:00Z',
+    updatedDate: '2026-07-07T12:00:00Z',
+    publishedDate: '2026-07-07T12:00:00Z',
+    title: 'Canonical Essay: The Art of Traditional Academic Typography',
+    slug: 'canonical-essay-academic-typography',
+    tags: ['Canonical', 'Essay', 'Academic'],
+    canonicalUrl: 'https://zayd.adjung.com/essay/canonical-essay-academic-typography',
+    excerpt: 'This is the official Canonical Essay, designed as the baseline standard for academic book publishing in Adjung. It utilizes formal margins, traditional footnotes at the bottom, and drop-caps.',
+    content: 'Traditional scholarship thrives on the physical geometry of text blocks. The layout of an essay must respect the focus of the reader, anchoring complex source citations at the base of the page.[^fn-1] By integrating [classical](gloss:traditional) proportions, we ensure a deep reading environment.\n\nFurthermore, the presentation of structured ideas requires a clear hierarchy of headings. The footnotes registry serves as the cross-referencing anchor, ensuring absolute textual authority.[^fn-2]',
+    footnotesData: [
+      {
+        id: 'fn-1',
+        label: 'Scribal Restraint',
+        content: 'Citing the classical dot-based measures of Arabic calligraphers.'
+      },
+      {
+        id: 'fn-2',
+        label: 'Footnotes Standard',
+        content: 'Footnotes reside at the base of the page, acting as the scholarly anchor.'
+      }
+    ]
+  },
+  {
+    id: 'entry-canonical-article',
+    authorId: 'user-zayd-ghazali',
+    contentType: 'Article',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-07-07T12:00:00Z',
+    updatedDate: '2026-07-07T12:00:00Z',
+    publishedDate: '2026-07-07T12:00:00Z',
+    title: 'Canonical Article: The Digital Press Layout Model',
+    slug: 'canonical-article-digital-press-model',
+    tags: ['Canonical', 'Article', 'Press'],
+    canonicalUrl: 'https://zayd.adjung.com/article/canonical-article-digital-press-model',
+    excerpt: 'This is the official Canonical Article, representing the wide-canvas digital twin of modern journalism. It supports structured multi-columns, featured images, and active margin notes.',
+    content: 'Digital publications require active commentary paths. Unlike essays, articles make use of the left or right margins to present immediate annotations next to the paragraphs they reference.[^mn-1] This split-screen layout keeps the primary and secondary readings visually aligned.\n\nIn addition, articles support high-impact media features such as large titles, featured headers, and custom matrices to outline systemic dimensions.[^mn-2]',
+    marginNotesData: {
+      'mn-1': 'MARGIN COMMENTARY\nAnnotations are kept inline with text to enrich the digital reading layer.',
+      'mn-2': 'MODERN MEDIA\nArticles are wide-canvas layouts with large typography and media integrations.'
     }
   }
 ];
@@ -1036,6 +1114,21 @@ class AdjungDb {
         // Force merge INITIAL_ENTRIES if the mock entries are missing from local storage
         if (loadedEntries.length < 17) {
           loadedEntries = [...INITIAL_ENTRIES];
+        } else {
+          // Always ensure new canonical entries are imported
+          let modified = false;
+          INITIAL_ENTRIES.forEach((initialEntry: any) => {
+            if (initialEntry.id.startsWith('entry-canonical-')) {
+              const exists = loadedEntries.some((le: any) => le.id === initialEntry.id);
+              if (!exists) {
+                loadedEntries.push(initialEntry);
+                modified = true;
+              }
+            }
+          });
+          if (modified) {
+            localStorage.setItem('adjung_entries', JSON.stringify(loadedEntries));
+          }
         }
         // Auto-detect and purge corrupted entries (content with ****X**** between every character)
         const isCorrupted = (text: string) => {
