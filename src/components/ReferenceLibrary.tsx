@@ -25,8 +25,8 @@ const archetypeLanguageVersions: Record<string, { LTR: Partial<Entry>; RTL: Part
       tags: ['Canonical', 'Essay', 'Typography'],
       footnotes: ['[^1]', '[^2]'],
       footnotesData: [
-        { id: '1', displayNum: 1, originalId: '1', content: 'This visual silence is equivalent to the musical pause, which gives meaning to the note.' },
-        { id: '2', displayNum: 2, originalId: '2', content: 'See Jan Tschichold, "The Form of the Book" (1975) for historical margin ratios.' }
+        { id: '1', content: 'This visual silence is equivalent to the musical pause, which gives meaning to the note.' },
+        { id: '2', content: 'See Jan Tschichold, "The Form of the Book" (1975) for historical margin ratios.' }
       ]
     },
     RTL: {
@@ -35,8 +35,8 @@ const archetypeLanguageVersions: Record<string, { LTR: Partial<Entry>; RTL: Part
       tags: ['نموذجي', 'مقالة', 'خط'],
       footnotes: ['[^1]', '[^2]'],
       footnotesData: [
-        { id: '1', displayNum: 1, originalId: '1', content: 'هذا الفراغ البصري يعادل الصمت الموسيقي الذي يمنح النغمة معناها وقيمتها.' },
-        { id: '2', displayNum: 2, originalId: '2', content: 'انظر كتاب يان تشيشولد "شكل الكتاب" (1975) لمعرفة نسب الهوامش التاريخية.' }
+        { id: '1', content: 'هذا الفراغ البصري يعادل الصمت الموسيقي الذي يمنح النغمة معناها وقيمتها.' },
+        { id: '2', content: 'انظر كتاب يان تشيشولد "شكل الكتاب" (1975) لمعرفة نسب الهوامش التاريخية.' }
       ]
     }
   },
