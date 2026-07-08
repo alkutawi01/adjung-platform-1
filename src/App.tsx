@@ -3,6 +3,7 @@ import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSetti
 import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { useAppContext } from './context/AppContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollapseRenderer';
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
@@ -292,6 +293,23 @@ export default function App() {
     hasPermission
   } = useAppContext();
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const subdomain = (() => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      const sub = parts[0];
+      if (sub !== 'www' && sub !== 'adjung' && sub !== 'localhost') {
+        return sub;
+      }
+    }
+    return null;
+  })();
+
+  const authorFromSubdomain = subdomain ? users.find(u => u.username === subdomain) : null;
+
   const [showNavbar, setShowNavbar] = useState(true);
   const [navVisible, setNavVisible] = useState(true);
   const [isFloating, setIsFloating] = useState(false);
@@ -454,184 +472,258 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeTab, selectedEntry, selectedAuthorId]);
 
-  // Two-way URL Hash Router Synchronization
+  // Two-way browser URL path Synchronization
   useEffect(() => {
     if (initializing) return;
 
-    let newHash = '#/';
+    // Handle subdomain override logic
+    if (authorFromSubdomain) {
+      let subPath = '/';
+      if (editingEntry) {
+        subPath = `/desk/edit/${editingEntry.id}`;
+      } else if (selectedEntry) {
+        subPath = `/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.slug}`;
+      } else {
+        if (activeTab === 'bio') subPath = '/bio';
+        else if (activeTab === 'identity') subPath = '/identity';
+        else if (activeTab === 'desk') subPath = '/desk';
+        else if (activeTab === 'policies') subPath = '/policies';
+      }
+
+      if (location.pathname !== subPath) {
+        navigate(subPath);
+      }
+      return;
+    }
+
+    let newPath = '/';
     if (editingEntry) {
-      newHash = `#/desk/edit/${editingEntry.id}`;
+      newPath = `/desk/edit/${editingEntry.id}`;
     } else if (selectedEntry) {
       if (selectedEntry.publicationClass === 'Institutional') {
         const typeSlug = selectedEntry.contentType === 'Notice' ? 'notice' : 'editorial';
-        newHash = `#/${typeSlug}/${selectedEntry.slug}`;
+        newPath = `/${typeSlug}/${selectedEntry.slug}`;
       } else {
-        newHash = `#/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.authorId}/${selectedEntry.slug}`;
+        newPath = `/${selectedEntry.contentType.toLowerCase()}/${selectedEntry.authorId}/${selectedEntry.slug}`;
       }
     } else {
-      if (activeTab === 'landing') newHash = '#/landing';
-      else if (activeTab === 'frontpage') newHash = '#/frontpage';
-      else if (activeTab === 'directory') newHash = '#/directory';
-      else if (activeTab === 'index') newHash = '#/index';
-      else if (activeTab === 'editorium') newHash = `#/editorium/${editoriumActiveTab}`;
-      else if (activeTab === 'desk') newHash = '#/desk';
-      else if (activeTab === 'folio') newHash = `#/folio/${selectedAuthorId || ''}`;
-      else if (activeTab === 'bio') newHash = `#/bio/${selectedAuthorId || ''}`;
-      else if (activeTab === 'identity') newHash = '#/identity';
-      else if (activeTab === 'notices') newHash = '#/notices';
-      else if (activeTab === 'editorial') newHash = '#/editorial';
-      else if (activeTab === 'changelog') newHash = '#/changelog';
-      else if (activeTab === 'policies') newHash = '#/policies';
+      if (activeTab === 'landing') newPath = '/landing';
+      else if (activeTab === 'frontpage') newPath = '/frontpage';
+      else if (activeTab === 'directory') newPath = '/directory';
+      else if (activeTab === 'index') newPath = '/index';
+      else if (activeTab === 'editorium') newPath = `/editorium/${editoriumActiveTab}`;
+      else if (activeTab === 'desk') newPath = '/desk';
+      else if (activeTab === 'folio') newPath = `/folio/${selectedAuthorId || ''}`;
+      else if (activeTab === 'bio') newPath = `/bio/${selectedAuthorId || ''}`;
+      else if (activeTab === 'identity') newPath = '/identity';
+      else if (activeTab === 'notices') newPath = '/notices';
+      else if (activeTab === 'editorial') newPath = '/editorial';
+      else if (activeTab === 'changelog') newPath = '/changelog';
+      else if (activeTab === 'policies') newPath = '/policies';
     }
 
-    if (window.location.hash !== newHash) {
-      window.location.hash = newHash;
+    if (location.pathname !== newPath) {
+      navigate(newPath);
     }
-  }, [activeTab, selectedAuthorId, selectedEntry, editingEntry, initializing, editoriumActiveTab]);
+  }, [activeTab, selectedAuthorId, selectedEntry, editingEntry, initializing, editoriumActiveTab, navigate, location.pathname, authorFromSubdomain]);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash || '#/';
-      const parts = hash.substring(1).split('/').filter(Boolean);
+    if (initializing) return;
 
-      if (parts.length === 0 || parts[0] === 'landing') {
-        if (currentUser) {
-          window.location.hash = '#/frontpage';
-        } else {
-          setActiveTab('landing');
-          setSelectedEntry(null);
-          setEditingEntry(null);
-        }
-        return;
-      }
+    const path = location.pathname;
+    const parts = path.split('/').filter(Boolean);
 
-      const route = parts[0];
-      if (route === 'frontpage') {
-        setActiveTab('frontpage');
+    // If subdomain is active, we enforce selectedAuthorId
+    if (authorFromSubdomain) {
+      setSelectedAuthorId(authorFromSubdomain.id);
+      
+      if (parts.length === 0) {
+        setActiveTab('folio');
         setSelectedEntry(null);
         setEditingEntry(null);
         return;
       }
-      if (route === 'identity') {
+
+      const route = parts[0];
+      if (route === 'bio') {
+        setActiveTab('bio');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else if (route === 'identity') {
         if (!currentUser) {
-          window.location.hash = '#/landing';
+          navigate('/');
         } else {
           setActiveTab('identity');
           setSelectedEntry(null);
           setEditingEntry(null);
         }
-        return;
-      }
-      if (route === 'directory') {
-        setActiveTab('directory');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'index') {
-        setActiveTab('index');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'editorium') {
-        setActiveTab('editorium');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-        if (parts[1]) {
-          setEditoriumActiveTab(parts[1] as any);
-        } else {
-          setEditoriumActiveTab('platform');
-        }
       } else if (route === 'desk') {
         setActiveTab('desk');
         setSelectedEntry(null);
         if (parts[1] === 'edit' && parts[2]) {
-          const entryId = parts[2];
-          const entry = db.getEntryById(entryId);
-          if (entry) {
-            setEditingEntry(entry);
-          } else {
-            setEditingEntry(null);
-          }
+          const entry = entries.find(e => e.id === parts[2]);
+          setEditingEntry(entry || null);
         } else {
           setEditingEntry(null);
         }
-      } else if (route === 'folio' && parts[1]) {
-        setSelectedAuthorId(parts[1]);
-        setActiveTab('folio');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'bio' && parts[1]) {
-        setSelectedAuthorId(parts[1]);
-        setActiveTab('bio');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'notices') {
-        setActiveTab('notices');
-        setSelectedEntry(null);
-        setEditingEntry(null);
-      } else if (route === 'notice' && parts[1]) {
-        const slug = parts[1];
-        const entry = db.getEntries().find(e => e.contentType === 'Notice' && e.slug === slug);
-        if (entry) {
-          setSelectedEntry(entry);
-          setActiveTab('notices');
-          setEditingEntry(null);
-        }
-      } else if (route === 'editorial') {
-        if (parts[1]) {
-          const slug = parts[1];
-          const entry = db.getEntries().find(e => e.contentType === "Editor's Note" && e.slug === slug);
-          if (entry) {
-            setSelectedEntry(entry);
-            setActiveTab('editorial');
-            setEditingEntry(null);
-          }
-        } else {
-          setActiveTab('editorial');
-          setSelectedEntry(null);
-          setEditingEntry(null);
-        }
-      } else if (route === 'changelog') {
-        setActiveTab('changelog');
-        setSelectedEntry(null);
-        setEditingEntry(null);
       } else if (route === 'policies') {
         setActiveTab('policies');
         setSelectedEntry(null);
         setEditingEntry(null);
-      } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
-        const authorId = parts[1];
-        const slug = parts[2];
-        const entry = db.getEntries().find(e => e.authorId === authorId && e.slug === slug);
+      } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1]) {
+        const slug = parts[1];
+        const entry = entries.find(e => e.authorId === authorFromSubdomain.id && e.slug === slug);
         if (entry) {
           if (entry.contentType === 'Note') {
-            setSelectedAuthorId(authorId);
             setActiveTab('folio');
             setSelectedEntry(null);
             setEditingEntry(null);
-            const noteId = entry.id;
-            setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
-            setTimeout(() => {
-              const element = document.getElementById(`note-card-${noteId}`);
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }, 150);
+            setExpandedNoteIds(prev => prev.includes(entry.id) ? prev : [...prev, entry.id]);
           } else {
-            setSelectedAuthorId(authorId);
             setSelectedEntry(entry);
             setActiveTab('folio');
             setEditingEntry(null);
           }
         }
       }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    if (!initializing) {
-      handleHashChange();
+      return;
     }
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [initializing, currentUser]);
+    // Main Portal routing synchronization
+    if (parts.length === 0 || parts[0] === 'landing') {
+      if (currentUser) {
+        setActiveTab('frontpage');
+        setSelectedAuthorId('');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      } else {
+        setActiveTab('landing');
+        setSelectedAuthorId('');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      }
+      return;
+    }
+
+    const route = parts[0];
+    if (route === 'frontpage') {
+      setActiveTab('frontpage');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'identity') {
+      if (!currentUser) {
+        navigate('/landing');
+      } else {
+        setActiveTab('identity');
+        setSelectedAuthorId('');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      }
+    } else if (route === 'directory') {
+      setActiveTab('directory');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'index') {
+      setActiveTab('index');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'editorium') {
+      setActiveTab('editorium');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+      if (parts[1]) {
+        setEditoriumActiveTab(parts[1] as any);
+      } else {
+        setEditoriumActiveTab('platform');
+      }
+    } else if (route === 'desk') {
+      setActiveTab('desk');
+      setSelectedAuthorId(currentUser?.id || '');
+      setSelectedEntry(null);
+      if (parts[1] === 'edit' && parts[2]) {
+        const entry = entries.find(e => e.id === parts[2]);
+        setEditingEntry(entry || null);
+      } else {
+        setEditingEntry(null);
+      }
+    } else if (route === 'folio' && parts[1]) {
+      setSelectedAuthorId(parts[1]);
+      setActiveTab('folio');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'bio' && parts[1]) {
+      setSelectedAuthorId(parts[1]);
+      setActiveTab('bio');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'notices') {
+      setActiveTab('notices');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'notice' && parts[1]) {
+      const slug = parts[1];
+      const entry = entries.find(e => e.contentType === 'Notice' && e.slug === slug);
+      if (entry) {
+        setSelectedEntry(entry);
+        setActiveTab('notices');
+        setEditingEntry(null);
+      }
+    } else if (route === 'editorial') {
+      if (parts[1]) {
+        const slug = parts[1];
+        const entry = entries.find(e => e.contentType === "Editor's Note" && e.slug === slug);
+        if (entry) {
+          setSelectedEntry(entry);
+          setActiveTab('editorial');
+          setEditingEntry(null);
+        }
+      } else {
+        setActiveTab('editorial');
+        setSelectedEntry(null);
+        setEditingEntry(null);
+      }
+    } else if (route === 'changelog') {
+      setActiveTab('changelog');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'policies') {
+      setActiveTab('policies');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if ((route === 'note' || route === 'essay' || route === 'article') && parts[1] && parts[2]) {
+      const authorId = parts[1];
+      const slug = parts[2];
+      const entry = entries.find(e => e.authorId === authorId && e.slug === slug);
+      if (entry) {
+        setSelectedAuthorId(authorId);
+        if (entry.contentType === 'Note') {
+          setActiveTab('folio');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+          const noteId = entry.id;
+          setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
+          setTimeout(() => {
+            const element = document.getElementById(`note-card-${noteId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 150);
+        } else {
+          setSelectedAuthorId(authorId);
+          setSelectedEntry(entry);
+          setActiveTab('folio');
+          setEditingEntry(null);
+        }
+      }
+    }
+  }, [location.pathname, currentUser, entries, initializing, authorFromSubdomain]);
 
   // Initialize selected writer edit fields when selection changes
   useEffect(() => {
@@ -1217,6 +1309,13 @@ Editorial Board of Adjung`;
 
     const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '.');
     
+    // Check reserved usernames
+    const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
+    if (RESERVED_PATHS.includes(formattedUsername)) {
+      showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
+      return;
+    }
+    
     // Check for duplicate username
     const exists = users.some(u => u.username.toLowerCase() === formattedUsername);
     if (exists) {
@@ -1270,6 +1369,13 @@ Editorial Board of Adjung`;
     const { username, displayName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
 
     const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
+    
+    // Check reserved usernames
+    const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
+    if (RESERVED_PATHS.includes(formattedUsername)) {
+      showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
+      return;
+    }
     
     // Check for duplicate username
     const exists = users.some(u => u.username.toLowerCase() === formattedUsername);

@@ -7,6 +7,7 @@ import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount } from '../utils';
 import { EntryImage, EntryImageEditor } from './EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
+import { db } from '../db/mockDb';
 
 interface EntryRendererProps {
   entry: Entry;
@@ -87,6 +88,17 @@ export function EntryRenderer({
   const [showXmlView, setShowXmlView] = useState(false);
   const [citations, setCitations] = useState<Citation[]>(entry.citations || []);
   const [referenceSortOrder, setReferenceSortOrder] = useState<'alphabetical' | 'appearance'>(entry.referenceSortOrder || 'alphabetical');
+
+  const getCanonicalUrl = () => {
+    if (entry.publicationClass === 'Institutional') {
+      const typeSlug = entry.contentType === 'Notice' ? 'notice' : 'editorial';
+      return `https://adjung.com/${typeSlug}/${entry.slug}`;
+    } else {
+      const author = db.getUsers().find(u => u.id === entry.authorId);
+      const username = author ? author.username : 'scholar';
+      return `https://${username}.adjung.com/${entry.contentType.toLowerCase()}/${entry.slug}`;
+    }
+  };
 
   // Editor tab and validation states
   const [editorTab, setEditorTab] = useState<'write' | 'preview'>('write');
@@ -3321,9 +3333,25 @@ export function EntryRenderer({
                   </span>
                 )}
                 {visibility === 'Public' && (
-                  <span className="inline-flex items-center gap-1 text-stone-400 text-[10px]">
-                    <Globe className="w-3 h-3" /> canonical public
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-stone-400 text-[10px]">
+                      <Globe className="w-3 h-3" /> canonical public
+                    </span>
+                    {mode === 'view' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = getCanonicalUrl();
+                          navigator.clipboard.writeText(url);
+                          showToast('Canonical link copied to clipboard!', 'success');
+                        }}
+                        className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[10px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-2 py-0.5 rounded transition bg-white"
+                        title="Copy permanent canonical URL"
+                      >
+                        <Copy className="w-3 h-3" /> Copy Address
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
