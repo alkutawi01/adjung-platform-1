@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { DigitalSignature, IdentityProfile } from '../types';
-import { db } from '../db/mockDb';
+import { DigitalSignature, IdentityProfile } from '../../types';
+import { db } from '../../db/mockDb';
 import { SignaturePad } from './SignaturePad';
 import { SignatureRenderer } from './SignatureRenderer';
 import { Edit3, CheckCircle, Trash2 } from 'lucide-react';

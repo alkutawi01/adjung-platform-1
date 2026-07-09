@@ -62,6 +62,7 @@ export interface User {
   avatarColor?: string;
   bioSummary?: string;
   suspended?: boolean;
+  location?: string;
 }
 
 export type PublicationClass = 'Scholarly' | 'Institutional';
@@ -217,6 +218,7 @@ export interface IdentityProfile {
   lifeTimeline: BiographyItem[];
   signatures: DigitalSignature[];
   publicVisibility: 'Public' | 'Private';
+  location?: string;
 }
 
 export interface SystemSettings {

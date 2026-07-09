@@ -1,6 +1,6 @@
 import React from 'react';
-import { Entry } from '../types';
-import { parseInlineFormatting } from '../utils';
+import { Entry } from '../../types';
+import { parseInlineFormatting } from '../../utils';
 
 interface NoticesViewProps {
   entries: Entry[];

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-react';
-import { Entry, User, EntryType } from '../types';
-import { EntryRenderer } from './EntryRenderer';
-import { parseInlineFormatting, stripMarkdown } from '../utils';
-import { db } from '../db/mockDb';
-import { useAppContext } from '../context/AppContext';
+import { Entry, User, EntryType } from '../../types';
+import { EntryRenderer } from '../rendering/EntryRenderer';
+import { parseInlineFormatting, stripMarkdown } from '../../utils';
+import { db } from '../../db/mockDb';
+import { useAppContext } from '../../context/AppContext';
 
 interface WritingDeskProps {
   entry?: Entry | null;
@@ -85,6 +85,7 @@ export function WritingDesk({
     // 1. Update user's public identity metadata
     const updatedUser: User = {
       ...currentUser,
+      username: deskUsername,
       penName: deskPenName,
       signature: deskSignature
     };
@@ -104,6 +105,8 @@ export function WritingDesk({
     if (identity) {
       db.updateIdentity({
         ...identity,
+        penName: deskPenName,
+        username: deskUsername,
         biography: deskBioText
       });
     }
@@ -431,7 +434,7 @@ export function WritingDesk({
               </div>
 
               <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Pen Name</label>
+                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Pen & Short Name</label>
                 <input
                   type="text"
                   value={deskPenName}

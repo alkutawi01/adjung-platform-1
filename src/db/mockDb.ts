@@ -149,7 +149,8 @@ export const INITIAL_USERS: User[] = [
     penName: 'T. Malik',
     signature: 'Prof. Tariq Malik',
     avatarColor: 'bg-stone-800 text-stone-100',
-    bioSummary: 'Professor Emeritus of Islamic Philosophy and Comparative Literature. Chief Editor of Adjung.'
+    bioSummary: 'Professor Emeritus of Islamic Philosophy and Comparative Literature. Chief Editor of Adjung.',
+    location: 'Kuala Lumpur, Malaysia'
   },
   {
     id: 'user-associate-editor',
@@ -159,7 +160,8 @@ export const INITIAL_USERS: User[] = [
     penName: 'Ed. Amina',
     signature: 'Amina (Editor)',
     avatarColor: 'bg-stone-700 text-stone-100',
-    bioSummary: 'Associate Editor at Adjung, curating published indices and frontpage folios.'
+    bioSummary: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
+    location: 'Kuala Lumpur, Malaysia'
   },
   {
     id: 'user-zayd-ghazali',
@@ -169,7 +171,8 @@ export const INITIAL_USERS: User[] = [
     penName: 'Al-Ghazali',
     signature: 'Zayd Al-Ghazali',
     avatarColor: 'bg-emerald-950 text-emerald-100',
-    bioSummary: 'Scholarly writer focusing on the synthesis of medieval Arabic logic and modern typographic form.'
+    bioSummary: 'Scholarly writer focusing on the synthesis of medieval Arabic logic and modern typographic form.',
+    location: 'Cairo, Egypt'
   },
   {
     id: 'user-amina-masri',
@@ -179,7 +182,8 @@ export const INITIAL_USERS: User[] = [
     penName: 'Al-Masri',
     signature: 'Amina Al-Masri',
     avatarColor: 'bg-blue-950 text-blue-100',
-    bioSummary: 'Maritime historian specializing in Red Sea trading hubs and pre-modern Levantine trade routes.'
+    bioSummary: 'Maritime historian specializing in Red Sea trading hubs and pre-modern Levantine trade routes.',
+    location: 'Alexandria, Egypt'
   },
   {
     id: 'user-sarah-henderson',
@@ -189,7 +193,8 @@ export const INITIAL_USERS: User[] = [
     penName: 'Henderson',
     signature: 'S. Henderson',
     avatarColor: 'bg-red-950 text-red-100',
-    bioSummary: 'Typographer and scholar examining the intersection of modern Swiss rationalism and traditional book design.'
+    bioSummary: 'Typographer and scholar examining the intersection of modern Swiss rationalism and traditional book design.',
+    location: 'Zurich, Switzerland'
   }
 ];
 
@@ -241,7 +246,8 @@ He holds a doctorate in Comparative Semiotics and splits his academic research b
         category: 'Personal'
       }
     ],
-    signatures: []
+    signatures: [],
+    location: 'Cairo, Egypt'
   },
   {
     identityId: 'id-user-amina-masri',
@@ -283,7 +289,8 @@ She acts as a consultant for maritime heritage preservation and teaches Economic
         category: 'Career'
       }
     ],
-    signatures: []
+    signatures: [],
+    location: 'Alexandria, Egypt'
   },
   {
     identityId: 'id-user-sarah-henderson',
@@ -318,7 +325,8 @@ Her Adjung Folio features highly structured layout reflections and critical arti
         category: 'Publication'
       }
     ],
-    signatures: []
+    signatures: [],
+    location: 'Zurich, Switzerland'
   }
 ];
 

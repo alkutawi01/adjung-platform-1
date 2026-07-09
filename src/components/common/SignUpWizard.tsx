@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, QrCode, Laptop, Smartphone, Check, RefreshCw, PenTool, Type, Loader2, Sparkles, AlertCircle } from 'lucide-react';
-import { SignaturePad } from './SignaturePad';
+import { SignaturePad } from '../desk/SignaturePad';
 
 // The steps of the wizard
 const TOTAL_STEPS = 9;
@@ -9,7 +9,7 @@ const TITLES = [
   '',
   'Welcome',
   'The Philosophy',
-  'The Membership',
+  'Term of Use',
   'Your Identity',
   'Verification',
   'About You',
@@ -33,6 +33,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
   // Form Data State
   const [formData, setFormData] = useState({
     displayName: '',
+    penName: '',
     username: '',
     email: '',
     biography: '',
@@ -109,16 +110,6 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
                   className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-light flex items-start justify-center"
                 >
                   {overlayTitle}
-                  <motion.sup 
-                    key={overlayCount}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-1 text-[0.55em] align-super font-mono opacity-80"
-                  >
-                    {overlayCount}
-                  </motion.sup>
                 </motion.h2>
                 <div className="h-px w-16 bg-white/20 mx-auto my-3" />
                 <div className="flex items-center justify-center gap-1.5 pt-1">
@@ -227,14 +218,6 @@ function Step1Welcome({ onNext }: { onNext: () => void, key?: string }) {
   return (
     <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center text-center w-full h-full justify-between select-none">
       <div className="flex flex-col items-center justify-center flex-1 py-4">
-        <div className="mb-8">
-          <svg width="40" height="40" viewBox="0 0 48 48" fill="none" className="mx-auto text-adjung-maroon">
-            <rect x="10" y="6" width="28" height="36" rx="1.5" stroke="currentColor" strokeWidth="1.5"></rect>
-            <line x1="16" y1="14" x2="32" y2="14" stroke="currentColor" strokeWidth="1.25"></line>
-            <line x1="16" y1="20" x2="32" y2="20" stroke="currentColor" strokeWidth="1.25"></line>
-            <line x1="16" y1="26" x2="26" y2="26" stroke="currentColor" strokeWidth="1.25"></line>
-          </svg>
-        </div>
         <h1 className="font-serif text-3xl md:text-4xl font-normal text-[#111111] mb-4 tracking-tight leading-tight">Welcome to Adjung</h1>
         <p className="text-stone-500 text-base max-w-sm leading-relaxed font-serif italic">A place where knowledge is written to endure.</p>
       </div>
@@ -243,7 +226,7 @@ function Step1Welcome({ onNext }: { onNext: () => void, key?: string }) {
         onClick={onNext} 
         className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
       >
-        Begin Onboarding
+        Start Now
       </button>
     </motion.section>
   );
@@ -255,12 +238,12 @@ function Step2Philosophy({ onNext }: { onNext: () => void, key?: string }) {
       <div className="text-center w-full">
         <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-4 tracking-tight">The Philosophy</h2>
       </div>
-      <div className="space-y-4 text-stone-600 leading-relaxed mb-6 font-serif text-[14.5px] max-w-md border-l-2 border-adjung-maroon/20 pl-6 italic flex-1 flex flex-col justify-center">
-        <p>“Adjung values knowledge over popularity. Every work published here is meant to endure beyond the moment of its creation.”</p>
-        <p>“We honour human authorship. Every word carries the weight of its author's intellectual commitment.”</p>
-        <p>“Editorial integrity is paramount. We do not optimise for engagement—we optimise for truth and clarity.”</p>
-        <p>“Long-term preservation is our promise. What you write here becomes part of an enduring record.”</p>
-        <p>“Respectful discourse is expected. Adjung is a place for serious intellectual exchange.”</p>
+      <div className="space-y-4 text-stone-600 leading-relaxed mb-6 font-serif text-[14.5px] max-w-md border-l-2 border-adjung-maroon/20 pl-6 flex-1 flex flex-col justify-center">
+        <p>Adjung values knowledge over popularity. Every work published here is meant to endure beyond the moment of its creation.</p>
+        <p>We honour human authorship. Every word carries the weight of its author's intellectual commitment.</p>
+        <p>Editorial integrity is paramount. We do not optimise for engagement—we optimise for truth and clarity.</p>
+        <p>Long-term preservation is our promise. What you write here becomes part of an enduring record.</p>
+        <p>Respectful discourse is expected. Adjung is a place for serious intellectual exchange.</p>
       </div>
       <button 
         onClick={onNext} 
@@ -299,7 +282,7 @@ function Step3Charter({ onNext }: { onNext: () => void, key?: string }) {
   return (
     <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center w-full px-2 h-full justify-between">
       <div className="text-center w-full">
-        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">The Membership Charter</h2>
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Term of Use</h2>
         <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-4">≈ 5–7 minutes reading time</p>
       </div>
 
@@ -307,59 +290,115 @@ function Step3Charter({ onNext }: { onNext: () => void, key?: string }) {
       <div 
         ref={containerRef}
         onScroll={handleScroll}
-        className="w-full max-w-md border border-stone-200/80 bg-stone-50/50 p-6 md:p-8 flex flex-col overflow-y-auto rounded-sm scrollbar-thin scrollbar-thumb-stone-200" 
+        className="w-full max-w-md border border-stone-200/80 bg-stone-50/50 p-6 md:p-8 flex flex-col overflow-y-auto rounded-sm maroon-scrollbar" 
         style={{ maxHeight: '200px' }}
       >
         <div className="text-stone-600 font-serif leading-relaxed text-sm text-justify space-y-4">
-          <p className="italic text-center mb-6 font-semibold text-stone-800">This Charter establishes the principles, rights, and responsibilities of all Adjung members. Adjung is a serious intellectual community dedicated to the creation and preservation of knowledge. By enrolling, you join a tradition of scholarly discourse and authorial integrity.</p>
-          
           <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">The Philosophy of Adjung</h3>
-            <p>Adjung values knowledge over popularity. We do not optimize for engagement metrics or algorithmic virality. Every contribution is considered for its intellectual merit, clarity, and potential to endure beyond the moment of its creation. We believe that serious thinking requires serious infrastructure—one that prizes substance over spectacle.</p>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">1. Introduction</h3>
+            <p className="mb-2 font-normal">Welcome to Adjung.</p>
+            <p className="mb-2 font-normal">Adjung is an editorial publishing platform dedicated to the creation, preservation, and dissemination of knowledge. By creating an account or accessing any part of the platform, you agree to comply with these Terms of Use.</p>
+            <p className="font-normal">These Terms govern your use of Adjung and all related services.</p>
           </div>
           
           <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Rights of Members</h3>
-            <p className="mb-2">As an Adjung member, you retain full authorship of your works. Your intellectual property is protected. You have the right to publish, unpublish, or modify your contributions within the guidelines of this Charter. You have the right to a respectful intellectual community free from harassment or bad-faith engagement.</p>
-            <p>You may request the deletion of your account and associated data in compliance with applicable law. You have the right to appeal editorial decisions through established channels.</p>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">2. Eligibility</h3>
+            <p className="mb-2 font-normal">You must be legally capable of entering into a binding agreement under the laws applicable in your jurisdiction.</p>
+            <p className="font-normal">If you register on behalf of an organization, you confirm that you are authorized to do so.</p>
           </div>
           
           <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Responsibilities of Members</h3>
-            <p className="mb-2">You commit to intellectual honesty in all published works. You will not intentionally publish false or misleading information. You respect the authorship and intellectual property of others. When referencing external sources, you provide proper attribution.</p>
-            <p>You engage in discourse with respect and scholarly rigour. You acknowledge that published works become part of your intellectual record and may be preserved indefinitely, even if later removed from public view.</p>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">3. Membership</h3>
+            <p className="mb-2 font-normal">Creating an account establishes your membership in Adjung.</p>
+            <p className="mb-2 font-normal">Membership grants access to features according to your account privileges and participation within the platform.</p>
+            <p className="font-normal">Certain privileges, including eligibility for a Personal Site, may require additional participation requirements determined by Adjung.</p>
           </div>
           
           <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Editorial Standards</h3>
-            <p className="mb-2">Adjung maintains editorial standards across all public contributions. While we do not censor private notes or drafts, published works may be subject to review for clarity, coherence, and alignment with scholarly conventions.</p>
-            <p>Editorial decisions are made transparently and may be appealed. We do not remove content solely because it is controversial or challenges mainstream opinion. We remove content that is demonstrably false, harmful, or violates the terms of this Charter.</p>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">4. User Identity</h3>
+            <p className="mb-2 font-normal">Members are responsible for maintaining accurate account information.</p>
+            <p className="mb-2 font-normal">You may publish under a Pen Name.</p>
+            <p className="font-normal">However, Adjung reserves the right to request identity verification where necessary to protect platform integrity.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">5. Intellectual Property</h3>
+            <p className="mb-2 font-normal">You retain ownership of the works you publish.</p>
+            <p className="mb-2 font-normal">By publishing content on Adjung, you grant Adjung a non-exclusive licence to display, archive, index, preserve, and distribute your published works within the platform.</p>
+            <p className="font-normal">Adjung does not claim ownership of your intellectual property.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">6. Publication Standards</h3>
+            <p className="mb-2 font-normal">Members agree that published content should:</p>
+            <ul className="list-disc pl-5 mb-2 font-normal space-y-1">
+              <li>be original or properly attributed;</li>
+              <li>respect copyright;</li>
+              <li>avoid plagiarism;</li>
+              <li>avoid impersonation;</li>
+              <li>avoid fraudulent or misleading information;</li>
+              <li>comply with applicable laws.</li>
+            </ul>
+            <p className="font-normal">Adjung may remove or restrict content that violates these standards.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">7. Artificial Intelligence</h3>
+            <p className="mb-2 font-normal">Members may use artificial intelligence tools during the creation of their works.</p>
+            <p className="mb-2 font-normal">Where required by Adjung policies, AI-assisted content should be appropriately disclosed.</p>
+            <p className="font-normal">Members remain fully responsible for everything published under their names.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">8. Personal Site</h3>
+            <p className="mb-2 font-normal">Eligible members may establish a Personal Site under an Adjung subdomain.</p>
+            <p className="mb-2 font-normal">Eligibility requirements are determined by Adjung and may change over time.</p>
+            <p className="font-normal">A Personal Site remains subject to these Terms of Use.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">9. Privacy</h3>
+            <p className="mb-2 font-normal">Adjung collects only the information necessary to operate the platform.</p>
+            <p className="font-normal">Personal information will be handled in accordance with the Adjung Privacy Policy.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">10. Account Security</h3>
+            <p className="mb-2 font-normal">Members are responsible for maintaining the confidentiality of their login credentials.</p>
+            <p className="font-normal">Notify Adjung immediately if unauthorized access is suspected.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">11. Suspension and Termination</h3>
+            <p className="mb-2 font-normal">Adjung may suspend or terminate accounts that:</p>
+            <ul className="list-disc pl-5 mb-2 font-normal space-y-1">
+              <li>violate these Terms;</li>
+              <li>repeatedly breach publication standards;</li>
+              <li>threaten platform integrity;</li>
+              <li>engage in unlawful activities.</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">12. Amendments</h3>
+            <p className="mb-2 font-normal">These Terms may be updated from time to time.</p>
+            <p className="mb-2 font-normal">Material changes will be communicated through appropriate platform notices.</p>
+            <p className="font-normal">Continued use of Adjung constitutes acceptance of the revised Terms.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">13. Governing Law</h3>
+            <p className="font-normal">These Terms shall be governed by the laws applicable to the operator of Adjung unless otherwise required by mandatory local law.</p>
+          </div>
+          
+          <div>
+            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">14. Contact</h3>
+            <p className="font-normal">Questions regarding these Terms may be directed through the official contact channels published by Adjung.</p>
           </div>
 
-          <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Personal Sites</h3>
-            <p>Personal Sites represent permanent intellectual addresses for established members. Access to a Personal Site is earned through demonstrated commitment to the Adjung community and completion of publishing milestones. Personal Sites cannot be transferred, sold, or used for commercial purposes without explicit permission.</p>
-          </div>
-
-          <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Publication Ethics</h3>
-            <p className="mb-2">All published works must represent original thought or properly credited research. Plagiarism, whether intentional or negligent, violates the Charter. If plagiarism is discovered, the offending work will be removed and the member will be subject to sanctions.</p>
-            <p>Members agree to disclose conflicts of interest when relevant to their published work. Funded research or compensated advocacy must be clearly labeled.</p>
-          </div>
-
-          <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Long-Term Preservation</h3>
-            <p>Adjung commits to preserving published works for the long term. We do not monetize member content through advertising or third-party sales. Your intellectual legacy is protected as part of Adjung's enduring record.</p>
-          </div>
-
-          <div>
-            <h3 className="font-serif text-base font-bold text-stone-900 mb-2">Final Declaration</h3>
-            <p>By joining Adjung, you commit to building an intellectual identity with integrity. You understand that this is not social media. You embrace the responsibility of authorship in a scholarly community. You accept that your words may influence others and carry weight accordingly. Welcome to Adjung.</p>
-          </div>
-          
           {scrolledToBottom && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-adjung-maroon font-serif text-xs italic mt-6 pt-4 border-t border-stone-200">
-              You have reached the end of the Adjung Membership Charter.
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-adjung-maroon font-serif text-xs font-normal mt-6 pt-4 border-t border-stone-200">
+              You have reached the end of the Adjung Terms of Use.
             </motion.p>
           )}
         </div>
@@ -378,7 +417,7 @@ function Step3Charter({ onNext }: { onNext: () => void, key?: string }) {
             I understand and accept the terms and responsibilities of Adjung membership.
             {!scrolledToBottom && (
               <span className="block text-[10px] text-stone-400 font-mono mt-1 uppercase tracking-wide">
-                Please scroll to the bottom of the Charter to enable
+                Please scroll to the bottom of the Terms of Use to enable
               </span>
             )}
           </span>
@@ -414,14 +453,26 @@ function Step4Identity({ formData, setFormData, onNext }: any) {
       <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md font-sans flex-1 flex flex-col justify-center">
         
         <div className="relative group">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Display Name</label>
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Real & Full Name</label>
           <input 
             type="text" 
             required
             value={formData.displayName}
             onChange={e => setFormData({...formData, displayName: e.target.value})}
-            className="w-full border border-stone-200 bg-stone-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon focus:ring-1 focus:ring-adjung-maroon/10 transition-all font-serif" 
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60" 
             placeholder="e.g. Al-Ghazali"
+          />
+        </div>
+
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Pen Name / Short Name</label>
+          <input 
+            type="text" 
+            required
+            value={formData.penName}
+            onChange={e => setFormData({...formData, penName: e.target.value})}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60" 
+            placeholder="e.g. Ghazali"
           />
         </div>
 
@@ -432,7 +483,7 @@ function Step4Identity({ formData, setFormData, onNext }: any) {
             required
             value={formData.username}
             onChange={e => setFormData({...formData, username: e.target.value})}
-            className="w-full border border-stone-200 bg-stone-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon focus:ring-1 focus:ring-adjung-maroon/10 transition-all font-mono" 
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-mono placeholder:text-stone-300" 
             placeholder="e.g. zayd.ghazali"
           />
         </div>
@@ -444,12 +495,12 @@ function Step4Identity({ formData, setFormData, onNext }: any) {
             required
             value={formData.email}
             onChange={e => setFormData({...formData, email: e.target.value})}
-            className="w-full border border-stone-200 bg-stone-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon focus:ring-1 focus:ring-adjung-maroon/10 transition-all" 
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all placeholder:text-stone-300" 
             placeholder="e.g. contact@domain.edu"
           />
         </div>
 
-        <div className="pt-6 flex justify-center">
+        <div className="pt-4 flex justify-center">
           <button 
             type="submit" 
             className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
@@ -540,7 +591,7 @@ function Step5Verification({ formData, onNext, goBack }: { formData: any; onNext
               setCode(e.target.value.replace(/\D/g, ''));
               setError('');
             }}
-            className="w-full border border-stone-200 bg-stone-50/50 hover:bg-white focus:bg-white px-4 py-3 text-center text-xl font-mono tracking-[0.4em] text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon focus:ring-1 focus:ring-adjung-maroon/10 transition-all" 
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-3 text-center text-xl font-mono tracking-[0.4em] text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all" 
             placeholder="000000"
           />
         </div>
@@ -610,7 +661,7 @@ function Step6Biography({ formData, setFormData, onNext }: any) {
             rows={5} 
             value={formData.biography}
             onChange={e => setFormData({...formData, biography: e.target.value})}
-            className="w-full border border-stone-200 bg-stone-50/50 hover:bg-white focus:bg-white px-3.5 py-2.5 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon focus:ring-1 focus:ring-adjung-maroon/10 transition-all font-serif leading-relaxed"
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2.5 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif leading-relaxed placeholder:italic placeholder:text-stone-400/60"
             placeholder="e.g. Researching ethics, epistemic integrity, and classical Islamic scholarship."
           ></textarea>
         </div>
@@ -687,7 +738,7 @@ function Step7PersonalSite({ formData, setFormData, onNext }: any) {
 
       {/* Domain input */}
       <div className="w-full max-w-md mb-4 relative">
-        <div className="flex items-center bg-stone-50/50 hover:bg-white focus-within:bg-white border border-stone-200 px-4 py-2.5 rounded-sm focus-within:border-adjung-maroon focus-within:ring-1 focus-within:ring-adjung-maroon/10 transition-all">
+        <div className="flex items-baseline bg-transparent border-b-2 border-stone-200/60 pb-1.5 focus-within:border-adjung-maroon transition-all">
           <input 
             type="text" 
             placeholder="yourname" 
@@ -1100,7 +1151,7 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
             </div>
 
             <div className="text-left space-y-1.5">
-              <label className="block text-[9px] font-mono uppercase tracking-wider text-stone-400">Pen Name on Seal</label>
+              <label className="block text-[9px] font-mono uppercase tracking-wider text-stone-400">Pen & Short Name</label>
               <input 
                 type="text" 
                 value={typedText}

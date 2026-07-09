@@ -1,5 +1,5 @@
 import React from 'react';
-import { db } from '../db/mockDb';
+import { db } from '../../db/mockDb';
 
 export const ChangelogView: React.FC = () => {
   const releaseLogs = db.getReleaseLogs();

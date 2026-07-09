@@ -1,9 +1,9 @@
 import React from 'react';
-import { Entry, SystemSettings } from '../types';
-import { parseInlineFormatting, toRoman, markdownToHtml } from '../utils';
-import { PhilosophyCarousel } from './PhilosophyCarousel';
-import { ElasticMarginRow } from './ElasticMarginRow';
-import { AnimatedSignature } from './AnimatedSignature';
+import { Entry, SystemSettings } from '../../types';
+import { parseInlineFormatting, toRoman, markdownToHtml } from '../../utils';
+import { PhilosophyCarousel } from '../common/PhilosophyCarousel';
+import { ElasticMarginRow } from '../rendering/ElasticMarginRow';
+import { AnimatedSignature } from '../desk/AnimatedSignature';
 import { motion } from 'motion/react';
 
 interface LandingViewProps {

@@ -4,12 +4,12 @@ import { db } from './db/mockDb';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
 import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { EntryRenderer } from './components/EntryRenderer';
-import { TimelineEntryCollapseRenderer } from './components/TimelineEntryCollapseRenderer';
+import { EntryRenderer } from './components/rendering/EntryRenderer';
+import { TimelineEntryCollapseRenderer } from './components/rendering/TimelineEntryCollapseRenderer';
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
-import { SignatureLayout } from './components/SignatureLayout';
-import { SignatureRenderer } from './components/SignatureRenderer';
-import SignUpWizard from './components/SignUpWizard';
+import { SignatureLayout } from './components/desk/SignatureLayout';
+import { SignatureRenderer } from './components/desk/SignatureRenderer';
+import SignUpWizard from './components/common/SignUpWizard';
 import { 
   Compass,
   User as UserIcon,
@@ -34,25 +34,25 @@ import {
   Send
 } from 'lucide-react';
 
-import { FolioTimeline } from './components/FolioTimeline';
-import { FrontpageView } from './components/FrontpageView';
-import { FolioView } from './components/FolioView';
-import { BiographyView } from './components/BiographyView';
-import { PoliciesView } from './components/PoliciesView';
-import { LandingView } from './components/LandingView';
-import { NoticesView } from './components/NoticesView';
-import { EditorialNotesView } from './components/EditorialNotesView';
-import { ChangelogView } from './components/ChangelogView';
-import { PhilosophyCarousel } from './components/PhilosophyCarousel';
+import { FolioTimeline } from './components/portal/FolioTimeline';
+import { FrontpageView } from './components/portal/FrontpageView';
+import { FolioView } from './components/portal/FolioView';
+import { BiographyView } from './components/portal/BiographyView';
+import { PoliciesView } from './components/institutional/PoliciesView';
+import { LandingView } from './components/portal/LandingView';
+import { NoticesView } from './components/institutional/NoticesView';
+import { EditorialNotesView } from './components/institutional/EditorialNotesView';
+import { ChangelogView } from './components/institutional/ChangelogView';
+import { PhilosophyCarousel } from './components/common/PhilosophyCarousel';
 
-import { WritingDesk } from './components/WritingDesk';
-import { EditorialIndex } from './components/EditorialIndex';
-import { Editorium } from './components/Editorium';
-import { Directory } from './components/Directory';
-import { IdentityStudio } from './components/IdentityStudio';
-import { LoadingScreen } from './components/LoadingScreen';
-import { ElasticMarginRow } from './components/ElasticMarginRow';
-import { AnimatedSignature } from './components/AnimatedSignature';
+import { WritingDesk } from './components/desk/WritingDesk';
+import { EditorialIndex } from './components/portal/EditorialIndex';
+import { Editorium } from './components/studio/Editorium';
+import { Directory } from './components/portal/Directory';
+import { IdentityStudio } from './components/portal/IdentityStudio';
+import { LoadingScreen } from './components/common/LoadingScreen';
+import { ElasticMarginRow } from './components/rendering/ElasticMarginRow';
+import { AnimatedSignature } from './components/desk/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
 
@@ -575,16 +575,9 @@ export default function App() {
         const slug = parts[1];
         const entry = entries.find(e => e.authorId === authorFromSubdomain.id && e.slug === slug);
         if (entry) {
-          if (entry.contentType === 'Note') {
-            setActiveTab('folio');
-            setSelectedEntry(null);
-            setEditingEntry(null);
-            setExpandedNoteIds(prev => prev.includes(entry.id) ? prev : [...prev, entry.id]);
-          } else {
-            setSelectedEntry(entry);
-            setActiveTab('folio');
-            setEditingEntry(null);
-          }
+          setSelectedEntry(entry);
+          setActiveTab('folio');
+          setEditingEntry(null);
         }
       }
       return;
@@ -704,24 +697,9 @@ export default function App() {
       const entry = entries.find(e => e.authorId === authorId && e.slug === slug);
       if (entry) {
         setSelectedAuthorId(authorId);
-        if (entry.contentType === 'Note') {
-          setActiveTab('folio');
-          setSelectedEntry(null);
-          setEditingEntry(null);
-          const noteId = entry.id;
-          setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
-          setTimeout(() => {
-            const element = document.getElementById(`note-card-${noteId}`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }, 150);
-        } else {
-          setSelectedAuthorId(authorId);
-          setSelectedEntry(entry);
-          setActiveTab('folio');
-          setEditingEntry(null);
-        }
+        setSelectedEntry(entry);
+        setActiveTab('folio');
+        setEditingEntry(null);
       }
     }
     setIsRouteSynced(true);
@@ -1368,7 +1346,7 @@ Editorial Board of Adjung`;
   };
 
   const handleWizardComplete = (data: any) => {
-    const { username, displayName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
+    const { username, displayName, penName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
 
     const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
     
@@ -1392,8 +1370,8 @@ Editorial Board of Adjung`;
       username: formattedUsername,
       email: email.trim(),
       role: 'Writer',
-      penName: displayName.trim(),
-      signature: typeof signatureData === 'string' ? signatureData.trim() : displayName.trim(),
+      penName: (penName || displayName).trim(),
+      signature: typeof signatureData === 'string' ? signatureData.trim() : (penName || displayName).trim(),
       avatarColor: 'bg-stone-800 text-stone-100',
       bioSummary: `Newly registered independent scholar on Adjung.`
     };
@@ -1405,7 +1383,7 @@ Editorial Board of Adjung`;
     const profile = db.getProfileByAuthorId(newUserId);
     const updatedProfile: WriterProfile = {
       ...profile,
-      heroTitle: `${displayName.trim()}'s Folio`,
+      heroTitle: `${(penName || displayName).trim()}'s Folio`,
       heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
     };
     db.updateProfile(updatedProfile);
@@ -1413,16 +1391,11 @@ Editorial Board of Adjung`;
     const identity = db.getIdentityByAccountId(newUserId);
     if (identity) {
       // bioContent removed
-
-
-
-
-
-
-
       db.updateIdentity({
         ...identity,
-        biography: biography ? biography.trim() : `Biography of ${displayName.trim()}.`
+        displayName: displayName.trim(),
+        penName: (penName || displayName).trim(),
+        biography: biography ? biography.trim() : `Biography of ${(penName || displayName).trim()}.`
       });
     }
 
@@ -1432,7 +1405,7 @@ Editorial Board of Adjung`;
     setSelectedAuthorId(newUserId);
     setActiveTab('desk');
     setShowSignUpWizard(false);
-    showToast(`Membership established! Welcome to Adjung, ${displayName.trim()}!`, 'success');
+    showToast(`Membership established! Welcome to Adjung, ${(penName || displayName).trim()}!`, 'success');
   };
 
   // Editorium: Reset Database
@@ -2048,6 +2021,7 @@ Editorial Board of Adjung`;
             setSelectedEntry={setSelectedEntry}
             setSelectedAuthorId={setSelectedAuthorId}
             setActiveTab={setActiveTab}
+            currentUser={currentUser}
           />
         )}
 
@@ -2186,7 +2160,7 @@ Editorial Board of Adjung`;
               {/* Display name (Read-only on account, managed on Desk) */}
               <div>
                 <label className="block font-mono uppercase text-[9px] text-stone-400 tracking-wider mb-1">
-                  Public Pen Name <span className="text-[8px] italic">(Customized on Desk)</span>
+                  Pen & Short Name <span className="text-[8px] italic">(Customized on Desk)</span>
                 </label>
                 <div className="w-full bg-stone-50 border border-stone-200 p-2.5 rounded text-stone-500 font-serif text-[13px] select-none">
                   {currentUser.penName}

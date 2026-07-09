@@ -1,5 +1,5 @@
 import React from 'react';
-import { VectorStroke, DigitalSignature } from '../types';
+import { VectorStroke, DigitalSignature } from '../../types';
 import { SignatureRenderer } from './SignatureRenderer';
 import { ShieldCheck } from 'lucide-react';
 
@@ -12,6 +12,7 @@ interface SignatureLayoutProps {
   color?: string;
   strokeWidth?: number;
   role?: string;
+  location?: string;
 }
 
 export function SignatureLayout({
@@ -22,7 +23,8 @@ export function SignatureLayout({
   className = "",
   color = "#802334", // Adjung-maroon
   strokeWidth = 3.2,
-  role
+  role,
+  location
 }: SignatureLayoutProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center select-none ${className}`}>
@@ -52,8 +54,13 @@ export function SignatureLayout({
 
       {/* Author details */}
       <div className="mt-2 flex flex-col items-center">
-        <div className="font-serif italic font-semibold text-stone-900 tracking-wide text-sm">
+        <div className="font-serif italic font-semibold text-stone-900 tracking-wide text-sm flex items-center gap-1.5 justify-center">
           {penName}
+          {location && (
+            <span className="font-sans font-normal not-italic text-[10px] text-stone-400">
+              ({location})
+            </span>
+          )}
         </div>
         {role && (
           <div className="font-mono text-[8px] uppercase tracking-widest text-stone-400/80 mt-0.5">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PolicyDocument } from '../types';
+import { PolicyDocument } from '../../types';
 
 interface PoliciesViewProps {
   policies: PolicyDocument[];

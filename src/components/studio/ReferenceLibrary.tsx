@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Entry, User, IdentityProfile } from '../types';
-import { WritingDesk } from './WritingDesk';
-import { EntryRenderer } from './EntryRenderer';
-import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
-import { getPresentationSpec, PresentationSpec } from '../presentation';
-import { isArabicText } from '../utils';
+import { Entry, User, IdentityProfile } from '../../types';
+import { WritingDesk } from '../desk/WritingDesk';
+import { EntryRenderer } from '../rendering/EntryRenderer';
+import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
+import { getPresentationSpec, PresentationSpec } from '../../presentation';
+import { isArabicText, parseInlineFormatting } from '../../utils';
 import { 
   BookOpen, FileText, Layers, CheckCircle, Monitor, Layout, 
   Calendar, Search, RefreshCw, Copy, ShieldAlert, Award, FileCode,
@@ -259,27 +259,31 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         const isFeatured = selectedVariantId === 'featured';
 
         if (isHero) {
+          const showHeroTitle = tempEntry.contentType !== 'Note';
+          const isNote = tempEntry.contentType === 'Note';
           return (
-            <div className="bg-stone-900 text-stone-100 p-8 md:p-12 rounded-md max-w-5xl mx-auto flex flex-col justify-between min-h-[350px] shadow-lg relative overflow-hidden border border-stone-850">
+            <div className="bg-[#FDFBF7] p-8 md:p-12 rounded-md max-w-5xl mx-auto flex flex-col justify-between min-h-[300px] shadow-md relative overflow-hidden border border-stone-200 text-left animate-fade-in">
               <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-[#802334] tracking-widest uppercase font-bold select-none">
                 Hero Publication Feature
               </div>
-              <div className="space-y-4 max-w-2xl text-left">
+              <div className="space-y-4 max-w-2xl">
                 <span className="bg-[#802334] text-white font-mono text-[8px] tracking-widest px-2.5 py-0.5 uppercase font-bold rounded">
                   {tempEntry.contentType}
                 </span>
-                <h2 className="text-3xl md:text-4xl font-serif font-light leading-tight">
-                  {tempEntry.title || 'Untitled Sandbox Entry'}
-                </h2>
-                {tempEntry.subtitle && (
-                  <p className="text-stone-400 text-sm font-serif italic">{tempEntry.subtitle}</p>
+                {showHeroTitle && (
+                  <h2 className="text-3xl md:text-4xl font-serif font-light text-stone-900 leading-tight">
+                    {tempEntry.title || 'Untitled Sandbox Entry'}
+                  </h2>
                 )}
-                <p className="text-stone-300 text-sm leading-relaxed font-serif line-clamp-3">
-                  {tempEntry.excerpt || tempEntry.content.substring(0, 200) + '...'}
-                </p>
+                {showHeroTitle && tempEntry.subtitle && (
+                  <p className="text-stone-405 text-sm font-serif italic">{tempEntry.subtitle}</p>
+                )}
+                <div className={`text-stone-750 leading-relaxed font-serif ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
+                  {parseInlineFormatting(tempEntry.excerpt || tempEntry.content)}
+                </div>
               </div>
-              <div className="flex items-center gap-4 text-xs text-stone-400 font-sans border-t border-stone-800 pt-4 mt-6">
-                <span>By <strong className="text-stone-200">{authorName}</strong></span>
+              <div className="flex items-center gap-4 text-xs text-stone-500 font-sans border-t border-stone-200 pt-4 mt-6">
+                <span>By <strong className="text-stone-850">{authorName}</strong></span>
                 <span>•</span>
                 <span>{new Date(tempEntry.publishedDate).toLocaleDateString()}</span>
               </div>
@@ -297,12 +301,14 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               )}
               <div className="flex-1 space-y-3">
                 <span className="font-mono text-[8px] uppercase tracking-widest text-[#802334] font-bold">Featured {tempEntry.contentType}</span>
-                <h3 className="font-serif text-xl font-bold text-stone-900 leading-tight">
-                  {tempEntry.title || 'Untitled Featured Archetype'}
-                </h3>
-                <p className="font-serif text-stone-750 text-xs leading-relaxed line-clamp-3">
-                  {tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...'}
-                </p>
+                {tempEntry.contentType !== 'Note' && (
+                  <h3 className="font-serif text-xl font-bold text-stone-900 leading-tight">
+                    {tempEntry.title || 'Untitled Featured Archetype'}
+                  </h3>
+                )}
+                <div className="font-serif text-stone-750 text-xs leading-relaxed line-clamp-3">
+                  {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...')}
+                </div>
                 <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-250/20">
                   By {authorName} • {new Date(tempEntry.publishedDate).toLocaleDateString()}
                 </div>
@@ -316,11 +322,23 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
           <div className="max-w-md mx-auto p-5 rounded border bg-white border-stone-200/70 shadow-sm text-left">
             <span className="block font-mono text-[9px] uppercase tracking-wider text-[#802334] mb-2">{tempEntry.contentType}</span>
             {activeSpec.visibility.showTitle && tempEntry.title && (
-              <h4 className="text-stone-900 leading-tight mb-2 font-serif text-base font-bold">{tempEntry.title}</h4>
+              <h4 
+                dir={isAr ? 'rtl' : 'ltr'}
+                className="text-stone-900 leading-tight mb-2 font-serif text-base font-bold"
+              >
+                {tempEntry.title}
+              </h4>
             )}
-            <p className={`text-stone-600 text-xs leading-relaxed mb-4 line-clamp-3 ${isAr ? 'font-arabic' : 'font-serif'}`}>
-              {tempEntry.excerpt || tempEntry.content.substring(0, 150) + '...'}
-            </p>
+            <div 
+              dir={isAr ? 'rtl' : 'ltr'}
+              className={`text-stone-700 leading-relaxed mb-4 line-clamp-3 ${
+                tempEntry.contentType === 'Note'
+                  ? (isAr ? 'font-arabic text-base md:text-lg leading-loose text-right' : 'font-serif text-sm md:text-base')
+                  : (isAr ? 'font-arabic text-xs leading-loose' : 'font-serif text-xs')
+              }`}
+            >
+              {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 150) + '...')}
+            </div>
             <div className="flex items-center justify-between text-[10px] text-stone-500 font-sans border-t border-stone-100 pt-2">
               <span>By {authorName}</span>
               <span>{new Date(tempEntry.publishedDate).toLocaleDateString()}</span>
@@ -371,15 +389,29 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         );
 
       case 'archive':
+        const cleanContent = tempEntry.content.replace(/\[\^.*?\]/g, '').trim();
+        const firstPara = cleanContent.split(/\n+/)[0] || '';
+        const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
+        const archiveRowText = tempEntry.contentType === 'Note'
+          ? (sentenceMatch ? sentenceMatch[0] : firstPara.substring(0, 100))
+          : tempEntry.title;
+
         return (
-          <div className="max-w-4xl mx-auto p-4 bg-white border border-stone-200/60 rounded font-sans text-xs flex items-center justify-between gap-4 shadow-sm">
+          <div className="max-w-4xl mx-auto p-4 bg-white border border-stone-200/60 rounded font-sans text-xs flex items-center justify-between gap-4 shadow-sm animate-fade-in">
             <div className="flex items-center gap-3">
               <span className="bg-[#802334]/5 text-[#802334] font-mono text-[9px] font-bold px-2 py-0.5 border border-[#802334]/15 rounded uppercase">
                 {tempEntry.contentType}
               </span>
-              <div className="text-left">
-                <div className="font-serif font-bold text-stone-900 text-sm">{tempEntry.title || '(Untitled)'}</div>
-                <div className="font-mono text-[9px] text-stone-400">Slug: {tempEntry.slug}</div>
+              <div 
+                dir={isArabicText(archiveRowText) ? 'rtl' : 'ltr'}
+                className={`text-left ${isArabicText(archiveRowText) ? 'text-right' : ''}`}
+              >
+                <div className="font-serif font-bold text-stone-900 text-sm">
+                  {archiveRowText || '(Untitled Note)'}
+                </div>
+                {tempEntry.contentType !== 'Note' && (
+                  <div className="font-mono text-[9px] text-stone-400">Slug: {tempEntry.slug}</div>
+                )}
               </div>
             </div>
             <div className="text-right font-mono text-[10px] text-stone-400">
@@ -543,7 +575,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Display Name</label>
+                      <label className="block text-[8px] text-stone-400 uppercase font-semibold mb-1">Real & Full Name</label>
                       <input
                         type="text"
                         value={authorName}

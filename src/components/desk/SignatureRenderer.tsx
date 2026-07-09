@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { VectorStroke } from '../types';
+import { VectorStroke } from '../../types';
 
 interface SignatureRendererProps {
   strokes: VectorStroke[][];
@@ -22,7 +22,7 @@ export function SignatureRenderer({
   strokes, 
   type = 'drawn',
   typedText,
-  fontFamily = 'Mistrully, Dancing Script, cursive',
+  fontFamily = 'Mrs Saint Delafield, Birthstone, Pinyon Script, cursive',
   className = "w-full h-full", 
   color = "#802334", // Adjung-maroon
   strokeWidth = 3.2, // Enhanced default thickness
@@ -33,8 +33,11 @@ export function SignatureRenderer({
   const id = useId();
   const filterId = `ink-bleed-${id.replace(/:/g, '-')}`;
 
-  if (type === 'typed') {
-    if (!typedText) {
+  const hasStrokes = strokes && strokes.length > 0 && !strokes.every(s => s.length === 0);
+
+  if (type === 'typed' || (!hasStrokes && typedText)) {
+    const activeText = typedText || '';
+    if (!activeText) {
       return (
         <div className={`flex items-center justify-center text-stone-300 italic font-serif select-none ${className}`}>
           No signature
@@ -79,22 +82,22 @@ export function SignatureRenderer({
           dominantBaseline="middle" 
           textAnchor="middle" 
           fill={color}
-          textLength={typedText.length > 18 ? "370" : undefined}
-          lengthAdjust={typedText.length > 18 ? "spacingAndGlyphs" : undefined}
+          textLength={activeText.length > 18 ? "370" : undefined}
+          lengthAdjust={activeText.length > 18 ? "spacingAndGlyphs" : undefined}
           style={{ 
-            fontFamily: fontFamily || 'Mistrully, Dancing Script, cursive', 
+            fontFamily: fontFamily || 'Mrs Saint Delafield, Birthstone, Pinyon Script, cursive', 
             fontSize: `${64 * textScale}px`,
             letterSpacing: typographyStyle?.letterSpacing ? `${typographyStyle.letterSpacing}px` : 'normal',
             fontWeight: typographyStyle?.fontWeight || 'normal'
           }}
         >
-          {typedText}
+          {activeText}
         </text>
       </svg>
     );
   }
 
-  if (!strokes || strokes.length === 0 || strokes.every(s => s.length === 0)) {
+  if (!hasStrokes) {
     return (
       <div className={`flex items-center justify-center text-stone-300 italic font-serif select-none ${className}`}>
         No signature

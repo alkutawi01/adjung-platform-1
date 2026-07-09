@@ -54,7 +54,7 @@ const initialNodes: Node[] = [
       label: 'Publication', 
       desc: 'Core document entity (Note, Essay, Article, Notice, Editor\'s Note).', 
       purpose: 'Represents the primary scholarly record containing text layers, footnotes, and signatures.', 
-      spec: 'SPEC-001', 
+      spec: 'SPEC-007', 
       dbEntity: 'entries', 
       files: ['src/types.ts', 'src/components/EntryRenderer.tsx'] 
     } 
@@ -67,7 +67,7 @@ const initialNodes: Node[] = [
       label: 'Author', 
       desc: 'Scholarly contributor profile and key owner.', 
       purpose: 'Identifies the creator of publications, holds public profile details and handwritten signature strokes.', 
-      spec: 'SPEC-002', 
+      spec: 'SPEC-006', 
       dbEntity: 'users, profiles', 
       files: ['src/types.ts', 'src/components/FolioView.tsx'] 
     } 
@@ -80,7 +80,7 @@ const initialNodes: Node[] = [
       label: 'Writing Desk', 
       desc: 'Authoring workspace and markdown editor.', 
       purpose: 'Provides the environment for drafting, formatting, right-clicking to insert annotations, and signing entries.', 
-      spec: 'SPEC-010', 
+      spec: 'SPEC-008', 
       dbEntity: 'entries (Draft status)', 
       files: ['src/components/WritingDesk.tsx', 'src/utils.tsx'] 
     } 
@@ -93,7 +93,7 @@ const initialNodes: Node[] = [
       label: 'Editorium', 
       desc: 'Editorial board workspace and configuration desk.', 
       purpose: 'Allows Chief Editors to manage users, roles, Frontpage curations, and inspect platform topology / Reference Library.', 
-      spec: 'SPEC-015', 
+      spec: 'SPEC-011', 
       dbEntity: 'systemSettings, logs', 
       files: ['src/components/Editorium.tsx', 'src/components/ReferenceLibrary.tsx'] 
     } 
@@ -106,7 +106,7 @@ const initialNodes: Node[] = [
       label: 'Frontpage', 
       desc: 'Public portal for exploring curated publications.', 
       purpose: 'Renders the landing view, editorial picks, headlines, and calligraphic tag seals.', 
-      spec: 'SPEC-020', 
+      spec: 'SPEC-013', 
       dbEntity: 'entries (Published status), systemSettings', 
       files: ['src/components/FrontpageView.tsx', 'src/components/LandingView.tsx'] 
     } 
@@ -119,7 +119,7 @@ const initialNodes: Node[] = [
       label: 'Folio', 
       desc: 'Author-specific continuous archive timeline.', 
       purpose: 'Displays a chronological feed of a single scholar\'s verified publications and biography.', 
-      spec: 'SPEC-012', 
+      spec: 'SPEC-009', 
       dbEntity: 'entries (Published status)', 
       files: ['src/components/FolioView.tsx'] 
     } 
@@ -132,7 +132,7 @@ const initialNodes: Node[] = [
       label: 'RBAC Policies', 
       desc: 'Role-Based Access Control configuration.', 
       purpose: 'Defines roles (Chief Editor, Editor, Writer, Visitor) and maps permissions to platform actions.', 
-      spec: 'SPEC-024', 
+      spec: 'SPEC-014', 
       dbEntity: 'systemSettings.rolePermissions', 
       files: ['src/App.tsx'] 
     } 
@@ -145,7 +145,7 @@ const initialNodes: Node[] = [
       label: 'Biography', 
       desc: 'Author biographical narrative and timeline.', 
       purpose: 'Stores educational background, academic affiliations, and scholarship statements.', 
-      spec: 'SPEC-003', 
+      spec: 'SPEC-010', 
       dbEntity: 'profiles', 
       files: ['src/components/BiographyView.tsx'] 
     } 
@@ -158,7 +158,7 @@ const initialNodes: Node[] = [
       label: 'Search Index', 
       desc: 'Cross-document scholarly directory index.', 
       purpose: 'Allows searching publications by keywords, tags, or cross-referenced authors.', 
-      spec: 'SPEC-018', 
+      spec: 'SPEC-012', 
       dbEntity: 'entries', 
       files: ['src/components/EditorialIndex.tsx'] 
     } 
@@ -171,7 +171,7 @@ const initialNodes: Node[] = [
       label: 'Metadata Schema', 
       desc: 'Scholarly cataloging schema standards.', 
       purpose: 'Governs tags, citation styles (Harvard, APA, MLA), reading times, and XML export formats.', 
-      spec: 'SPEC-005', 
+      spec: 'SPEC-017', 
       dbEntity: 'citations', 
       files: ['src/utils.tsx'] 
     } 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { User, Entry, WriterProfile, SystemSettings, DigitalSignature } from '../types';
-import { db } from '../db/mockDb';
-import { BRAND } from '../config/brand';
-import { isArabicText, parseInlineFormatting, toRoman } from '../utils';
-import { SignatureRenderer } from './SignatureRenderer';
-import { TimelineEntryCollapseRenderer } from './TimelineEntryCollapseRenderer';
+import { User, Entry, WriterProfile, SystemSettings, DigitalSignature } from '../../types';
+import { db } from '../../db/mockDb';
+import { BRAND } from '../../config/brand';
+import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
+import { SignatureRenderer } from '../desk/SignatureRenderer';
+import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { FileText, ArrowRight } from 'lucide-react';
 
 interface FolioViewProps {
@@ -56,6 +56,8 @@ export const FolioView: React.FC<FolioViewProps> = ({
   setShowLoginModal,
   setLoginError,
 }) => {
+  const [noteExceedsMap, setNoteExceedsMap] = React.useState<Record<string, boolean>>({});
+
   return (
     !currentAuthor ? (
       <div className="max-w-2xl mx-auto text-center py-16 px-4 space-y-8 select-none">
@@ -240,18 +242,25 @@ export const FolioView: React.FC<FolioViewProps> = ({
                               }
                             }}
                           >
-                            <TimelineEntryCollapseRenderer
-                              item={item}
-                              isExpanded={isNote ? isExpanded : false}
-                              onToggle={() => {
-                                if (isNote) {
-                                  toggleNote(item.id);
-                                } else {
-                                  setSelectedEntry(item);
-                                }
-                              }}
-                              onOpenText={() => setSelectedEntry(item)}
-                            />
+                             <TimelineEntryCollapseRenderer
+                               item={item}
+                               isExpanded={isNote ? isExpanded : false}
+                               onToggle={() => {
+                                 if (isNote) {
+                                   toggleNote(item.id);
+                                 } else {
+                                   setSelectedEntry(item);
+                                 }
+                               }}
+                               onOpenText={() => setSelectedEntry(item)}
+                               showInlineToggle={false}
+                               onLimitExceeded={(exceeded) => {
+                                 setNoteExceedsMap(prev => {
+                                   if (prev[item.id] === exceeded) return prev;
+                                   return { ...prev, [item.id]: exceeded };
+                                 });
+                               }}
+                             />
                           </div>
 
                           {/* Tag tokens */}
@@ -265,24 +274,25 @@ export const FolioView: React.FC<FolioViewProps> = ({
                         </div>
 
                         {/* View trigger */}
-                        {!isNote ? (
+                        <div className="self-end md:self-center flex items-center gap-2 flex-shrink-0">
+                           {isNote && noteExceedsMap[item.id] && (
+                             <button
+                               type="button"
+                               onClick={() => toggleNote(item.id)}
+                               className="px-3 py-1.5 rounded hover:bg-stone-100 text-stone-500 font-mono text-[10px] uppercase tracking-wider transition border border-stone-200/50 cursor-pointer"
+                             >
+                               {isExpanded ? 'Collapse' : 'Expand'}
+                             </button>
+                           )}
                           <button
                             type="button"
                             onClick={() => setSelectedEntry(item)}
-                            className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0 cursor-pointer font-semibold"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 cursor-pointer font-semibold"
                           >
                             Open Text
                             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => toggleNote(item.id)}
-                            className="self-end md:self-center flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 flex-shrink-0 cursor-pointer"
-                          >
-                            {isExpanded ? 'Collapse' : 'Expand'}
-                          </button>
-                        )}
+                        </div>
 
                       </div>
                     );

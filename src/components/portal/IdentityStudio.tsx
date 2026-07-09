@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { User, IdentityProfile } from '../types';
-import { db } from '../db/mockDb';
-import { SignatureManager } from './SignatureManager';
+import { User, IdentityProfile } from '../../types';
+import { db } from '../../db/mockDb';
+import { SignatureManager } from '../desk/SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Layout } from 'lucide-react';
 
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 
 export function IdentityStudio() {
   const { currentUser, setActiveTab, refreshDbState: refreshGlobalState } = useAppContext();
@@ -18,6 +18,7 @@ export function IdentityStudio() {
   const [penName, setPenName] = useState('');
   const [biography, setBiography] = useState('');
   const [visibility, setVisibility] = useState<'Public' | 'Private'>('Public');
+  const [location, setLocation] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -61,6 +62,7 @@ export function IdentityStudio() {
     setPenName(ident.penName);
     setBiography(ident.biography || '');
     setVisibility(ident.publicVisibility || 'Public');
+    setLocation(ident.location || '');
   }, [currentUser]);
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
@@ -89,7 +91,8 @@ export function IdentityStudio() {
       penName,
       biography,
       publicVisibility: visibility,
-      signatures: updatedSignatures
+      signatures: updatedSignatures,
+      location
     };
 
     db.updateIdentity(updatedIdentity);
@@ -101,6 +104,7 @@ export function IdentityStudio() {
     if (updatedUser) {
       updatedUser.penName = penName;
       updatedUser.username = username;
+      updatedUser.location = location;
       const defaultSig = updatedIdentity.signatures.find(s => s.status === 'Default');
       if (defaultSig) {
         updatedUser.signature = defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label;
@@ -207,9 +211,9 @@ export function IdentityStudio() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Display Name (Legal)</label>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Full Name</label>
                   <input
                     type="text"
                     value={displayName}
@@ -218,13 +222,23 @@ export function IdentityStudio() {
                   />
                 </div>
                 <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Pen Name (Published)</label>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Pen & Short Name</label>
                   <input
                     type="text"
                     value={penName}
                     onChange={(e) => setPenName(e.target.value)}
                     className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon font-serif font-semibold text-sm"
                     required
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Location (City, Country)</label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Cairo, Egypt"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon text-xs font-sans"
                   />
                 </div>
               </div>

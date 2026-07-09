@@ -1,6 +1,6 @@
 import React from 'react';
-import { Entry } from '../types';
-import { parseInlineFormatting } from '../utils';
+import { Entry } from '../../types';
+import { parseInlineFormatting } from '../../utils';
 
 interface EditorialNotesViewProps {
   entries: Entry[];
@@ -48,7 +48,7 @@ export const EditorialNotesView: React.FC<EditorialNotesViewProps> = ({
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-mono text-[9px] uppercase text-[#802334] bg-[#802334]/5 px-2 py-0.5 font-semibold">
-                    Editorial Essay
+                    {note.contentType}
                   </span>
                   <span className="text-stone-300">—</span>
                   <time className="font-mono text-[10px] text-stone-400">
