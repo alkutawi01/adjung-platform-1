@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocument, PolicySection } from '../../types';
 import { db } from '../../db/mockDb';
-import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown } from '../../utils';
+import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown, parseInTheNews, getDeskAccentColor } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
@@ -135,6 +135,12 @@ export function Editorium() {
   const [editorialSelectionIds, setEditorialSelectionIds] = useState<string[]>(
     systemSettings.editorialSelectionIds || []
   );
+  const [featuredEssayIds, setFeaturedEssayIds] = useState<string[]>(
+    systemSettings.featuredEssayIds || []
+  );
+  const [featuredNoteIds, setFeaturedNoteIds] = useState<string[]>(
+    systemSettings.featuredNoteIds || []
+  );
   const [announcementBanner, setAnnouncementBanner] = useState(
     systemSettings.announcementBanner || 'Welcome to the Adjung scholarly archive. The independent digital press.'
   );
@@ -145,15 +151,19 @@ export function Editorium() {
     systemSettings.layoutDensity || 'Standard'
   );
   const [editorialAddInput, setEditorialAddInput] = useState('');
+  const [inTheNewsRawText, setInTheNewsRawText] = useState(systemSettings.inTheNewsText || '');
 
   // Sync sub-states when systemSettings changes (e.g. on reset)
   useEffect(() => {
     if (systemSettings.featuredScholarId) setFeaturedScholarId(systemSettings.featuredScholarId);
     if (systemSettings.featuredEntryId) setFeaturedEntryId(systemSettings.featuredEntryId);
     if (systemSettings.editorialSelectionIds) setEditorialSelectionIds(systemSettings.editorialSelectionIds);
+    if (systemSettings.featuredEssayIds) setFeaturedEssayIds(systemSettings.featuredEssayIds);
+    if (systemSettings.featuredNoteIds) setFeaturedNoteIds(systemSettings.featuredNoteIds);
     if (systemSettings.announcementBanner !== undefined) setAnnouncementBanner(systemSettings.announcementBanner);
     if (systemSettings.enableArabicAccent !== undefined) setEnableArabicAccent(systemSettings.enableArabicAccent);
     if (systemSettings.layoutDensity) setLayoutDensity(systemSettings.layoutDensity);
+    if (systemSettings.inTheNewsText !== undefined) setInTheNewsRawText(systemSettings.inTheNewsText);
   }, [systemSettings]);
 
   // Sync selected board member if the current selection is no longer valid or is empty
@@ -192,7 +202,9 @@ export function Editorium() {
       ...systemSettings,
       featuredScholarId,
       featuredEntryId,
-        editorialSelectionIds,
+      editorialSelectionIds,
+      featuredEssayIds,
+      featuredNoteIds,
       announcementBanner,
       enableArabicAccent,
       layoutDensity
@@ -203,6 +215,18 @@ export function Editorium() {
     db.addLog(`Modified Frontpage Curation: Scholar='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser.penName, currentUser.role);
     refreshDbState();
     showToast('Frontpage curation settings saved and synchronized.', 'success');
+  };
+
+  const handleSaveNewsDigest = () => {
+    const updatedSettings = {
+      ...systemSettings,
+      inTheNewsText: inTheNewsRawText
+    };
+    setSystemSettings(updatedSettings);
+    db.updateSystemSettings(updatedSettings);
+    db.addLog(`Updated In The News digest plain text.`, currentUser.penName, currentUser.role);
+    refreshDbState();
+    showToast('In The News digest saved and synchronized.', 'success');
   };
 
   // Helper helper to check if text contains Arabic characters
@@ -414,105 +438,125 @@ export function Editorium() {
                 </select>
                 <span className="text-stone-400 text-[9px] font-mono mt-1 block">Places an editorial focus box and calligraphic seal of this scholar on the public greeting catalog.</span>
               </div>
-
-                <div className="pt-4 border-t border-stone-200">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-2">Editorial Selections (Max 10)</label>
-                  
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      placeholder="Paste entry UUID (e.g. entry-zayd-1)..."
-                      value={editorialAddInput}
-                      onChange={(e) => setEditorialAddInput(e.target.value)}
-                      className="flex-1 border border-stone-200 p-2 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const val = editorialAddInput.trim();
-                        if (!val) return;
-                        if (editorialSelectionIds.includes(val)) {
-                          showToast('Entry is already in the list.', 'info');
-                          return;
-                        }
-                        const exists = publishedEntries.some(e => e.id === val);
-                        if (exists) {
-                          if (editorialSelectionIds.length < 10) {
-                            setEditorialSelectionIds([...editorialSelectionIds, val]);
-                            setEditorialAddInput('');
-                          } else {
-                            showToast('Maximum of 10 selections reached.', 'error');
-                          }
-                        } else {
-                          showToast('Invalid UUID: Entry not found or is in draft.', 'error');
-                        }
-                      }}
-                      className="px-4 py-2 bg-stone-100 border border-stone-300 rounded text-xs font-mono uppercase hover:bg-stone-200 transition cursor-pointer"
-                    >
-                      Add
-                    </button>
+                {/* 3 Slots for Editorial Selections */}
+                <div className="pt-4 border-t border-stone-200 space-y-3">
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
+                    Editorial Selections (3 Slots)
+                  </label>
+                  <div className="space-y-2">
+                    {[0, 1, 2].map((idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                        <select
+                          value={editorialSelectionIds[idx] || ''}
+                          onChange={(e) => {
+                            const updated = [...editorialSelectionIds];
+                            updated[idx] = e.target.value;
+                            setEditorialSelectionIds(updated);
+                          }}
+                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
+                        >
+                          <option value="">-- Empty Slot --</option>
+                          {publishedEntries.map(e => (
+                            <option key={e.id} value={e.id}>
+                              [{e.contentType}] {e.title || e.content.substring(0, 35) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <div className="space-y-2 mt-4">
-                    {editorialSelectionIds.map((id, idx) => {
-                      const ent = publishedEntries.find(e => e.id === id);
-                      return (
-                        <div key={id} className="flex items-center justify-between bg-stone-50 p-2 rounded border border-stone-200/50">
-                          <div className="text-left font-serif text-xs">
-                            <span className="font-mono text-[9px] bg-stone-200/60 px-1.5 py-0.5 rounded mr-2 font-bold text-stone-500">{id}</span>
-                            <span className="text-stone-800 font-semibold">{ent ? ent.title : 'Untitled / Deleted'}</span>
-                            {ent && <span className="text-stone-400 font-sans text-[10px] ml-2">({ent.contentType})</span>}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setEditorialSelectionIds(editorialSelectionIds.filter(x => x !== id))}
-                            className="text-red-500 text-xs font-mono uppercase hover:underline ml-2 flex-shrink-0 cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-2 block">
-                    Curated entries displayed on the Frontpage under "Editorial Selection". Order is preserved. 
-                    Tip: Copy UUIDs from the <a href="#/index" target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline font-semibold">Publication Index (#/index)</a>.
+                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
+                    Curated entries displayed on the Frontpage under "Editor's Selections".
                   </span>
                 </div>
 
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Apex Pinned Publication of the Week (Featured Entry UUID)</label>
-                  <input
-                    type="text"
-                    value={featuredEntryId}
-                    placeholder="Enter entry UUID (e.g. entry-zayd-1)..."
-                    onChange={(e) => setFeaturedEntryId(e.target.value.trim())}
-                    className="w-full border border-stone-200 p-2.5 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
-                  />
-                  {(() => {
-                    const match = publishedEntries.find(e => e.id === featuredEntryId);
-                    if (!featuredEntryId) return null;
-                    if (match) {
-                      return (
-                        <div className="mt-2 p-2 bg-emerald-50 border border-emerald-100 rounded flex items-center gap-2 text-left">
-                          <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
-                          <span className="font-sans text-[10px] text-emerald-800">
-                            <strong>Found {match.contentType}:</strong> "{match.title || 'Untitled'}" by {users.find(u => u.id === match.authorId)?.penName || 'Unknown'}
-                          </span>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded flex items-center gap-2 text-left">
-                          <span className="w-1.5 h-1.5 bg-amber-600 rounded-full animate-ping"></span>
-                          <span className="font-sans text-[10px] text-amber-800">
-                            No published entry found with ID/UUID "{featuredEntryId}". Please paste a valid published entry ID.
-                          </span>
-                        </div>
-                      );
-                    }
-                  })()}
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">Pins this publication at the absolute pinnacle of the public landing archive timeline.</span>
+                {/* 1 Slot for Apex Pinned Entry */}
+                <div className="pt-4 border-t border-stone-200">
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                    Apex Pinned Publication of the Week
+                  </label>
+                  <select
+                    value={featuredEntryId || ''}
+                    onChange={(e) => setFeaturedEntryId(e.target.value)}
+                    className="w-full border border-stone-200 p-2.5 rounded bg-white font-serif text-sm focus:outline-none focus:border-adjung-maroon cursor-pointer"
+                  >
+                    <option value="">-- None Selected --</option>
+                    {publishedEntries.map(e => (
+                      <option key={e.id} value={e.id}>
+                        [{e.contentType}] {e.title || e.content.substring(0, 45) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
+                    Pins this publication at the absolute pinnacle of the public landing archive timeline.
+                  </span>
+                </div>
+
+                {/* 3 Slots for Featured Essays */}
+                <div className="pt-4 border-t border-stone-200 space-y-3">
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
+                    Featured Essays (3 Slots)
+                  </label>
+                  <div className="space-y-2">
+                    {[0, 1, 2].map((idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                        <select
+                          value={featuredEssayIds[idx] || ''}
+                          onChange={(e) => {
+                            const updated = [...featuredEssayIds];
+                            updated[idx] = e.target.value;
+                            setFeaturedEssayIds(updated);
+                          }}
+                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
+                        >
+                          <option value="">-- Empty Slot --</option>
+                          {publishedEntries.filter(e => e.contentType === 'Essay').map(e => (
+                            <option key={e.id} value={e.id}>
+                              {e.title || 'Untitled Essay'} by {users.find(u => u.id === e.authorId)?.penName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
+                    Curated essays displayed on the Frontpage under "Featured Essays".
+                  </span>
+                </div>
+
+                {/* 2 Slots for Featured Notes */}
+                <div className="pt-4 border-t border-stone-200 space-y-3">
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
+                    Featured Notes (2 Slots)
+                  </label>
+                  <div className="space-y-2">
+                    {[0, 1].map((idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                        <select
+                          value={featuredNoteIds[idx] || ''}
+                          onChange={(e) => {
+                            const updated = [...featuredNoteIds];
+                            updated[idx] = e.target.value;
+                            setFeaturedNoteIds(updated);
+                          }}
+                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
+                        >
+                          <option value="">-- Empty Slot --</option>
+                          {publishedEntries.filter(e => e.contentType === 'Note').map(e => (
+                            <option key={e.id} value={e.id}>
+                              {e.title || e.content.substring(0, 45) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
+                    Curated notes displayed on the Frontpage under "Featured Notes".
+                  </span>
                 </div>
 
               <button
@@ -573,6 +617,92 @@ export function Editorium() {
               </div>
             </div>
           </div>
+
+          {/* In The News digest raw editor */}
+          {(() => {
+            const { items: newsParsedItems, errors: newsParseErrors } = parseInTheNews(inTheNewsRawText);
+            return (
+              <div className="lg:col-span-12 mt-4 border-t border-stone-200 pt-6">
+                <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
+                  <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
+                    <div>
+                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">In The News Plain Text Digest</h3>
+                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate global developments in a plain text format (max 10 items, separated by ---)</p>
+                    </div>
+                    <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+                    <div className="lg:col-span-7 space-y-4">
+                      <div>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text</label>
+                        <textarea
+                          value={inTheNewsRawText}
+                          onChange={(e) => setInTheNewsRawText(e.target.value)}
+                          className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[350px] resize-y bg-[#FAFAF9]"
+                          placeholder="Desk: Astronomy&#10;Title: NASA Reviews Hubble Space Telescope&#10;Brief: NASA evaluates operations into 2030s...&#10;Source: Nature&#10;URL: https://nature.com/...&#10;&#10;---&#10;&#10;Desk: Libraries&#10;..."
+                        />
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={handleSaveNewsDigest}
+                        className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm cursor-pointer"
+                      >
+                        Update In The News Digest
+                      </button>
+                    </div>
+                    
+                    <div className="lg:col-span-5 space-y-4">
+                      <div className="space-y-2">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
+                        {newsParseErrors.length > 0 ? (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
+                            <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
+                            <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
+                              {newsParseErrors.map((err, i) => (
+                                <li key={i}>
+                                  News Item {err.index}: {err.error}
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="text-[9px] text-red-400 mt-1">Note: Items with errors are automatically skipped. The landing page will load only valid items.</p>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-2 text-left">
+                            <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
+                            <span className="font-mono text-[9px] uppercase font-bold tracking-wider">Digest Status: All Items Valid</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({newsParsedItems.length})</span>
+                        {newsParsedItems.length === 0 ? (
+                          <p className="font-serif italic text-stone-400 text-xs">No valid news items parsed. Add items above.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {newsParsedItems.map((item, i) => (
+                              <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded font-bold" style={{ color: getDeskAccentColor(item.desk), border: `1px solid ${getDeskAccentColor(item.desk)}22` }}>
+                                    {item.desk}
+                                  </span>
+                                  <span className="font-mono text-[8px] text-stone-400">Item #{item.rawIndex}</span>
+                                </div>
+                                <h6 className="font-serif font-bold text-stone-850 line-clamp-1">{item.title}</h6>
+                                <p className="font-serif text-[11px] text-stone-500 line-clamp-2 leading-relaxed">{item.brief}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

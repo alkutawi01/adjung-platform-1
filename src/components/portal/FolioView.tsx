@@ -6,6 +6,7 @@ import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { FileText, ArrowRight } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -56,7 +57,35 @@ export const FolioView: React.FC<FolioViewProps> = ({
   setShowLoginModal,
   setLoginError,
 }) => {
+  const { currentUser, refreshDbState } = useAppContext();
   const [noteExceedsMap, setNoteExceedsMap] = React.useState<Record<string, boolean>>({});
+  const [isEditingHeader, setIsEditingHeader] = React.useState(false);
+  const [editedTitle, setEditedTitle] = React.useState(authorProfile?.heroTitle || '');
+  const [editedSubtitle, setEditedSubtitle] = React.useState(authorProfile?.heroSubtitle || '');
+
+  React.useEffect(() => {
+    setEditedTitle(authorProfile?.heroTitle || '');
+    setEditedSubtitle(authorProfile?.heroSubtitle || '');
+  }, [authorProfile]);
+
+  const handleSaveHeader = async () => {
+    if (!currentAuthor) return;
+    const updatedProfile = {
+      authorId: currentAuthor.id,
+      heroTitle: editedTitle,
+      heroSubtitle: editedSubtitle
+    };
+    
+    await fetch('/api/profiles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProfile)
+    });
+    
+    db.updateProfile(updatedProfile);
+    setIsEditingHeader(false);
+    refreshDbState();
+  };
 
   return (
     !currentAuthor ? (
@@ -103,13 +132,60 @@ export const FolioView: React.FC<FolioViewProps> = ({
       <div className="space-y-10 max-w-4xl mx-auto">
         {/* Writer Hero Block */}
         <div className="text-center md:text-left border-b border-stone-200/40 pb-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
-          <div className="space-y-3 max-w-2xl">
-            <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight">
-              {authorProfile?.heroTitle}
-            </h2>
-            <p className="font-serif italic text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
-              {authorProfile?.heroSubtitle}
-            </p>
+          <div className="space-y-3 max-w-2xl relative group">
+            {isEditingHeader ? (
+              <div className="space-y-2 py-2 text-left">
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="w-full border border-stone-200 p-2 rounded text-base font-serif text-[#111111] focus:outline-none focus:border-[#802334]"
+                  placeholder="Folio Hero Title"
+                />
+                <textarea
+                  value={editedSubtitle}
+                  onChange={(e) => setEditedSubtitle(e.target.value)}
+                  className="w-full border border-stone-200 p-2 rounded text-xs font-serif italic text-stone-500 focus:outline-none focus:border-[#802334] min-h-[50px]"
+                  placeholder="Folio Hero Subtitle"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingHeader(false)}
+                    className="px-2.5 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveHeader}
+                    className="px-2.5 py-1 bg-[#802334] text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight flex items-center gap-2">
+                  {authorProfile?.heroTitle}
+                  {currentUser?.id === currentAuthor.id && (
+                    <button
+                      onClick={() => setIsEditingHeader(true)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] cursor-pointer"
+                      title="Edit Banner Title & Subtitle"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  )}
+                </h2>
+                <p className="font-serif italic text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
+                  {authorProfile?.heroSubtitle}
+                </p>
+              </>
+            )}
           </div>
           {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
           <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-8 py-1.5 select-none">

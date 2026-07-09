@@ -2,23 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { User, IdentityProfile } from '../../types';
 import { db } from '../../db/mockDb';
 import { SignatureManager } from '../desk/SignatureManager';
-import { ShieldCheck, User as UserIcon, BookOpen, Key, Layout } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint } from 'lucide-react';
 
 import { useAppContext } from '../../context/AppContext';
 
-export function IdentityStudio() {
+interface IdentityStudioProps {
+  isModal?: boolean;
+  onClose?: () => void;
+}
+
+export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps) {
   const { currentUser, setActiveTab, refreshDbState: refreshGlobalState } = useAppContext();
   
-  const onClose = () => setActiveTab('desk');
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      setActiveTab('desk');
+    }
+  };
+
   const [identity, setIdentity] = useState<IdentityProfile | null>(null);
   
   // Form states
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [penName, setPenName] = useState('');
-  const [biography, setBiography] = useState('');
   const [visibility, setVisibility] = useState<'Public' | 'Private'>('Public');
-  const [location, setLocation] = useState('');
+  const [affiliation, setAffiliation] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -60,9 +71,8 @@ export function IdentityStudio() {
     setUsername(ident.username);
     setDisplayName(ident.displayName || '');
     setPenName(ident.penName);
-    setBiography(ident.biography || '');
     setVisibility(ident.publicVisibility || 'Public');
-    setLocation(ident.location || '');
+    setAffiliation(ident.affiliation || '');
   }, [currentUser]);
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
@@ -89,35 +99,57 @@ export function IdentityStudio() {
       username,
       displayName,
       penName,
-      biography,
       publicVisibility: visibility,
       signatures: updatedSignatures,
-      location
+      affiliation
     };
 
-    db.updateIdentity(updatedIdentity);
-    setIdentity(updatedIdentity);
-
     // Also update the User object penName & username & signature to keep in sync
-    const users = db.getUsers();
-    const updatedUser = users.find(u => u.id === currentUser.id);
-    if (updatedUser) {
-      updatedUser.penName = penName;
-      updatedUser.username = username;
-      updatedUser.location = location;
-      const defaultSig = updatedIdentity.signatures.find(s => s.status === 'Default');
-      if (defaultSig) {
-        updatedUser.signature = defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label;
-      }
-      db.saveUsersToStorage();
-    }
+    const defaultSig = updatedIdentity.signatures.find(s => s.status === 'Default');
+    const updatedUser: User = {
+      ...currentUser,
+      username,
+      penName,
+      affiliation,
+      signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
+    };
 
-    setTimeout(() => {
+    // Make POST requests to server
+    Promise.all([
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      }),
+      fetch('/api/identities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedIdentity)
+      })
+    ]).then(() => {
+      // Update local storage session
+      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+      
+      // Update local mockDb
+      db.updateIdentity(updatedIdentity);
+      setIdentity(updatedIdentity);
+      const usersList = db.getUsers();
+      const uIdx = usersList.findIndex(u => u.id === currentUser.id);
+      if (uIdx !== -1) {
+        usersList[uIdx] = updatedUser;
+        db.saveUsersToStorage();
+      }
+
+      setTimeout(() => {
+        setIsSaving(false);
+        setSaveSuccess(true);
+        refreshGlobalState();
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }, 400);
+    }).catch(err => {
+      console.error('Failed to save identity to server:', err);
       setIsSaving(false);
-      setSaveSuccess(true);
-      refreshGlobalState();
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }, 400);
+    });
   };
 
   const handleIdentityUpdateFromSignature = (updatedIdentity: IdentityProfile) => {
@@ -140,29 +172,50 @@ export function IdentityStudio() {
     }
 
     setIdentity(finalIdentity);
-    db.updateIdentity(finalIdentity);
 
     // Sync to User object
-    const users = db.getUsers();
-    const updatedUser = users.find(u => u.id === currentUser.id);
-    if (updatedUser) {
-      updatedUser.penName = newPenName;
-      if (defaultSig) {
-        updatedUser.signature = defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label;
-      }
-      db.saveUsersToStorage();
-    }
+    const updatedUser: User = {
+      ...currentUser,
+      penName: newPenName,
+      signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
+    };
 
-    refreshGlobalState();
+    // Make POST requests to server
+    Promise.all([
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      }),
+      fetch('/api/identities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalIdentity)
+      })
+    ]).then(() => {
+      // Update local storage session
+      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+      
+      // Update local mockDb in case it is queried before refresh
+      db.updateIdentity(finalIdentity);
+      const usersList = db.getUsers();
+      const uIdx = usersList.findIndex(u => u.id === currentUser.id);
+      if (uIdx !== -1) {
+        usersList[uIdx] = updatedUser;
+        db.saveUsersToStorage();
+      }
+
+      refreshGlobalState();
+    }).catch(err => console.error('Failed to save signature updates to server:', err));
   };
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-12">
+  const renderContent = () => (
+    <div className="space-y-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
-            <Layout className="w-6 h-6 text-Adjung-maroon" />
+            <Fingerprint className="w-6 h-6 text-[#802334]" />
             Identity
           </h2>
           <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
@@ -170,10 +223,10 @@ export function IdentityStudio() {
           </p>
         </div>
         <button
-          onClick={onClose}
-          className="px-4 py-1.5 border border-stone-200 text-stone-600 rounded hover:bg-stone-50 font-mono text-xs uppercase tracking-wider transition"
+          onClick={handleClose}
+          className="px-4 py-1.5 border border-stone-200 text-stone-600 rounded hover:bg-stone-50 font-mono text-xs uppercase tracking-wider transition cursor-pointer"
         >
-          Return to Workspace
+          {isModal ? 'Close' : 'Return to Desk'}
         </button>
       </div>
 
@@ -189,12 +242,12 @@ export function IdentityStudio() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Username (URL)</label>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Subdomain (ID Unik)</label>
                   <input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon font-mono text-xs"
+                    className="w-full border border-stone-200 p-2 rounded bg-stone-50 text-stone-400 font-mono text-xs cursor-not-allowed select-none"
+                    disabled
                     required
                   />
                 </div>
@@ -232,25 +285,15 @@ export function IdentityStudio() {
                   />
                 </div>
                 <div>
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Location (City, Country)</label>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Affiliation</label>
                   <input
                     type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Cairo, Egypt"
+                    value={affiliation}
+                    onChange={(e) => setAffiliation(e.target.value)}
+                    placeholder="e.g. Universiti Mu'tah, Jordan or Cairo, Egypt"
                     className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon text-xs font-sans"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">About You</label>
-                <textarea
-                  value={biography}
-                  onChange={(e) => setBiography(e.target.value)}
-                  className="w-full border border-stone-200 p-3 rounded focus:outline-none focus:border-Adjung-maroon min-h-[120px] font-serif leading-relaxed text-sm resize-y"
-                  placeholder="Enter a description of yourself, your intellectual background, or interests..."
-                />
               </div>
             </div>
 
@@ -294,6 +337,23 @@ export function IdentityStudio() {
         </div>
 
       </div>
+    </div>
+  );
+
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-5xl w-full p-8 relative max-h-[90vh] overflow-y-auto scholarly-border animate-fade-in">
+          <button onClick={handleClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 font-mono text-xs uppercase tracking-wider cursor-pointer">✕ Close</button>
+          {renderContent()}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-12">
+      {renderContent()}
     </div>
   );
 }

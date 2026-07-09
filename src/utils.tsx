@@ -1,5 +1,5 @@
 import React from 'react';
-import { Citation, EditorBlock } from './types';
+import { Citation, EditorBlock, NewsItem, ParseError } from './types';
 import { citationStyleRegistry, HarvardStylePlugin } from './services/citationStyles';
 
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
@@ -1633,3 +1633,146 @@ export const getMarginNotesReadingOrderMap = (content: string) => {
   
   return { map, occurrences };
 };
+
+export const DESK_ACCENTS: Record<string, string> = {
+  'Astronomy': '#0A192F',
+  'Space': '#1E293B',
+  'Science': '#15803D',
+  'Medicine': '#7B2737',
+  'Artificial Intelligence': '#6D28D9',
+  'History': '#78350F',
+  'Archaeology': '#B45309',
+  'Libraries': '#4B5563',
+  'Museums': '#D97706',
+  'Environment': '#4D7C0F',
+  'Education': '#1E3A8A',
+  'Technology': '#475569',
+  'Publishing': '#881337',
+  'Languages': '#4338CA',
+  'Heritage': '#92400E',
+  'Islamic Affairs': '#047857',
+  'International Relations': '#1F1F1F'
+};
+
+export function getDeskAccentColor(deskName: string): string {
+  if (!deskName) return '#777777';
+  const normalized = Object.keys(DESK_ACCENTS).find(
+    k => k.toLowerCase() === deskName.trim().toLowerCase()
+  );
+  return normalized ? DESK_ACCENTS[normalized] : '#777777';
+}
+
+export function parseInTheNews(text: string): { items: NewsItem[]; errors: ParseError[] } {
+  const items: NewsItem[] = [];
+  const errors: ParseError[] = [];
+  
+  if (!text) return { items, errors };
+  
+  // Split sections by --- (matching --- on its own line)
+  const sections = text.split(/^[ \t]*---[ \t]*$/m);
+  
+  sections.forEach((section, index) => {
+    const itemIndex = index + 1;
+    const lines = section.split('\n');
+    
+    let desk = '';
+    let title = '';
+    let brief = '';
+    let source = '';
+    let url = '';
+    
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      
+      const colonIndex = trimmed.indexOf(':');
+      if (colonIndex <= 0) return;
+      
+      const key = trimmed.substring(0, colonIndex).trim().toLowerCase();
+      const val = trimmed.substring(colonIndex + 1).trim();
+      
+      if (key === 'desk') {
+        desk = val;
+      } else if (key === 'title') {
+        title = val;
+      } else if (key === 'brief') {
+        brief = val;
+      } else if (key === 'source') {
+        source = val;
+      } else if (key === 'url') {
+        url = val;
+      }
+    });
+    
+    // Skip completely empty sections
+    if (!desk && !title && !brief && !source && !url) {
+      return;
+    }
+    
+    const missing: string[] = [];
+    if (!desk) missing.push('Desk');
+    if (!title) missing.push('Title');
+    if (!brief) missing.push('Brief');
+    if (!source) missing.push('Source');
+    if (!url) missing.push('URL');
+    
+    if (missing.length > 0) {
+      errors.push({
+        index: itemIndex,
+        error: `Missing mandatory field(s): ${missing.join(', ')}`
+      });
+      return;
+    }
+    
+    if (desk.length > 30) {
+      errors.push({
+        index: itemIndex,
+        error: `Desk field exceeds 30 characters limit`
+      });
+      return;
+    }
+    
+    if (title.length > 80) {
+      errors.push({
+        index: itemIndex,
+        error: `Title field exceeds 80 characters limit`
+      });
+      return;
+    }
+    
+    if (brief.length > 220) {
+      errors.push({
+        index: itemIndex,
+        error: `Brief field exceeds 220 characters limit`
+      });
+      return;
+    }
+    
+    if (source.length > 40) {
+      errors.push({
+        index: itemIndex,
+        error: `Source field exceeds 40 characters limit`
+      });
+      return;
+    }
+    
+    if (!url.startsWith('https://')) {
+      errors.push({
+        index: itemIndex,
+        error: `Invalid URL: must be secure HTTPS`
+      });
+      return;
+    }
+    
+    items.push({
+      desk,
+      title,
+      brief,
+      source,
+      url,
+      rawIndex: itemIndex
+    });
+  });
+  
+  return { items, errors };
+}

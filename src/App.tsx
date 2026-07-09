@@ -44,6 +44,10 @@ import { NoticesView } from './components/institutional/NoticesView';
 import { EditorialNotesView } from './components/institutional/EditorialNotesView';
 import { ChangelogView } from './components/institutional/ChangelogView';
 import { PhilosophyCarousel } from './components/common/PhilosophyCarousel';
+import { Footer } from './components/common/Footer';
+import { Navbar } from './components/common/Navbar';
+import { LoginModal } from './components/common/LoginModal';
+import { AccountModal } from './components/common/AccountModal';
 
 import { WritingDesk } from './components/desk/WritingDesk';
 import { EditorialIndex } from './components/portal/EditorialIndex';
@@ -335,35 +339,16 @@ export default function App() {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   
-  // Account and User Menu states
+  // Sync Account Edit states when Account Modal is shown
+
   const [showAccountModal, setShowAccountModal] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const [accountEmail, setAccountEmail] = useState('');
   const [accountUsername, setAccountUsername] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
   const [accountConfirmPassword, setAccountConfirmPassword] = useState('');
   const [accountError, setAccountError] = useState('');
-
-  // Handle clicking outside the user menu to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-    };
-
-    if (showUserMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showUserMenu]);
 
   // Sync Account Edit states when Account Modal is shown
   useEffect(() => {
@@ -996,7 +981,7 @@ export default function App() {
     setLoginError('');
 
     try {
-      const authenticatedUser = await AuthService.signIn(usernameInput, passwordInput);
+      const authenticatedUser = await AuthService.signIn(usernameInput, passwordInput, rememberMe);
       setCurrentUser(authenticatedUser);
       setSelectedAuthorId(authenticatedUser.id);
       setUsernameInput('');
@@ -1179,17 +1164,35 @@ export default function App() {
       username: cleanUsername,
       email: cleanEmail
     };
-    db.updateUser(updatedUser);
-    setCurrentUser(updatedUser);
 
-    if (accountPassword) {
-      localStorage.setItem(`adjung_password_${currentUser.id}`, accountPassword);
-    }
-
-    db.addLog(`Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`, currentUser.penName, currentUser.role);
-    refreshDbState();
-    setShowAccountModal(false);
-    showToast('Account credentials updated successfully', 'success');
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...updatedUser,
+        password: accountPassword || undefined
+      })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Server update failed");
+      return res.json();
+    })
+    .then(() => {
+      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+      if (accountPassword) {
+        localStorage.setItem(`adjung_password_${currentUser.id}`, accountPassword);
+      }
+      db.updateUser(updatedUser);
+      setCurrentUser(updatedUser);
+      db.addLog(`Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`, currentUser.penName, currentUser.role);
+      refreshDbState();
+      setShowAccountModal(false);
+      showToast('Account credentials updated successfully', 'success');
+    })
+    .catch(err => {
+      console.error(err);
+      setAccountError('Gagal mengemas kini kredensial di server.');
+    });
   };
 
   // Add Biography Timeline Item
@@ -1497,281 +1500,19 @@ Editorial Board of Adjung`;
           </div>
         </div>
       )}
-
-      {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
-      <nav 
-        onMouseEnter={() => setIsHeaderHovered(true)}
-        onMouseLeave={() => setIsHeaderHovered(false)}
-        className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
-          isHeaderHovered ? 'duration-200' : 'duration-[1500ms]'
-        } ${
-          isFloating 
-            ? 'shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
-            : 'border-white/5 shadow-none'
-        } bg-[#802334]/90`}
-        style={{
-          opacity: showNavbar 
-            ? (isHeaderHovered 
-                ? 1.0 
-                : Math.max(0, 1.0 - scrollY / Math.max(100, Math.min(400, maxScroll)))) 
-            : 0,
-          pointerEvents: showNavbar ? 'auto' : 'none',
-        }}
-      >
-        <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
-          
-          {/* Left: Beautiful brand wordmark logo linking back to Frontpage */}
-          <div 
-            onClick={() => {
-              setSelectedAuthorId('');
-              setSelectedEntry(null);
-              setEditingEntry(null);
-              if (currentUser) {
-                setActiveTab('frontpage');
-              } else {
-                setActiveTab('landing');
-              }
-            }}
-            className="flex items-center cursor-pointer group text-white hover:opacity-85 transition-opacity"
-          >
-            <span className="font-serif text-[15px] font-semibold tracking-wider">
-              {BRAND.logoText}
-            </span>
-          </div>
-
-          {/* Middle: Dynamic Navigation Links depending on portal/author context */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 md:gap-3">
-              {selectedAuthorId === '' ? (
-                /* PLATFORM PORTAL NAVIGATION (DIRECTORY, INDEX) */
-                <>
-                  {/* Directory */}
-                  {currentUser && hasPermission('viewDirectory') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('directory');
-                        setSelectedEntry(null);
-                        setEditingEntry(null);
-                      }}
-                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
-                        activeTab === 'directory'
-                          ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                          : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      Directory
-                    </button>
-                  )}
-
-                  {/* Shared Index */}
-                  {currentUser && hasPermission('viewIndex') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('index');
-                        setSelectedEntry(null);
-                        setEditingEntry(null);
-                      }}
-                      className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
-                        activeTab === 'index'
-                          ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                          : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      Index
-                    </button>
-                  )}
-                </>
-              ) : (
-                /* INDEPENDENT AUTHOR SITE NAVIGATION (FOLIO, BIOGRAPHY, DESK) */
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('folio');
-                      setSelectedEntry(null);
-                      setEditingEntry(null);
-                    }}
-                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
-                      activeTab === 'folio'
-                        ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    Folio
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('bio');
-                      setSelectedEntry(null);
-                      setEditingEntry(null);
-                    }}
-                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
-                      activeTab === 'bio'
-                        ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    Biography
-                  </button>
-
-                  {/* Desk: Only if the authenticated user is the owner of this author site */}
-                  {currentUser?.id === selectedAuthorId && (
-                    <>
-                      <span className="text-white/20 text-[10px] select-none font-mono">|</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('desk');
-                          setSelectedEntry(null);
-                          setEditingEntry(null);
-                        }}
-                        className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border rounded-sm cursor-pointer ${
-                          activeTab === 'desk'
-                            ? 'bg-white border-white text-[#802334] font-semibold'
-                            : 'text-white/80 border-white/20 hover:bg-white/10 font-medium'
-                        }`}
-                        title="Your private workspace"
-                      >
-                        desk
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="h-4 w-px bg-white/20" />
-
-            {/* Right: Authentication or User menu */}
-            {currentUser ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white transition uppercase cursor-pointer"
-                >
-                  <span>{currentUser.penName}</span>
-                  <span className="text-[10px] opacity-60">▾</span>
-                </button>
-
-                {showUserMenu && (
-                  <>
-                    <div className="absolute right-0 mt-2 w-52 bg-[#FDFDFD] border border-stone-200 shadow-md rounded-sm py-2 z-50 animate-fade-in font-sans text-left">
-                      <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/40 select-none">
-                        <div className="font-serif text-[13px] font-semibold text-stone-950 leading-tight">
-                          {currentUser.penName}
-                        </div>
-                        <div className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider mt-1">
-                          {currentUser.role}
-                        </div>
-                        <div className="font-mono text-[9px] text-stone-400 mt-0.5">
-                          {currentUser.username}
-                        </div>
-                      </div>
-
-                      <div className="py-1 font-mono uppercase tracking-wider text-[11px]">
-                        {selectedAuthorId !== currentUser.id && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowUserMenu(false);
-                              setSelectedAuthorId(currentUser.id);
-                              setActiveTab('folio');
-                              setSelectedEntry(null);
-                              setEditingEntry(null);
-                            }}
-                            className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1 cursor-pointer"
-                          >
-                            My Site
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            setShowAccountModal(true);
-                          }}
-                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
-                        >
-                          Account
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            setSelectedAuthorId('');
-                            setActiveTab('identity');
-                            setSelectedEntry(null);
-                            setEditingEntry(null);
-                          }}
-                          className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
-                            activeTab === 'identity'
-                              ? 'text-[#802334] bg-stone-50/60 font-semibold'
-                              : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
-                          }`}
-                        >
-                          Identity
-                        </button>
-
-                        {hasPermission('curateFrontpage') && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowUserMenu(false);
-                              setSelectedAuthorId('');
-                              setActiveTab('editorium');
-                              setSelectedEntry(null);
-                              setEditingEntry(null);
-                            }}
-                            className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
-                              activeTab === 'editorium'
-                                ? 'text-[#802334] bg-stone-50/60 font-semibold'
-                                : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
-                            }`}
-                          >
-                            Editorium
-                          </button>
-                        )}
-
-                        <div className="h-px bg-stone-100 my-1" />
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            handleLogout();
-                          }}
-                          className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-medium cursor-pointer"
-                        >
-                          Sign Out
-                        </button>
-
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginError('');
-                    setShowLoginModal(true);
-                  }}
-                  className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
-                >
-                  Sign In
-                </button>
-              </>
-            )}
-          </div>        </div>      </nav>
+           {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
+      <Navbar
+        isHeaderHovered={isHeaderHovered}
+        setIsHeaderHovered={setIsHeaderHovered}
+        isFloating={isFloating}
+        showNavbar={showNavbar}
+        scrollY={scrollY}
+        maxScroll={maxScroll}
+        setShowAccountModal={setShowAccountModal}
+        setShowLoginModal={setShowLoginModal}
+        setLoginError={setLoginError}
+        handleLogout={handleLogout}
+      />
       {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
       {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
         <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
@@ -1992,12 +1733,6 @@ Editorial Board of Adjung`;
           <PoliciesView policies={db.getPolicies()} />
         )}
 
-        {/* ACTIVE MODULE: IDENTITY STUDIO */}
-        {activeTab === 'identity' && currentUser && (
-          <div className="py-8">
-            <IdentityStudio />
-          </div>
-        )}
 
         {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
         {activeTab === 'landing' && (
@@ -2028,239 +1763,37 @@ Editorial Board of Adjung`;
       </main>
 
       {/* ==================== 4. SIGN IN / AUTH OVERLAY MODAL ==================== */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border">
-            
-            {/* Modal header */}
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-2xl text-adjung-maroon">Sign In</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Sign in to your {BRAND.shortName} account.</p>
-            </div>
-
-            {/* Modal form */}
-            <form onSubmit={handleLogin} className="p-6 space-y-4 text-xs font-sans">
-              
-              {loginError && (
-                <div className="p-2.5 bg-red-50 border border-red-100 text-red-800 rounded font-sans text-xs">
-                  {loginError}
-                </div>
-              )}
-
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Username or Email</label>
-                <input
-                  type="text"
-                  placeholder="e.g. zayd.ghazali"
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Password</label>
-                <input
-                  type="password"
-                  placeholder="Password matches 'password'"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowLoginModal(false)}
-                  className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2.5 rounded text-xs font-mono uppercase tracking-wider transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold"
-                >
-                  Sign In
-                </button>
-              </div>
-
-              {/* DEMO FAST CREDENTIAL SWITCHER (Highly recommended for evaluator testing) */}
-              <div className="border-t border-stone-200/80 pt-4 mt-4">
-                <span className="block font-mono uppercase text-[9px] text-stone-400 tracking-wider mb-2 text-center">
-                  Simulation Fast-Login Presets (Click to sign in)
-                </span>
-                <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-                  {users.map(u => {
-                    const isChief = u.role === 'Chief Editor';
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => handleFastLogin(u.username)}
-                        className={`bg-white hover:bg-stone-50 border border-stone-200/60 p-2 rounded flex flex-col items-center gap-0.5 transition-colors ${
-                          isChief ? 'text-[#802334]' : 'text-stone-800'
-                        }`}
-                      >
-                        <span className={`font-serif font-bold ${isChief ? 'text-adjung-maroon' : 'text-stone-900'}`}>
-                          {u.penName}
-                        </span>
-                        <span className={`font-mono text-[8px] uppercase ${isChief ? 'text-stone-500 font-bold' : 'text-stone-400'}`}>
-                          {u.role}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Registration Prompt */}
-              <div className="border-t border-stone-200/50 pt-4 mt-4 text-center select-none">
-                <p className="font-sans text-xs text-stone-500">
-                  Not registered as a Member yet?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLoginModal(false);
-                      setShowSignUpWizard(true);
-                    }}
-                    className="text-adjung-maroon hover:underline font-semibold cursor-pointer ml-1 font-serif italic text-[13px]"
-                  >
-                    Register here
-                  </button>
-                </p>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        loginError={loginError}
+        setLoginError={setLoginError}
+        usernameInput={usernameInput}
+        setUsernameInput={setUsernameInput}
+        passwordInput={passwordInput}
+        setPasswordInput={setPasswordInput}
+        handleLogin={handleLogin}
+        rememberMe={rememberMe}
+        setRememberMe={setRememberMe}
+        setShowSignUpWizard={setShowSignUpWizard}
+      />
 
       {/* ==================== 4B. ACCOUNT DETAILS MODAL ==================== */}
-      {showAccountModal && currentUser && (
-        <div className="fixed inset-0 bg-stone-900/65 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#FDFDFD] border border-adjung-maroon/25 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border animate-fade-in text-left">
-            
-            {/* Modal header */}
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-2xl text-adjung-maroon">Account Settings</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Platform Identity & Credentials</p>
-            </div>
-
-            <form onSubmit={handleSaveAccountSettings} className="p-6 space-y-4 text-xs font-sans text-stone-800">
-              
-              {accountError && (
-                <div className="p-2.5 bg-red-50 border border-red-100 text-red-800 rounded font-sans text-xs">
-                  {accountError}
-                </div>
-              )}
-
-              {/* Display name (Read-only on account, managed on Desk) */}
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-400 tracking-wider mb-1">
-                  Pen & Short Name <span className="text-[8px] italic">(Customized on Desk)</span>
-                </label>
-                <div className="w-full bg-stone-50 border border-stone-200 p-2.5 rounded text-stone-500 font-serif text-[13px] select-none">
-                  {currentUser.penName}
-                </div>
-              </div>
-
-              {/* Username Input */}
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">
-                  Platform Username
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 font-mono text-stone-400 select-none">@</span>
-                  <input
-                    type="text"
-                    value={accountUsername}
-                    onChange={(e) => setAccountUsername(e.target.value)}
-                    className="w-full border border-stone-200 pl-7 pr-3 py-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
-                    placeholder="username"
-                    required
-                  />
-                </div>
-                <span className="text-[8px] font-mono text-stone-400 mt-1 block leading-normal">
-                  Your unique handle. Allowed: lowercase letters, numbers, dots, and underscores.
-                </span>
-              </div>
-
-              {/* Email Input */}
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={accountEmail}
-                  onChange={(e) => setAccountEmail(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
-                  placeholder="e.g. scholar@adjung.com"
-                />
-                <span className="text-[8px] font-mono text-stone-400 mt-1 block leading-normal">
-                  Used for password retrieval, platform communications, and board logs.
-                </span>
-              </div>
-
-              {/* Password Fields */}
-              <div className="border-t border-stone-100 pt-3.5 space-y-3">
-                <span className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider font-semibold">
-                  Update Password <span className="text-[8px] font-normal italic text-stone-400">(Leave blank to keep current)</span>
-                </span>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-mono uppercase text-[8px] text-stone-400 tracking-wider mb-1">New Password</label>
-                    <input
-                      type="password"
-                      value={accountPassword}
-                      onChange={(e) => setAccountPassword(e.target.value)}
-                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
-                      placeholder="Min 4 characters"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-mono uppercase text-[8px] text-stone-400 tracking-wider mb-1">Confirm New</label>
-                    <input
-                      type="password"
-                      value={accountConfirmPassword}
-                      onChange={(e) => setAccountConfirmPassword(e.target.value)}
-                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
-                      placeholder="Repeat password"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Informative Architectural note box */}
-              <div className="bg-stone-50 border border-stone-200/85 p-3 rounded-sm text-[10.5px] text-stone-600 font-serif leading-relaxed italic text-left">
-                Note: In alignment with the Adjung publishing architecture, all Author Site settings (such as your pen name, handwritten signature stamp, custom hero title/subtitle, and public biography) are managed securely inside your private <span className="font-mono uppercase tracking-wider font-semibold text-[#802334] text-[9px]">Desk</span>. This Account panel is strictly reserved for platform-level identity credentials.
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAccountModal(false)}
-                  className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2.5 rounded text-xs font-mono uppercase tracking-wider transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-2/3 bg-[#802334] hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
-                >
-                  Save Credentials
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
+      <AccountModal
+        isOpen={showAccountModal}
+        onClose={() => setShowAccountModal(false)}
+        currentUser={currentUser}
+        accountEmail={accountEmail}
+        setAccountEmail={setAccountEmail}
+        accountUsername={accountUsername}
+        setAccountUsername={setAccountUsername}
+        accountPassword={accountPassword}
+        setAccountPassword={setAccountPassword}
+        accountConfirmPassword={accountConfirmPassword}
+        setAccountConfirmPassword={setAccountConfirmPassword}
+        accountError={accountError}
+        handleSaveAccountSettings={handleSaveAccountSettings}
+      />
 
       {/* ==================== 5. ADD TIMELINE ITEM MODAL (Shown only in Biography when Owner) ==================== */}
       {showAddBioModal && (
@@ -2418,39 +1951,12 @@ Editorial Board of Adjung`;
 
       {/* ==================== ACADEMIC REGISTRATION WIZARD ==================== */}      {showSignUpWizard && (        <SignUpWizard          onClose={() => setShowSignUpWizard(false)}          onComplete={handleWizardComplete}        />      )}
       {/* ==================== 6. ACADEMIC FOOTER ==================== */}
-      <footer className="w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
-        <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center items-start">
-          <div className="space-y-4 flex flex-col items-center text-center">
-            <h1 className="font-serif text-2xl font-semibold tracking-wider text-[#802334]">{BRAND.logoText}</h1>
-            <p className="font-serif italic text-stone-600 text-sm max-w-sm mx-auto">{systemSettings.editorialPolicy}</p>
-          </div>
-          
-          <div className="space-y-4 flex flex-col items-center text-center">
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Institutional</h4>
-            <ul className="space-y-2 font-sans text-xs text-stone-600">
-              <li><button onClick={() => { setActiveTab('editorial'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editor's Notes</button></li>
-              <li><button onClick={() => { setActiveTab('notices'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Notices</button></li>
-              <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Publishing Policies</button></li>
-              <li><button onClick={() => { setActiveTab('changelog'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Version History</button></li>
-            </ul>
-          </div>
-          
-          <div className="space-y-4 flex flex-col items-center text-center">
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Network</h4>
-            <ul className="space-y-2 font-sans text-xs text-stone-600">
-              <li><button onClick={() => { setActiveTab('policies'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">About Adjung</button></li>
-              <li><button onClick={() => { setActiveTab('directory'); setSelectedEntry(null); setEditingEntry(null); window.scrollTo(0,0); }} className="hover:text-[#802334] transition">Editorial Board</button></li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Copyright Bottom Bar */}
-        <div className="max-w-4xl mx-auto px-4 border-t border-stone-200/50 mt-8 pt-6 text-center">
-          <p className="font-mono uppercase tracking-widest text-[9px] text-stone-400">
-            {BRAND.copyright}
-          </p>
-        </div>
-      </footer>
+      <Footer
+        systemSettings={systemSettings}
+        setActiveTab={setActiveTab}
+        setSelectedEntry={setSelectedEntry}
+        setEditingEntry={setEditingEntry}
+      />
 
         </motion.div>
       )}

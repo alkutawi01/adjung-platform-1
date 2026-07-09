@@ -1338,7 +1338,7 @@ function Step9Complete({ onComplete }: { onComplete: () => void, key?: string })
           <motion.div exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.6 }} className="flex flex-col gap-6 w-full items-center justify-center min-h-[250px] select-none">
             <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(0) ? 1 : 0, y: visibleLines.includes(0) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 italic">Your membership has been established.</motion.p>
             <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(1) ? 1 : 0, y: visibleLines.includes(1) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 italic">Your intellectual identity has been created.</motion.p>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(2) ? 1 : 0, y: visibleLines.includes(2) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 italic">Your Writing Desk is now ready.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(2) ? 1 : 0, y: visibleLines.includes(2) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 italic">Your Desk is now ready.</motion.p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1362,7 +1362,7 @@ function Step9Complete({ onComplete }: { onComplete: () => void, key?: string })
               onClick={onComplete} 
               className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
             >
-              Enter Writing Desk
+              Enter Desk
             </button>
           </motion.div>
         )}

@@ -184,7 +184,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       setCurrentUser(null);
       setSelectedAuthorId('');
-      setActiveTab('landing');
+      
+      // Determine initial tab from current pathname
+      const path = window.location.pathname;
+      const parts = path.split('/').filter(Boolean);
+      const route = parts[0];
+      const PUBLIC_ROUTES = ['frontpage', 'directory', 'index', 'notices', 'notice', 'editorial', 'changelog', 'policies'];
+      
+      if (route && PUBLIC_ROUTES.includes(route)) {
+        setActiveTab(route);
+      } else {
+        setActiveTab('landing');
+      }
     }
     
     refreshDbState();

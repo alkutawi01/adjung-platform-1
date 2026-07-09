@@ -60,29 +60,37 @@ export class SessionService {
   private static SESSION_KEY = 'Adjung_session_user_id';
 
   /**
-   * Starts a persistent session by storing the user ID and user data.
+   * Starts a session by storing the user ID and user data.
    */
-  static createSession(user: User): void {
-    localStorage.setItem(this.SESSION_KEY, user.id);
-    localStorage.setItem('Adjung_session_user_data', JSON.stringify(user));
+  static createSession(user: User, rememberMe: boolean = true): void {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    const otherStorage = rememberMe ? sessionStorage : localStorage;
+    
+    otherStorage.removeItem(this.SESSION_KEY);
+    otherStorage.removeItem('Adjung_session_user_data');
+
+    storage.setItem(this.SESSION_KEY, user.id);
+    storage.setItem('Adjung_session_user_data', JSON.stringify(user));
   }
 
   /**
-   * Ends the persistent session.
+   * Ends the session in both storages.
    */
   static destroySession(): void {
     localStorage.removeItem(this.SESSION_KEY);
     localStorage.removeItem('Adjung_session_user_data');
+    sessionStorage.removeItem(this.SESSION_KEY);
+    sessionStorage.removeItem('Adjung_session_user_data');
   }
 
   /**
    * Retrieves and automatically audits the current session.
    */
   static validateAndRetrieveSession(): User | null {
-    const userId = localStorage.getItem(this.SESSION_KEY);
+    const userId = localStorage.getItem(this.SESSION_KEY) || sessionStorage.getItem(this.SESSION_KEY);
     if (!userId) return null;
 
-    const cachedUserStr = localStorage.getItem('Adjung_session_user_data');
+    const cachedUserStr = localStorage.getItem('Adjung_session_user_data') || sessionStorage.getItem('Adjung_session_user_data');
     if (cachedUserStr) {
       try {
         const cachedUser = JSON.parse(cachedUserStr);
@@ -116,7 +124,7 @@ export class AuthService {
   /**
    * Standard sign-in pipeline calling Express backend.
    */
-  static async signIn(usernameOrEmailInput: string, passwordInput: string): Promise<User> {
+  static async signIn(usernameOrEmailInput: string, passwordInput: string, rememberMe: boolean = true): Promise<User> {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
@@ -133,7 +141,7 @@ export class AuthService {
       throw new AuthError(data.error || 'UserNotFound', data.message || 'Authentication failed.');
     }
 
-    SessionService.createSession(data.user);
+    SessionService.createSession(data.user, rememberMe);
     return data.user;
   }
 
@@ -141,7 +149,7 @@ export class AuthService {
    * Sign-in via Fast-Login Preset.
    */
   static async signInWithPreset(username: string): Promise<User> {
-    return this.signIn(username, 'password');
+    return this.signIn(username, 'password', true);
   }
 
   /**

@@ -106,9 +106,29 @@ const initializeSchema = () => {
           id TEXT PRIMARY KEY,
           frontpageTitle TEXT,
           frontpageSubtitle TEXT,
-          rolePermissions TEXT
+          rolePermissions TEXT,
+          inTheNewsText TEXT,
+          featuredScholarId TEXT,
+          featuredEntryId TEXT,
+          editorialSelectionIds TEXT,
+          announcementBanner TEXT,
+          enableArabicAccent INTEGER,
+          layoutDensity TEXT,
+          allowedSignatureFonts TEXT,
+          featuredEssayIds TEXT,
+          featuredNoteIds TEXT
         )
       `);
+      db.run("ALTER TABLE system_settings ADD COLUMN inTheNewsText TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN featuredScholarId TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN featuredEntryId TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN editorialSelectionIds TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN announcementBanner TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN enableArabicAccent INTEGER", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN layoutDensity TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN allowedSignatureFonts TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN featuredEssayIds TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN featuredNoteIds TEXT", () => {});
 
       // 6. Logs Table
       db.run(`
@@ -237,9 +257,27 @@ const seedDatabase = async () => {
     // 5. Seed System Settings
     const sysSettings = mockDb.getSystemSettings();
     db.run(`
-      INSERT INTO system_settings (id, frontpageTitle, frontpageSubtitle, rolePermissions)
-      VALUES ('settings-main', ?, ?, ?)
-    `, [sysSettings.frontpageTitle, sysSettings.frontpageSubtitle, JSON.stringify(sysSettings.rolePermissions)]);
+      INSERT INTO system_settings (
+        id, frontpageTitle, frontpageSubtitle, rolePermissions, inTheNewsText,
+        featuredScholarId, featuredEntryId, editorialSelectionIds, announcementBanner,
+        enableArabicAccent, layoutDensity, allowedSignatureFonts, featuredEssayIds, featuredNoteIds
+      )
+      VALUES ('settings-main', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      sysSettings.frontpageTitle,
+      sysSettings.frontpageSubtitle,
+      JSON.stringify(sysSettings.rolePermissions),
+      sysSettings.inTheNewsText,
+      sysSettings.featuredScholarId,
+      sysSettings.featuredEntryId,
+      JSON.stringify(sysSettings.editorialSelectionIds || []),
+      sysSettings.announcementBanner,
+      sysSettings.enableArabicAccent ? 1 : 0,
+      sysSettings.layoutDensity,
+      JSON.stringify(sysSettings.allowedSignatureFonts || []),
+      JSON.stringify(sysSettings.featuredEssayIds || []),
+      JSON.stringify(sysSettings.featuredNoteIds || [])
+    ]);
 
     // 6. Seed Logs
     const stmtLog = db.prepare(`
@@ -358,7 +396,17 @@ app.get('/api/db-state', async (req, res) => {
       id: settingsRow.id,
       frontpageTitle: settingsRow.frontpageTitle,
       frontpageSubtitle: settingsRow.frontpageSubtitle,
-      rolePermissions: JSON.parse(settingsRow.rolePermissions || '{}')
+      rolePermissions: JSON.parse(settingsRow.rolePermissions || '{}'),
+      inTheNewsText: settingsRow.inTheNewsText || '',
+      featuredScholarId: settingsRow.featuredScholarId || '',
+      featuredEntryId: settingsRow.featuredEntryId || '',
+      editorialSelectionIds: JSON.parse(settingsRow.editorialSelectionIds || '[]'),
+      announcementBanner: settingsRow.announcementBanner || '',
+      enableArabicAccent: settingsRow.enableArabicAccent === 1,
+      layoutDensity: settingsRow.layoutDensity || 'Standard',
+      allowedSignatureFonts: JSON.parse(settingsRow.allowedSignatureFonts || '[]'),
+      featuredEssayIds: JSON.parse(settingsRow.featuredEssayIds || '[]'),
+      featuredNoteIds: JSON.parse(settingsRow.featuredNoteIds || '[]')
     } : {};
 
     const logs = logsRows;
@@ -590,9 +638,35 @@ app.post('/api/system/settings', async (req, res) => {
     const s = req.body;
     await dbRun(`
       UPDATE system_settings SET
-        frontpageTitle = ?, frontpageSubtitle = ?, rolePermissions = ?
+        frontpageTitle = ?, 
+        frontpageSubtitle = ?, 
+        rolePermissions = ?, 
+        inTheNewsText = ?,
+        featuredScholarId = ?,
+        featuredEntryId = ?,
+        editorialSelectionIds = ?,
+        announcementBanner = ?,
+        enableArabicAccent = ?,
+        layoutDensity = ?,
+        allowedSignatureFonts = ?,
+        featuredEssayIds = ?,
+        featuredNoteIds = ?
       WHERE id = 'settings-main'
-    `, [s.frontpageTitle, s.frontpageSubtitle, JSON.stringify(s.rolePermissions)]);
+    `, [
+      s.frontpageTitle, 
+      s.frontpageSubtitle, 
+      JSON.stringify(s.rolePermissions), 
+      s.inTheNewsText,
+      s.featuredScholarId,
+      s.featuredEntryId,
+      JSON.stringify(s.editorialSelectionIds || []),
+      s.announcementBanner,
+      s.enableArabicAccent ? 1 : 0,
+      s.layoutDensity,
+      JSON.stringify(s.allowedSignatureFonts || []),
+      JSON.stringify(s.featuredEssayIds || []),
+      JSON.stringify(s.featuredNoteIds || [])
+    ]);
     res.json({ success: true });
   } catch (err) {
     console.error('Save settings error:', err);

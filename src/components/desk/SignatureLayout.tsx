@@ -12,7 +12,7 @@ interface SignatureLayoutProps {
   color?: string;
   strokeWidth?: number;
   role?: string;
-  location?: string;
+  affiliation?: string;
 }
 
 export function SignatureLayout({
@@ -24,7 +24,7 @@ export function SignatureLayout({
   color = "#802334", // Adjung-maroon
   strokeWidth = 3.2,
   role,
-  location
+  affiliation
 }: SignatureLayoutProps) {
   return (
     <div className={`flex flex-col items-center justify-center text-center select-none ${className}`}>
@@ -54,14 +54,14 @@ export function SignatureLayout({
 
       {/* Author details */}
       <div className="mt-2 flex flex-col items-center">
-        <div className="font-serif italic font-semibold text-stone-900 tracking-wide text-sm flex items-center gap-1.5 justify-center">
+        <div className="font-serif italic font-semibold text-stone-900 tracking-wide text-sm">
           {penName}
-          {location && (
-            <span className="font-sans font-normal not-italic text-[10px] text-stone-400">
-              ({location})
-            </span>
-          )}
         </div>
+        {affiliation && (
+          <div className="font-sans font-normal text-[10px] text-stone-400 mt-0.5 select-all">
+            {affiliation}
+          </div>
+        )}
         {role && (
           <div className="font-mono text-[8px] uppercase tracking-widest text-stone-400/80 mt-0.5">
             {role}

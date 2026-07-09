@@ -62,7 +62,7 @@ export interface User {
   avatarColor?: string;
   bioSummary?: string;
   suspended?: boolean;
-  location?: string;
+  affiliation?: string;
 }
 
 export type PublicationClass = 'Scholarly' | 'Institutional';
@@ -218,7 +218,7 @@ export interface IdentityProfile {
   lifeTimeline: BiographyItem[];
   signatures: DigitalSignature[];
   publicVisibility: 'Public' | 'Private';
-  location?: string;
+  affiliation?: string;
 }
 
 export interface SystemSettings {
@@ -228,6 +228,8 @@ export interface SystemSettings {
   allowSelfRegistration: boolean;
   featuredScholarId?: string;
   featuredEntryId?: string;
+  featuredEssayIds?: string[];
+  featuredNoteIds?: string[];
   editorialSelectionIds?: string[]; // Max 10 entries for Frontpage curation
   announcementBanner?: string;
   enableArabicAccent?: boolean;
@@ -239,6 +241,7 @@ export interface SystemSettings {
     'Writer': RolePermissions;
     'Visitor': RolePermissions;
   };
+  inTheNewsText?: string;
 }
 
 export interface SystemLog {
@@ -247,4 +250,18 @@ export interface SystemLog {
   operator: string;
   role: string;
   action: string;
+}
+
+export interface NewsItem {
+  desk: string;
+  title: string;
+  brief: string;
+  source: string;
+  url: string;
+  rawIndex: number;
+}
+
+export interface ParseError {
+  index: number;
+  error: string;
 }

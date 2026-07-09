@@ -3775,7 +3775,7 @@ export function EntryRenderer({
             
             {(() => {
               const authorIdentity = entry.authorId ? db.getIdentityByAccountId(entry.authorId) : undefined;
-              const authorLocation = authorIdentity?.location;
+              const authorAffiliation = authorIdentity?.affiliation;
 
               if (authorDigitalSignature) {
                 return (
@@ -3785,7 +3785,7 @@ export function EntryRenderer({
                     date={entry.publishedDate || new Date().toISOString()}
                     role="SCHOLARLY WRITER"
                     strokeWidth={3.0}
-                    location={authorLocation}
+                    affiliation={authorAffiliation}
                   />
                 );
               }
@@ -3797,7 +3797,7 @@ export function EntryRenderer({
                     date={entry.publishedDate || new Date().toISOString()}
                     role="SCHOLARLY WRITER"
                     strokeWidth={3.0}
-                    location={authorLocation}
+                    affiliation={authorAffiliation}
                   />
                 );
               }
@@ -3807,15 +3807,15 @@ export function EntryRenderer({
                        style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
                     {authorSignature}
                   </div>
-                  <div className="font-serif italic font-semibold text-stone-900 tracking-wide mt-2 flex items-center gap-1.5 justify-center">
-                    {authorName}
-                    {authorLocation && (
-                      <span className="font-sans font-normal not-italic text-[10px] text-stone-400">
-                        ({authorLocation})
-                      </span>
+                  <div className="font-serif italic font-semibold text-stone-900 tracking-wide mt-2 text-center">
+                    <div>{authorName}</div>
+                    {authorAffiliation && (
+                      <div className="font-sans font-normal not-italic text-[10px] text-stone-400 mt-0.5 select-all">
+                        {authorAffiliation}
+                      </div>
                     )}
                   </div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-400 mt-1 select-none">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-400 mt-2 select-none">
                     Published<br/>
                     {formatDate(entry.publishedDate || new Date().toISOString())}
                   </div>

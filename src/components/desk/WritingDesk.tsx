@@ -251,7 +251,7 @@ export function WritingDesk({
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-[#111111] flex items-center gap-2">
             <PenTool className="w-5 h-5 text-[#802334]" />
-            Writing Desk
+            Desk
           </h2>
           <p className="font-sans text-[10px] uppercase tracking-widest text-[#111111]/40">
             Write, edit and manage your publications.
@@ -306,9 +306,9 @@ export function WritingDesk({
       {activeEntry ? (
         renderComposer()
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left column: drafts & published */}
-          <div className="lg:col-span-8 space-y-10">
+        <div className="max-w-4xl mx-auto space-y-10">
+          {/* Drafts & Published Lists */}
+          <div className="space-y-10">
             
             {/* Drafts list */}
             <div className="space-y-4">
@@ -413,84 +413,6 @@ export function WritingDesk({
               )}
             </div>
 
-          </div>
-
-          {/* Right column: personal settings */}
-          <div className="lg:col-span-4 bg-white border border-[#111111]/10 rounded p-6 shadow-sm font-sans text-xs">
-            <h3 className="font-sans text-[11px] uppercase tracking-widest font-bold text-[#802334] border-b border-[#111111]/10 pb-3 mb-4 flex items-center gap-1.5 select-none">
-              <Settings className="w-4 h-4" /> Folio Settings
-            </h3>
-            
-            <form onSubmit={handleSaveFolioSettings} className="space-y-4">
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Account Username</label>
-                <input
-                  type="text"
-                  value={deskUsername}
-                  onChange={(e) => setDeskUsername(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#802334]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Pen & Short Name</label>
-                <input
-                  type="text"
-                  value={deskPenName}
-                  onChange={(e) => setDeskPenName(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#802334]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Signature Text Stamp</label>
-                <input
-                  type="text"
-                  value={deskSignature}
-                  onChange={(e) => setDeskSignature(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 bg-white text-[#802334] focus:outline-none focus:border-[#802334] font-signature text-xl"
-                  required
-                />
-                <span className="text-[10px] text-[#111111]/40 block mt-1 leading-normal">Replaces the profile photograph. Scribed live.</span>
-              </div>
-
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Folio Hero Title</label>
-                <input
-                  type="text"
-                  value={deskHeroTitle}
-                  onChange={(e) => setDeskHeroTitle(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#802334]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Folio Hero Subtitle</label>
-                <textarea
-                  value={deskHeroSubtitle}
-                  onChange={(e) => setDeskHeroSubtitle(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#802334] min-h-[50px]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-sans uppercase text-[9px] text-[#111111]/50 tracking-wider mb-1 font-medium">Biography</label>
-                <textarea
-                  value={deskBioText}
-                  onChange={(e) => setDeskBioText(e.target.value)}
-                  className="w-full border border-[#111111]/10 p-2 text-xs bg-white text-[#111111] focus:outline-none focus:border-[#802334] min-h-[120px] font-serif leading-relaxed"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-[#802334] text-white py-2 uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-90 transition shadow-sm mt-2 cursor-pointer"
-              >
-                Save Changes
-              </button>
-            </form>
           </div>
         </div>
       )}

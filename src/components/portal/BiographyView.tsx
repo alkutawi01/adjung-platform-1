@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BiographyItem, IdentityProfile, User } from '../../types';
 import { stripMarkdown, parseInlineFormatting } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
+import { Fingerprint, Edit3 } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
+import { IdentityStudio } from './IdentityStudio';
+import { db } from '../../db/mockDb';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -26,6 +30,32 @@ export function BiographyView({
   presentationSpec,
 }: BiographyViewProps) {
   const activeSpec = presentationSpec || getPresentationSpec('Essay');
+  const { refreshDbState } = useAppContext();
+
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editedBio, setEditedBio] = useState(authorProfile.biography || '');
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+
+  useEffect(() => {
+    setEditedBio(authorProfile.biography || '');
+  }, [authorProfile.biography]);
+
+  const handleSaveBio = async () => {
+    const updatedIdentity: IdentityProfile = {
+      ...authorProfile,
+      biography: editedBio
+    };
+
+    await fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedIdentity)
+    });
+
+    db.updateIdentity(updatedIdentity);
+    setIsEditingBio(false);
+    refreshDbState();
+  };
   return (
     <div className="space-y-16">
       {/* Intro Profile */}
@@ -39,8 +69,48 @@ export function BiographyView({
             Biography
           </h2>
           
-          <div className={`${activeSpec.typography.bodyFont} text-base text-[#111111]/80 leading-relaxed space-y-4 whitespace-pre-line text-justify pr-2`}>
-            {authorProfile.biography}
+          <div className="relative group/bio">
+            {isEditingBio ? (
+              <div className="space-y-2 py-2 text-left">
+                <textarea
+                  value={editedBio}
+                  onChange={(e) => setEditedBio(e.target.value)}
+                  className="w-full border border-stone-200 p-3 rounded text-sm font-serif leading-relaxed text-[#111111]/90 focus:outline-none focus:border-[#802334] min-h-[200px] resize-y"
+                  placeholder="Enter a description of yourself, your intellectual background, or interests..."
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingBio(false)}
+                    className="px-2.5 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveBio}
+                    className="px-2.5 py-1 bg-[#802334] text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                  >
+                    Save Biography
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className={`${activeSpec.typography.bodyFont} text-base text-[#111111]/80 leading-relaxed space-y-4 whitespace-pre-line text-justify pr-2`}>
+                  {authorProfile.biography || <span className="text-stone-400 italic">No biography written yet. Click edit to write one!</span>}
+                </div>
+                {currentUser?.id === selectedAuthorId && (
+                  <button
+                    onClick={() => setIsEditingBio(true)}
+                    className="absolute -top-6 right-0 opacity-0 group-hover/bio:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider cursor-pointer"
+                    title="Edit Biography"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Edit Biography
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -76,10 +146,10 @@ export function BiographyView({
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.displayName}</span>
               </div>
             )}
-            {authorProfile.location && (
+            {authorProfile.affiliation && (
               <div>
-                <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Location</span>
-                <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.location}</span>
+                <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Affiliation</span>
+                <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.affiliation}</span>
               </div>
             )}
             <div className="pt-2 border-t border-stone-200/50">
@@ -91,6 +161,17 @@ export function BiographyView({
                 {currentAuthor.email}
               </a>
             </div>
+            {currentUser?.id === selectedAuthorId && (
+              <div className="pt-3 border-t border-stone-200/50 mt-2">
+                <button
+                  onClick={() => setShowIdentityModal(true)}
+                  className="w-full flex items-center justify-center gap-1.5 bg-[#802334] text-white hover:opacity-95 py-2 px-3 rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer font-semibold shadow-sm"
+                >
+                  <Fingerprint className="w-3.5 h-3.5" />
+                  Edit Identity
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -169,6 +250,11 @@ export function BiographyView({
           </div>
         )}
       </div>
+
+      {/* Identity Studio Modal */}
+      {showIdentityModal && (
+        <IdentityStudio isModal={true} onClose={() => setShowIdentityModal(false)} />
+      )}
     </div>
   );
 }

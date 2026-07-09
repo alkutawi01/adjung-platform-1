@@ -150,7 +150,7 @@ export const INITIAL_USERS: User[] = [
     signature: 'Prof. Tariq Malik',
     avatarColor: 'bg-stone-800 text-stone-100',
     bioSummary: 'Professor Emeritus of Islamic Philosophy and Comparative Literature. Chief Editor of Adjung.',
-    location: 'Kuala Lumpur, Malaysia'
+    affiliation: 'Kuala Lumpur, Malaysia'
   },
   {
     id: 'user-associate-editor',
@@ -161,7 +161,7 @@ export const INITIAL_USERS: User[] = [
     signature: 'Amina (Editor)',
     avatarColor: 'bg-stone-700 text-stone-100',
     bioSummary: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
-    location: 'Kuala Lumpur, Malaysia'
+    affiliation: 'Kuala Lumpur, Malaysia'
   },
   {
     id: 'user-zayd-ghazali',
@@ -172,7 +172,7 @@ export const INITIAL_USERS: User[] = [
     signature: 'Zayd Al-Ghazali',
     avatarColor: 'bg-emerald-950 text-emerald-100',
     bioSummary: 'Scholarly writer focusing on the synthesis of medieval Arabic logic and modern typographic form.',
-    location: 'Cairo, Egypt'
+    affiliation: 'Cairo, Egypt'
   },
   {
     id: 'user-amina-masri',
@@ -183,7 +183,7 @@ export const INITIAL_USERS: User[] = [
     signature: 'Amina Al-Masri',
     avatarColor: 'bg-blue-950 text-blue-100',
     bioSummary: 'Maritime historian specializing in Red Sea trading hubs and pre-modern Levantine trade routes.',
-    location: 'Alexandria, Egypt'
+    affiliation: 'Alexandria, Egypt'
   },
   {
     id: 'user-sarah-henderson',
@@ -194,7 +194,7 @@ export const INITIAL_USERS: User[] = [
     signature: 'S. Henderson',
     avatarColor: 'bg-red-950 text-red-100',
     bioSummary: 'Typographer and scholar examining the intersection of modern Swiss rationalism and traditional book design.',
-    location: 'Zurich, Switzerland'
+    affiliation: 'Zurich, Switzerland'
   }
 ];
 
@@ -247,7 +247,7 @@ He holds a doctorate in Comparative Semiotics and splits his academic research b
       }
     ],
     signatures: [],
-    location: 'Cairo, Egypt'
+    affiliation: 'Cairo, Egypt'
   },
   {
     identityId: 'id-user-amina-masri',
@@ -290,7 +290,7 @@ She acts as a consultant for maritime heritage preservation and teaches Economic
       }
     ],
     signatures: [],
-    location: 'Alexandria, Egypt'
+    affiliation: 'Alexandria, Egypt'
   },
   {
     identityId: 'id-user-sarah-henderson',
@@ -326,7 +326,7 @@ Her Adjung Folio features highly structured layout reflections and critical arti
       }
     ],
     signatures: [],
-    location: 'Zurich, Switzerland'
+    affiliation: 'Zurich, Switzerland'
   }
 ];
 
@@ -965,10 +965,41 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   editorialSelectionIds: ['entry-zayd-1', 'entry-amina-1', 'entry-sarah-1'],
   featuredScholarId: 'user-zayd-ghazali',
   featuredEntryId: 'entry-zayd-1',
+  featuredEssayIds: [],
+  featuredNoteIds: [],
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
   enableArabicAccent: true,
   layoutDensity: 'Standard',
   allowedSignatureFonts: ['Pinyon Script', 'Alex Brush', 'Great Vibes', 'Parisienne', 'Allura', 'Herr Von Muellerhoff'],
+  inTheNewsText: `Desk: Astronomy
+Title: NASA Reviews Long-Term Options for the Hubble Space Telescope
+Brief: NASA is evaluating whether the Hubble Space Telescope should continue operating into the 2030s, preserving one of astronomy's most influential observatories.
+Source: Nature
+URL: https://www.nature.com/articles/d41586-026-02000-x
+
+---
+
+Desk: Libraries
+Title: Library of Congress Announces 2026 National Book Festival
+Brief: More than eighty authors will participate in the annual festival, highlighting the enduring role of libraries in public scholarship and reading culture.
+Source: Library of Congress
+URL: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festival-features-more-than-80-authors-and-new-programming-to/s/7237e3a3-6b60-437a-bd1b-f15dfc680119
+
+---
+
+Desk: Islamic Affairs
+Title: Historic Quranic Manuscripts Undergo Advanced Digital Conservation
+Brief: Researchers at the Islamic Heritage Foundation have begun a comprehensive high-resolution digital scanning initiative to preserve early Kufic Quran fragments.
+Source: Islamic Heritage Foundation
+URL: https://www.islamicheritage.org/news/digital-conservation-early-kufic
+
+---
+
+Desk: Archaeology
+Title: Pre-Modern Trading Vessels Discovered in the Red Sea
+Brief: Marine archaeologists have located shipwreck remains dating back to the late antiquity period, containing custom customs documents and trade jars.
+Source: Journal of Maritime Archaeology
+URL: https://www.journalmaritimearch.org/articles/red-sea-discovery`,
   rolePermissions: {
     'Chief Editor': {
       viewIndex: true,
@@ -1224,6 +1255,15 @@ class AdjungDb {
         }
         if (!this.systemSettings.featuredScholarId) {
           this.systemSettings.featuredScholarId = INITIAL_SYSTEM_SETTINGS.featuredScholarId;
+        }
+        if (!this.systemSettings.inTheNewsText) {
+          this.systemSettings.inTheNewsText = INITIAL_SYSTEM_SETTINGS.inTheNewsText;
+        }
+        if (!this.systemSettings.featuredEssayIds) {
+          this.systemSettings.featuredEssayIds = [];
+        }
+        if (!this.systemSettings.featuredNoteIds) {
+          this.systemSettings.featuredNoteIds = [];
         }
 
         // Robustly ensure all roles and permission keys are populated
