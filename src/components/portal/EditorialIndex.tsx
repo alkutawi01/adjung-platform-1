@@ -143,7 +143,7 @@ export function EditorialIndex({
                       className={`p-3 text-[#111111] font-medium ${isAr ? 'text-right' : 'text-left'}`}
                     >
                       {item.contentType === 'Note' ? (
-                        <span className="italic text-stone-500 font-normal">
+                        <span className="text-stone-600 font-normal">
                           {(() => {
                             const cleanText = item.content.replace(/\[\^.*?\]/g, '').trim();
                             const firstPara = cleanText.split(/\n+/)[0] || '';
@@ -153,9 +153,6 @@ export function EditorialIndex({
                         </span>
                       ) : (
                         parseInlineFormatting(item.title)
-                      )}
-                      {isAr && (
-                        <span className="ml-2 font-mono text-[9px] text-[#802334] uppercase tracking-wide bg-[#802334]/5 px-1 rounded">AR</span>
                       )}
                     </td>
                     <td className="p-3 font-sans"><span className="text-[#802334] font-semibold">{item.contentType}</span></td>
