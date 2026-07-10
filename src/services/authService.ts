@@ -153,6 +153,27 @@ export class AuthService {
   }
 
   /**
+   * Reset password method.
+   */
+  static async resetPassword(email: string, newPasswordInput: string): Promise<void> {
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email,
+        password: newPasswordInput
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Password reset failed.');
+    }
+  }
+
+  /**
    * Sign-out helper.
    */
   static signOut(): void {

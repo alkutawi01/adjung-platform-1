@@ -26,10 +26,42 @@ import {
 } from 'lucide-react';
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocument, PolicySection } from '../../types';
 import { db } from '../../db/mockDb';
-import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown, parseInTheNews, getDeskAccentColor } from '../../utils';
+import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, parseResearchFindings } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
+
+const resolveEntryFromInput = (input: string, entries: Entry[]): Entry | undefined => {
+  if (!input) return undefined;
+  const cleanInput = input.trim();
+  
+  // Try matching by exact ID
+  let match = entries.find(e => e.id === cleanInput);
+  if (match) return match;
+  
+  // Try matching by slug
+  match = entries.find(e => e.slug === cleanInput);
+  if (match) return match;
+  
+  // Try parsing as URL to extract slug/id
+  try {
+    const url = new URL(cleanInput);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    if (pathParts.length > 0) {
+      const lastPart = pathParts[pathParts.length - 1];
+      match = entries.find(e => e.id === lastPart || e.slug === lastPart);
+      if (match) return match;
+    }
+  } catch (err) {
+    // Ignore
+  }
+  
+  // Fuzzy match by title
+  match = entries.find(e => e.title.toLowerCase().includes(cleanInput.toLowerCase()));
+  if (match) return match;
+
+  return undefined;
+};
 
 interface EditoriumProps {
   currentUser: User;
@@ -46,12 +78,13 @@ interface EditoriumProps {
   setActiveTab: (tab: any) => void;
   setSelectedEntry: (entry: Entry | null) => void;
   setEditingEntry: (entry: Entry | null) => void;
-  editoriumActiveTab: 'platform' | 'frontpage' | 'directory' | 'index' | 'editorial' | 'users' | 'roles' | 'moderation' | 'system' | 'dangerZone' | 'architecture' | 'reference-library';
+  editoriumActiveTab: 'platform' | 'landing' | 'frontpage' | 'directory' | 'index' | 'editorial' | 'users' | 'roles' | 'moderation' | 'system' | 'dangerZone' | 'architecture' | 'reference-library';
   setEditoriumActiveTab: (tab: any) => void;
 }
 
 type EditoriumTab = 
   | 'platform' 
+  | 'landing'
   | 'frontpage' 
   | 'directory' 
   | 'index' 
@@ -73,6 +106,7 @@ export function Editorium() {
     entries,
     systemSettings,
     setSystemSettings,
+    createNewEntry,
     resetDatabase: handleResetDatabase,
     changeUserRole: handleChangeUserRole,
     toggleUserSuspension: handleToggleUserSuspension,
@@ -83,7 +117,13 @@ export function Editorium() {
     setSelectedEntry,
     setEditingEntry,
     editoriumActiveTab,
-    setEditoriumActiveTab
+    setEditoriumActiveTab,
+    inTheNewsGoogleDocText,
+    worldClockHolidaysGoogleDocText,
+    researchFindingsGoogleDocText,
+    inTheNewsGoogleDocStatus,
+    worldClockHolidaysGoogleDocStatus,
+    researchFindingsGoogleDocStatus
   } = useAppContext();
 
   const hasPermission = (permissionKey: keyof RolePermissions) => {
@@ -152,6 +192,11 @@ export function Editorium() {
   );
   const [editorialAddInput, setEditorialAddInput] = useState('');
   const [inTheNewsRawText, setInTheNewsRawText] = useState(systemSettings.inTheNewsText || '');
+  const [inTheNewsGoogleDocUrl, setInTheNewsGoogleDocUrl] = useState(systemSettings.inTheNewsGoogleDocUrl || '');
+  const [worldClockHolidaysRawText, setWorldClockHolidaysRawText] = useState(systemSettings.worldClockHolidaysText || '');
+  const [worldClockHolidaysGoogleDocUrl, setWorldClockHolidaysGoogleDocUrl] = useState(systemSettings.worldClockHolidaysGoogleDocUrl || '');
+  const [researchFindingsRawText, setResearchFindingsRawText] = useState(systemSettings.researchFindingsText || '');
+  const [researchFindingsGoogleDocUrl, setResearchFindingsGoogleDocUrl] = useState(systemSettings.researchFindingsGoogleDocUrl || '');
 
   // Sync sub-states when systemSettings changes (e.g. on reset)
   useEffect(() => {
@@ -164,6 +209,11 @@ export function Editorium() {
     if (systemSettings.enableArabicAccent !== undefined) setEnableArabicAccent(systemSettings.enableArabicAccent);
     if (systemSettings.layoutDensity) setLayoutDensity(systemSettings.layoutDensity);
     if (systemSettings.inTheNewsText !== undefined) setInTheNewsRawText(systemSettings.inTheNewsText);
+    if (systemSettings.inTheNewsGoogleDocUrl !== undefined) setInTheNewsGoogleDocUrl(systemSettings.inTheNewsGoogleDocUrl);
+    if (systemSettings.worldClockHolidaysText !== undefined) setWorldClockHolidaysRawText(systemSettings.worldClockHolidaysText);
+    if (systemSettings.worldClockHolidaysGoogleDocUrl !== undefined) setWorldClockHolidaysGoogleDocUrl(systemSettings.worldClockHolidaysGoogleDocUrl);
+    if (systemSettings.researchFindingsText !== undefined) setResearchFindingsRawText(systemSettings.researchFindingsText);
+    if (systemSettings.researchFindingsGoogleDocUrl !== undefined) setResearchFindingsGoogleDocUrl(systemSettings.researchFindingsGoogleDocUrl);
   }, [systemSettings]);
 
   // Sync selected board member if the current selection is no longer valid or is empty
@@ -196,8 +246,97 @@ export function Editorium() {
     showToast(`Invitation created for ${inviteName.trim()}`, 'success');
   };
 
+  const renderGoogleDocConnectionStatus = (status: string, itemsCount: number) => {
+    if (status === 'success') {
+      return (
+        <div className="mt-1.5 p-2 bg-emerald-50 border border-emerald-150 rounded text-emerald-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
+          <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
+          <span className="font-semibold uppercase tracking-wider">Connection Success</span>
+          <span className="text-stone-400 font-sans">•</span>
+          <span className="text-stone-500 font-sans">Google Doc is accessible. Loaded {itemsCount} items.</span>
+        </div>
+      );
+    } else if (status === 'failed') {
+      return (
+        <div className="mt-1.5 p-2 bg-rose-50 border border-rose-150 rounded text-rose-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
+          <span className="w-1.5 h-1.5 bg-rose-600 rounded-full animate-pulse"></span>
+          <span className="font-semibold uppercase tracking-wider text-[#A02B2D]">Connection Failed</span>
+          <span className="text-stone-400 font-sans">•</span>
+          <span className="text-stone-500 font-sans">Private or invalid URL. Set General Access to "Anyone with the link can view" to update.</span>
+        </div>
+      );
+    }
+    return (
+      <div className="mt-1.5 p-2 bg-stone-50 border border-stone-150 rounded text-stone-600 flex items-center gap-1.5 text-[10px] font-mono select-none">
+        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full"></span>
+        <span className="font-semibold uppercase tracking-wider">No URL Provided</span>
+      </div>
+    );
+  };
+
   // Handle curation save
   const handleSaveCuration = () => {
+    // Validate Featured Articles (3 slots)
+    for (let i = 0; i < 3; i++) {
+      const val = editorialSelectionIds[i];
+      if (val) {
+        const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+        if (!resolved) {
+          showToast(`Error: Featured Article Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
+          return;
+        }
+        if (resolved.contentType !== 'Article') {
+          showToast(`Error: Featured Article Slot ${i + 1} ("${resolved.title}") must be of type Article. Found: ${resolved.contentType}.`, 'error');
+          return;
+        }
+      }
+    }
+
+    // Validate Featured Entry (1 slot)
+    if (featuredEntryId) {
+      const resolved = publishedEntries.find(e => e.id === featuredEntryId || e.slug === featuredEntryId);
+      if (!resolved) {
+        showToast(`Error: Featured Entry ("${featuredEntryId}") cannot be resolved to any published entry.`, 'error');
+        return;
+      }
+      if (resolved.contentType !== 'Essay' && resolved.contentType !== 'Article') {
+        showToast(`Error: Featured Entry ("${resolved.title}") must be of type Essay or Article. Found: ${resolved.contentType}.`, 'error');
+        return;
+      }
+    }
+
+    // Validate Featured Essays (3 slots)
+    for (let i = 0; i < 3; i++) {
+      const val = featuredEssayIds[i];
+      if (val) {
+        const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+        if (!resolved) {
+          showToast(`Error: Featured Essay Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
+          return;
+        }
+        if (resolved.contentType !== 'Essay') {
+          showToast(`Error: Featured Essay Slot ${i + 1} ("${resolved.title}") must be of type Essay. Found: ${resolved.contentType}.`, 'error');
+          return;
+        }
+      }
+    }
+
+    // Validate Featured Notes (2 slots)
+    for (let i = 0; i < 2; i++) {
+      const val = featuredNoteIds[i];
+      if (val) {
+        const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+        if (!resolved) {
+          showToast(`Error: Featured Note Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
+          return;
+        }
+        if (resolved.contentType !== 'Note') {
+          showToast(`Error: Featured Note Slot ${i + 1} ("${resolved.title}") must be of type Note. Found: ${resolved.contentType}.`, 'error');
+          return;
+        }
+      }
+    }
+
     const updatedSettings: SystemSettings = {
       ...systemSettings,
       featuredScholarId,
@@ -213,20 +352,126 @@ export function Editorium() {
     db.updateSystemSettings(updatedSettings);
 
     db.addLog(`Modified Frontpage Curation: Scholar='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser.penName, currentUser.role);
-    refreshDbState();
     showToast('Frontpage curation settings saved and synchronized.', 'success');
   };
 
   const handleSaveNewsDigest = () => {
     const updatedSettings = {
       ...systemSettings,
-      inTheNewsText: inTheNewsRawText
+      inTheNewsText: inTheNewsRawText,
+      inTheNewsGoogleDocUrl: inTheNewsGoogleDocUrl
     };
     setSystemSettings(updatedSettings);
     db.updateSystemSettings(updatedSettings);
-    db.addLog(`Updated In The News digest plain text.`, currentUser.penName, currentUser.role);
-    refreshDbState();
+    db.addLog(`Updated In The News digest and Google Doc URL.`, currentUser.penName, currentUser.role);
     showToast('In The News digest saved and synchronized.', 'success');
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateText = `desk: Astronomy
+title: NASA Reviews Long-Term Options for the Hubble Space Telescope
+brief: NASA is evaluating whether the Hubble Space Telescope should continue operating into the 2030s, preserving one of astronomy's most influential observatories.
+source: Nature
+url: https://www.nature.com/articles/d41586-026-02000-x
+
+---
+
+desk: Libraries
+title: Library of Congress Announces 2026 National Book Festival
+brief: More than eighty authors will participate in the annual festival, highlighting the enduring role of libraries in public scholarship and reading culture.
+source: Library of Congress
+url: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festival-features-more-than-80-authors-and-new-programming-to/s/7237e3a3-6b60-437a-bd1b-f15dfc680119
+`;
+
+    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(templateText);
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'adjung_news_template.txt');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSaveWorldClockHolidays = () => {
+    const updatedSettings = {
+      ...systemSettings,
+      worldClockHolidaysText: worldClockHolidaysRawText,
+      worldClockHolidaysGoogleDocUrl: worldClockHolidaysGoogleDocUrl
+    };
+    setSystemSettings(updatedSettings);
+    db.updateSystemSettings(updatedSettings);
+    db.addLog(`Updated World Clock Calendars & Holidays digest and Google Doc URL.`, currentUser.penName, currentUser.role);
+    showToast('World Clock Calendars & Holidays digest saved and synchronized.', 'success');
+  };
+
+  const handleDownloadHolidaysTemplate = () => {
+    const templateText = `City: New York
+Date: 01/01/26
+Status: Holiday
+Holiday Name: New Year's Day
+
+---
+
+City: Kuala Lumpur
+Date: 31/08/26
+Status: Holiday
+Holiday Name: National Day
+
+---
+
+City: Mecca
+Date: 25/01/48
+Status: Holiday
+Holiday Name: Prophet's Birthday
+
+---
+
+City: Tokyo
+Date: 10/07/26
+Status: Working
+`;
+    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(templateText);
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'adjung_holidays_template.txt');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSaveResearchFindings = () => {
+    const updatedSettings = {
+      ...systemSettings,
+      researchFindingsText: researchFindingsRawText,
+      researchFindingsGoogleDocUrl: researchFindingsGoogleDocUrl
+    };
+    setSystemSettings(updatedSettings);
+    db.updateSystemSettings(updatedSettings);
+    db.addLog(`Updated Research Findings digest and Google Doc URL.`, currentUser.penName, currentUser.role);
+    showToast('Research Findings digest saved and synchronized.', 'success');
+  };
+
+  const handleDownloadFindingsTemplate = () => {
+    const templateText = `Finding: Social media usage is linked to decreased attention spans and cognitive fatigue.
+Source: Journal of Media Psychology, 2025
+
+---
+
+Finding: Deep reading builds cognitive stamina and improves critical thinking skills.
+Source: Stanford Research Centre, 2026
+
+---
+
+Finding: Regular digital disconnection restores neural pathways associated with empathy and reflection.
+Source: MIT Technology Review, 2024
+`;
+    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(templateText);
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'adjung_findings_template.txt');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Helper helper to check if text contains Arabic characters
@@ -254,20 +499,20 @@ export function Editorium() {
       <button
         type="button"
         onClick={() => setEditoriumActiveTab(tab)}
-        className={`px-3 py-2.5 font-mono text-[10px] uppercase tracking-wider transition border-b-2 -mb-px flex items-center gap-1.5 select-none cursor-pointer flex-shrink-0 ${
+        className={`w-full text-left px-3 py-2 rounded font-mono text-[10px] uppercase tracking-wider transition flex items-center gap-2 cursor-pointer select-none ${
           isActive
-            ? 'border-adjung-maroon text-adjung-maroon font-semibold'
-            : 'border-transparent text-stone-500 hover:text-stone-900 hover:border-stone-200'
+            ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
+            : 'text-stone-650 hover:bg-stone-200/60 hover:text-stone-900'
         }`}
       >
         {icon}
-        {label}
+        <span>{label}</span>
       </button>
     );
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in text-left">
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-left px-4">
       
       {/* Header section */}
       <div className="space-y-1 border-b border-stone-200 pb-5">
@@ -280,21 +525,27 @@ export function Editorium() {
         </p>
       </div>
 
-      {/* Editorium 10-tab Sub-navigation Bar */}
-      <div className="flex border-b border-stone-200 overflow-x-auto scrollbar-none gap-1 bg-stone-50/50 p-1 rounded-sm">
-        {renderTabButton('platform', 'Platform', <Database className="w-3.5 h-3.5" />)}
-        {renderTabButton('frontpage', 'Frontpage', <Layers className="w-3.5 h-3.5" />)}
-        {renderTabButton('directory', 'Directory', <Search className="w-3.5 h-3.5" />)}
-        {renderTabButton('index', 'Index', <ListOrdered className="w-3.5 h-3.5" />)}
-        {renderTabButton('editorial', 'Editorial', <Award className="w-3.5 h-3.5" />)}
-        {renderTabButton('users', 'Users', <UserCheck className="w-3.5 h-3.5" />)}
-        {renderTabButton('roles', 'Roles', <Lock className="w-3.5 h-3.5" />)}
-        {renderTabButton('moderation', 'Moderation', <EyeOff className="w-3.5 h-3.5" />)}
-        {renderTabButton('system', 'System', <FileText className="w-3.5 h-3.5" />)}
-        {renderTabButton('architecture', 'Architecture', <Sliders className="w-3.5 h-3.5" />)}
-        {renderTabButton('reference-library', 'Reference Library', <BookOpen className="w-3.5 h-3.5" />)}
-        {renderTabButton('dangerZone', 'Danger Zone', <ShieldAlert className="w-3.5 h-3.5 text-red-700" />)}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        {/* Left Sidebar Sub-navigation */}
+        <aside className="md:col-span-3 bg-stone-50 border border-stone-200 rounded p-4 space-y-1 select-none">
+          <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 font-bold block mb-2 px-1">Studio Modules</span>
+          {renderTabButton('platform', 'Platform', <Database className="w-3.5 h-3.5" />)}
+          {renderTabButton('landing', 'Landing', <Globe className="w-3.5 h-3.5" />)}
+          {renderTabButton('frontpage', 'Frontpage', <Layers className="w-3.5 h-3.5" />)}
+          {renderTabButton('directory', 'Directory', <Search className="w-3.5 h-3.5" />)}
+          {renderTabButton('index', 'Index', <ListOrdered className="w-3.5 h-3.5" />)}
+          {renderTabButton('editorial', 'Editorial', <Award className="w-3.5 h-3.5" />)}
+          {renderTabButton('users', 'Users', <UserCheck className="w-3.5 h-3.5" />)}
+          {renderTabButton('roles', 'Roles', <Lock className="w-3.5 h-3.5" />)}
+          {renderTabButton('moderation', 'Moderation', <EyeOff className="w-3.5 h-3.5" />)}
+          {renderTabButton('system', 'System', <FileText className="w-3.5 h-3.5" />)}
+          {renderTabButton('architecture', 'Architecture', <Sliders className="w-3.5 h-3.5" />)}
+          {renderTabButton('reference-library', 'Reference Library', <BookOpen className="w-3.5 h-3.5" />)}
+          {renderTabButton('dangerZone', 'Danger Zone', <ShieldAlert className="w-3.5 h-3.5 text-red-700" />)}
+        </aside>
+
+        {/* Right Main Content Area */}
+        <main className="md:col-span-9 space-y-6">
 
       {/* ========================================================= */}
       {/* 1. PLATFORM                                               */}
@@ -422,72 +673,79 @@ export function Editorium() {
             </div>
 
             <div className="space-y-4 text-xs font-sans">
-              {/* Highlight Scholar */}
-              <div>
-                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Curated Scholar of the Month</label>
-                <select
-                  value={featuredScholarId}
-                  onChange={(e) => setFeaturedScholarId(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded bg-white font-serif text-sm focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                >
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.penName} (@{u.username} — {u.role})
-                    </option>
-                  ))}
-                </select>
-                <span className="text-stone-400 text-[9px] font-mono mt-1 block">Places an editorial focus box and calligraphic seal of this scholar on the public greeting catalog.</span>
-              </div>
-                {/* 3 Slots for Editorial Selections */}
+                {/* 3 Slots for Featured Articles */}
                 <div className="pt-4 border-t border-stone-200 space-y-3">
                   <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
-                    Editorial Selections (3 Slots)
+                    Featured Articles (3 Slots)
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {[0, 1, 2].map((idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                        <select
-                          value={editorialSelectionIds[idx] || ''}
-                          onChange={(e) => {
-                            const updated = [...editorialSelectionIds];
-                            updated[idx] = e.target.value;
-                            setEditorialSelectionIds(updated);
-                          }}
-                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                        >
-                          <option value="">-- Empty Slot --</option>
-                          {publishedEntries.map(e => (
-                            <option key={e.id} value={e.id}>
-                              [{e.contentType}] {e.title || e.content.substring(0, 35) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
-                            </option>
-                          ))}
-                        </select>
+                      <div key={idx} className="space-y-1">
+                        <div className="flex gap-2 items-center">
+                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                          <input
+                            type="text"
+                            value={editorialSelectionIds[idx] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const resolved = resolveEntryFromInput(val, publishedEntries);
+                              const updated = [...editorialSelectionIds];
+                              updated[idx] = resolved ? resolved.id : val;
+                              setEditorialSelectionIds(updated);
+                            }}
+                            placeholder="Enter Entry ID, Slug, or URL..."
+                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
+                          />
+                        </div>
+                        <div className="pl-14 text-[9px] font-mono text-left">
+                          {(() => {
+                            const val = editorialSelectionIds[idx];
+                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
+                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                            if (resolved.contentType !== 'Article') {
+                              return <span className="text-red-500">❌ Invalid Type: Must be an Article (resolved as {resolved.contentType})</span>;
+                            }
+                            return <span className="text-emerald-600">✅ Article: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                          })()}
+                        </div>
                       </div>
                     ))}
                   </div>
                   <span className="text-stone-400 text-[9px] font-mono mt-1 block">
-                    Curated entries displayed on the Frontpage under "Editor's Selections".
+                    Curated entries displayed on the Frontpage under "Featured Articles".
                   </span>
                 </div>
 
-                {/* 1 Slot for Apex Pinned Entry */}
-                <div className="pt-4 border-t border-stone-200">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
-                    Apex Pinned Publication of the Week
+                {/* 1 Slot for Featured Entry */}
+                <div className="pt-4 border-t border-stone-200 space-y-2">
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
+                    Featured Entry
                   </label>
-                  <select
-                    value={featuredEntryId || ''}
-                    onChange={(e) => setFeaturedEntryId(e.target.value)}
-                    className="w-full border border-stone-200 p-2.5 rounded bg-white font-serif text-sm focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                  >
-                    <option value="">-- None Selected --</option>
-                    {publishedEntries.map(e => (
-                      <option key={e.id} value={e.id}>
-                        [{e.contentType}] {e.title || e.content.substring(0, 45) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={featuredEntryId || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const resolved = resolveEntryFromInput(val, publishedEntries);
+                        setFeaturedEntryId(resolved ? resolved.id : val);
+                      }}
+                      placeholder="Enter Entry ID, Slug, or URL..."
+                      className="w-full border border-stone-200 p-2.5 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
+                    />
+                    <div className="text-[9px] font-mono text-left pl-2">
+                      {(() => {
+                        if (!featuredEntryId) return <span className="text-stone-400">None Selected</span>;
+                        const resolved = publishedEntries.find(e => e.id === featuredEntryId || e.slug === featuredEntryId);
+                        if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                        if (resolved.contentType !== 'Essay' && resolved.contentType !== 'Article') {
+                          return <span className="text-red-500">❌ Invalid Type: Must be an Essay or Article (resolved as {resolved.contentType})</span>;
+                        }
+                        return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                      })()}
+                    </div>
+                  </div>
                   <span className="text-stone-400 text-[9px] font-mono mt-1 block">
                     Pins this publication at the absolute pinnacle of the public landing archive timeline.
                   </span>
@@ -498,26 +756,37 @@ export function Editorium() {
                   <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
                     Featured Essays (3 Slots)
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {[0, 1, 2].map((idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                        <select
-                          value={featuredEssayIds[idx] || ''}
-                          onChange={(e) => {
-                            const updated = [...featuredEssayIds];
-                            updated[idx] = e.target.value;
-                            setFeaturedEssayIds(updated);
-                          }}
-                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                        >
-                          <option value="">-- Empty Slot --</option>
-                          {publishedEntries.filter(e => e.contentType === 'Essay').map(e => (
-                            <option key={e.id} value={e.id}>
-                              {e.title || 'Untitled Essay'} by {users.find(u => u.id === e.authorId)?.penName}
-                            </option>
-                          ))}
-                        </select>
+                      <div key={idx} className="space-y-1">
+                        <div className="flex gap-2 items-center">
+                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                          <input
+                            type="text"
+                            value={featuredEssayIds[idx] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const resolved = resolveEntryFromInput(val, publishedEntries);
+                              const updated = [...featuredEssayIds];
+                              updated[idx] = resolved ? resolved.id : val;
+                              setFeaturedEssayIds(updated);
+                            }}
+                            placeholder="Enter Entry ID, Slug, or URL..."
+                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
+                          />
+                        </div>
+                        <div className="pl-14 text-[9px] font-mono text-left">
+                          {(() => {
+                            const val = featuredEssayIds[idx];
+                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
+                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                            if (resolved.contentType !== 'Essay') {
+                              return <span className="text-red-500">❌ Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
+                            }
+                            return <span className="text-emerald-600">✅ Essay: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                          })()}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -531,26 +800,37 @@ export function Editorium() {
                   <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
                     Featured Notes (2 Slots)
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {[0, 1].map((idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                        <select
-                          value={featuredNoteIds[idx] || ''}
-                          onChange={(e) => {
-                            const updated = [...featuredNoteIds];
-                            updated[idx] = e.target.value;
-                            setFeaturedNoteIds(updated);
-                          }}
-                          className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon cursor-pointer"
-                        >
-                          <option value="">-- Empty Slot --</option>
-                          {publishedEntries.filter(e => e.contentType === 'Note').map(e => (
-                            <option key={e.id} value={e.id}>
-                              {e.title || e.content.substring(0, 45) + '...'} by {users.find(u => u.id === e.authorId)?.penName}
-                            </option>
-                          ))}
-                        </select>
+                      <div key={idx} className="space-y-1">
+                        <div className="flex gap-2 items-center">
+                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
+                          <input
+                            type="text"
+                            value={featuredNoteIds[idx] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const resolved = resolveEntryFromInput(val, publishedEntries);
+                              const updated = [...featuredNoteIds];
+                              updated[idx] = resolved ? resolved.id : val;
+                              setFeaturedNoteIds(updated);
+                            }}
+                            placeholder="Enter Entry ID, Slug, or URL..."
+                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
+                          />
+                        </div>
+                        <div className="pl-14 text-[9px] font-mono text-left">
+                          {(() => {
+                            const val = featuredNoteIds[idx];
+                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
+                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
+                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                            if (resolved.contentType !== 'Note') {
+                              return <span className="text-red-500">❌ Invalid Type: Must be a Note (resolved as {resolved.contentType})</span>;
+                            }
+                            return <span className="text-emerald-600">✅ Note: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                          })()}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -584,23 +864,11 @@ export function Editorium() {
                 </div>
               )}
 
-              {/* Scholar Preview */}
-              <div className="bg-stone-50 border border-stone-200 p-3 rounded space-y-1.5 relative">
-                <span className="font-mono text-[7px] uppercase tracking-wider bg-adjung-maroon text-white px-1 py-0.2 rounded font-bold">Scholar Highlight</span>
-                <div className="absolute top-2 right-2 font-signature text-xl text-adjung-maroon/20">
-                  {users.find(u => u.id === featuredScholarId)?.signature || 'Seal'}
-                </div>
-                <h5 className="font-serif font-bold text-[#111111] text-xs">
-                  {users.find(u => u.id === featuredScholarId)?.penName || 'Scholar Name'}
-                </h5>
-                <p className="font-serif italic text-[10px] text-stone-500 leading-normal">
-                  {users.find(u => u.id === featuredScholarId)?.bioSummary || 'No bio on file for this scholar.'}
-                </p>
-              </div>
+              {/* Scholar Highlight is omitted to match the Frontpage layout */}
 
               {/* Article Preview */}
               <div className="border-t pt-3 space-y-1">
-                <span className="font-mono text-[7px] uppercase tracking-wider text-stone-400 font-semibold block">Apex Pinned Publication</span>
+                <span className="font-mono text-[7px] uppercase tracking-wider text-stone-400 font-semibold block">Featured Entry</span>
                 <h5 className="font-serif font-bold text-stone-800 text-xs line-clamp-1">
                   {(() => {
                     const ent = publishedEntries.find(e => e.id === featuredEntryId);
@@ -620,22 +888,46 @@ export function Editorium() {
 
           {/* In The News digest raw editor */}
           {(() => {
-            const { items: newsParsedItems, errors: newsParseErrors } = parseInTheNews(inTheNewsRawText);
+            const { items: docItems, errors: docErrors } = parseInTheNews(inTheNewsGoogleDocText);
+            const { items: localItems, errors: localErrors } = parseInTheNews(inTheNewsRawText);
+            const newsParsedItems = [...docItems, ...localItems];
+            const newsParseErrors = [...docErrors, ...localErrors];
             return (
               <div className="lg:col-span-12 mt-4 border-t border-stone-200 pt-6">
                 <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
                   <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
                     <div>
-                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">In The News Plain Text Digest</h3>
-                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate global developments in a plain text format (max 10 items, separated by ---)</p>
+                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">In The News Digest</h3>
+                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate global developments (displays up to 50 items from Source A & B, separated by ---)</p>
                     </div>
-                    <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleDownloadTemplate}
+                        className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 rounded transition cursor-pointer font-semibold"
+                      >
+                        Download Template (.txt)
+                      </button>
+                      <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
                     <div className="lg:col-span-7 space-y-4">
                       <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text</label>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
+                        <input
+                          type="text"
+                          value={inTheNewsGoogleDocUrl}
+                          onChange={(e) => setInTheNewsGoogleDocUrl(e.target.value)}
+                          className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
+                          placeholder="https://docs.google.com/document/d/.../edit"
+                        />
+                        {renderGoogleDocConnectionStatus(inTheNewsGoogleDocStatus, docItems.length)}
+                      </div>
+                      
+                      <div>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text (Source B)</label>
                         <textarea
                           value={inTheNewsRawText}
                           onChange={(e) => setInTheNewsRawText(e.target.value)}
@@ -703,6 +995,226 @@ export function Editorium() {
               </div>
             );
           })()}
+
+          {/* World Clock Calendars & Holidays digest raw editor */}
+          {(() => {
+            const { items: docItems, errors: docErrors } = parseWorldClockHolidays(worldClockHolidaysGoogleDocText);
+            const { items: localItems, errors: localErrors } = parseWorldClockHolidays(worldClockHolidaysRawText);
+            const holidayParsedItems = [...docItems, ...localItems];
+            const holidayParseErrors = [...docErrors, ...localErrors];
+            return (
+              <div className="lg:col-span-12 mt-6 border-t border-stone-200 pt-6">
+                <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
+                  <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
+                    <div>
+                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">World Clock Calendars & Holidays Digest</h3>
+                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate city working statuses and public holidays (separated by ---)</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleDownloadHolidaysTemplate}
+                        className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 rounded transition cursor-pointer font-semibold"
+                      >
+                        Download Template (.txt)
+                      </button>
+                      <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+                    <div className="lg:col-span-7 space-y-4">
+                      <div>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
+                        <input
+                          type="text"
+                          value={worldClockHolidaysGoogleDocUrl}
+                          onChange={(e) => setWorldClockHolidaysGoogleDocUrl(e.target.value)}
+                          className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
+                          placeholder="https://docs.google.com/document/d/.../edit"
+                        />
+                        {renderGoogleDocConnectionStatus(worldClockHolidaysGoogleDocStatus, docItems.length)}
+                      </div>
+                      
+                      <div>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text (Source B)</label>
+                        <textarea
+                          value={worldClockHolidaysRawText}
+                          onChange={(e) => setWorldClockHolidaysRawText(e.target.value)}
+                          className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[300px] resize-y bg-[#FAFAF9]"
+                          placeholder="City: Kuala Lumpur&#10;Date: 31/08/26&#10;Status: Holiday&#10;Holiday Name: National Day&#10;&#10;---&#10;&#10;City: Mecca&#10;Date: 25/01/48&#10;Status: Holiday&#10;Holiday Name: Prophet's Birthday"
+                        />
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={handleSaveWorldClockHolidays}
+                        className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm cursor-pointer"
+                      >
+                        Update World Clock Digest
+                      </button>
+                    </div>
+                    
+                    <div className="lg:col-span-5 space-y-4">
+                      <div className="space-y-2">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
+                        {holidayParseErrors.length > 0 ? (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
+                            <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
+                            <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
+                              {holidayParseErrors.map((err, i) => (
+                                <li key={i}>
+                                  Item {err.index}: {err.error}
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="text-[9px] text-red-400 mt-1">Note: Items with errors are skipped. Clocks will fall back to default calendars.</p>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-2 text-left">
+                            <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
+                            <span className="font-mono text-[9px] uppercase font-bold tracking-wider">Digest Status: All Items Valid</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({holidayParsedItems.length})</span>
+                        {holidayParsedItems.length === 0 ? (
+                          <p className="font-serif italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {holidayParsedItems.map((item, i) => (
+                              <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-sans font-bold text-[#7B2737]">{item.city}</span>
+                                  <span className="font-mono text-[8px] tracking-wider bg-stone-200 px-1 py-0.5 rounded font-semibold text-stone-600 uppercase">
+                                    {item.status}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-stone-500 font-mono text-[10px]">
+                                  <span>Date: {item.dateStr}</span>
+                                  {item.holidayName && <span>Name: {item.holidayName}</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 2. LANDING                                                */}
+      {/* ========================================================= */}
+      {editoriumActiveTab === 'landing' && (
+        <div className="space-y-6">
+          {(() => {
+            const { items: docItems, errors: docErrors } = parseResearchFindings(researchFindingsGoogleDocText);
+            const { items: localItems, errors: localErrors } = parseResearchFindings(researchFindingsRawText);
+            const findingsParsedItems = [...docItems, ...localItems];
+            const findingsParseErrors = [...docErrors, ...localErrors];
+            return (
+              <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
+                <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
+                  <div>
+                    <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">Landing Page - Research Findings & Deep Reading Digest</h3>
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate research insights and their academic citations for the portal welcome screen carousel (separated by ---)</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadFindingsTemplate}
+                      className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 rounded transition cursor-pointer font-semibold"
+                    >
+                      Download Template (.txt)
+                    </button>
+                    <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+                  <div className="lg:col-span-7 space-y-4">
+                    <div>
+                      <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
+                      <input
+                        type="text"
+                        value={researchFindingsGoogleDocUrl}
+                        onChange={(e) => setResearchFindingsGoogleDocUrl(e.target.value)}
+                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
+                        placeholder="https://docs.google.com/document/d/.../edit"
+                      />
+                      {renderGoogleDocConnectionStatus(researchFindingsGoogleDocStatus, docItems.length)}
+                    </div>
+                    
+                    <div>
+                      <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text (Source B)</label>
+                      <textarea
+                        value={researchFindingsRawText}
+                        onChange={(e) => setResearchFindingsRawText(e.target.value)}
+                        className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[300px] resize-y bg-[#FAFAF9]"
+                        placeholder="Finding: Social media usage is linked to decreased attention spans and cognitive fatigue.&#10;Source: Journal of Media Psychology, 2025&#10;&#10;---&#10;&#10;Finding: Deep reading builds cognitive stamina and improves critical thinking skills.&#10;Source: Stanford Research Centre, 2026"
+                      />
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={handleSaveResearchFindings}
+                      className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm cursor-pointer"
+                    >
+                      Update Research Findings
+                    </button>
+                  </div>
+                  
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="space-y-2">
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
+                      {findingsParseErrors.length > 0 ? (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
+                          <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
+                          <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
+                            {findingsParseErrors.map((err, i) => (
+                              <li key={i}>
+                                Item {err.index}: {err.error}
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-[9px] text-red-400 mt-1">Note: Items with errors are skipped. Landing page will fall back to default findings.</p>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-2 text-left">
+                          <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
+                          <span className="font-mono text-[9px] uppercase font-bold tracking-wider">Digest Status: All Items Valid</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({findingsParsedItems.length})</span>
+                      {findingsParsedItems.length === 0 ? (
+                        <p className="font-serif italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {findingsParsedItems.map((item, i) => (
+                            <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1.5 text-left">
+                              <p className="font-serif text-stone-850 leading-relaxed font-medium">"{item.finding}"</p>
+                              <p className="font-mono text-[9px] text-stone-400 uppercase tracking-wider">— {item.source}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -743,7 +1255,7 @@ export function Editorium() {
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500">
                     <th className="p-3.5 pl-4">Scholar Name</th>
-                    <th className="p-3.5">System Username</th>
+                    <th className="p-3.5">Subdomain / Domain</th>
                     <th className="p-3.5">Role</th>
                     <th className="p-3.5">Listing Status</th>
                     <th className="p-3.5 text-right pr-4">Action</th>
@@ -899,7 +1411,38 @@ export function Editorium() {
       {/* 5. EDITORIAL                                              */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'editorial' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="space-y-6">
+          {/* Institutional Publishing Control Panel */}
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm text-left">
+            <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+                  <FileText className="w-4 h-4 text-adjung-maroon" /> Institutional Publishing
+                </h3>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">
+                  Publish official platform announcements and reflections from the Editorial Board
+                </p>
+              </div>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => createNewEntry('Notice')}
+                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334] rounded flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> + New Notice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => createNewEntry("Editor's Note")}
+                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334] rounded flex items-center gap-1.5"
+                >
+                  <BookOpen className="w-3.5 h-3.5" /> + New Editor's Note
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Editorial policy input */}
           <div className="lg:col-span-5 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
@@ -1127,6 +1670,7 @@ export function Editorium() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* ========================================================= */}
@@ -1262,7 +1806,7 @@ export function Editorium() {
                 </div>
 
                 <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Email Address</label>
+                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Username (Email)</label>
                   <input
                     type="email"
                     placeholder="e.g. qurtubi@adjung.com"
@@ -1983,6 +2527,8 @@ export function Editorium() {
         </div>
       )}
 
+        </main>
+      </div>
     </div>
   );
 }

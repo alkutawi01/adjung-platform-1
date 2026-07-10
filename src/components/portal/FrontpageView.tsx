@@ -1,9 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor } from '../../utils';
+import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays } from '../../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+
+interface ClockTime {
+  timeStr: string;
+  isHoliday: boolean;
+  holidayName: string;
+  isWeekend: boolean;
+}
+
+const HOLIDAYS_2026: Record<string, Record<string, string>> = {
+  'New York': {
+    '01/01': "New Year's Day",
+    '01/19': "Martin Luther King Jr. Day",
+    '02/16': "Presidents' Day",
+    '05/25': "Memorial Day",
+    '06/19': "Juneteenth",
+    '07/04': "Independence Day",
+    '09/07': "Labor Day",
+    '10/12': "Columbus Day",
+    '11/11': "Veterans Day",
+    '11/26': "Thanksgiving",
+    '12/25': "Christmas Day"
+  },
+  'London': {
+    '01/01': "New Year's Day",
+    '04/03': "Good Friday",
+    '04/06': "Easter Monday",
+    '05/04': "Early May Bank Holiday",
+    '05/25': "Spring Bank Holiday",
+    '08/31': "Summer Bank Holiday",
+    '12/25': "Christmas Day",
+    '12/26': "Boxing Day"
+  },
+  'Mecca': {
+    '02/22': "Saudi Founding Day",
+    '03/19': "Eid al-Fitr Holiday",
+    '03/20': "Eid al-Fitr Holiday",
+    '03/21': "Eid al-Fitr Holiday",
+    '03/22': "Eid al-Fitr Holiday",
+    '05/26': "Eid al-Adha Holiday",
+    '05/27': "Eid al-Adha Holiday",
+    '05/28': "Eid al-Adha Holiday",
+    '05/29': "Eid al-Adha Holiday",
+    '09/23': "Saudi National Day"
+  },
+  'Kuala Lumpur': {
+    '01/01': "New Year's Day",
+    '01/29': "Chinese New Year",
+    '01/30': "Chinese New Year (Day 2)",
+    '02/01': "Federal Territory Day",
+    '02/03': "Thaipusam",
+    '03/20': "Hari Raya Aidilfitri",
+    '03/21': "Hari Raya Aidilfitri (Day 2)",
+    '05/01': "Labour Day",
+    '05/27': "Hari Raya Aidiladha",
+    '05/31': "Wesak Day",
+    '06/01': "Yang di-Pertuan Agong's Birthday",
+    '07/16': "Awal Muharram",
+    '08/31': "National Day (Merdeka)",
+    '09/16': "Malaysia Day",
+    '09/25': "Maulidur Rasul",
+    '11/08': "Deepavali",
+    '12/25': "Christmas Day"
+  },
+  'Tokyo': {
+    '01/01': "New Year's Day",
+    '01/12': "Coming of Age Day",
+    '02/11': "National Foundation Day",
+    '02/23': "Emperor's Birthday",
+    '03/20': "Vernal Equinox Day",
+    '04/29': "Showa Day",
+    '05/03': "Constitution Memorial Day",
+    '05/04': "Greenery Day",
+    '05/05': "Children's Day",
+    '07/20': "Marine Day",
+    '08/11': "Mountain Day",
+    '09/21': "Respect for the Aged Day",
+    '09/23': "Autumnal Equinox Day",
+    '10/12': "Sports Day",
+    '11/03': "Culture Day",
+    '11/23': "Labor Thanksgiving Day"
+  }
+};
 
 interface FrontpageViewProps {
   entries: Entry[];
@@ -13,6 +95,8 @@ interface FrontpageViewProps {
   setSelectedAuthorId: (id: string | null) => void;
   setActiveTab: (tab: string) => void;
   currentUser?: User | null;
+  inTheNewsGoogleDocText?: string;
+  worldClockHolidaysGoogleDocText?: string;
 }
 
 export function HoverWords({ text, className }: { text: string; className?: string }) {
@@ -44,35 +128,99 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   setSelectedAuthorId,
   setActiveTab,
   currentUser,
+  inTheNewsGoogleDocText = '',
+  worldClockHolidaysGoogleDocText = '',
+  setIndexSearchQuery,
 }) => {
   // 1. World Clock State
-  const [times, setTimes] = useState<string[]>(['', '', '', '', '']);
+  const [times, setTimes] = useState<(ClockTime | null)[]>([null, null, null, null, null]);
 
   // In The News digest overlay state
   const [showNewsOverlay, setShowNewsOverlay] = useState(false);
   const [activeOverlayIndex, setActiveOverlayIndex] = useState(0);
   const [activeFrontpageIndex, setActiveFrontpageIndex] = useState(0);
 
-  const { items: parsedNewsItems } = parseInTheNews(systemSettings.inTheNewsText || '');
+  const { items: parsedNewsItemsA } = parseInTheNews(systemSettings.inTheNewsText || '');
+  const { items: parsedNewsItemsB } = parseInTheNews(inTheNewsGoogleDocText || '');
+
+  const parsedNewsItems = React.useMemo(() => {
+    let merged: any[] = [];
+    if (parsedNewsItemsA.length === 0) {
+      merged = parsedNewsItemsB;
+    } else if (parsedNewsItemsB.length === 0) {
+      merged = parsedNewsItemsA;
+    } else {
+      const result: any[] = [];
+      let iA = 0;
+      let iB = 0;
+      while (iA < parsedNewsItemsA.length || iB < parsedNewsItemsB.length) {
+        if (iB < parsedNewsItemsB.length) {
+          result.push(parsedNewsItemsB[iB++]);
+        }
+        if (iA < parsedNewsItemsA.length) {
+          result.push(parsedNewsItemsA[iA++]);
+        }
+      }
+      merged = result;
+    }
+    // Limit display to maximum 50 news items
+    return merged.slice(0, 50);
+  }, [parsedNewsItemsA, parsedNewsItemsB]);
+
+  const newestEssays = React.useMemo(() => {
+    const list = entries
+      .filter(e => e.status === 'Published' && e.contentType === 'Essay')
+      .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime())
+      .slice(0, 3);
+    
+    const fallbacks = [
+      { id: 'fallback-essay-1', title: 'The Preservation Papers', authorId: null, fallback: true },
+      { id: 'fallback-essay-2', title: 'Letters on Method', authorId: null, fallback: true },
+      { id: 'fallback-essay-3', title: 'Foundations of Inquiry', authorId: null, fallback: true }
+    ];
+
+    return list.length > 0 ? list : fallbacks as any[];
+  }, [entries]);
+
+  const featuredTopics = React.useMemo(() => {
+    const tagCounts: Record<string, number> = {};
+    entries
+      .filter(e => e.status === 'Published')
+      .forEach(entry => {
+        (entry.tags || []).forEach(tag => {
+          if (tag) {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          }
+        });
+      });
+    
+    const sortedTags = Object.keys(tagCounts)
+      .sort((a, b) => tagCounts[b] - tagCounts[a])
+      .slice(0, 10);
+    
+    const fallbacks = ['Philosophy', 'History', 'Science', 'Literature'];
+    return sortedTags.length > 0 ? sortedTags : fallbacks;
+  }, [entries]);
+
   const activeNewsItem = parsedNewsItems[activeFrontpageIndex];
   const overlayItem = parsedNewsItems[activeOverlayIndex];
 
-  // Frontpage news preview rotation (4 seconds)
+  // Frontpage news preview rotation (10 seconds)
   useEffect(() => {
     if (parsedNewsItems.length <= 1) return;
     const interval = setInterval(() => {
       setActiveFrontpageIndex((prev) => (prev + 1) % parsedNewsItems.length);
-    }, 4000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [parsedNewsItems.length]);
 
-  // Fullscreen overlay news rotation (6 seconds)
+  // Fullscreen overlay news rotation (10 seconds)
   useEffect(() => {
     if (!showNewsOverlay || parsedNewsItems.length <= 1) return;
     
     const interval = setInterval(() => {
       setActiveOverlayIndex((prev) => (prev + 1) % parsedNewsItems.length);
-    }, 6000);
+    }, 10000);
     
     return () => clearInterval(interval);
   }, [showNewsOverlay, parsedNewsItems.length]);
@@ -108,11 +256,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   useEffect(() => {
     const cities = [
-      { name: 'Tokyo', tz: 'Asia/Tokyo' },
-      { name: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
-      { name: 'Makkah', tz: 'Asia/Riyadh' }, // Makkah is in Riyadh timezone (UTC+3)
+      { name: 'New York', tz: 'America/New_York' },
       { name: 'London', tz: 'Europe/London' },
-      { name: 'New York', tz: 'America/New_York' }
+      { name: 'Mecca', tz: 'Asia/Riyadh' }, // Mecca is in Riyadh timezone (UTC+3)
+      { name: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
+      { name: 'Tokyo', tz: 'Asia/Tokyo' }
     ];
 
     const updateTime = () => {
@@ -120,7 +268,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         try {
           const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: c.tz,
-            year: 'numeric',
+            year: '2-digit',
             month: '2-digit',
             day: '2-digit',
             weekday: 'short',
@@ -131,9 +279,81 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           const parts = formatter.formatToParts(new Date());
           const obj: any = {};
           parts.forEach(p => { obj[p.type] = p.value; });
-          return `${obj.month}/${obj.day}/${obj.year} · ${obj.weekday.toUpperCase()} · ${obj.hour}:${obj.minute}`;
+
+          let dateStr = `${obj.day}/${obj.month}/${obj.year}`;
+          if (c.name === 'New York') {
+            dateStr = `${obj.month}/${obj.day}/${obj.year}`;
+          } else if (c.name === 'Tokyo') {
+            dateStr = `${obj.year}/${obj.month}/${obj.day}`;
+          } else if (c.name === 'Mecca') {
+            try {
+              const hijriFormatter = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', {
+                timeZone: c.tz,
+                year: '2-digit',
+                month: '2-digit',
+                day: '2-digit'
+              });
+              const hParts = hijriFormatter.formatToParts(new Date());
+              const hObj: any = {};
+              hParts.forEach(p => { hObj[p.type] = p.value; });
+              dateStr = `${hObj.day}/${hObj.month}/${hObj.year}`;
+            } catch (err) {
+              console.error(err);
+            }
+          }
+
+          // Parse custom holidays
+          const { items: customHolidaysText } = parseWorldClockHolidays(systemSettings.worldClockHolidaysText || '');
+          const { items: customHolidaysGoogle } = parseWorldClockHolidays(worldClockHolidaysGoogleDocText || '');
+          const allCustomHolidays = [...customHolidaysText, ...customHolidaysGoogle];
+
+          // Find match for this city and dateStr
+          const customMatch = allCustomHolidays.find(h => 
+            h.city.toLowerCase() === c.name.toLowerCase() && 
+            h.dateStr === dateStr
+          );
+
+          let isHoliday = false;
+          let holidayName = '';
+          let isWeekend = false;
+
+          const day = obj.weekday.toUpperCase();
+
+          if (customMatch) {
+            if (customMatch.status === 'Holiday') {
+              isHoliday = true;
+              holidayName = customMatch.holidayName || 'Public Holiday';
+              isWeekend = c.name === 'Mecca'
+                ? (day === 'FRI' || day === 'SAT')
+                : (day === 'SAT' || day === 'SUN');
+            } else if (customMatch.status === 'Weekend') {
+              isWeekend = true;
+            } else if (customMatch.status === 'Working') {
+              isWeekend = false;
+              isHoliday = false;
+            }
+          } else {
+            // Default pre-seeded logic
+            const gregKey = `${obj.month}/${obj.day}`;
+            const cityHolidays = HOLIDAYS_2026[c.name] || {};
+            holidayName = cityHolidays[gregKey] || '';
+            isHoliday = !!holidayName;
+
+            isWeekend = c.name === 'Mecca'
+              ? (day === 'FRI' || day === 'SAT')
+              : (day === 'SAT' || day === 'SUN');
+          }
+
+          const timeStr = `${dateStr} · ${day} · ${obj.hour}:${obj.minute}`;
+
+          return {
+            timeStr,
+            isHoliday,
+            holidayName,
+            isWeekend
+          };
         } catch (e) {
-          return '';
+          return null;
         }
       });
       setTimes(newTimes);
@@ -142,7 +362,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [systemSettings.worldClockHolidaysText, worldClockHolidaysGoogleDocText]);
 
   // Helper to extract name initials (e.g. "Elena Vasquez" -> "E.V.")
   const getInitials = (name: string): string => {
@@ -325,34 +545,61 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           >
             <HoverWords text={BRAND.logoText} />
           </motion.h1>
-          <p className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#777777] mt-3">
+          <p className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#555555] mt-3">
             <HoverWords text={BRAND.tagline} />
           </p>
         </section>
 
-        <hr className="rule border-t border-[#E0DDD8] my-3" />
+        <hr className="rule border-t border-stone-300 my-3" />
 
         {/* World Clock Strip */}
         <div className="py-2.5 flex justify-center items-center overflow-x-auto gap-10 px-1 text-center" id="world-clock">
           {[
-            { city: 'Tokyo', tz: 'Asia/Tokyo' },
-            { city: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
-            { city: 'Makkah', tz: 'Asia/Riyadh' },
+            { city: 'New York', tz: 'America/New_York' },
             { city: 'London', tz: 'Europe/London' },
-            { city: 'New York', tz: 'America/New_York' }
-          ].map((c, i) => (
-            <div key={c.city} className="flex-shrink-0">
-              <p className="font-sans text-[9px] tracking-editorial uppercase text-[#777777] mb-0.5">
-                {c.city}
-              </p>
-              <p className="font-serif text-xs md:text-sm text-[#1F1F1F] font-light min-w-[140px]">
-                {times[i] || 'Loading...'}
-              </p>
-            </div>
-          ))}
+            { city: 'Mecca', tz: 'Asia/Riyadh' },
+            { city: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
+            { city: 'Tokyo', tz: 'Asia/Tokyo' }
+          ].map((c, i) => {
+            const timeData = times[i];
+            let cityColor = 'text-[#555555]';
+            let isHoliday = false;
+            let isWeekend = false;
+            let holidayName = '';
+
+            if (timeData) {
+              isHoliday = timeData.isHoliday;
+              isWeekend = timeData.isWeekend;
+              holidayName = timeData.holidayName;
+
+              if (isHoliday) {
+                cityColor = 'text-[#1F1F1F] font-bold border-b border-dashed border-[#1F1F1F]/40';
+              } else if (isWeekend) {
+                cityColor = 'text-stone-400 font-light';
+              } else {
+                cityColor = 'text-[#7B2737] font-semibold';
+              }
+            }
+
+            return (
+              <div key={c.city} className="flex-shrink-0 group relative">
+                <p className={`font-sans text-[9px] tracking-editorial uppercase mb-0.5 inline-block select-none transition-colors duration-200 ${cityColor} ${isHoliday ? 'cursor-help' : ''}`}>
+                  {c.city}
+                </p>
+                {isHoliday && holidayName && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#1F1F1F] text-[#FDFDFD] text-[9px] font-sans py-1 px-2.5 rounded shadow-lg whitespace-nowrap z-50 animate-fade-in pointer-events-none tracking-normal">
+                    {holidayName}
+                  </div>
+                )}
+                <p className="font-serif text-xs md:text-sm text-[#1F1F1F] font-light min-w-[140px]">
+                  {timeData ? timeData.timeStr : 'Loading...'}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
-        <hr className="rule border-t border-[#E0DDD8] my-3" />
+        <hr className="rule border-t border-stone-300 my-3" />
 
         {/* Landing Page quiet news panel */}
         <div 
@@ -362,7 +609,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               setShowNewsOverlay(true);
             }
           }}
-          className="py-4 px-4 bg-stone-50/50 hover:bg-[#802334]/[0.02] border border-stone-200/50 rounded-sm hover:border-[#802334]/20 transition duration-300 cursor-pointer text-left space-y-2 group relative"
+          className="py-3 px-0 bg-transparent hover:opacity-85 transition duration-300 cursor-pointer text-left space-y-2 group relative"
         >
           <div className="flex justify-between items-center select-none">
             <p className="font-sans text-[10px] tracking-editorial uppercase text-[#7B2737] font-semibold">
@@ -401,7 +648,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           )}
         </div>
 
-        <hr className="rule border-t border-[#E0DDD8] my-3" />
+        <hr className="rule border-t border-stone-300 my-3" />
 
         {/* Featured Entry Label with Curation Option */}
         <div className="pt-4 pb-2 flex items-center justify-between">
@@ -441,11 +688,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               <HoverWords text={activeFeatured.title} />
             </h2>
             
-            <p className="font-serif text-[16px] md:text-[17px] text-[#444444] leading-relaxed font-light">
+            <p className="font-serif text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed">
               <HoverWords text={activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...'} />
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#777777]">
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#555555]">
               <span 
                 onClick={() => {
                   if (activeFeatured.authorId) {
@@ -499,13 +746,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 }}
                 className="font-sans text-xs tracking-editorial uppercase text-[#7B2737] hover:text-[#9e3347] transition-all border-b border-[#7B2737] pb-0.5 font-semibold hover:font-bold cursor-pointer"
               >
-                Read Full Essay →
+                Read Full Entry →
               </button>
             </div>
           </div>
 
           {/* Right Column: Editorial Note */}
-          <aside className="border-l border-[#E0DDD8] pl-6 md:pl-8 space-y-4">
+          <aside className="border-l border-stone-300 pl-6 md:pl-8 space-y-4">
             <span className="block font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold">
               EDITORIAL NOTE
             </span>
@@ -521,7 +768,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 <h4 className="font-serif text-lg md:text-xl text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
-                <p className="font-serif text-sm leading-relaxed text-[#444444] italic">
+                <p className="font-serif text-sm leading-relaxed text-[#2D2D2D] italic">
                   <HoverWords text={dbEditorNote.excerpt || dbEditorNote.content.substring(0, 220) + '...'} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
@@ -530,10 +777,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="font-serif text-[14px] leading-relaxed text-[#444444] font-light">
+                <p className="font-serif text-[14px] leading-relaxed text-[#2D2D2D]">
                   <HoverWords text="This week we return to a question that has occupied Adjung since its founding: what does it mean to publish something that endures? In an era of ephemeral content and algorithmic decay, the act of writing for permanence is itself a form of resistance. We present Dr. Vasquez's essay as both argument and demonstration." />
                 </p>
-                <p className="font-sans text-[9px] tracking-editorial uppercase text-[#777777] font-medium leading-normal">
+                <p className="font-sans text-[9px] tracking-editorial uppercase text-[#555555] font-medium leading-normal">
                   THE ADJUNG EDITORIAL BOARD
                 </p>
               </div>
@@ -542,13 +789,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
         </section>
 
-        <hr className="rule border-t border-[#E0DDD8]" />
+        <hr className="rule border-t border-stone-300" />
 
         {/* Editor's Selections */}
         <section className="py-10">
           <div className="flex items-center justify-between mb-8">
             <span className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold">
-              EDITOR'S SELECTIONS
+              FEATURED ARTICLES
             </span>
             {canCurate && (
               <button
@@ -571,31 +818,31 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     setActiveTab('folio');
                   }
                 }}
-                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-[#E0DDD8] md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''}`}
+                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''}`}
               >
                 {item.entryObj ? (
                   <>
-                    <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#777777]">
+                    <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555]">
                       {item.discipline}
                     </p>
                     <h3 className="font-serif font-light text-[20px] md:text-[22px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                       <HoverWords text={item.title} />
                     </h3>
-                    <p className="font-serif text-sm leading-relaxed text-[#444444]">
+                    <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
                       <HoverWords text={item.excerpt} />
                     </p>
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="font-sans text-[9px] md:text-[10px] text-[#777777]">
+                      <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                         {item.authorName.toUpperCase()}
                       </span>
-                      <span className="sig italic text-[9px] text-[#777777] opacity-70">
+                      <span className="sig italic text-[9px] text-[#555555] opacity-70">
                         {item.authorSig}
                       </span>
                     </div>
                   </>
                 ) : (
-                  <div className="min-h-[150px] flex items-center justify-center border border-dashed border-[#E0DDD8]/40 rounded-sm select-none bg-stone-50/10">
-                    <span className="font-sans text-[9px] uppercase tracking-wider text-stone-300">Empty Selection Slot</span>
+                  <div className="min-h-[150px] flex items-center justify-center border border-dashed border-stone-300 rounded-sm select-none bg-stone-50/10">
+                    <span className="font-sans text-[9px] uppercase tracking-wider text-stone-500">Empty Selection Slot</span>
                   </div>
                 )}
               </div>
@@ -603,7 +850,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           </div>
         </section>
 
-        <hr className="rule border-t border-[#E0DDD8]" />
+        <hr className="rule border-t border-stone-300" />
 
         {/* Featured Essays & Notes Section */}
         <section className="py-10 grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -624,7 +871,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setActiveTab('folio');
                     }
                   }}
-                  className={`flex justify-between items-baseline border-b border-[#E0DDD8] pb-3 ${
+                  className={`flex justify-between items-baseline border-b border-stone-300 pb-3 ${
                     essay.entryObj ? 'cursor-pointer group' : ''
                   }`}
                 >
@@ -633,13 +880,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <h3 className="font-serif font-light text-[18px] md:text-[20px] text-[#1F1F1F] group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 max-w-[70%]">
                         <HoverWords text={essay.title} />
                       </h3>
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-[#777777]">
+                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-[#555555]">
                         <span className="font-sans font-light">{essay.author}</span>
                         <span className="sig italic font-serif text-[9px] opacity-70">{essay.sig}</span>
                       </div>
                     </>
                   ) : (
-                    <div className="w-full flex justify-between items-center py-2 text-stone-300 select-none">
+                    <div className="w-full flex justify-between items-center py-2 text-stone-500 select-none">
                       <span className="font-sans text-[9px] uppercase tracking-wider">Empty Essay Slot</span>
                     </div>
                   )}
@@ -649,7 +896,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           </div>
 
           {/* Column 3: Featured Notes */}
-          <div className="border-l border-[#E0DDD8] pl-6 md:pl-8 space-y-6">
+          <div className="border-l border-stone-300 pl-6 md:pl-8 space-y-6">
             <span className="block font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-2">
               FEATURED NOTES
             </span>
@@ -671,13 +918,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <h3 className="font-serif font-light text-[18px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                         <HoverWords text={note.title} />
                       </h3>
-                      <div className="flex items-center gap-2 text-[10px] text-[#777777]">
+                      <div className="flex items-center gap-2 text-[10px] text-[#555555]">
                         <span className="font-sans font-light">{note.author}</span>
                         <span className="sig italic text-[9px] opacity-70">{note.sig}</span>
                       </div>
                     </>
                   ) : (
-                    <div className="py-2 text-stone-300 select-none">
+                    <div className="py-2 text-stone-500 select-none">
                       <span className="font-sans text-[9px] uppercase tracking-wider">Empty Note Slot</span>
                     </div>
                   )}
@@ -688,7 +935,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
         </section>
 
-        <hr className="rule border-t border-[#E0DDD8]" />
+        <hr className="rule border-t border-stone-300" />
 
         {/* Institutional Section */}
         <section className="py-10">
@@ -698,65 +945,78 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Notice Board */}
             <div>
-              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#777777] mb-2 font-medium">
+              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 NOTICE BOARD
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#444444] font-light">
+              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
                 {parseInlineFormatting(noticeBoardText)}
               </p>
             </div>
             
             {/* Publishing Policy */}
-            <div className="md:border-l md:border-[#E0DDD8] md:pl-8">
-              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#777777] mb-2 font-medium">
+            <div className="md:border-l md:border-stone-300 md:pl-8">
+              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 PUBLISHING POLICY
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#444444] font-light">
+              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
                 All works are reviewed for intellectual merit and editorial clarity. Adjung does not optimise for engagement. We publish what endures.
               </p>
             </div>
             
             {/* About */}
-            <div className="md:border-l md:border-[#E0DDD8] md:pl-8">
-              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#777777] mb-2 font-medium">
+            <div className="md:border-l md:border-stone-300 md:pl-8">
+              <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 ABOUT ADJUNG
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#444444] font-light">
+              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
                 Adjung is a knowledge publishing platform dedicated to thoughtful writing, scholarly publishing, and the long-term preservation of human knowledge.
               </p>
             </div>
           </div>
         </section>
 
-        <hr className="rule border-t border-[#E0DDD8]" />
+        <hr className="rule border-t border-stone-300" />
 
-        {/* Collections & Topics */}
+        {/* Newest Essays & Topics */}
         <section className="py-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div>
               <p className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-4">
-                COLLECTIONS
+                NEWEST ESSAYS & ARTICLES
               </p>
-              {['The Preservation Papers', 'Letters on Method', 'Foundations of Inquiry'].map(coll => (
+              {newestEssays.map(coll => (
                 <p 
-                  key={coll}
-                  onClick={() => setActiveTab('index')} 
+                  key={coll.id}
+                  onClick={() => {
+                    if (coll.fallback) {
+                      setActiveTab('index');
+                    } else {
+                      setSelectedEntry(coll);
+                      setSelectedAuthorId(coll.authorId);
+                      setActiveTab('folio');
+                    }
+                  }} 
                   className="font-serif text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 mb-2.5 cursor-pointer inline-block w-full"
                 >
-                  {coll}
+                  {coll.title}
                 </p>
               ))}
             </div>
             
-            <div className="md:border-l md:border-[#E0DDD8] md:pl-8">
+            <div className="md:border-l md:border-stone-300 md:pl-8">
               <p className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-4">
                 TOPICS
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {['Philosophy', 'History', 'Science', 'Literature'].map(topic => (
+                {featuredTopics.map(topic => (
                   <p 
                     key={topic}
-                    onClick={() => setActiveTab('index')}
+                    onClick={() => {
+                      if (setIndexSearchQuery) {
+                        setIndexSearchQuery(topic);
+                      }
+                      setActiveTab('index');
+                    }}
                     className="font-serif text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 cursor-pointer"
                   >
                     {topic}
@@ -772,11 +1032,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       {/* Full-screen Reading Display Overlay */}
       {showNewsOverlay && overlayItem && (
         <div 
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#faf8f3]/95 backdrop-blur-md transition-all duration-300 animate-fade-in p-6 select-none"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-lg transition-all duration-300 animate-fade-in p-6 select-none"
           onClick={() => setShowNewsOverlay(false)}
         >
-          {/* Top Left Logo */}
-          <div className="absolute top-6 left-6 font-serif text-lg font-semibold tracking-wider text-[#802334] select-none">
+          {/* Top Centered Logo */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 font-serif text-lg font-semibold tracking-wider text-[#802334] select-none">
             {BRAND.logoText}
           </div>
 
@@ -856,7 +1116,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             {/* Navigation Dots */}
             {parsedNewsItems.length > 1 && (
               <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex justify-center gap-2 select-none">
-                {parsedNewsItems.map((_, idx) => (
+                {Array.from({ length: Math.min(10, parsedNewsItems.length) }).map((_, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -865,7 +1125,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setActiveOverlayIndex(idx);
                     }}
                     className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                      idx === activeOverlayIndex 
+                      idx === (activeOverlayIndex % 10) 
                         ? 'bg-adjung-maroon w-4' 
                         : 'bg-stone-300 hover:bg-stone-400'
                     }`}

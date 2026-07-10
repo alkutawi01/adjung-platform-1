@@ -15,6 +15,13 @@ interface SignatureRendererProps {
     fontWeight?: number;
     slantAngle?: number;
     scale?: number;
+    yOffset?: number;
+  };
+  penStyle?: {
+    nibAngle?: number;
+    inkFlowWeight?: number;
+    baselineY?: number;
+    canvasHeight?: number;
   };
 }
 
@@ -27,7 +34,8 @@ export function SignatureRenderer({
   color = "#802334", // Adjung-maroon
   strokeWidth = 3.2, // Enhanced default thickness
   enableBleed = true,
-  typographyStyle
+  typographyStyle,
+  penStyle
 }: SignatureRendererProps) {
   
   const id = useId();
@@ -46,9 +54,17 @@ export function SignatureRenderer({
     }
     
     const textScale = typographyStyle?.scale !== undefined ? typographyStyle.scale : 1;
+    const hasBaseline = penStyle?.baselineY !== undefined && penStyle?.canvasHeight !== undefined;
+    
+    // Dynamically calculate viewBox width based on text length and scale to prevent overflow
+    const calculatedWidth = Math.max(activeText.length * 28 * textScale + 40, 400);
+    const canvasHeight = hasBaseline ? penStyle.baselineY : 150;
+    const viewBox = `0 0 ${calculatedWidth} ${canvasHeight}`;
+    const yPos = hasBaseline ? penStyle.baselineY! + (typographyStyle?.yOffset || 0) - 30 : 75;
+
     return (
       <svg 
-        viewBox="0 0 400 150" 
+        viewBox={viewBox} 
         className={`${className} overflow-visible`}
         preserveAspectRatio="xMidYMid meet"
         style={{ 
@@ -78,7 +94,7 @@ export function SignatureRenderer({
         )}
         <text 
           x="50%" 
-          y="50%" 
+          y={`${yPos}px`}
           dominantBaseline="middle" 
           textAnchor="middle" 
           fill={color}
@@ -130,11 +146,29 @@ export function SignatureRenderer({
   // Add a small padding to prevent clipping of thick strokes
   const padding = 12;
   const width = Math.max(maxX - minX + padding * 2, 100);
-  const height = Math.max(maxY - minY + padding * 2, 50);
+
+  // Check if baseline information is available
+  const hasBaseline = penStyle?.baselineY !== undefined && penStyle?.canvasHeight !== undefined;
+
+  let height = 0;
+  let viewBox = '';
+  let mapX = (x: number) => x - minX + padding;
+  let mapY = (y: number) => y - minY + padding;
+
+  if (hasBaseline) {
+    const bY = penStyle!.baselineY!;
+    const startX = minX - padding;
+    viewBox = `${startX} 0 ${width} ${bY}`;
+    mapX = (x: number) => x; // Raw X mapping
+    mapY = (y: number) => y; // Raw Y mapping relative to baselineY height
+  } else {
+    height = Math.max(maxY - minY + padding * 2, 50);
+    viewBox = `0 0 ${width} ${height}`;
+  }
 
   return (
     <svg 
-      viewBox={`0 0 ${width} ${height}`} 
+      viewBox={viewBox} 
       className={`${className} overflow-visible`}
       preserveAspectRatio="xMidYMid meet"
       style={{ 
@@ -174,8 +208,8 @@ export function SignatureRenderer({
           
           // Render first point as an ink pooling dot
           const pStart = stroke[0];
-          const startX = pStart.x - minX + padding;
-          const startY = pStart.y - minY + padding;
+          const startX = mapX(pStart.x);
+          const startY = mapY(pStart.y);
           const startWidth = pStart.pressure || strokeWidth;
 
           return (
@@ -193,10 +227,10 @@ export function SignatureRenderer({
                 if (pointIdx === 0) return null;
                 
                 const pPrev = stroke[pointIdx - 1];
-                const x1 = pPrev.x - minX + padding;
-                const y1 = pPrev.y - minY + padding;
-                const x2 = point.x - minX + padding;
-                const y2 = point.y - minY + padding;
+                const x1 = mapX(pPrev.x);
+                const y1 = mapY(pPrev.y);
+                const x2 = mapX(point.x);
+                const y2 = mapY(point.y);
                 
                 // Width matches the point's computed pressure, falls back to default
                 const w = point.pressure !== undefined ? point.pressure : strokeWidth;

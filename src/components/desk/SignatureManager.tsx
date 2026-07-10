@@ -26,6 +26,7 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
       typedText: data.typedText,
       fontFamily: data.fontFamily,
       typographyStyle: data.typographyStyle,
+      penStyle: data.penStyle,
       createdAt: new Date().toISOString()
     };
 
@@ -74,7 +75,8 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
         <SignaturePad 
           onSave={handleSaveNewSignature} 
           onCancel={() => setShowPad(false)} 
-          defaultName={identity.displayName || identity.penName}
+          defaultName={identity.penName || identity.displayName}
+          existingSignature={activeSig}
         />
       )}
 

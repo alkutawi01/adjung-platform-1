@@ -68,6 +68,48 @@ export const FolioView: React.FC<FolioViewProps> = ({
     setEditedSubtitle(authorProfile?.heroSubtitle || '');
   }, [authorProfile]);
 
+  const handleKeyDownShortcut = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, setter: (val: string) => void) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart || 0;
+      const end = target.selectionEnd || 0;
+      const text = target.value;
+      
+      if (start === end) {
+        const newText = text.slice(0, start) + '**' + text.slice(start);
+        setter(newText);
+        setTimeout(() => {
+          target.focus();
+          target.setSelectionRange(start + 1, start + 1);
+        }, 0);
+      } else {
+        const selectedText = text.slice(start, end);
+        const isAlreadyItalic = selectedText.startsWith('*') && selectedText.endsWith('*');
+        let newText = '';
+        let newCursorStart = start;
+        let newCursorEnd = end;
+        
+        if (isAlreadyItalic) {
+          const unwrapped = selectedText.slice(1, -1);
+          newText = text.slice(0, start) + unwrapped + text.slice(end);
+          newCursorEnd = start + unwrapped.length;
+        } else {
+          const wrapped = `*${selectedText}*`;
+          newText = text.slice(0, start) + wrapped + text.slice(end);
+          newCursorStart = start;
+          newCursorEnd = end + 2;
+        }
+        
+        setter(newText);
+        setTimeout(() => {
+          target.focus();
+          target.setSelectionRange(newCursorStart, newCursorEnd);
+        }, 0);
+      }
+    }
+  };
+
   const handleSaveHeader = async () => {
     if (!currentAuthor) return;
     const updatedProfile = {
@@ -131,23 +173,37 @@ export const FolioView: React.FC<FolioViewProps> = ({
     ) : (
       <div className="space-y-10 max-w-4xl mx-auto">
         {/* Writer Hero Block */}
-        <div className="text-center md:text-left border-b border-stone-200/40 pb-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
-          <div className="space-y-3 max-w-2xl relative group">
+        <div className="text-center md:text-left border-b border-stone-300 pb-8 flex flex-col md:flex-row items-center md:items-stretch justify-between gap-6 md:gap-8">
+          <div className="space-y-3 max-w-3xl flex-grow relative group">
             {isEditingHeader ? (
-              <div className="space-y-2 py-2 text-left">
-                <input
-                  type="text"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded text-base font-serif text-[#111111] focus:outline-none focus:border-[#802334]"
-                  placeholder="Folio Hero Title"
-                />
-                <textarea
-                  value={editedSubtitle}
-                  onChange={(e) => setEditedSubtitle(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded text-xs font-serif italic text-stone-500 focus:outline-none focus:border-[#802334] min-h-[50px]"
-                  placeholder="Folio Hero Subtitle"
-                />
+              <div className="space-y-3 py-2 text-left w-full">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value.slice(0, 200))}
+                    onKeyDown={(e) => handleKeyDownShortcut(e, setEditedTitle)}
+                    maxLength={200}
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-2xl md:text-[28px] font-serif text-[#111111] focus:outline-none focus:border-[#802334] leading-tight"
+                    placeholder="Folio Hero Title"
+                  />
+                  <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
+                    {editedTitle.length}/200
+                  </span>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={editedSubtitle}
+                    onChange={(e) => setEditedSubtitle(e.target.value.slice(0, 300))}
+                    onKeyDown={(e) => handleKeyDownShortcut(e, setEditedSubtitle)}
+                    maxLength={300}
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[14px] md:text-[15px] font-serif text-stone-500 focus:outline-none focus:border-[#802334] min-h-[140px] leading-relaxed"
+                    placeholder="Folio Hero Subtitle"
+                  />
+                  <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
+                    {editedSubtitle.length}/300
+                  </span>
+                </div>
                 <div className="flex gap-2 justify-end">
                   <button
                     type="button"
@@ -167,29 +223,29 @@ export const FolioView: React.FC<FolioViewProps> = ({
               </div>
             ) : (
               <>
-                <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight flex items-center gap-2">
-                  {authorProfile?.heroTitle}
+                <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight relative group/title inline-block">
+                  <span>{parseInlineFormatting(authorProfile?.heroTitle || '')}</span>
                   {currentUser?.id === currentAuthor.id && (
                     <button
                       onClick={() => setIsEditingHeader(true)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] cursor-pointer"
+                      className="inline-block align-middle ml-2 opacity-0 group-hover/title:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] cursor-pointer"
                       title="Edit Banner Title & Subtitle"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
                   )}
                 </h2>
-                <p className="font-serif italic text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
-                  {authorProfile?.heroSubtitle}
+                <p className="font-serif text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
+                  {parseInlineFormatting(authorProfile?.heroSubtitle || '')}
                 </p>
               </>
             )}
           </div>
-          {/* Writer Pen Name & Signature replacement of traditional avatar (refined personal seal style) */}
-          <div className="flex-shrink-0 text-center border-l border-stone-200/50 pl-8 py-1.5 select-none">
-            <div className="h-16 w-64 flex items-center justify-center -mb-3.5 z-10 relative mix-blend-multiply">
+          {/* Writer Signature replacement of traditional avatar (refined personal seal style) */}
+          <div className="flex-shrink-0 text-center border-l border-stone-300 pl-8 py-1.5 select-none flex flex-col justify-center">
+            <div className="h-16 w-64 flex items-center justify-center z-10 relative mix-blend-multiply">
               {currentAuthor && (
                 <SignatureRenderer
                   strokes={resolveDigitalSignature(currentAuthor.id)?.strokes || []}
@@ -204,15 +260,12 @@ export const FolioView: React.FC<FolioViewProps> = ({
                 />
               )}
             </div>
-            <span className="font-serif text-[10px] font-semibold uppercase tracking-wider text-stone-600 block relative z-0 pt-0.5">
-              {currentAuthor?.penName}
-            </span>
           </div>
         </div>
 
         {/* Categories filter bar */}
         {allUniqueTags.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 border-b border-stone-200/40 pb-4 text-xs font-mono">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 border-b border-stone-300 pb-4 text-xs font-mono">
             <span className="text-stone-400 uppercase tracking-wider mr-2">Sort Index:</span>
             <button
               type="button"
@@ -278,10 +331,10 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       <div 
                         key={item.id} 
                         id={`note-card-${item.id}`}
-                        className={`p-5 rounded border my-3 group flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all duration-300 w-full ${
+                        className={`px-6 py-5 md:px-8 md:py-6 rounded border my-4 group flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all duration-300 w-full ${
                           isNote 
-                            ? 'bg-[#FAF8F5] border-stone-200/50 hover:border-stone-300 hover:shadow-sm text-stone-850' 
-                            : 'bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] border-stone-200/40 text-stone-900'
+                            ? 'bg-[#FAF8F5] border-stone-300/85 hover:border-stone-400 hover:shadow-sm text-stone-850' 
+                            : 'bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] border-stone-300 hover:text-stone-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)]'
                         } ${isAr && isNote ? 'text-right' : 'text-left'}`}
                       >
                         

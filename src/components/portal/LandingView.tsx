@@ -14,6 +14,7 @@ interface LandingViewProps {
   setSelectedAuthorId: (id: string | null) => void;
   setShowLoginModal: (show: boolean) => void;
   setLoginError: (error: string) => void;
+  researchFindingsGoogleDocText?: string;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
@@ -24,6 +25,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   setSelectedAuthorId,
   setShowLoginModal,
   setLoginError,
+  researchFindingsGoogleDocText = '',
 }) => {
   const manifestoEntry = entries.find((e) => e.id === 'entry-manifesto');
 
@@ -108,7 +110,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="py-6 max-w-xl mx-auto text-center my-4 bg-transparent"
       >
-        <PhilosophyCarousel />
+        <PhilosophyCarousel systemSettings={systemSettings} researchFindingsGoogleDocText={researchFindingsGoogleDocText} />
       </motion.div>
 
       {/* FASA 1.5: FEATURED ENTRY HERO */}

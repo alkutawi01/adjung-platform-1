@@ -18,6 +18,8 @@ export interface DigitalSignature {
   penStyle?: {
     nibAngle?: number;
     inkFlowWeight?: number;
+    baselineY?: number;
+    canvasHeight?: number;
     inkColor?: string;
     paperTexture?: string;
   };
@@ -26,6 +28,7 @@ export interface DigitalSignature {
     fontWeight?: number;
     slantAngle?: number;
     scale?: number;
+    yOffset?: number;
   };
 }
 
@@ -242,6 +245,11 @@ export interface SystemSettings {
     'Visitor': RolePermissions;
   };
   inTheNewsText?: string;
+  inTheNewsGoogleDocUrl?: string;
+  worldClockHolidaysText?: string;
+  worldClockHolidaysGoogleDocUrl?: string;
+  researchFindingsText?: string;
+  researchFindingsGoogleDocUrl?: string;
 }
 
 export interface SystemLog {

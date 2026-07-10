@@ -1668,8 +1668,8 @@ export function parseInTheNews(text: string): { items: NewsItem[]; errors: Parse
   
   if (!text) return { items, errors };
   
-  // Split sections by --- (matching --- on its own line)
-  const sections = text.split(/^[ \t]*---[ \t]*$/m);
+  // Split sections by 3 or more hyphens/underscores/dashes, or two-em dashes (matching --- or ⸻ on its own line)
+  const sections = text.split(/^[ \t]*(?:[-_—–―]{3,}|⸻+)[ \t]*$/gm);
   
   sections.forEach((section, index) => {
     const itemIndex = index + 1;
@@ -1685,6 +1685,12 @@ export function parseInTheNews(text: string): { items: NewsItem[]; errors: Parse
       const trimmed = line.trim();
       if (!trimmed) return;
       
+      // Robust check for URL on its own line
+      if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+        url = trimmed;
+        return;
+      }
+      
       const colonIndex = trimmed.indexOf(':');
       if (colonIndex <= 0) return;
       
@@ -1695,7 +1701,7 @@ export function parseInTheNews(text: string): { items: NewsItem[]; errors: Parse
         desk = val;
       } else if (key === 'title') {
         title = val;
-      } else if (key === 'brief') {
+      } else if (key === 'brief' || key === 'summary') {
         brief = val;
       } else if (key === 'source') {
         source = val;
@@ -1756,10 +1762,10 @@ export function parseInTheNews(text: string): { items: NewsItem[]; errors: Parse
       return;
     }
     
-    if (!url.startsWith('https://')) {
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
       errors.push({
         index: itemIndex,
-        error: `Invalid URL: must be secure HTTPS`
+        error: `Invalid URL: must start with http:// or https://`
       });
       return;
     }
@@ -1776,3 +1782,173 @@ export function parseInTheNews(text: string): { items: NewsItem[]; errors: Parse
   
   return { items, errors };
 }
+
+export interface HolidayItem {
+  city: string;
+  dateStr: string; // DD/MM/YY
+  status: 'Holiday' | 'Weekend' | 'Working';
+  holidayName?: string;
+}
+
+export function parseWorldClockHolidays(text: string): { items: HolidayItem[]; errors: ParseError[] } {
+  const items: HolidayItem[] = [];
+  const errors: ParseError[] = [];
+  
+  if (!text) return { items, errors };
+  
+  // Split sections by 3 or more hyphens/underscores/dashes, or two-em dashes (matching --- or ⸻ on its own line)
+  const sections = text.split(/^[ \t]*(?:[-_—–―]{3,}|⸻+)[ \t]*$/gm);
+  
+  sections.forEach((section, index) => {
+    const itemIndex = index + 1;
+    const lines = section.split('\n');
+    
+    let city = '';
+    let dateStr = '';
+    let status = '';
+    let holidayName = '';
+    
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      
+      const colonIndex = trimmed.indexOf(':');
+      if (colonIndex <= 0) return;
+      
+      const key = trimmed.substring(0, colonIndex).trim().toLowerCase();
+      const val = trimmed.substring(colonIndex + 1).trim();
+      
+      if (key === 'city') {
+        city = val;
+      } else if (key === 'date') {
+        dateStr = val;
+      } else if (key === 'status') {
+        status = val;
+      } else if (key === 'holiday name' || key === 'holidayname' || key === 'name') {
+        holidayName = val;
+      }
+    });
+    
+    // Skip completely empty sections
+    if (!city && !dateStr && !status && !holidayName) {
+      return;
+    }
+    
+    const missing: string[] = [];
+    if (!city) missing.push('City');
+    if (!dateStr) missing.push('Date');
+    if (!status) missing.push('Status');
+    
+    if (missing.length > 0) {
+      errors.push({
+        index: itemIndex,
+        error: `Missing mandatory field(s): ${missing.join(', ')}`
+      });
+      return;
+    }
+    
+    // Normalize status
+    let normStatus: 'Holiday' | 'Weekend' | 'Working' = 'Working';
+    const cleanStatus = status.toLowerCase();
+    if (cleanStatus.includes('holiday')) {
+      normStatus = 'Holiday';
+    } else if (cleanStatus.includes('weekend')) {
+      normStatus = 'Weekend';
+    } else if (cleanStatus.includes('working') || cleanStatus.includes('work')) {
+      normStatus = 'Working';
+    } else {
+      errors.push({
+        index: itemIndex,
+        error: `Invalid status "${status}". Must be Holiday, Weekend, or Working`
+      });
+      return;
+    }
+    
+    items.push({
+      city,
+      dateStr,
+      status: normStatus,
+      holidayName
+    });
+  });
+  
+  return { items, errors };
+}
+
+export interface ResearchFindingItem {
+  finding: string;
+  source: string;
+  rawIndex: number;
+}
+
+export function parseResearchFindings(text: string): { items: ResearchFindingItem[]; errors: { index: number; error: string }[] } {
+  const items: ResearchFindingItem[] = [];
+  const errors: { index: number; error: string }[] = [];
+  
+  if (!text) return { items, errors };
+  
+  const lines = text.split('\n');
+  let currentFinding = '';
+  let currentSource = '';
+  let itemIndex = 1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Check if it's a separator line
+    if (/^[ \t]*(?:[-_—–―]{3,}|⸻+)[ \t]*$/.test(trimmed)) {
+      if (currentFinding || currentSource) {
+        if (!currentFinding) {
+          errors.push({ index: itemIndex, error: 'Missing "Finding:" parameter.' });
+        } else if (!currentSource) {
+          errors.push({ index: itemIndex, error: 'Missing "Source:" parameter.' });
+        } else {
+          items.push({ finding: currentFinding, source: currentSource, rawIndex: itemIndex });
+        }
+        currentFinding = '';
+        currentSource = '';
+        itemIndex++;
+      }
+      continue;
+    }
+
+    const match = line.match(/^\s*(Finding|Source)\s*:\s*(.*)$/i);
+    if (match) {
+      const key = match[1].toLowerCase();
+      const val = match[2].trim();
+
+      if (key === 'finding') {
+        // Auto-push the previous finding if we encounter a new one
+        if (currentFinding) {
+          if (!currentSource) {
+            errors.push({ index: itemIndex, error: 'Missing "Source:" parameter.' });
+          } else {
+            items.push({ finding: currentFinding, source: currentSource, rawIndex: itemIndex });
+          }
+          currentFinding = '';
+          currentSource = '';
+          itemIndex++;
+        }
+        currentFinding = val;
+      } else if (key === 'source') {
+        currentSource = val;
+      }
+    }
+  }
+
+  // Push the final finding if pending
+  if (currentFinding || currentSource) {
+    if (!currentFinding) {
+      errors.push({ index: itemIndex, error: 'Missing "Finding:" parameter.' });
+    } else if (!currentSource) {
+      errors.push({ index: itemIndex, error: 'Missing "Source:" parameter.' });
+    } else {
+      items.push({ finding: currentFinding, source: currentSource, rawIndex: itemIndex });
+    }
+  }
+
+  return { items, errors };
+}
+

@@ -294,7 +294,10 @@ export default function App() {
     toggleUserSuspension,
     changeUserRole,
     saveWriterFromEditorium,
-    hasPermission
+    hasPermission,
+    inTheNewsGoogleDocText,
+    worldClockHolidaysGoogleDocText,
+    researchFindingsGoogleDocText
   } = useAppContext();
 
   const location = useLocation();
@@ -327,6 +330,7 @@ export default function App() {
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
   const [isRouteSynced, setIsRouteSynced] = useState(false);
+  const [indexSearchQuery, setIndexSearchQuery] = useState('');
 
   // Synchronize browser title with central brand identity on mount
   useEffect(() => {
@@ -518,6 +522,7 @@ export default function App() {
 
     const path = location.pathname;
     const parts = path.split('/').filter(Boolean);
+    console.log('[ROUTER] path:', path, 'parts:', parts, 'currentUser:', currentUser?.id, 'authorFromSubdomain:', authorFromSubdomain?.id);
 
     // If subdomain is active, we enforce selectedAuthorId
     if (authorFromSubdomain) {
@@ -571,11 +576,15 @@ export default function App() {
     // Main Portal routing synchronization
     if (parts.length === 0 || parts[0] === 'landing') {
       if (currentUser) {
-        setActiveTab('frontpage');
-        setSelectedAuthorId('');
-        setSelectedEntry(null);
-        setEditingEntry(null);
+        if (activeTab === 'landing' || activeTab === 'frontpage') {
+          console.log('[ROUTER] Main portal sync: currentUser exists -> frontpage');
+          setActiveTab('frontpage');
+          setSelectedAuthorId('');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+        }
       } else {
+        console.log('[ROUTER] Main portal sync: no currentUser -> landing');
         setActiveTab('landing');
         setSelectedAuthorId('');
         setSelectedEntry(null);
@@ -1518,7 +1527,7 @@ Editorial Board of Adjung`;
         <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
           <div className="max-w-6xl mx-auto text-center relative">
                         {/* Main classical visual focus: The Author's Identity with refined lines */}
-            <div className="border-t border-b border-stone-200/50 py-5 my-1 max-w-3xl mx-auto">
+            <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
               <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
                 PERSONAL SITE
               </span>
@@ -1549,7 +1558,7 @@ Editorial Board of Adjung`;
       {activeTab === 'directory' && (
         <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
           <div className="max-w-6xl mx-auto text-center relative">
-            <div className="border-t border-b border-stone-200/50 py-5 my-1 max-w-3xl mx-auto">
+            <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
               <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
                 PLATFORM DIRECTORY
               </span>
@@ -1580,7 +1589,7 @@ Editorial Board of Adjung`;
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               {selectedEntry.publicationClass === 'Institutional'
                 ? (selectedEntry.contentType === 'Notice' ? 'Return to Notices' : "Return to Editor's Notes")
-                : 'Return to Catalog Timeline'}
+                : 'Return to Folio'}
             </button>
             <EntryRenderer 
               entry={selectedEntry} 
@@ -1702,6 +1711,8 @@ Editorial Board of Adjung`;
               users={users}
               setSelectedEntry={setSelectedEntry}
               systemSettings={systemSettings}
+              initialSearchQuery={indexSearchQuery}
+              onSearchQueryChange={setIndexSearchQuery}
             />
           </div>
         )}
@@ -1744,6 +1755,7 @@ Editorial Board of Adjung`;
             setSelectedAuthorId={setSelectedAuthorId}
             setShowLoginModal={setShowLoginModal}
             setLoginError={setLoginError}
+            researchFindingsGoogleDocText={researchFindingsGoogleDocText}
           />
         )}
 
@@ -1757,6 +1769,9 @@ Editorial Board of Adjung`;
             setSelectedAuthorId={setSelectedAuthorId}
             setActiveTab={setActiveTab}
             currentUser={currentUser}
+            inTheNewsGoogleDocText={inTheNewsGoogleDocText}
+            worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
+            setIndexSearchQuery={setIndexSearchQuery}
           />
         )}
 

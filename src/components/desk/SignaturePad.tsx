@@ -7,6 +7,7 @@ interface SignaturePadProps {
   onSave: (data: Partial<DigitalSignature>) => void;
   onCancel?: () => void;
   defaultName?: string;
+  existingSignature?: DigitalSignature;
 }
 
 type PaperTexture = 'Smooth' | 'Laid' | 'Vintage';
@@ -52,12 +53,12 @@ const PAPER_STYLES = {
   }
 };
 
-export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProps) {
+export function SignaturePad({ onSave, onCancel, defaultName, existingSignature }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [strokes, setStrokes] = useState<VectorStroke[][]>([]);
+  const [strokes, setStrokes] = useState<VectorStroke[][]>(existingSignature?.type === 'drawn' ? existingSignature.strokes || [] : []);
   const [currentStroke, setCurrentStroke] = useState<VectorStroke[]>([]);
   
   // Customization states
@@ -71,16 +72,16 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
     'Herr Von Muellerhoff'
   ];
   const dynamicFontOptions = allowedFonts.map(f => ({ name: f, value: `${f}, cursive` }));
-  const [signatureMode, setSignatureMode] = useState<'draw' | 'type'>('draw');
-  const [typedText, setTypedText] = useState(defaultName || '');
-  const [selectedFont, setSelectedFont] = useState(dynamicFontOptions[0]?.value || 'cursive');
-  const [inkFlowWeight, setInkFlowWeight] = useState<number>(7.5);
-  const [nibAngle, setNibAngle] = useState<number>(45); // 0 (round), 30, 45, 60
-  const [paperTexture, setPaperTexture] = useState<PaperTexture>('Laid');
-  const [inkColor, setInkColor] = useState<InkColor>('Maroon');
+  const [signatureMode, setSignatureMode] = useState<'draw' | 'type'>(existingSignature?.type || 'draw');
+  const [typedText, setTypedText] = useState(existingSignature?.type === 'typed' ? existingSignature.typedText || existingSignature.label : (defaultName || '').slice(0, 15));
+  const [selectedFont, setSelectedFont] = useState(existingSignature?.fontFamily ? `${existingSignature.fontFamily}, cursive` : (dynamicFontOptions[0]?.value || 'cursive'));
+  const [inkFlowWeight, setInkFlowWeight] = useState<number>(existingSignature?.penStyle?.inkFlowWeight || 7.5);
+  const [nibAngle, setNibAngle] = useState<number>(existingSignature?.penStyle?.nibAngle || 45); // 0 (round), 30, 45, 60
+  const [paperTexture, setPaperTexture] = useState<PaperTexture>((existingSignature?.penStyle as any)?.paperTexture || 'Laid');
+  const [inkColor, setInkColor] = useState<InkColor>((existingSignature?.penStyle as any)?.inkColor || 'Maroon');
   const [smoothingFactor, setSmoothingFactor] = useState<number>(0.22); // alpha parameter
-  const [letterSpacing, setLetterSpacing] = useState<number>(0);
-  const [fontWeight, setFontWeight] = useState<number>(500);
+  const [letterSpacing, setLetterSpacing] = useState<number>(existingSignature?.typographyStyle?.letterSpacing || 0);
+  const [fontWeight, setFontWeight] = useState<number>(existingSignature?.typographyStyle?.fontWeight || 500);
   const [showSettings, setShowSettings] = useState<boolean>(true);
 
   useEffect(() => {
@@ -90,8 +91,9 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
   }, []);
 
   const [simulatedPressure, setSimulatedPressure] = useState<number>(2.0); // UI feedback
-  const [slantAngle, setSlantAngle] = useState<number>(0); // Slant angle in degrees (-15 to 15)
-  const [scale, setScale] = useState<number>(1.0); // Size multiplier (0.5 to 2.2)
+  const [slantAngle, setSlantAngle] = useState<number>(existingSignature?.typographyStyle?.slantAngle || 0); // Slant angle in degrees (-15 to 15)
+  const [scale, setScale] = useState<number>(existingSignature?.typographyStyle?.scale || 1.0); // Size multiplier (0.5 to 2.2)
+  const [yOffset, setYOffset] = useState<number>(existingSignature?.typographyStyle?.yOffset || 30); // Vertical position offset from center (aligns with baseline)
 
   // Physics & Smoothing Refs
   const lastPointRef = useRef<{ x: number, y: number } | null>(null);
@@ -358,16 +360,41 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
   const currentPaperStyle = PAPER_STYLES[paperTexture];
 
   const handleSaveSignature = () => {
+    const containerHeight = containerRef.current?.clientHeight || 200;
+    const baselineY = containerHeight - 64; // bottom-16 is 64px
+
     if (signatureMode === 'draw') {
-      onSave({ strokes, type: 'drawn', typographyStyle: { slantAngle, scale } });
+      onSave({ 
+        strokes, 
+        type: 'drawn', 
+        typographyStyle: { slantAngle, scale },
+        penStyle: {
+          nibAngle,
+          inkFlowWeight,
+          inkColor,
+          paperTexture,
+          baselineY,
+          canvasHeight: containerHeight
+        }
+      });
     } else {
-      onSave({ strokes: [], type: 'typed', typedText, fontFamily: selectedFont, typographyStyle: { letterSpacing, fontWeight, slantAngle, scale } });
+      onSave({ 
+        strokes: [], 
+        type: 'typed', 
+        typedText, 
+        fontFamily: selectedFont, 
+        typographyStyle: { letterSpacing, fontWeight, slantAngle, scale, yOffset },
+        penStyle: {
+          baselineY: baselineY - yOffset,
+          canvasHeight: containerHeight
+        }
+      });
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-8 bg-stone-950/80 backdrop-blur-sm">
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 bg-stone-900 border-0 sm:border border-stone-800 rounded-none sm:rounded-lg p-4 sm:p-5 shadow-2xl text-stone-200 w-full h-full sm:h-auto xl:h-[620px] max-h-screen sm:max-h-[95vh] overflow-y-auto xl:overflow-hidden">
+      <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 bg-stone-900 border-0 sm:border border-stone-800 rounded-none sm:rounded-lg p-4 sm:p-5 shadow-2xl text-stone-200 w-full max-w-4xl h-full sm:h-auto xl:h-[480px] max-h-screen sm:max-h-[95vh] overflow-y-auto xl:overflow-hidden">
       
       {/* Settings Panel */}
       {showSettings && (
@@ -598,6 +625,23 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
                     className="adjung-range"
                   />
                 </div>
+
+                {/* Vertical Position Offset */}
+                <div className="space-y-0.5 col-span-2">
+                  <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
+                    <span>Vertical Position</span>
+                    <span className="text-Adjung-maroon font-bold">{yOffset > 0 ? `+${yOffset}` : yOffset}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-40"
+                    max="75"
+                    step="1"
+                    value={yOffset}
+                    onChange={(e) => setYOffset(parseInt(e.target.value))}
+                    className="adjung-range"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -692,13 +736,12 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
                 <input
                   type="text"
                   value={typedText}
+                  maxLength={15}
                   onChange={(e) => {
                     const rawVal = e.target.value;
                     // Restrict to letters and spaces only (no numbers/symbols)
-                    const filtered = rawVal.replace(/[^A-Za-z ]/g, '');
-                    if (filtered.length <= 15) {
-                      setTypedText(filtered);
-                    }
+                    const filtered = rawVal.replace(/[^A-Za-z ]/g, '').slice(0, 15);
+                    setTypedText(filtered);
                   }}
                   placeholder="Type your signature here..."
                   className="w-full bg-stone-950/40 border border-stone-850 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-Adjung-maroon font-serif"
@@ -776,9 +819,9 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
               />
               
               {/* Elegant baseline guideline */}
-              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-300/40 pointer-events-none flex justify-between items-end select-none">
-                <span className="font-mono text-[8px] tracking-widest text-stone-400/30 uppercase pb-1">Signature baseline</span>
-                <span className="font-serif text-[11px] italic text-stone-400/20 pb-0.5">Adjung studio</span>
+              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/80 pointer-events-none flex justify-between items-end select-none">
+                <span className="font-mono text-[8px] tracking-widest text-stone-600/80 uppercase pb-1">Signature baseline</span>
+                <span className="font-serif text-[11px] italic text-stone-500/70 pb-0.5">Adjung studio</span>
               </div>
 
               {strokes.length === 0 && (
@@ -800,7 +843,7 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
                   letterSpacing: `${letterSpacing}px`, 
                   fontWeight, 
                   textAlign: 'center',
-                  transform: `rotate(${slantAngle}deg) scale(${scale})`,
+                  transform: `translateY(${yOffset}px) rotate(${slantAngle}deg) scale(${scale})`,
                   transformOrigin: 'center center',
                   whiteSpace: 'nowrap'
                 }}
@@ -810,9 +853,9 @@ export function SignaturePad({ onSave, onCancel, defaultName }: SignaturePadProp
               </span>
               
               {/* Elegant baseline guideline (matches Draw mode) */}
-              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-300/40 pointer-events-none flex justify-between items-end select-none">
-                <span className="font-mono text-[8px] tracking-widest text-stone-400/30 uppercase pb-1">Signature baseline</span>
-                <span className="font-serif text-[11px] italic text-stone-400/20 pb-0.5">Adjung studio</span>
+              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/80 pointer-events-none flex justify-between items-end select-none">
+                <span className="font-mono text-[8px] tracking-widest text-stone-600/80 uppercase pb-1">Signature baseline</span>
+                <span className="font-serif text-[11px] italic text-stone-500/70 pb-0.5">Adjung studio</span>
               </div>
             </>
           )}

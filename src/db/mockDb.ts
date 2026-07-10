@@ -1000,6 +1000,22 @@ Title: Pre-Modern Trading Vessels Discovered in the Red Sea
 Brief: Marine archaeologists have located shipwreck remains dating back to the late antiquity period, containing custom customs documents and trade jars.
 Source: Journal of Maritime Archaeology
 URL: https://www.journalmaritimearch.org/articles/red-sea-discovery`,
+  inTheNewsGoogleDocUrl: '',
+  worldClockHolidaysText: '',
+  worldClockHolidaysGoogleDocUrl: '',
+  researchFindingsText: `Finding: Social media usage is linked to decreased attention spans and cognitive fatigue.
+Source: Journal of Media Psychology, 2025
+
+---
+
+Finding: Deep reading builds cognitive stamina and improves critical thinking skills.
+Source: Stanford Research Centre, 2026
+
+---
+
+Finding: Regular digital disconnection restores neural pathways associated with empathy and reflection.
+Source: MIT Technology Review, 2024`,
+  researchFindingsGoogleDocUrl: '',
   rolePermissions: {
     'Chief Editor': {
       viewIndex: true,
@@ -1648,6 +1664,31 @@ class AdjungDb {
     };
     this.logs = [newLog, ...this.logs];
     this.saveLogsToStorage();
+  }
+
+  setUsers(users: User[]) {
+    this.users = users;
+    this.saveUsersToStorage();
+  }
+
+  setProfiles(profiles: WriterProfile[]) {
+    this.profiles = profiles;
+    this.saveProfilesToStorage();
+  }
+
+  setEntries(entries: Entry[]) {
+    this.entries = entries;
+    this.saveEntriesToStorage();
+  }
+
+  setSystemSettings(settings: SystemSettings) {
+    this.systemSettings = settings;
+    this.saveSettingsToStorage();
+  }
+
+  setIdentities(identities: IdentityProfile[]) {
+    this.identities = identities;
+    this.saveIdentitiesToStorage();
   }
 
   resetToDefaults() {

@@ -17,7 +17,7 @@ export const noticeSpec: PresentationSpec = {
   spacing: {
     canvasMaxWidth: 'max-w-2xl',
     canvasPadding: 'py-8 px-4 md:px-8',
-    headerBottomMargin: 'mb-6 border-b border-stone-200 pb-4',
+    headerBottomMargin: 'mb-6 border-b border-stone-300 pb-4',
     paragraphSpacing: 'mb-4',
     signatureMarginTop: 'mt-12 pt-8 border-t border-stone-200'
   },
@@ -42,7 +42,7 @@ export const editorsNoteSpec: PresentationSpec = {
   spacing: {
     canvasMaxWidth: 'max-w-3xl',
     canvasPadding: 'py-10 px-4 md:px-8',
-    headerBottomMargin: 'mb-8 border-b border-stone-200/70 pb-6',
+    headerBottomMargin: 'mb-8 border-b border-stone-300 pb-6',
     paragraphSpacing: 'mb-6',
     signatureMarginTop: 'mt-16 pt-12 border-t border-stone-200'
   },

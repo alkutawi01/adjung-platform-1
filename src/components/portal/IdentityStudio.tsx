@@ -82,25 +82,13 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     setIsSaving(true);
     setSaveSuccess(false);
 
-    // Synchronize default typed signature to the penName
-    const updatedSignatures = (identity.signatures || []).map(sig => {
-      if (sig.status === 'Default' && sig.type === 'typed') {
-        return {
-          ...sig,
-          typedText: penName,
-          label: penName
-        };
-      }
-      return sig;
-    });
-
     const updatedIdentity: IdentityProfile = {
       ...identity,
       username,
       displayName,
       penName,
       publicVisibility: visibility,
-      signatures: updatedSignatures,
+      signatures: identity.signatures,
       affiliation
     };
 
@@ -127,8 +115,10 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
         body: JSON.stringify(updatedIdentity)
       })
     ]).then(() => {
-      // Update local storage session
-      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+      // Update active storage session
+      const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
       
       // Update local mockDb
       db.updateIdentity(updatedIdentity);
@@ -159,17 +149,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     let newPenName = penName;
     let newDisplayName = displayName;
 
-    if (defaultSig && defaultSig.type === 'typed' && defaultSig.typedText) {
-      newPenName = defaultSig.typedText;
-      newDisplayName = defaultSig.typedText;
-      finalIdentity = {
-        ...finalIdentity,
-        penName: newPenName,
-        displayName: newDisplayName
-      };
-      setPenName(newPenName);
-      setDisplayName(newDisplayName);
-    }
+    // Keep penName and displayName as configured in the form without overwriting them with signature text
 
     setIdentity(finalIdentity);
 
@@ -193,8 +173,10 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
         body: JSON.stringify(finalIdentity)
       })
     ]).then(() => {
-      // Update local storage session
-      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+      // Update active storage session
+      const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
       
       // Update local mockDb in case it is queried before refresh
       db.updateIdentity(finalIdentity);

@@ -59,12 +59,8 @@ export function BiographyView({
   return (
     <div className="space-y-16">
       {/* Intro Profile */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-b border-stone-200/60 pb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-b border-stone-300 pb-12">
         <div className="lg:col-span-8 space-y-6">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#802334] rounded-full" />
-            <span className="font-sans text-[10px] uppercase tracking-widest text-[#111111]/40">Biography</span>
-          </div>
           <h2 className="font-serif text-3xl md:text-4xl font-light tracking-tight text-[#111111] text-left">
             Biography
           </h2>
@@ -97,7 +93,10 @@ export function BiographyView({
               </div>
             ) : (
               <div className="relative">
-                <div className={`${activeSpec.typography.bodyFont} text-base text-[#111111]/80 leading-relaxed space-y-4 whitespace-pre-line text-justify pr-2`}>
+                <div 
+                  className={`${activeSpec.typography.bodyFont} text-[9px] text-[#111111]/80 leading-relaxed whitespace-pre-line text-justify pr-2 columns-1 md:columns-2 gap-8 md:h-[130px]`}
+                  style={{ columnFill: 'auto' }}
+                >
                   {authorProfile.biography || <span className="text-stone-400 italic">No biography written yet. Click edit to write one!</span>}
                 </div>
                 {currentUser?.id === selectedAuthorId && (
@@ -115,7 +114,7 @@ export function BiographyView({
         </div>
 
         {/* Signature stamp card representation */}
-        <div className="lg:col-span-4 bg-[#FDFDFD] border border-stone-200/65 rounded p-6 text-center shadow-sm select-none">
+        <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-8 lg:pt-0 lg:pl-8 text-center select-none">
           <span className="font-sans text-[9px] uppercase tracking-widest text-[#111111]/40 block mb-2">Signature</span>
           <div className="h-32 flex items-center justify-center z-10 overflow-visible">
             {(() => {
@@ -127,6 +126,7 @@ export function BiographyView({
                   typedText={defaultSig?.typedText || currentAuthor.signature}
                   fontFamily={defaultSig?.fontFamily}
                   typographyStyle={defaultSig?.typographyStyle}
+                  penStyle={defaultSig?.penStyle}
                   className="w-full h-full overflow-visible origin-center"
                   color="#802334"
                   strokeWidth={2.5}
@@ -135,7 +135,7 @@ export function BiographyView({
               );
             })()}
           </div>
-          <div className="border-t border-stone-200/55 pt-4 mt-2 space-y-2">
+          <div className="border-t border-stone-300/80 pt-4 mt-2 space-y-2">
             <div>
               <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Pen Name</span>
               <span className="font-serif font-semibold text-[#111111] text-sm">{currentAuthor.penName}</span>
@@ -152,7 +152,7 @@ export function BiographyView({
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.affiliation}</span>
               </div>
             )}
-            <div className="pt-2 border-t border-stone-200/50">
+            <div className="pt-2 border-t border-stone-300/70">
               <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40 mb-0.5">Email / Contact</span>
               <a 
                 href={`mailto:${currentAuthor.email}`} 
@@ -162,7 +162,7 @@ export function BiographyView({
               </a>
             </div>
             {currentUser?.id === selectedAuthorId && (
-              <div className="pt-3 border-t border-stone-200/50 mt-2">
+              <div className="pt-3 border-t border-stone-300/70 mt-2">
                 <button
                   onClick={() => setShowIdentityModal(true)}
                   className="w-full flex items-center justify-center gap-1.5 bg-[#802334] text-white hover:opacity-95 py-2 px-3 rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer font-semibold shadow-sm"
@@ -178,7 +178,7 @@ export function BiographyView({
 
       {/* Chronological Life Timeline */}
       <div className="space-y-8">
-        <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
+        <div className="flex items-center justify-between border-b border-stone-300 pb-3">
           <h3 className="font-serif text-xl font-semibold tracking-tight text-[#111111]">
             Timeline
           </h3>
@@ -199,7 +199,7 @@ export function BiographyView({
         {authorProfile.lifeTimeline.length === 0 ? (
           <p className="text-xs text-[#111111]/40 italic">No timeline milestones cataloged yet.</p>
         ) : (
-          <div className="relative border-l border-stone-200/60 ml-4 md:ml-32 pl-6 space-y-10 py-2">
+          <div className="relative border-l border-stone-300 ml-4 md:ml-32 pl-6 space-y-10 py-2">
             {authorProfile.lifeTimeline.map(item => (
               <div key={item.id} className="relative group">
                 

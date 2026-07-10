@@ -281,24 +281,6 @@ export function WritingDesk({
             >
               + Article
             </button>
-            {(currentUser.role === 'Chief Editor' || currentUser.role === 'Editor') && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => createNewEntry('Notice')}
-                  className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
-                >
-                  + Notice
-                </button>
-                <button
-                  type="button"
-                  onClick={() => createNewEntry("Editor's Note")}
-                  className="px-3 py-1.5 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334]"
-                >
-                  + Editor's Note
-                </button>
-              </>
-            )}
           </div>
         )}
       </div>

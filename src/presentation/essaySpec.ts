@@ -10,7 +10,7 @@ export const essaySpec: PresentationSpec = {
   spacing: {
     canvasMaxWidth: 'max-w-3xl',
     canvasPadding: 'py-10 px-4 md:px-8',
-    headerBottomMargin: 'mb-8 border-b border-stone-200/70 pb-6',
+    headerBottomMargin: 'mb-8 border-b border-stone-300 pb-6',
     paragraphSpacing: 'mb-6',
     signatureMarginTop: 'mt-16 pt-12 border-t border-stone-200'
   },

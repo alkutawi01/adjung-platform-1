@@ -85,7 +85,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 15, scale: 0.98 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#FCFAF2] border border-stone-200 shadow-2xl max-w-xl w-full h-[620px] max-h-[95vh] overflow-hidden scholarly-border flex flex-col relative my-4 text-stone-900 font-sans"
+        className="bg-[#FFFFFF] border border-stone-200 shadow-2xl max-w-xl w-full h-[620px] max-h-[95vh] overflow-hidden scholarly-border flex flex-col relative my-4 text-stone-900 font-sans"
       >
         
         {/* Overlay Transition inside the Card */}
@@ -138,7 +138,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
 
         {/* Elegant Publication Header with Progress Bar */}
         {currentStep < 9 && (
-          <div className="border-b border-stone-200/60 p-5 bg-[#FCFAF2] flex justify-between items-center select-none relative">
+          <div className="border-b border-stone-200/60 p-5 bg-[#FFFFFF] flex justify-between items-center select-none relative">
             <div className="flex items-center gap-3">
               {currentStep > 1 && (
                 <button
@@ -187,7 +187,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
 
         {/* Elegant Pagination Indicators (Dots Rail at the very bottom edge) */}
         {currentStep < 9 && (
-          <div className="border-t border-stone-200/40 py-3.5 bg-[#FCFAF2] flex justify-center items-center gap-2 select-none">
+          <div className="border-t border-stone-200/40 py-3.5 bg-[#FFFFFF] flex justify-center items-center gap-2 select-none">
             {Array.from({ length: 9 }).map((_, i) => (
               <div 
                 key={i}
@@ -477,7 +477,7 @@ function Step4Identity({ formData, setFormData, onNext }: any) {
         </div>
 
         <div className="relative group">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Username</label>
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Subdomain / Domain</label>
           <input 
             type="text" 
             required
@@ -489,7 +489,7 @@ function Step4Identity({ formData, setFormData, onNext }: any) {
         </div>
 
         <div className="relative group">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Email</label>
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Username (Email)</label>
           <input 
             type="email" 
             required
@@ -1291,7 +1291,7 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
       )}
 
       {/* Footer Navigation controls */}
-      <div className="w-full border-t border-stone-150 pt-4 mt-2 flex justify-between items-center bg-[#FCFAF2] select-none">
+      <div className="w-full border-t border-stone-150 pt-4 mt-2 flex justify-between items-center bg-[#FFFFFF] select-none">
         <span className="text-[11px] text-stone-400 font-serif italic">
           {hasRecordedSignature ? '✓ Signature logged successfully' : 'Please authenticate with a signature'}
         </span>

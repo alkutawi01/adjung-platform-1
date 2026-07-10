@@ -30,13 +30,14 @@ export function SignatureLayout({
     <div className={`flex flex-col items-center justify-center text-center select-none ${className}`}>
       
       {/* Signature Graphic Area */}
-      <div className="w-72 h-28 -mb-10 z-10 overflow-visible pointer-events-none mix-blend-multiply">
+      <div className="w-72 h-20 z-10 overflow-visible pointer-events-none mix-blend-multiply">
         <SignatureRenderer 
           strokes={signature?.strokes || strokes || []} 
           type={signature?.type || 'drawn'}
           typedText={signature?.typedText}
           fontFamily={signature?.fontFamily}
           typographyStyle={signature?.typographyStyle}
+          penStyle={signature?.penStyle}
           className="w-full h-full overflow-visible" 
           color={color} 
           strokeWidth={strokeWidth} 
@@ -45,16 +46,12 @@ export function SignatureLayout({
       </div>
 
       {/* Elegant Architectural Baseline */}
-      <div className="w-64 border-b border-stone-300/80 my-1 relative">
-        {/* Tiny security/verification lock or badge */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-1.5 bg-[#fdfdfd] px-2 flex items-center gap-0.5 text-[7px] font-mono tracking-widest text-stone-400 uppercase select-none">
-          <ShieldCheck className="w-2.5 h-2.5 text-Adjung-maroon/65" /> Verified
-        </div>
+      <div className="w-64 border-b border-stone-400 my-1">
       </div>
 
       {/* Author details */}
       <div className="mt-2 flex flex-col items-center">
-        <div className="font-serif italic font-semibold text-stone-900 tracking-wide text-sm">
+        <div className="font-serif font-semibold text-stone-900 tracking-wide text-sm">
           {penName}
         </div>
         {affiliation && (

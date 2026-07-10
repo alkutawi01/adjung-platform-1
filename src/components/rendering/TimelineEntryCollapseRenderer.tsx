@@ -14,6 +14,89 @@ interface TimelineEntryCollapseRendererProps {
   onLimitExceeded?: (exceeded: boolean) => void;
 }
 
+function truncatePreviewContent(content: string): { text: string; exceeded: boolean } {
+  if (!content) return { text: '', exceeded: false };
+
+  const rawLines = content.split('\n');
+  let charCount = 0;
+  let wordCount = 0;
+  let lineCount = 0;
+  let finalLines: string[] = [];
+  let exceeded = false;
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+
+    if (lineCount >= 6) {
+      exceeded = true;
+      break;
+    }
+
+    if (line.trim() === '') {
+      if (charCount + 1 > 500) {
+        exceeded = true;
+        break;
+      }
+      finalLines.push('');
+      charCount += 1;
+      lineCount++;
+      continue;
+    }
+
+    const words = line.split(/(\s+)/);
+    let reconstructedLine = '';
+
+    for (let word of words) {
+      if (word === '') continue;
+
+      const isWhitespace = /^\s+$/.test(word);
+      if (isWhitespace) {
+        if (charCount + word.length > 500) {
+          exceeded = true;
+          break;
+        }
+        reconstructedLine += word;
+        charCount += word.length;
+      } else {
+        if (wordCount >= 100) {
+          exceeded = true;
+          break;
+        }
+        if (charCount + word.length > 500) {
+          exceeded = true;
+          break;
+        }
+        reconstructedLine += word;
+        charCount += word.length;
+        wordCount++;
+      }
+    }
+
+    finalLines.push(reconstructedLine);
+    lineCount++;
+
+    if (exceeded) {
+      break;
+    }
+
+    if (i < rawLines.length - 1) {
+      if (charCount + 1 > 500) {
+        exceeded = true;
+        break;
+      }
+      charCount += 1;
+    }
+  }
+
+  let truncatedText = finalLines.join('\n');
+  if (exceeded || truncatedText.length < content.length) {
+    exceeded = true;
+    truncatedText = truncatedText.trim() + '...';
+  }
+
+  return { text: truncatedText, exceeded };
+}
+
 export function TimelineEntryCollapseRenderer({
   item,
   isExpanded,
@@ -25,11 +108,14 @@ export function TimelineEntryCollapseRenderer({
   onLimitExceeded,
 }: TimelineEntryCollapseRendererProps) {
   const activeSpec = presentationSpec || getPresentationSpec(item.contentType);
-  const [visibleCount, setVisibleCount] = useState<number>(9999);
   const [exceedsLimit, setExceedsLimit] = useState<boolean>(false);
   const measureContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const contentBlocks = parseContentToBlocks(item.content);
+  const { text: truncatedContent, exceeded: contentExceeded } = truncatePreviewContent(item.content);
+
+  const fullContentBlocks = parseContentToBlocks(item.content);
+  const previewContentBlocks = parseContentToBlocks(truncatedContent);
+
   const fMap = getFootnotesReadingOrderMap(item.content).map;
   const mMap = getMarginNotesReadingOrderMap(item.content).map;
 
@@ -37,28 +123,9 @@ export function TimelineEntryCollapseRenderer({
     const measureContainer = measureContainerRef.current;
     if (!measureContainer) return;
 
-    const children = measureContainer.children;
-    if (children.length === 0) return;
+    const visuallyClamped = measureContainer.scrollHeight > measureContainer.clientHeight;
+    const exceeded = contentExceeded || visuallyClamped;
 
-    const containerRect = measureContainer.getBoundingClientRect();
-    const containerTop = containerRect.top;
-
-    let limitIdx = contentBlocks.length;
-    let exceeded = false;
-
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childBottom = child.getBoundingClientRect().bottom - containerTop;
-
-      if (childBottom > maxHeight) {
-        // Move collapse point to the end of the previous block
-        limitIdx = Math.max(1, i);
-        exceeded = true;
-        break;
-      }
-    }
-
-    setVisibleCount(limitIdx);
     setExceedsLimit(exceeded);
 
     if (onLimitExceeded) {
@@ -67,7 +134,7 @@ export function TimelineEntryCollapseRenderer({
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [item.content, maxHeight, contentBlocks.length, onLimitExceeded]);
+  }, [item.content, contentExceeded, onLimitExceeded]);
 
   const renderSingleBlock = (block: any, pIdx: number) => {
     if (block.type === 'heading') {
@@ -226,20 +293,27 @@ export function TimelineEntryCollapseRenderer({
 
   return (
     <div className="relative w-full">
-      {/* Hidden measuring container to determine block heights under the exact layout rules */}
+      {/* Hidden measuring container styled with line-clamp-6 to measure visual clamping */}
       <div 
         ref={measureContainerRef}
-        className="absolute opacity-0 pointer-events-none select-none w-full"
-        style={{ top: -9999, left: -9999 }}
+        className="absolute opacity-0 pointer-events-none select-none w-full line-clamp-6"
+        style={{ 
+          top: -9999, 
+          left: -9999,
+          display: '-webkit-box',
+          WebkitLineClamp: 6,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }}
       >
-        {contentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
+        {previewContentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
       </div>
 
       {/* Main Visible Container */}
       <div className="space-y-3 mt-1.5">
         {isExpanded ? (
           <div className="space-y-3 animate-fade-in">
-            {contentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
+            {fullContentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
             {activeSpec.visibility.showCitations && item.citations && item.citations.length > 0 && (
               <div className="mt-4 pt-3 border-t border-stone-200/50 text-[10px] text-stone-500 font-sans text-left">
                 <span className="font-semibold uppercase tracking-wider block mb-1">References & Bibliography:</span>
@@ -267,7 +341,17 @@ export function TimelineEntryCollapseRenderer({
           </div>
         ) : (
           <div className="space-y-3">
-            {contentBlocks.slice(0, visibleCount).map((block, idx) => renderSingleBlock(block, idx))}
+            <div 
+              className="space-y-3 line-clamp-6"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 6,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}
+            >
+              {previewContentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
+            </div>
             {exceedsLimit && showInlineToggle && (
               item.contentType === 'Note' ? (
                 <button

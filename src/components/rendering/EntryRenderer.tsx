@@ -10,6 +10,8 @@ import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, Arr
 import { db } from '../../db/mockDb';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
+import { RichTextEditable } from './RichTextEditable';
+import { FloatingFormatToolbar } from './FloatingFormatToolbar';
 
 interface EntryRendererProps {
   entry: Entry;
@@ -24,44 +26,6 @@ interface EntryRendererProps {
   authorDigitalSignature?: DigitalSignature;
   preventScrollToTop?: boolean;
   presentationSpec?: PresentationSpec;
-}
-
-function RichTextEditable({ html, onChange, className, tagName = 'div', placeholder, onKeyDown, dir, id, onContextMenu }: any) {
-  const editorRef = useRef<HTMLElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
-
-  useEffect(() => {
-    if (editorRef.current && !isFocused && html !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = html;
-    }
-  }, [html, isFocused]);
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
-
-  const Tag = tagName as any;
-  return (
-    <Tag
-      ref={editorRef}
-      id={id}
-      contentEditable
-      suppressContentEditableWarning
-      className={className}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => {
-        setIsFocused(false);
-        handleInput();
-      }}
-      onInput={handleInput}
-      onKeyDown={onKeyDown}
-      onContextMenu={onContextMenu}
-      placeholder={placeholder}
-      dir={dir}
-    />
-  );
 }
 
 export function EntryRenderer({
@@ -3212,132 +3176,24 @@ export function EntryRenderer({
   };
 
   const renderFloatingToolbar = () => {
-    if (!selectionState || !selectionState.show) return null;
     return (
-      <div 
-        style={{ left: `${selectionState.x}px`, top: `${selectionState.y}px` }}
-        className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/45 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
-      >
-        {!showLinkInput && !showGlossInput ? (
-          <>
-            <button
-              type="button"
-              onClick={applyBold}
-              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-bold transition cursor-pointer font-sans"
-              title="Bold"
-            >
-              B
-            </button>
-            <button
-              type="button"
-              onClick={applyItalic}
-              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 italic transition cursor-pointer font-sans"
-              title="Italic"
-            >
-              I
-            </button>
-            <button
-              type="button"
-              onClick={applyUnderline}
-              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 underline transition cursor-pointer font-sans"
-              title="Underline"
-            >
-              U
-            </button>
-            <span className="w-px h-4 bg-stone-800 mx-1" />
-            <button
-              type="button"
-              onClick={() => setShowLinkInput(true)}
-              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
-              title="Insert Link"
-            >
-              Link
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowGlossInput(true)}
-              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
-              title="Insert Interlinear Note (Gloss)"
-            >
-              Gloss
-            </button>
-            <button
-              type="button"
-              onClick={applyFootnote}
-              className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
-              title="Insert Footnote (Auto Number)"
-            >
-              FN
-            </button>
-          </>
-        ) : showLinkInput ? (
-          <div className="flex items-center gap-1.5 px-1 font-sans">
-            <input
-              type="text"
-              placeholder="URL (https://...)"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-Adjung-maroon w-36 font-sans"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  applyLink(linkUrl);
-                }
-              }}
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={() => applyLink(linkUrl)}
-              className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
-            >
-              Apply
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowLinkInput(false);
-                setLinkUrl('');
-              }}
-              className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-1 font-sans">
-            <input
-              type="text"
-              placeholder="Gloss word/translation..."
-              value={glossText}
-              onChange={(e) => setGlossText(e.target.value)}
-              className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-Adjung-maroon w-36 font-sans"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  applyInterlinear(glossText);
-                }
-              }}
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={() => applyInterlinear(glossText)}
-              className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
-            >
-              Apply
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowGlossInput(false);
-                setGlossText('');
-              }}
-              className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
-            >
-              ×
-            </button>
-          </div>
-        )}
-      </div>
+      <FloatingFormatToolbar
+        selectionState={selectionState}
+        showLinkInput={showLinkInput}
+        setShowLinkInput={setShowLinkInput}
+        linkUrl={linkUrl}
+        setLinkUrl={setLinkUrl}
+        showGlossInput={showGlossInput}
+        setShowGlossInput={setShowGlossInput}
+        glossText={glossText}
+        setGlossText={setGlossText}
+        applyBold={applyBold}
+        applyItalic={applyItalic}
+        applyUnderline={applyUnderline}
+        applyLink={applyLink}
+        applyInterlinear={applyInterlinear}
+        applyFootnote={applyFootnote}
+      />
     );
   };
 
@@ -3379,7 +3235,7 @@ export function EntryRenderer({
         {activeSpec.visibility.showTitle ? (
           <header className={activeSpec.spacing.headerBottomMargin}>
             {/* Metadata Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-300 pb-3">
               <div className="flex items-center gap-1.5">
                 <span className="font-semibold text-Adjung-maroon">{contentType}</span>
                 <span className="text-stone-300">|</span>
@@ -3417,10 +3273,10 @@ export function EntryRenderer({
                           onClick={() => {
                             const url = getCanonicalUrl();
                             navigator.clipboard.writeText(url);
-                            showToast('Canonical link copied to clipboard!', 'success');
+                            showToast('Entry link copied to clipboard!', 'success');
                           }}
                           className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[10px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-2 py-0.5 rounded transition bg-white"
-                          title="Copy permanent canonical URL"
+                          title="Copy permanent entry URL"
                         >
                           <Copy className="w-3 h-3" /> Copy Address
                         </button>
@@ -3500,10 +3356,10 @@ export function EntryRenderer({
                     onClick={() => {
                       const url = getCanonicalUrl();
                       navigator.clipboard.writeText(url);
-                      showToast('Canonical link copied to clipboard!', 'success');
+                      showToast('Entry link copied to clipboard!', 'success');
                     }}
                     className="inline-flex items-center gap-1 text-[#802334] hover:text-[#4a1521] text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-[#802334]/20 hover:border-[#802334]/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
-                    title="Copy permanent canonical URL"
+                    title="Copy permanent entry URL"
                   >
                     <Copy className="w-2.5 h-2.5" /> Copy
                   </button>
@@ -3761,7 +3617,7 @@ export function EntryRenderer({
         {/* Signature Closure */}
         {/* Signature Closure */}
         {status === 'Published' && entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
-          <div className="mt-16 pt-12 border-t border-stone-200 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
+          <div className="mt-16 pt-12 border-t border-stone-300 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
              <span className="w-2 h-2 bg-[#802334] rotate-45 mb-4"></span>
              <div className="font-serif text-stone-900 tracking-wide text-lg">Adjung Editorial Board</div>
              <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mt-2">
@@ -3771,7 +3627,7 @@ export function EntryRenderer({
         )}
         {status === 'Published' && !entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
-            <div className="w-16 h-[1px] bg-stone-300 absolute top-0 mt-[-1px] mb-8"></div>
+            <div className="w-24 h-[1px] bg-stone-400 absolute top-0 mt-[-1px] mb-8"></div>
             
             {(() => {
               const authorIdentity = entry.authorId ? db.getIdentityByAccountId(entry.authorId) : undefined;
@@ -3783,7 +3639,6 @@ export function EntryRenderer({
                     signature={authorDigitalSignature}
                     penName={authorName}
                     date={entry.publishedDate || new Date().toISOString()}
-                    role="SCHOLARLY WRITER"
                     strokeWidth={3.0}
                     affiliation={authorAffiliation}
                   />
@@ -3795,7 +3650,6 @@ export function EntryRenderer({
                     strokes={authorSignatureStrokes}
                     penName={authorName}
                     date={entry.publishedDate || new Date().toISOString()}
-                    role="SCHOLARLY WRITER"
                     strokeWidth={3.0}
                     affiliation={authorAffiliation}
                   />
@@ -3827,7 +3681,7 @@ export function EntryRenderer({
 
         {/* Margin Notes Fallback for Smaller Screens */}
         {contentType === 'Article' && (
-          <div className="lg:hidden mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700 animate-fade-in">
+          <div className="lg:hidden mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700 animate-fade-in">
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-stone-100 select-none">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
                 Scholarly Margin Notes
@@ -3895,7 +3749,7 @@ export function EntryRenderer({
 
         {/* Footnotes Section */}
         {activeSpec.visibility.showFootnotes && getOrderedFootnotesToRender().length > 0 && (
-          <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
+          <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
                 Scholarly Footnotes & Citations
@@ -3984,7 +3838,7 @@ export function EntryRenderer({
 
         {/* References & Bibliography */}
         {activeSpec.visibility.showCitations && citations.length > 0 && (
-          <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
+          <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
               <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
                 References & Bibliography
@@ -4042,7 +3896,7 @@ export function EntryRenderer({
 
         {/* Tags Block */}
         {tags.length > 0 && (
-          <div className="mt-12 pt-6 border-t border-stone-200/40 flex flex-wrap gap-2 items-center">
+          <div className="mt-12 pt-6 border-t border-stone-300 flex flex-wrap gap-2 items-center">
             <Tag className="w-3.5 h-3.5 text-stone-400" />
             {tags.map((t) => (
               <span key={t} className="font-mono text-[10px] text-Adjung-maroon bg-stone-50 px-2 py-0.5 rounded border border-stone-200/30">
@@ -4054,16 +3908,36 @@ export function EntryRenderer({
 
         {activeSpec.visibility.showNoteFooter && (
           <footer 
-            className={`mt-8 pt-4 border-t border-stone-200/40 flex items-center justify-between text-base text-stone-500 select-none ${
+            className={`mt-8 pt-4 border-t border-stone-300 flex items-center justify-between text-base text-stone-500 select-none ${
               isArContent ? 'flex-row-reverse text-right' : 'flex-row text-left font-sans'
             }`}
           >
             <span>— {authorName}</span>
-            {authorSignature && (
+            {authorDigitalSignature ? (
+              <div className="w-24 h-12 flex items-center justify-end">
+                <SignatureRenderer
+                  strokes={authorDigitalSignature.strokes || []}
+                  type={authorDigitalSignature.type || 'drawn'}
+                  typedText={authorDigitalSignature.typedText || authorSignature}
+                  fontFamily={authorDigitalSignature.fontFamily}
+                  typographyStyle={authorDigitalSignature.typographyStyle}
+                  penStyle={authorDigitalSignature.penStyle}
+                  color="#802334"
+                />
+              </div>
+            ) : authorSignatureStrokes && authorSignatureStrokes.length > 0 ? (
+              <div className="w-24 h-12 flex items-center justify-end">
+                <SignatureRenderer
+                  strokes={authorSignatureStrokes}
+                  type="drawn"
+                  color="#802334"
+                />
+              </div>
+            ) : authorSignature ? (
               <span className="font-signature text-2xl" style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
                 {authorSignature}
               </span>
-            )}
+            ) : null}
           </footer>
         )}
 

@@ -19,30 +19,19 @@ export const LoadingScreen: React.FC = () => {
       id="Adjung-loading-screen"
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#802334] text-[#FDFDFD] transition-colors duration-300 select-none px-6"
     >
-      <div className="max-w-md w-full flex flex-col items-center text-center space-y-6">
+      <div className="max-w-md w-full flex flex-col items-center justify-center text-center space-y-3">
         
         {/* 1. Official Adjung Logo */}
-        <div className="flex items-center gap-2 select-none">
-          <span className="font-serif text-3xl font-semibold tracking-wider text-[#FDFDFD]">
+        <div className="select-none flex justify-center items-center">
+          <span className="font-serif text-3xl md:text-4xl font-semibold tracking-wider text-[#FDFDFD]">
             {BRAND.logoText}
-          </span>
-          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-200 border-l border-stone-200/50 pl-3">
-            platform
           </span>
         </div>
 
         {/* 2. Official Tagline */}
-        <p className="font-serif italic text-stone-100 text-[14px] md:text-[15px] tracking-wide select-none">
+        <p className="font-serif text-stone-200 text-[13px] md:text-[14px] tracking-wide select-none">
           {BRAND.tagline}
         </p>
-
-        {/* 3. Minimal loading indicator */}
-        <motion.div 
-          animate={pulseAnimate}
-          transition={pulseTransition}
-          className="w-16 h-[1.5px] bg-[#FDFDFD]/80 mt-6 rounded-full"
-          aria-label="Loading..."
-        />
       </div>
     </div>
   );

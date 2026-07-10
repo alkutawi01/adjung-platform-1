@@ -1,6 +1,0 @@
-{
-  "name": "Adjung",
-  "description": "An independent long-term knowledge publishing and preservation ecosystem.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

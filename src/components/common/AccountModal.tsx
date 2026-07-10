@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from '../../types';
+import { useAppContext } from '../../context/AppContext';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -32,7 +33,54 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   accountError,
   handleSaveAccountSettings,
 }) => {
+  const { showToast } = useAppContext();
+  const [showVerification, setShowVerification] = React.useState(false);
+  const [verificationCode, setVerificationCode] = React.useState('');
+  const [generatedCode, setGeneratedCode] = React.useState('');
+  const [localError, setLocalError] = React.useState('');
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setShowVerification(false);
+      setVerificationCode('');
+      setGeneratedCode('');
+      setLocalError('');
+    }
+  }, [isOpen]);
+
   if (!isOpen || !currentUser) return null;
+
+  const handleClose = () => {
+    setShowVerification(false);
+    setVerificationCode('');
+    setGeneratedCode('');
+    setLocalError('');
+    onClose();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError('');
+
+    const emailChanged = accountEmail.trim().toLowerCase() !== (currentUser.email || '').trim().toLowerCase();
+
+    if (emailChanged && !showVerification) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedCode(code);
+      setShowVerification(true);
+      showToast(`Verification code sent to ${accountEmail.trim()}: ${code}`, 'info');
+      return;
+    }
+
+    if (emailChanged && showVerification) {
+      if (verificationCode !== generatedCode) {
+        setLocalError('Invalid verification code. Please check your notifications.');
+        return;
+      }
+    }
+
+    handleSaveAccountSettings(e);
+  };
 
   return (
     <div className="fixed inset-0 bg-stone-900/65 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -44,18 +92,18 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Platform Identity & Credentials</p>
         </div>
 
-        <form onSubmit={handleSaveAccountSettings} className="p-6 space-y-4 text-xs font-sans text-stone-800">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-sans text-stone-800">
           
-          {accountError && (
+          {(accountError || localError) && (
             <div className="p-2.5 bg-red-50 border border-red-100 text-red-800 rounded font-sans text-xs">
-              {accountError}
+              {accountError || localError}
             </div>
           )}
 
           {/* Username Input */}
           <div>
             <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">
-              Subdomain / Username
+              Subdomain / Domain
             </label>
             <div>
               <input
@@ -74,7 +122,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           {/* Email Input */}
           <div>
             <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">
-              Email Address
+              Username (Email)
             </label>
             <input
               type="email"
@@ -82,16 +130,38 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               onChange={(e) => setAccountEmail(e.target.value)}
               className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
               placeholder="e.g. scholar@adjung.com"
+              disabled={showVerification}
             />
             <span className="text-[8px] font-mono text-stone-400 mt-1 block leading-normal">
               Used for password retrieval, platform communications, and board logs.
             </span>
           </div>
 
+          {/* Verification Code Input */}
+          {showVerification && (
+            <div className="bg-stone-50 border border-stone-200 p-4 rounded space-y-2 animate-fade-in">
+              <span className="block font-mono uppercase text-[9px] text-adjung-maroon tracking-wider font-semibold">
+                Email Verification Code Required
+              </span>
+              <p className="text-[10px] text-stone-600 leading-normal font-serif">
+                We have sent a 6-digit confirmation code to your new email <strong>{accountEmail}</strong>. Please enter the code below to authorize the change.
+              </p>
+              <input
+                type="text"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-center tracking-[0.25em] text-base"
+                placeholder="000000"
+                required
+              />
+            </div>
+          )}
+
           {/* Password Fields */}
           <div className="border-t border-stone-100 pt-3.5 space-y-3">
             <span className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider font-semibold">
-              Update Password <span className="text-[8px] font-normal italic text-stone-400">(Leave blank to keep current)</span>
+              Update Password <span className="text-[8px] font-normal text-stone-400">(Leave blank to keep current)</span>
             </span>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -103,6 +173,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   onChange={(e) => setAccountPassword(e.target.value)}
                   className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
                   placeholder="Min 4 characters"
+                  disabled={showVerification}
                 />
               </div>
               <div>
@@ -113,17 +184,17 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   onChange={(e) => setAccountConfirmPassword(e.target.value)}
                   className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
                   placeholder="Repeat password"
+                  disabled={showVerification}
                 />
               </div>
             </div>
           </div>
 
-
           {/* Action Buttons */}
           <div className="pt-2 flex gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2.5 rounded text-xs font-mono uppercase tracking-wider transition cursor-pointer"
             >
               Cancel
@@ -132,7 +203,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               type="submit"
               className="w-2/3 bg-[#802334] hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
             >
-              Save Credentials
+              {showVerification ? 'Confirm Email Change' : 'Save Credentials'}
             </button>
           </div>
 

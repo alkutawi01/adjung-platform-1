@@ -120,6 +120,7 @@ const initializeSchema = () => {
         )
       `);
       db.run("ALTER TABLE system_settings ADD COLUMN inTheNewsText TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN inTheNewsGoogleDocUrl TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN featuredScholarId TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN featuredEntryId TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN editorialSelectionIds TEXT", () => {});
@@ -129,6 +130,12 @@ const initializeSchema = () => {
       db.run("ALTER TABLE system_settings ADD COLUMN allowedSignatureFonts TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN featuredEssayIds TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN featuredNoteIds TEXT", () => {});
+      db.run("ALTER TABLE users ADD COLUMN affiliation TEXT", () => {});
+      db.run("ALTER TABLE identities ADD COLUMN affiliation TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN worldClockHolidaysText TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN worldClockHolidaysGoogleDocUrl TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN researchFindingsText TEXT", () => {});
+      db.run("ALTER TABLE system_settings ADD COLUMN researchFindingsGoogleDocUrl TEXT", () => {});
 
       // 6. Logs Table
       db.run(`
@@ -350,6 +357,33 @@ const dbRun = (query, params = []) => {
   });
 };
 
+// Helper to fetch Google Doc text export in the background
+async function fetchGoogleDocText(docUrl) {
+  if (!docUrl) return '';
+  try {
+    const match = docUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) return '';
+    const docId = match[1];
+    const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch(exportUrl, { signal: controller.signal });
+    clearTimeout(id);
+    
+    if (!response.ok) {
+      console.error('Failed to fetch Google Doc export:', response.statusText);
+      return '';
+    }
+    const text = await response.text();
+    return text;
+  } catch (err) {
+    console.error('Error fetching Google Doc:', err);
+    return '';
+  }
+}
+
 // --- REST API ROUTES ---
 
 // 1. Fetch Complete DB State
@@ -398,6 +432,7 @@ app.get('/api/db-state', async (req, res) => {
       frontpageSubtitle: settingsRow.frontpageSubtitle,
       rolePermissions: JSON.parse(settingsRow.rolePermissions || '{}'),
       inTheNewsText: settingsRow.inTheNewsText || '',
+      inTheNewsGoogleDocUrl: settingsRow.inTheNewsGoogleDocUrl || '',
       featuredScholarId: settingsRow.featuredScholarId || '',
       featuredEntryId: settingsRow.featuredEntryId || '',
       editorialSelectionIds: JSON.parse(settingsRow.editorialSelectionIds || '[]'),
@@ -406,7 +441,11 @@ app.get('/api/db-state', async (req, res) => {
       layoutDensity: settingsRow.layoutDensity || 'Standard',
       allowedSignatureFonts: JSON.parse(settingsRow.allowedSignatureFonts || '[]'),
       featuredEssayIds: JSON.parse(settingsRow.featuredEssayIds || '[]'),
-      featuredNoteIds: JSON.parse(settingsRow.featuredNoteIds || '[]')
+      featuredNoteIds: JSON.parse(settingsRow.featuredNoteIds || '[]'),
+      worldClockHolidaysText: settingsRow.worldClockHolidaysText || '',
+      worldClockHolidaysGoogleDocUrl: settingsRow.worldClockHolidaysGoogleDocUrl || '',
+      researchFindingsText: settingsRow.researchFindingsText || '',
+      researchFindingsGoogleDocUrl: settingsRow.researchFindingsGoogleDocUrl || ''
     } : {};
 
     const logs = logsRows;
@@ -420,12 +459,38 @@ app.get('/api/db-state', async (req, res) => {
     }));
 
     let currentUser = null;
+    let isSuspended = false;
     if (sessionId) {
       const u = users.find(user => user.id === sessionId);
-      if (u && !u.suspended) {
-        currentUser = u;
+      if (u) {
+        if (u.suspended) {
+          isSuspended = true;
+        } else {
+          currentUser = u;
+        }
       }
     }
+
+    const rawNewsText = await fetchGoogleDocText(systemSettings.inTheNewsGoogleDocUrl);
+    const rawHolidaysText = await fetchGoogleDocText(systemSettings.worldClockHolidaysGoogleDocUrl);
+    const rawFindingsText = await fetchGoogleDocText(systemSettings.researchFindingsGoogleDocUrl);
+
+    const checkStatus = (text, url) => {
+      if (!url) return 'empty';
+      if (!text) return 'failed';
+      if (text.includes('<!DOCTYPE html>') || text.includes('errorMessage') || text.includes('Sorry, the file you have requested does not exist.')) {
+        return 'failed';
+      }
+      return 'success';
+    };
+
+    const inTheNewsGoogleDocStatus = checkStatus(rawNewsText, systemSettings.inTheNewsGoogleDocUrl);
+    const worldClockHolidaysGoogleDocStatus = checkStatus(rawHolidaysText, systemSettings.worldClockHolidaysGoogleDocUrl);
+    const researchFindingsGoogleDocStatus = checkStatus(rawFindingsText, systemSettings.researchFindingsGoogleDocUrl);
+
+    const inTheNewsGoogleDocText = inTheNewsGoogleDocStatus === 'success' ? rawNewsText : '';
+    const worldClockHolidaysGoogleDocText = worldClockHolidaysGoogleDocStatus === 'success' ? rawHolidaysText : '';
+    const researchFindingsGoogleDocText = researchFindingsGoogleDocStatus === 'success' ? rawFindingsText : '';
 
     res.json({
       users,
@@ -436,7 +501,14 @@ app.get('/api/db-state', async (req, res) => {
       logs,
       releaseLogs,
       policies,
-      currentUser
+      currentUser,
+      isSuspended,
+      inTheNewsGoogleDocText,
+      worldClockHolidaysGoogleDocText,
+      researchFindingsGoogleDocText,
+      inTheNewsGoogleDocStatus,
+      worldClockHolidaysGoogleDocStatus,
+      researchFindingsGoogleDocStatus
     });
   } catch (err) {
     console.error('Error fetching database state:', err);
@@ -479,6 +551,36 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login pipeline failed' });
+  }
+});
+
+// Authentication Reset Password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const normalized = email.trim().toLowerCase();
+    const userRow = await dbGet(
+      "SELECT * FROM users WHERE LOWER(email) = ?",
+      [normalized]
+    );
+
+    if (!userRow) {
+      return res.status(404).json({ error: 'UserNotFound', message: 'User with this email was not found.' });
+    }
+
+    await dbRun(
+      "UPDATE users SET password = ? WHERE id = ?",
+      [password, userRow.id]
+    );
+
+    res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Reset password failed.' });
   }
 });
 
@@ -556,19 +658,19 @@ app.post('/api/users', async (req, res) => {
     if (checkExists) {
       await dbRun(`
         UPDATE users SET
-          username = ?, email = ?, role = ?, penName = ?, signature = ?, avatarColor = ?, bioSummary = ?, isSuspended = ?
+          username = ?, email = ?, role = ?, penName = ?, signature = ?, avatarColor = ?, bioSummary = ?, isSuspended = ?, affiliation = ?
           ${u.password ? ', password = ?' : ''}
         WHERE id = ?
       `, [
-        u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0,
+        u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.affiliation,
         ...(u.password ? [u.password] : []), u.id
       ]);
     } else {
       await dbRun(`
-        INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended, password)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended, password, affiliation)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.password || 'password'
+        u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.password || 'password', u.affiliation
       ]);
     }
 
@@ -609,20 +711,20 @@ app.post('/api/identities', async (req, res) => {
       await dbRun(`
         UPDATE identities SET
           accountId = ?, username = ?, displayName = ?, penName = ?, biography = ?, publicVisibility = ?,
-          lifeTimeline = ?, signatures = ?
+          lifeTimeline = ?, signatures = ?, affiliation = ?
         WHERE identityId = ?
       `, [
         i.accountId, i.username, i.displayName, i.penName, i.biography, i.publicVisibility,
-        JSON.stringify(i.lifeTimeline || []), JSON.stringify(i.signatures || []), i.identityId
+        JSON.stringify(i.lifeTimeline || []), JSON.stringify(i.signatures || []), i.affiliation, i.identityId
       ]);
     } else {
       await dbRun(`
         INSERT INTO identities (
-          identityId, accountId, username, displayName, penName, biography, publicVisibility, lifeTimeline, signatures
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          identityId, accountId, username, displayName, penName, biography, publicVisibility, lifeTimeline, signatures, affiliation
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         i.identityId, i.accountId, i.username, i.displayName, i.penName, i.biography, i.publicVisibility,
-        JSON.stringify(i.lifeTimeline || []), JSON.stringify(i.signatures || [])
+        JSON.stringify(i.lifeTimeline || []), JSON.stringify(i.signatures || []), i.affiliation
       ]);
     }
     res.json({ success: true });
@@ -642,6 +744,7 @@ app.post('/api/system/settings', async (req, res) => {
         frontpageSubtitle = ?, 
         rolePermissions = ?, 
         inTheNewsText = ?,
+        inTheNewsGoogleDocUrl = ?,
         featuredScholarId = ?,
         featuredEntryId = ?,
         editorialSelectionIds = ?,
@@ -650,13 +753,18 @@ app.post('/api/system/settings', async (req, res) => {
         layoutDensity = ?,
         allowedSignatureFonts = ?,
         featuredEssayIds = ?,
-        featuredNoteIds = ?
+        featuredNoteIds = ?,
+        worldClockHolidaysText = ?,
+        worldClockHolidaysGoogleDocUrl = ?,
+        researchFindingsText = ?,
+        researchFindingsGoogleDocUrl = ?
       WHERE id = 'settings-main'
     `, [
       s.frontpageTitle, 
       s.frontpageSubtitle, 
       JSON.stringify(s.rolePermissions), 
       s.inTheNewsText,
+      s.inTheNewsGoogleDocUrl,
       s.featuredScholarId,
       s.featuredEntryId,
       JSON.stringify(s.editorialSelectionIds || []),
@@ -665,7 +773,11 @@ app.post('/api/system/settings', async (req, res) => {
       s.layoutDensity,
       JSON.stringify(s.allowedSignatureFonts || []),
       JSON.stringify(s.featuredEssayIds || []),
-      JSON.stringify(s.featuredNoteIds || [])
+      JSON.stringify(s.featuredNoteIds || []),
+      s.worldClockHolidaysText,
+      s.worldClockHolidaysGoogleDocUrl,
+      s.researchFindingsText,
+      s.researchFindingsGoogleDocUrl
     ]);
     res.json({ success: true });
   } catch (err) {

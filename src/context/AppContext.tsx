@@ -22,6 +22,7 @@ export type ActiveTabType =
 
 export type EditoriumTabType = 
   | 'platform' 
+  | 'landing'
   | 'frontpage' 
   | 'directory' 
   | 'index' 
@@ -41,6 +42,12 @@ interface AppContextType {
   entries: Entry[];
   systemSettings: SystemSettings;
   setSystemSettings: (settings: SystemSettings) => void;
+  inTheNewsGoogleDocText: string;
+  worldClockHolidaysGoogleDocText: string;
+  researchFindingsGoogleDocText: string;
+  inTheNewsGoogleDocStatus: string;
+  worldClockHolidaysGoogleDocStatus: string;
+  researchFindingsGoogleDocStatus: string;
   initializing: boolean;
   
   // Navigation & Session
@@ -103,6 +110,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profiles, setProfiles] = useState<WriterProfile[]>(db.getProfiles());
   const [entries, setEntries] = useState<Entry[]>(db.getEntries());
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(db.getSystemSettings());
+  const [inTheNewsGoogleDocText, setInTheNewsGoogleDocText] = useState('');
+  const [worldClockHolidaysGoogleDocText, setWorldClockHolidaysGoogleDocText] = useState('');
+  const [researchFindingsGoogleDocText, setResearchFindingsGoogleDocText] = useState('');
+  const [inTheNewsGoogleDocStatus, setInTheNewsGoogleDocStatus] = useState('empty');
+  const [worldClockHolidaysGoogleDocStatus, setWorldClockHolidaysGoogleDocStatus] = useState('empty');
+  const [researchFindingsGoogleDocStatus, setResearchFindingsGoogleDocStatus] = useState('empty');
   const [initializing, setInitializing] = useState(true);
 
   // App Navigation & Session States
@@ -121,25 +134,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toastVisible, setToastVisible] = useState(false);
 
   const refreshDbState = () => {
-    const sessionId = localStorage.getItem('Adjung_session_user_id') || '';
+    const sessionId = localStorage.getItem('Adjung_session_user_id') || sessionStorage.getItem('Adjung_session_user_id') || '';
     fetch('/api/db-state', {
       headers: { 'x-session-id': sessionId }
     })
       .then(res => res.json())
       .then(data => {
+        if (data.users) db.setUsers(data.users);
+        if (data.profiles) db.setProfiles(data.profiles);
+        if (data.entries) db.setEntries(data.entries);
+        if (data.systemSettings) db.setSystemSettings(data.systemSettings);
+        if (data.identities) db.setIdentities(data.identities);
+
         setUsers(data.users);
         setProfiles(data.profiles);
         setEntries(data.entries);
         setSystemSettings(data.systemSettings);
+        setInTheNewsGoogleDocText(data.inTheNewsGoogleDocText || '');
+        setWorldClockHolidaysGoogleDocText(data.worldClockHolidaysGoogleDocText || '');
+        setResearchFindingsGoogleDocText(data.researchFindingsGoogleDocText || '');
+        setInTheNewsGoogleDocStatus(data.inTheNewsGoogleDocStatus || 'empty');
+        setWorldClockHolidaysGoogleDocStatus(data.worldClockHolidaysGoogleDocStatus || 'empty');
+        setResearchFindingsGoogleDocStatus(data.researchFindingsGoogleDocStatus || 'empty');
         if (data.currentUser) {
           setCurrentUser(data.currentUser);
-          localStorage.setItem('Adjung_session_user_data', JSON.stringify(data.currentUser));
-        } else if (sessionId) {
+          const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('Adjung_session_user_data', JSON.stringify(data.currentUser));
+        } else if (data.isSuspended) {
           setCurrentUser(null);
           setSelectedAuthorId('');
           setActiveTab('landing');
           localStorage.removeItem('Adjung_session_user_id');
           localStorage.removeItem('Adjung_session_user_data');
+          sessionStorage.removeItem('Adjung_session_user_id');
+          sessionStorage.removeItem('Adjung_session_user_data');
         }
       })
       .catch(err => console.error('Failed to sync state from database:', err));
@@ -210,32 +239,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Intercept Note selection to prevent dedicated page rendering, expanding inline instead
+  // Scroll to top of page when tab or entry changes
   useEffect(() => {
-    if (selectedEntry && selectedEntry.contentType === 'Note') {
-      const noteId = selectedEntry.id;
-      setExpandedNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
-      setSelectedEntry(null);
-      setActiveTab('folio');
-      
-      setTimeout(() => {
-        const element = document.getElementById(`note-card-${noteId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 150);
-    }
-  }, [selectedEntry]);
-
-  // Scroll to top of page when tab or non-note entry changes
-  useEffect(() => {
-    if (selectedEntry) {
-      if (selectedEntry.contentType !== 'Note') {
-        window.scrollTo(0, 0);
-      }
-    } else {
-      window.scrollTo(0, 0);
-    }
+    window.scrollTo(0, 0);
   }, [activeTab, selectedEntry]);
 
   const hasPermission = (permissionKey: keyof RolePermissions) => {
@@ -245,20 +251,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Enforce private environment & Access Control guards
   useEffect(() => {
     if (initializing) return;
+    console.log('[GUARD] running. currentUser:', currentUser?.id, 'activeTab:', activeTab, 'selectedAuthorId:', selectedAuthorId);
 
     if (currentUser && activeTab === 'landing') {
+      console.log('[GUARD] Redirecting because currentUser exists and activeTab is landing -> frontpage');
       setActiveTab('frontpage');
     }
 
     if (!currentUser && (activeTab === 'desk' || activeTab === 'index' || activeTab === 'editorium')) {
+      console.log('[GUARD] Redirecting because no currentUser and tab requires auth -> landing');
       setActiveTab('landing');
     }
     
     if ((activeTab === 'folio' || activeTab === 'bio') && !selectedAuthorId) {
-      setActiveTab('landing');
+      if (currentUser) {
+        console.log('[GUARD] Restoring selectedAuthorId to currentUser.id:', currentUser.id);
+        setSelectedAuthorId(currentUser.id);
+      } else {
+        console.log('[GUARD] Redirecting because activeTab is folio/bio but selectedAuthorId is empty -> landing');
+        setActiveTab('landing');
+      }
     }
 
     if (activeTab === 'directory' && !hasPermission('viewDirectory')) {
+      console.log('[GUARD] Redirecting because no viewDirectory permission -> landing');
       setActiveTab('landing');
     }
   }, [currentUser, activeTab, systemSettings, selectedAuthorId, initializing]);
@@ -336,6 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.ok) {
           refreshDbState();
           setEditingEntry(newEntry);
+          setActiveTab('desk');
         }
       })
       .catch(err => console.error('Failed to create entry:', err));
@@ -543,6 +560,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       entries,
       systemSettings,
       setSystemSettings: updateSystemSettingsState,
+      inTheNewsGoogleDocText,
+      worldClockHolidaysGoogleDocText,
+      researchFindingsGoogleDocText,
+      inTheNewsGoogleDocStatus,
+      worldClockHolidaysGoogleDocStatus,
+      researchFindingsGoogleDocStatus,
       initializing,
       
       currentUser,

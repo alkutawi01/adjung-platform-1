@@ -8,6 +8,8 @@ interface EditorialIndexProps {
   users: User[];
   setSelectedEntry: (entry: Entry) => void;
   systemSettings: SystemSettings;
+  initialSearchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 export function EditorialIndex({
@@ -15,9 +17,15 @@ export function EditorialIndex({
   users,
   setSelectedEntry,
   systemSettings,
+  initialSearchQuery = '',
+  onSearchQueryChange,
 }: EditorialIndexProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [typeFilter, setTypeFilter] = useState<'All' | 'Article' | 'Essay' | 'Note' | 'Notice' | "Editor's Note">('All');
+
+  React.useEffect(() => {
+    setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
 
   // Filter entries based on search query and type filter
   const filteredEntries = entries.filter(e => {
@@ -36,6 +44,7 @@ export function EditorialIndex({
       e.title.toLowerCase().includes(query) ||
       authorName.toLowerCase().includes(query) ||
       e.contentType.toLowerCase().includes(query) ||
+      (e.tags && e.tags.some((t: string) => t.toLowerCase().includes(query))) ||
       (e.slug && e.slug.toLowerCase().includes(query)) ||
       e.id.toLowerCase().includes(query);
 
@@ -70,7 +79,10 @@ export function EditorialIndex({
             type="text"
             placeholder="Search entries by title, author, slug..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (onSearchQueryChange) onSearchQueryChange(e.target.value);
+            }}
             className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white"
           />
           <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
