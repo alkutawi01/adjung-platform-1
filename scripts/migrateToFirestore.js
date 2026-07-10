@@ -30,7 +30,7 @@ if (!fs.existsSync(dbPath)) {
 }
 
 const app = initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
+const firestore = getFirestore(app, process.env.VITE_FIREBASE_DATABASE_ID || undefined);
 
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
   if (err) {
@@ -91,10 +91,10 @@ async function migrate() {
     for (const iden of identities) {
       const docRef = doc(firestore, 'identities', iden.identityId);
       await setDoc(docRef, {
-        accountId: iden.accountId,
-        username: iden.username,
-        displayName: iden.displayName,
-        penName: iden.penName,
+        accountId: iden.accountId || '',
+        username: iden.username || '',
+        displayName: iden.displayName || '',
+        penName: iden.penName || '',
         biography: iden.biography || '',
         lifeTimeline: JSON.parse(iden.lifeTimeline || '[]'),
         signatures: JSON.parse(iden.signatures || '[]'),
@@ -155,9 +155,9 @@ async function migrate() {
     for (const s of settings) {
       const docRef = doc(firestore, 'system_settings', s.id);
       await setDoc(docRef, {
-        academicAffiliation: s.academicAffiliation,
-        editorialPolicy: s.editorialPolicy,
-        accentColor: s.accentColor,
+        academicAffiliation: s.academicAffiliation || '',
+        editorialPolicy: s.editorialPolicy || '',
+        accentColor: s.accentColor || '',
         allowSelfRegistration: s.allowSelfRegistration === 1,
         featuredScholarId: s.featuredScholarId || '',
         featuredEntryId: s.featuredEntryId || '',
