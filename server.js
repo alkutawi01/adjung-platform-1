@@ -357,27 +357,70 @@ const dbRun = (query, params = []) => {
   });
 };
 
-// Helper to fetch Google Doc text export in the background
+// Helper to extract plain text from published Google Doc HTML
+function extractTextFromHtml(html) {
+  if (!html) return '';
+  // Remove scripts and styles first (both inside head and body)
+  let cleanedHtml = html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+    
+  // Extract everything inside <body ...> ... </body>
+  const bodyMatch = cleanedHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  let bodyHtml = bodyMatch ? bodyMatch[1] : cleanedHtml;
+  
+  // Replace <p> tags, </div>, and <br> with newlines
+  let text = bodyHtml
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "") // strip all HTML tags
+    // Decode common HTML entities
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    // Clean up multi-newlines
+    .replace(/\n\s*\n\s*\n/g, "\n\n");
+    
+  return text.trim();
+}
+
+// Helper to fetch Google Doc text export in the background (supports standard and published URLs)
 async function fetchGoogleDocText(docUrl) {
   if (!docUrl) return '';
   try {
-    const match = docUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (!match) return '';
-    const docId = match[1];
-    const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+    const isPublishedUrl = docUrl.includes('/d/e/') || docUrl.includes('/pub');
+    let fetchUrl = '';
+    
+    if (isPublishedUrl) {
+      fetchUrl = docUrl;
+    } else {
+      const match = docUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!match) return '';
+      const docId = match[1];
+      fetchUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+    }
     
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 3000);
+    const id = setTimeout(() => controller.abort(), 5000);
     
-    const response = await fetch(exportUrl, { signal: controller.signal });
+    const response = await fetch(fetchUrl, { signal: controller.signal });
     clearTimeout(id);
     
     if (!response.ok) {
-      console.error('Failed to fetch Google Doc export:', response.statusText);
+      console.error('Failed to fetch Google Doc:', response.statusText);
       return '';
     }
-    const text = await response.text();
-    return text;
+    const content = await response.text();
+    
+    if (isPublishedUrl) {
+      return extractTextFromHtml(content);
+    } else {
+      return content;
+    }
   } catch (err) {
     console.error('Error fetching Google Doc:', err);
     return '';
