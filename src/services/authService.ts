@@ -3,7 +3,9 @@ import {
   createUserWithEmailAndPassword, 
   signOut as fbSignOut, 
   sendPasswordResetEmail,
-  onAuthStateChanged
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { 
   collection, 
@@ -149,6 +151,32 @@ export class AuthService {
         }
       }
       throw new AuthError('IncorrectPassword', 'The password entered is incorrect.');
+    }
+  }
+
+  static async signInWithGoogle(): Promise<User> {
+    const provider = new GoogleAuthProvider();
+    try {
+      const userCredential = await signInWithPopup(auth, provider);
+      const fbUser = userCredential.user;
+      
+      const userDoc = await UserRepository.getUserByUsernameOrEmail(fbUser.email || '');
+      if (!userDoc) {
+        await fbSignOut(auth);
+        throw new AuthError('UserNotFound', `Email ${fbUser.email} is not registered on Adjung.`);
+      }
+      
+      if (userDoc.suspended) {
+        await fbSignOut(auth);
+        throw new AuthError('AccountSuspended', 'This account has been suspended by the Editorial Board.');
+      }
+      
+      SessionService.createSession(userDoc, true);
+      return userDoc;
+    } catch (err: any) {
+      if (err instanceof AuthError) throw err;
+      console.error('Google Sign-In Error:', err);
+      throw new AuthError('AuthFailed', err.message || 'Google authentication failed.');
     }
   }
 

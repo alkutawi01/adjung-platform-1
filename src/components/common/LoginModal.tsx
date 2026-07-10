@@ -25,6 +25,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
   loginError,
+  setLoginError,
   usernameInput,
   setUsernameInput,
   passwordInput,
@@ -343,8 +344,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <div>
                 <button
                   type="button"
-                  onClick={() => {
-                    alert('Google Sign-In: Integrasi OAuth 2.0 akan diaktifkan di Fasa 2. (Emel tidak memerlukan pengesahan tambahan kerana telah disahkan oleh Google).');
+                  onClick={async () => {
+                    setLoginError('');
+                    try {
+                      await AuthService.signInWithGoogle();
+                      showToast('Successfully signed in with Google', 'success');
+                      await refreshDbState();
+                      onClose();
+                    } catch (err: any) {
+                      setLoginError(err.message || 'Google Sign-In failed.');
+                    }
                   }}
                   className="w-full flex items-center justify-center gap-2 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 py-2.5 rounded text-[10px] font-mono uppercase tracking-wider transition cursor-pointer shadow-sm font-semibold"
                 >
