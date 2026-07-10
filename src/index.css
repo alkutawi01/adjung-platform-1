@@ -361,3 +361,9 @@ input[type="range"].adjung-range::-moz-range-thumb:active {
   transition: all 0.3s ease;
 }
 
+/* Hide Microsoft Edge native password reveal button */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
