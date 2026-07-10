@@ -4,6 +4,7 @@ import { User } from '../../types';
 import { db } from '../../db/mockDb';
 import { AuthService } from '../../services/authService';
 import { useAppContext } from '../../context/AppContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
   const [forgotError, setForgotError] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -55,6 +57,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setNewPassword('');
       setConfirmNewPassword('');
       setForgotError('');
+      setShowPassword(false);
     }
   }, [isOpen]);
 
@@ -271,14 +274,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
               <div>
                 <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Password</label>
-                <input
-                  type="password"
-                  placeholder="Password matches 'password'"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon bg-white text-stone-800"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password matches 'password'"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full border border-stone-200 p-2.5 pr-10 rounded focus:outline-none focus:border-adjung-maroon bg-white text-stone-800"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-end select-none">
