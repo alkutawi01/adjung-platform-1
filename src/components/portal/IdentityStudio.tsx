@@ -189,12 +189,14 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
             Decoupled authorship, signature, and verification management.
           </p>
         </div>
-        <button
-          onClick={handleClose}
-          className="px-4 py-1.5 border border-stone-200 text-stone-600 rounded hover:bg-stone-50 font-mono text-xs uppercase tracking-wider transition cursor-pointer"
-        >
-          {isModal ? 'Close' : 'Return to Desk'}
-        </button>
+        {!isModal && (
+          <button
+            onClick={handleClose}
+            className="px-4 py-1.5 border border-stone-200 text-stone-600 rounded hover:bg-stone-50 font-mono text-xs uppercase tracking-wider transition cursor-pointer"
+          >
+            Return to Desk
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

@@ -26,31 +26,48 @@ export function SignatureLayout({
   role,
   affiliation
 }: SignatureLayoutProps) {
+  // Get baseline and canvasHeight from signature penStyle
+  const baselineY = signature?.penStyle?.baselineY !== undefined ? signature.penStyle.baselineY : 136;
+  const canvasHeight = signature?.penStyle?.canvasHeight !== undefined ? signature.penStyle.canvasHeight : 200;
+  
+  // Calculate relative top percentage for the architectural baseline
+  const baselinePercent = (baselineY / canvasHeight) * 100;
+
   return (
     <div className={`flex flex-col items-center justify-center text-center select-none ${className}`}>
       
-      {/* Signature Graphic Area */}
-      <div className="w-72 h-20 z-10 overflow-visible pointer-events-none mix-blend-multiply">
-        <SignatureRenderer 
-          strokes={signature?.strokes || strokes || []} 
-          type={signature?.type || 'drawn'}
-          typedText={signature?.typedText}
-          fontFamily={signature?.fontFamily}
-          typographyStyle={signature?.typographyStyle}
-          penStyle={signature?.penStyle}
-          className="w-full h-full overflow-visible" 
-          color={color} 
-          strokeWidth={strokeWidth} 
-          enableBleed={true}
-        />
-      </div>
+      {/* Signature Graphic & Baseline Area */}
+      <div className="relative w-64 h-24 overflow-visible mix-blend-multiply flex flex-col justify-start">
+        
+        {/* The Signature SVG */}
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-visible">
+          <SignatureRenderer 
+            strokes={signature?.strokes || strokes || []} 
+            type={signature?.type || 'drawn'}
+            typedText={signature?.typedText}
+            fontFamily={signature?.fontFamily}
+            typographyStyle={signature?.typographyStyle}
+            penStyle={signature?.penStyle}
+            className="w-full h-full overflow-visible" 
+            color={color} 
+            strokeWidth={strokeWidth} 
+            enableBleed={true}
+          />
+        </div>
 
-      {/* Elegant Architectural Baseline */}
-      <div className="w-64 border-b border-stone-400 my-1">
+        {/* The Baseline Guideline line positioned exactly matching the baselineY percentage */}
+        <div 
+          className="absolute left-0 right-0 border-b border-stone-400 pointer-events-none z-0"
+          style={{ top: `${baselinePercent}%` }}
+        />
+        
       </div>
 
       {/* Author details */}
-      <div className="mt-2 flex flex-col items-center">
+      <div 
+        className="flex flex-col items-center"
+        style={{ marginTop: `-${96 - (96 * (baselineY / canvasHeight)) - 8}px` }}
+      >
         <div className="font-serif font-semibold text-stone-900 tracking-wide text-sm">
           {penName}
         </div>

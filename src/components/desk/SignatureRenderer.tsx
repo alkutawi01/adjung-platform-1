@@ -58,9 +58,9 @@ export function SignatureRenderer({
     
     // Dynamically calculate viewBox width based on text length and scale to prevent overflow
     const calculatedWidth = Math.max(activeText.length * 28 * textScale + 40, 400);
-    const canvasHeight = hasBaseline ? penStyle.baselineY : 150;
+    const canvasHeight = hasBaseline ? penStyle.canvasHeight! : 200;
     const viewBox = `0 0 ${calculatedWidth} ${canvasHeight}`;
-    const yPos = hasBaseline ? penStyle.baselineY! + (typographyStyle?.yOffset || 0) - 30 : 75;
+    const yPos = hasBaseline ? penStyle.baselineY! : canvasHeight / 2;
 
     return (
       <svg 
@@ -95,7 +95,7 @@ export function SignatureRenderer({
         <text 
           x="50%" 
           y={`${yPos}px`}
-          dominantBaseline="middle" 
+          dominantBaseline="alphabetic" 
           textAnchor="middle" 
           fill={color}
           textLength={activeText.length > 18 ? "370" : undefined}
@@ -156,9 +156,9 @@ export function SignatureRenderer({
   let mapY = (y: number) => y - minY + padding;
 
   if (hasBaseline) {
-    const bY = penStyle!.baselineY!;
+    const totalH = penStyle!.canvasHeight || 200;
     const startX = minX - padding;
-    viewBox = `${startX} 0 ${width} ${bY}`;
+    viewBox = `${startX} 0 ${width} ${totalH}`;
     mapX = (x: number) => x; // Raw X mapping
     mapY = (y: number) => y; // Raw Y mapping relative to baselineY height
   } else {
