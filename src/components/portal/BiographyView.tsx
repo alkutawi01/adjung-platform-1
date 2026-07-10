@@ -94,7 +94,7 @@ export function BiographyView({
             ) : (
               <div className="relative">
                 <div 
-                  className={`${activeSpec.typography.bodyFont} text-[9px] text-[#111111]/80 leading-relaxed whitespace-pre-line text-justify pr-2 columns-1 md:columns-2 gap-8 md:h-[130px]`}
+                  className={`${activeSpec.typography.bodyFont} text-[9px] text-[#111111]/80 leading-relaxed whitespace-pre-line text-justify pr-2 columns-1 md:columns-2 gap-8 md:h-[130px] overflow-hidden`}
                   style={{ columnFill: 'auto' }}
                 >
                   {authorProfile.biography || <span className="text-stone-400 italic">No biography written yet. Click edit to write one!</span>}
