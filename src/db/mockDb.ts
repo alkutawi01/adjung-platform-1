@@ -1691,6 +1691,11 @@ class AdjungDb {
     this.saveIdentitiesToStorage();
   }
 
+  setLogs(logs: any[]) {
+    this.logs = logs;
+    this.saveLogsToStorage();
+  }
+
   resetToDefaults() {
     this.users = INITIAL_USERS;
     this.profiles = INITIAL_PROFILES;

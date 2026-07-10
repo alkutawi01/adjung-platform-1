@@ -30,6 +30,7 @@ import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stri
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
+import { firestoreService } from '../../utils/firestoreService';
 
 const resolveEntryFromInput = (input: string, entries: Entry[]): Entry | undefined => {
   if (!input) return undefined;
@@ -2287,22 +2288,22 @@ Source: MIT Technology Review, 2024
                           onClick={() => {
                             const confirmRestore = window.confirm("Are you sure you want to restore this article?");
                             if (!confirmRestore) return;
-                            fetch(`/api/entries/${entry.id}/dismiss-report`, { method: 'POST' })
-                              .then(res => {
-                                if (res.ok) {
-                                  fetch('/api/logs', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      id: `log-${Date.now()}`,
-                                      timestamp: new Date().toISOString(),
-                                      operator: currentUser.penName,
-                                      role: currentUser.role,
-                                      action: `Dismissed report and restored entry "${entry.title}" (ID: ${entry.id}).`
-                                    })
-                                  }).then(() => refreshDbState());
-                                  showToast('Report dismissed. Article returned to normal status.', 'success');
-                                }
+                            
+                            const updatedEntry = {
+                              ...entry,
+                              underReview: false
+                            };
+                            
+                            firestoreService.saveEntry(updatedEntry)
+                              .then(() => {
+                                firestoreService.saveLog({
+                                  id: `log-${Date.now()}`,
+                                  timestamp: new Date().toISOString(),
+                                  operator: currentUser.penName,
+                                  role: currentUser.role,
+                                  action: `Dismissed report and restored entry "${entry.title}" (ID: ${entry.id}).`
+                                }).then(() => refreshDbState());
+                                showToast('Report dismissed. Article returned to normal status.', 'success');
                               });
                           }}
                           className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-mono uppercase rounded transition cursor-pointer border border-stone-200"
@@ -2314,22 +2315,23 @@ Source: MIT Technology Review, 2024
                           onClick={() => {
                             const confirmUnlist = window.confirm("Are you sure you want to unlist this article from public display?");
                             if (!confirmUnlist) return;
-                            fetch(`/api/entries/${entry.id}/unlist`, { method: 'POST' })
-                              .then(res => {
-                                if (res.ok) {
-                                  fetch('/api/logs', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      id: `log-${Date.now()}`,
-                                      timestamp: new Date().toISOString(),
-                                      operator: currentUser.penName,
-                                      role: currentUser.role,
-                                      action: `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`
-                                    })
-                                  }).then(() => refreshDbState());
-                                  showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
-                                }
+                            
+                            const updatedEntry = {
+                              ...entry,
+                              visibility: 'Private' as const,
+                              underReview: false
+                            };
+                            
+                            firestoreService.saveEntry(updatedEntry)
+                              .then(() => {
+                                firestoreService.saveLog({
+                                  id: `log-${Date.now()}`,
+                                  timestamp: new Date().toISOString(),
+                                  operator: currentUser.penName,
+                                  role: currentUser.role,
+                                  action: `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`
+                                }).then(() => refreshDbState());
+                                showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
                               });
                           }}
                           className="px-3 py-1.5 bg-adjung-maroon hover:bg-[#962e41] text-white text-xs font-mono uppercase rounded transition cursor-pointer"

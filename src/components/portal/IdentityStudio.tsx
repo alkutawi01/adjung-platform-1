@@ -5,6 +5,7 @@ import { SignatureManager } from '../desk/SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint } from 'lucide-react';
 
 import { useAppContext } from '../../context/AppContext';
+import { firestoreService } from '../../utils/firestoreService';
 
 interface IdentityStudioProps {
   isModal?: boolean;
@@ -102,18 +103,10 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
     };
 
-    // Make POST requests to server
+    // Make POST requests to Firestore
     Promise.all([
-      fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser)
-      }),
-      fetch('/api/identities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedIdentity)
-      })
+      firestoreService.saveUser(updatedUser),
+      firestoreService.saveIdentity(updatedIdentity)
     ]).then(() => {
       // Update active storage session
       const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
@@ -160,18 +153,10 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
     };
 
-    // Make POST requests to server
+    // Make POST requests to Firestore
     Promise.all([
-      fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser)
-      }),
-      fetch('/api/identities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalIdentity)
-      })
+      firestoreService.saveUser(updatedUser),
+      firestoreService.saveIdentity(finalIdentity)
     ]).then(() => {
       // Update active storage session
       const rememberMe = !!localStorage.getItem('Adjung_session_user_id');

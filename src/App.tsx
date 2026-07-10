@@ -10,6 +10,9 @@ import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks
 import { SignatureLayout } from './components/desk/SignatureLayout';
 import { SignatureRenderer } from './components/desk/SignatureRenderer';
 import SignUpWizard from './components/common/SignUpWizard';
+import { updatePassword } from 'firebase/auth';
+import { auth } from './config/firebase';
+import { firestoreService } from './utils/firestoreService';
 import { 
   Compass,
   User as UserIcon,
@@ -1174,18 +1177,21 @@ export default function App() {
       email: cleanEmail
     };
 
-    fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...updatedUser,
-        password: accountPassword || undefined
-      })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Server update failed");
-      return res.json();
-    })
+    const userToSave = {
+      ...updatedUser,
+      password: accountPassword || undefined
+    };
+
+    const updateAuthPassword = async () => {
+      if (accountPassword && auth.currentUser) {
+        await updatePassword(auth.currentUser, accountPassword);
+      }
+    };
+
+    Promise.all([
+      firestoreService.saveUser(userToSave),
+      updateAuthPassword()
+    ])
     .then(() => {
       localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
       if (accountPassword) {
@@ -1193,8 +1199,13 @@ export default function App() {
       }
       db.updateUser(updatedUser);
       setCurrentUser(updatedUser);
-      db.addLog(`Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`, currentUser.penName, currentUser.role);
-      refreshDbState();
+      firestoreService.saveLog({
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        operator: currentUser.penName,
+        role: currentUser.role,
+        action: `Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`
+      }).then(() => refreshDbState());
       setShowAccountModal(false);
       showToast('Account credentials updated successfully', 'success');
     })

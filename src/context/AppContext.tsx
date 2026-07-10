@@ -4,6 +4,9 @@ import { db } from '../db/mockDb';
 import { AuthService, SessionService, RbacService } from '../services/authService';
 import { BRAND } from '../config/brand';
 import { generateUUID } from '../utils';
+import { firestoreService } from '../utils/firestoreService';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 export type ActiveTabType = 
   | 'landing' 
@@ -16,6 +19,7 @@ export type ActiveTabType =
   | 'editorium' 
   | 'identity' 
   | 'notices' 
+  | 'notice' 
   | 'editorial' 
   | 'changelog' 
   | 'policies';
@@ -133,58 +137,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
 
-  const refreshDbState = () => {
-    const sessionId = localStorage.getItem('Adjung_session_user_id') || sessionStorage.getItem('Adjung_session_user_id') || '';
-    fetch('/api/db-state', {
-      headers: { 'x-session-id': sessionId }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.users) db.setUsers(data.users);
-        if (data.profiles) db.setProfiles(data.profiles);
-        if (data.entries) db.setEntries(data.entries);
-        if (data.systemSettings) db.setSystemSettings(data.systemSettings);
-        if (data.identities) db.setIdentities(data.identities);
+  const fetchGoogleDocContent = async (url: string | undefined): Promise<{ text: string; status: 'success' | 'failed' | 'empty' }> => {
+    if (!url) return { text: '', status: 'empty' };
+    try {
+      const res = await fetch(`/api/fetch-doc?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error('Fetch failed');
+      const data = await res.json();
+      if (!data.text || data.text.includes('<!DOCTYPE html>') || data.text.includes('Sorry, the file you have requested does not exist.')) {
+        return { text: '', status: 'failed' };
+      }
+      return { text: data.text, status: 'success' };
+    } catch (e) {
+      return { text: '', status: 'failed' };
+    }
+  };
 
-        setUsers(data.users);
-        setProfiles(data.profiles);
-        setEntries(data.entries);
+  const refreshDbState = async () => {
+    try {
+      const data = await firestoreService.fetchDbState();
+      
+      if (data.users) db.setUsers(data.users);
+      if (data.profiles) db.setProfiles(data.profiles);
+      if (data.entries) db.setEntries(data.entries);
+      if (data.identities) db.setIdentities(data.identities);
+      if (data.logs) db.setLogs(data.logs);
+      if (data.systemSettings) {
+        db.setSystemSettings(data.systemSettings);
         setSystemSettings(data.systemSettings);
-        setInTheNewsGoogleDocText(data.inTheNewsGoogleDocText || '');
-        setWorldClockHolidaysGoogleDocText(data.worldClockHolidaysGoogleDocText || '');
-        setResearchFindingsGoogleDocText(data.researchFindingsGoogleDocText || '');
-        setInTheNewsGoogleDocStatus(data.inTheNewsGoogleDocStatus || 'empty');
-        setWorldClockHolidaysGoogleDocStatus(data.worldClockHolidaysGoogleDocStatus || 'empty');
-        setResearchFindingsGoogleDocStatus(data.researchFindingsGoogleDocStatus || 'empty');
-        if (data.currentUser) {
-          setCurrentUser(data.currentUser);
-          const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
-          const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('Adjung_session_user_data', JSON.stringify(data.currentUser));
-        } else if (data.isSuspended) {
-          setCurrentUser(null);
-          setSelectedAuthorId('');
-          setActiveTab('landing');
-          localStorage.removeItem('Adjung_session_user_id');
-          localStorage.removeItem('Adjung_session_user_data');
-          sessionStorage.removeItem('Adjung_session_user_id');
-          sessionStorage.removeItem('Adjung_session_user_data');
+      }
+
+      setUsers(data.users);
+      setProfiles(data.profiles);
+      setEntries(data.entries);
+
+      if (data.systemSettings) {
+        const settings = data.systemSettings;
+        const [newsRes, holidaysRes, findingsRes] = await Promise.all([
+          fetchGoogleDocContent(settings.inTheNewsGoogleDocUrl),
+          fetchGoogleDocContent(settings.worldClockHolidaysGoogleDocUrl),
+          fetchGoogleDocContent(settings.researchFindingsGoogleDocUrl)
+        ]);
+
+        setInTheNewsGoogleDocText(newsRes.text);
+        setInTheNewsGoogleDocStatus(newsRes.status);
+        
+        setWorldClockHolidaysGoogleDocText(holidaysRes.text);
+        setWorldClockHolidaysGoogleDocStatus(holidaysRes.status);
+
+        setResearchFindingsGoogleDocText(findingsRes.text);
+        setResearchFindingsGoogleDocStatus(findingsRes.status);
+      }
+
+      const activeSessionUser = SessionService.validateAndRetrieveSession();
+      if (activeSessionUser) {
+        const found = data.users.find(u => u.id === activeSessionUser.id);
+        if (found) {
+          if (found.suspended) {
+            setCurrentUser(null);
+            setSelectedAuthorId('');
+            setActiveTab('landing');
+            SessionService.destroySession();
+          } else {
+            setCurrentUser(found);
+            setSelectedAuthorId(found.id);
+          }
         }
-      })
-      .catch(err => console.error('Failed to sync state from database:', err));
+      }
+    } catch (err) {
+      console.error('Failed to sync state from Firestore:', err);
+    }
   };
 
   const updateSystemSettingsState = (settings: SystemSettings) => {
-    fetch('/api/system/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings)
-    })
-      .then(res => {
-        if (res.ok) {
-          refreshDbState();
-          showToast('System settings saved', 'success');
-        }
+    firestoreService.saveSystemSettings(settings)
+      .then(() => {
+        refreshDbState();
+        showToast('System settings saved', 'success');
       })
       .catch(err => console.error('Failed to save system settings:', err));
   };
@@ -203,34 +231,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [toastVisible]);
 
+  // Reactive Firebase Auth state listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        const data = await firestoreService.fetchDbState();
+        const resolvedUser = data.users.find(u => u.email.toLowerCase() === fbUser.email?.toLowerCase());
+        if (resolvedUser && !resolvedUser.suspended) {
+          setCurrentUser(resolvedUser);
+          setSelectedAuthorId(resolvedUser.id);
+          SessionService.createSession(resolvedUser, true);
+        } else {
+          setCurrentUser(null);
+          setSelectedAuthorId('');
+          SessionService.destroySession();
+        }
+      } else {
+        // Fallback to local session check if not logged in to Firebase yet (lazy session validation)
+        const activeSessionUser = SessionService.validateAndRetrieveSession();
+        if (activeSessionUser) {
+          setCurrentUser(activeSessionUser);
+          setSelectedAuthorId(activeSessionUser.id);
+        } else {
+          setCurrentUser(null);
+          setSelectedAuthorId('');
+          SessionService.destroySession();
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Startup Session Restore & Verification
   useEffect(() => {
-    const activeSessionUser = SessionService.validateAndRetrieveSession();
-    if (activeSessionUser) {
-      setCurrentUser(activeSessionUser);
-      setSelectedAuthorId(activeSessionUser.id);
-      setActiveTab('folio');
-    } else {
-      setCurrentUser(null);
-      setSelectedAuthorId('');
-      
+    refreshDbState().finally(() => {
       // Determine initial tab from current pathname
       const path = window.location.pathname;
       const parts = path.split('/').filter(Boolean);
       const route = parts[0];
       const PUBLIC_ROUTES = ['frontpage', 'directory', 'index', 'notices', 'notice', 'editorial', 'changelog', 'policies'];
       
-      if (route && PUBLIC_ROUTES.includes(route)) {
-        setActiveTab(route);
+      const activeSessionUser = SessionService.validateAndRetrieveSession();
+      if (activeSessionUser) {
+        setActiveTab('folio');
+      } else if (route && PUBLIC_ROUTES.includes(route)) {
+        setActiveTab(route as ActiveTabType);
       } else {
         setActiveTab('landing');
       }
-    }
-    
-    refreshDbState();
-    setTimeout(() => {
-      setInitializing(false);
-    }, 1000);
+      
+      setTimeout(() => {
+        setInitializing(false);
+      }, 1000);
+    });
   }, []);
 
   const toggleNote = (id: string) => {
@@ -281,30 +334,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // DB actions
   const saveEntry = (updatedEntry: Entry) => {
-    fetch('/api/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedEntry)
-    })
-      .then(res => {
-        if (res.ok) {
-          refreshDbState();
-          if (editingEntry?.id === updatedEntry.id) {
-            setEditingEntry(updatedEntry);
-          }
+    firestoreService.saveEntry(updatedEntry)
+      .then(() => {
+        refreshDbState();
+        if (editingEntry?.id === updatedEntry.id) {
+          setEditingEntry(updatedEntry);
         }
       })
       .catch(err => console.error('Failed to save entry:', err));
   };
 
   const deleteEntry = (entryId: string) => {
-    fetch(`/api/entries/${entryId}`, { method: 'DELETE' })
-      .then(res => {
-        if (res.ok) {
-          refreshDbState();
-          setEditingEntry(null);
-          setSelectedEntry(null);
-        }
+    firestoreService.deleteEntry(entryId)
+      .then(() => {
+        refreshDbState();
+        setEditingEntry(null);
+        setSelectedEntry(null);
       })
       .catch(err => console.error('Failed to delete entry:', err));
   };
@@ -343,25 +388,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       marginNotes: type === 'Article' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
     };
 
-    fetch('/api/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newEntry)
-    })
-      .then(res => {
-        if (res.ok) {
-          refreshDbState();
-          setEditingEntry(newEntry);
-          setActiveTab('desk');
-        }
+    firestoreService.saveEntry(newEntry)
+      .then(() => {
+        refreshDbState();
+        setEditingEntry(newEntry);
+        setActiveTab('desk');
       })
       .catch(err => console.error('Failed to create entry:', err));
   };
 
   const resetDatabase = () => {
-    fetch('/api/system/reset', { method: 'POST' })
-      .then(res => {
-        if (res.ok) {
+    if (window.confirm('WARNING: This will restore the database to the initial academic seed data, erasing all custom cloud modifications. Proceed?')) {
+      const seedData = {
+        users: db.getUsers(),
+        profiles: db.getProfiles(),
+        entries: db.getEntries(),
+        identities: db.getIdentities(),
+        systemSettings: db.getSystemSettings()
+      };
+      firestoreService.resetDatabase(seedData)
+        .then(() => {
           AuthService.signOut();
           refreshDbState();
           setCurrentUser(null);
@@ -369,9 +415,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setActiveTab('folio');
           setEditingEntry(null);
           setSelectedEntry(null);
-        }
-      })
-      .catch(err => console.error('Failed to reset database:', err));
+        })
+        .catch(err => console.error('Failed to reset database:', err));
+    }
   };
 
   const toggleUserSuspension = (targetUserId: string) => {
@@ -401,28 +447,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       suspended: !targetUser.suspended
     };
 
-    fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedUser)
-    })
-      .then(res => {
-        if (res.ok) {
-          fetch('/api/logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: `log-${Date.now()}`,
-              timestamp: new Date().toISOString(),
-              operator: currentUser.penName,
-              role: currentUser.role,
-              action: `${updatedUser.suspended ? 'Suspended' : 'Reactivated'} account of ${targetUser.penName} (@${targetUser.username}).`
-            })
-          }).then(() => {
-            refreshDbState();
-            showToast(`${targetUser.penName}'s account has been ${updatedUser.suspended ? 'suspended' : 'reactivated'}.`, 'success');
-          });
-        }
+    firestoreService.saveUser(updatedUser)
+      .then(() => {
+        refreshDbState();
+        showToast(`${targetUser.penName}'s account has been ${updatedUser.suspended ? 'suspended' : 'reactivated'}.`, 'success');
       })
       .catch(err => console.error('Failed to suspend user:', err));
   };
@@ -454,28 +482,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: newRole
     };
 
-    fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedUser)
-    })
-      .then(res => {
-        if (res.ok) {
-          fetch('/api/logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: `log-${Date.now()}`,
-              timestamp: new Date().toISOString(),
-              operator: currentUser.penName,
-              role: currentUser.role,
-              action: `Modified role of ${targetUser.penName} (@${targetUser.username}) from '${targetUser.role}' to '${newRole}'.`
-            })
-          }).then(() => {
-            refreshDbState();
-            showToast(`${targetUser.penName}'s role changed to ${newRole}.`, 'success');
-          });
-        }
+    firestoreService.saveUser(updatedUser)
+      .then(() => {
+        refreshDbState();
+        showToast(`${targetUser.penName}'s role changed to ${newRole}.`, 'success');
       })
       .catch(err => console.error('Failed to change role:', err));
   };
@@ -509,48 +519,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       heroSubtitle,
     };
 
-    fetch('/api/db-state')
-      .then(res => res.json())
-      .then(data => {
-        const identitiesList: IdentityProfile[] = data.identities;
-        const identity = identitiesList.find(i => i.accountId === id);
-        const updatedIdentity = identity ? {
-          ...identity,
-          biography: bioText,
-        } : {
-          identityId: `id-${id}`,
-          accountId: id,
-          username,
-          displayName: penName,
-          penName,
-          biography: bioText,
-          publicVisibility: 'Public',
-          lifeTimeline: [],
-          signatures: []
-        };
+    firestoreService.fetchDbState().then(data => {
+      const identitiesList: IdentityProfile[] = data.identities;
+      const identity = identitiesList.find(i => i.accountId === id);
+      const updatedIdentity = identity ? {
+        ...identity,
+        biography: bioText,
+      } : {
+        identityId: `id-${id}`,
+        accountId: id,
+        username,
+        displayName: penName,
+        penName,
+        biography: bioText,
+        publicVisibility: 'Public' as const,
+        lifeTimeline: [],
+        signatures: []
+      };
 
-        Promise.all([
-          fetch('/api/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedUser)
-          }),
-          fetch('/api/profiles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedProfile)
-          }),
-          fetch('/api/identities', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedIdentity)
-          })
-        ]).then(() => {
-          refreshDbState();
-          showToast('Settings updated', 'success');
-        });
-      })
-      .catch(err => console.error('Failed to update writer settings:', err));
+      Promise.all([
+        firestoreService.saveUser(updatedUser),
+        firestoreService.saveProfile(updatedProfile),
+        firestoreService.saveIdentity(updatedIdentity)
+      ]).then(() => {
+        refreshDbState();
+        showToast('Settings updated', 'success');
+      });
+    }).catch(err => console.error('Failed to update writer settings:', err));
   };
 
   return (

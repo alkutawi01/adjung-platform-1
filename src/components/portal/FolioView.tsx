@@ -7,6 +7,7 @@ import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { FileText, ArrowRight } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { firestoreService } from '../../utils/firestoreService';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -118,11 +119,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
       heroSubtitle: editedSubtitle
     };
     
-    await fetch('/api/profiles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedProfile)
-    });
+    await firestoreService.saveProfile(updatedProfile);
     
     db.updateProfile(updatedProfile);
     setIsEditingHeader(false);

@@ -10,6 +10,7 @@ import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, Arr
 import { db } from '../../db/mockDb';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
+import { firestoreService } from '../../utils/firestoreService';
 import { RichTextEditable } from './RichTextEditable';
 import { FloatingFormatToolbar } from './FloatingFormatToolbar';
 
@@ -76,26 +77,25 @@ export function EntryRenderer({
     const confirmReport = window.confirm("Are you sure you want to report this writing for review by the Editorial Board?");
     if (!confirmReport) return;
     
-    fetch(`/api/entries/${entry.id}/report`, { method: 'POST' })
-      .then(res => {
-        if (res.ok) {
-          if (currentUser) {
-            fetch('/api/logs', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: `log-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                operator: currentUser.penName,
-                role: currentUser.role,
-                action: `Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`
-              })
-            }).then(() => refreshDbState());
-          } else {
-            refreshDbState();
-          }
-          showToast('Report sent. The article is now under review by the Editorial Board.', 'info');
+    const updatedEntry: Entry = {
+      ...entry,
+      underReview: true
+    };
+    
+    firestoreService.saveEntry(updatedEntry)
+      .then(() => {
+        if (currentUser) {
+          firestoreService.saveLog({
+            id: `log-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            operator: currentUser.penName,
+            role: currentUser.role,
+            action: `Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`
+          }).then(() => refreshDbState());
+        } else {
+          refreshDbState();
         }
+        showToast('Report sent. The article is now under review by the Editorial Board.', 'info');
       })
       .catch(err => console.error('Failed to report entry:', err));
   };

@@ -7,6 +7,7 @@ import { Fingerprint, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { IdentityStudio } from './IdentityStudio';
 import { db } from '../../db/mockDb';
+import { firestoreService } from '../../utils/firestoreService';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -46,11 +47,7 @@ export function BiographyView({
       biography: editedBio
     };
 
-    await fetch('/api/identities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedIdentity)
-    });
+    await firestoreService.saveIdentity(updatedIdentity);
 
     db.updateIdentity(updatedIdentity);
     setIsEditingBio(false);
