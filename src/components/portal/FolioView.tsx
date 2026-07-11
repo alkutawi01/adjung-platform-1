@@ -5,7 +5,7 @@ import { BRAND } from '../../config/brand';
 import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
-import { FileText, ArrowRight } from 'lucide-react';
+import { FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { firestoreService } from '../../utils/firestoreService';
 
@@ -68,6 +68,19 @@ export const FolioView: React.FC<FolioViewProps> = ({
     setEditedTitle(authorProfile?.heroTitle || '');
     setEditedSubtitle(authorProfile?.heroSubtitle || '');
   }, [authorProfile]);
+
+  const handleRestrictedAction = (action: () => void, actionType: 'expand' | 'read' = 'read') => {
+    if (!currentUser) {
+      setLoginError(
+        actionType === 'expand'
+          ? 'Sila log masuk atau mendaftar untuk membaca kandungan nota penuh.'
+          : 'Sila log masuk atau mendaftar untuk membaca karya penuh.'
+      );
+      setShowLoginModal(true);
+      return;
+    }
+    action();
+  };
 
   const handleKeyDownShortcut = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, setter: (val: string) => void) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
@@ -316,42 +329,70 @@ export const FolioView: React.FC<FolioViewProps> = ({
                 </div>
 
                 {/* Timeline items list */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {timelineGroupedByYear[year].map((item, idx) => {
                     const dateObj = new Date(item.publishedDate || item.createdDate);
                     const dayMonthStr = dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
                     const isNote = item.contentType === 'Note';
+                    const isEssay = item.contentType === 'Essay';
+                    const isArticle = item.contentType === 'Article';
                     const isAr = isNote ? isArabicText(item.content) : isArabicText(item.title);
                     const isExpanded = expandedNoteIds.includes(item.id);
                     
+                    const containerClass = (() => {
+                      const base = `group flex flex-col md:flex-row md:items-start justify-between transition-all duration-300 w-full ${isAr && isNote ? 'text-right' : 'text-left'}`;
+                      if (isNote) {
+                        return `${base} px-6 py-5 md:px-8 md:py-6 bg-[#FAF8F5] border border-stone-300/85 border-l-4 border-l-[#802334] rounded-r shadow-[0_1.5px_4px_rgba(0,0,0,0.035),0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 my-5`;
+                      }
+                      if (isEssay) {
+                        return `${base} bg-transparent border-none border-b border-stone-200/60 pb-8 last:border-b-0 my-8`;
+                      }
+                      // Article
+                      return `${base} p-8 md:px-10 md:py-8 bg-[#FCFCFC] border border-stone-300 rounded-sm shadow-[0_2px_4px_rgba(0,0,0,0.015)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:-translate-y-0.5 my-6 gap-6`;
+                    })();
+
                     return (
                       <div 
                         key={item.id} 
                         id={`note-card-${item.id}`}
-                        className={`px-6 py-5 md:px-8 md:py-6 rounded border my-4 group flex flex-col md:flex-row md:items-start justify-between gap-4 transition-all duration-300 w-full ${
-                          isNote 
-                            ? 'bg-[#FAF8F5] border-stone-300/85 hover:border-stone-400 hover:shadow-sm text-stone-850' 
-                            : 'bg-adjung-maroon/[0.015] hover:bg-adjung-maroon/[0.03] border-stone-300 hover:text-stone-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)]'
-                        } ${isAr && isNote ? 'text-right' : 'text-left'}`}
+                        className={containerClass}
                       >
                         
-                        <div className="space-y-2 flex-grow text-left w-full">
-                          {/* Day / Month label */}
-                          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-stone-500">
-                            <span className="bg-[#FDFDFD] border border-stone-200 px-1.5 py-0.5 rounded">{dayMonthStr}</span>
-                            <span>•</span>
-                            <span className="text-adjung-maroon font-semibold uppercase tracking-wider text-[9px]">{item.contentType}</span>
-                          </div>
+                        <div className="space-y-3.5 flex-grow text-left w-full">
+                          {/* Metadata row */}
+                          {isNote && (
+                            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-stone-500 select-none">
+                              <span className="bg-[#FDFDFD] border border-stone-200 px-1.5 py-0.5 rounded">{dayMonthStr}</span>
+                              <span>•</span>
+                              <span className="text-adjung-maroon font-semibold uppercase tracking-wider text-[9px]">Note</span>
+                            </div>
+                          )}
+                          {isEssay && (
+                            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-stone-400 select-none">
+                              <span className="px-2 py-0.5 bg-stone-100/80 text-stone-600 rounded font-semibold">Essay</span>
+                              <span>•</span>
+                              <span>{dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            </div>
+                          )}
+                          {isArticle && (
+                            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-stone-400 select-none">
+                              <span className="px-2 py-0.5 bg-adjung-maroon/5 text-adjung-maroon border border-adjung-maroon/10 rounded-sm font-bold">Article</span>
+                              <span>•</span>
+                              <span>{dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            </div>
+                          )}
 
                           {/* Title link */}
                           {!isNote && item.title && (
                             <h3 
                               onClick={() => {
-                                setSelectedEntry(item);
+                                handleRestrictedAction(() => setSelectedEntry(item));
                               }}
-                              className={`text-xl font-serif text-stone-900 cursor-pointer hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium ${
-                                isAr ? 'font-arabic text-right' : ''
-                              }`}
+                              className={`${
+                                isEssay 
+                                  ? 'text-2xl md:text-3xl font-serif text-stone-900 cursor-pointer hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium'
+                                  : 'text-xl md:text-2xl font-serif text-stone-900 cursor-pointer hover:text-[#802334] transition-colors leading-tight tracking-tight font-semibold'
+                              } ${isAr ? 'font-arabic text-right' : ''}`}
                             >
                               {parseInlineFormatting(item.title || '')}
                             </h3>
@@ -362,9 +403,9 @@ export const FolioView: React.FC<FolioViewProps> = ({
                             className="cursor-pointer" 
                             onClick={(e) => {
                               if (isNote) {
-                                toggleNote(item.id);
+                                handleRestrictedAction(() => toggleNote(item.id), 'expand');
                               } else {
-                                setSelectedEntry(item);
+                                handleRestrictedAction(() => setSelectedEntry(item));
                               }
                             }}
                           >
@@ -373,12 +414,12 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                isExpanded={isNote ? isExpanded : false}
                                onToggle={() => {
                                  if (isNote) {
-                                   toggleNote(item.id);
+                                   handleRestrictedAction(() => toggleNote(item.id), 'expand');
                                  } else {
-                                   setSelectedEntry(item);
+                                   handleRestrictedAction(() => setSelectedEntry(item));
                                  }
                                }}
-                               onOpenText={() => setSelectedEntry(item)}
+                               onOpenText={() => handleRestrictedAction(() => setSelectedEntry(item))}
                                showInlineToggle={false}
                                onLimitExceeded={(exceeded) => {
                                  setNoteExceedsMap(prev => {
@@ -390,9 +431,18 @@ export const FolioView: React.FC<FolioViewProps> = ({
                           </div>
 
                           {/* Tag tokens */}
-                          <div className="flex flex-wrap gap-1.5 pt-1">
+                          <div className="flex flex-wrap gap-1.5 pt-1.5 select-none">
                             {item.tags.map(t => (
-                              <span key={t} className="font-mono text-[9px] text-stone-400 uppercase tracking-wider">
+                              <span 
+                                key={t} 
+                                className={`font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-sm ${
+                                  isNote
+                                    ? 'bg-[#F4F1EC] text-stone-500 border border-stone-300/30'
+                                    : isEssay
+                                    ? 'border border-dashed border-stone-300 text-stone-400'
+                                    : 'bg-stone-100 text-stone-500'
+                                }`}
+                              >
                                 #{t}
                               </span>
                             ))}
@@ -400,11 +450,11 @@ export const FolioView: React.FC<FolioViewProps> = ({
                         </div>
 
                         {/* View trigger */}
-                        <div className="self-end md:self-center flex items-center gap-2 flex-shrink-0">
+                        <div className="self-end md:self-center flex items-center gap-2.5 flex-shrink-0 mt-3 md:mt-0 select-none">
                            {isNote && noteExceedsMap[item.id] && (
                              <button
                                type="button"
-                               onClick={() => toggleNote(item.id)}
+                               onClick={() => handleRestrictedAction(() => toggleNote(item.id), 'expand')}
                                className="px-3 py-1.5 rounded hover:bg-stone-100 text-stone-500 font-mono text-[10px] uppercase tracking-wider transition border border-stone-200/50 cursor-pointer"
                              >
                                {isExpanded ? 'Collapse' : 'Expand'}
@@ -412,11 +462,17 @@ export const FolioView: React.FC<FolioViewProps> = ({
                            )}
                           <button
                             type="button"
-                            onClick={() => setSelectedEntry(item)}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon font-mono text-[10px] uppercase tracking-wider transition border border-transparent hover:border-adjung-maroon/10 cursor-pointer font-semibold"
+                            onClick={() => handleRestrictedAction(() => setSelectedEntry(item))}
+                            className={`flex items-center gap-1.5 transition duration-200 cursor-pointer font-semibold font-mono text-[10px] uppercase tracking-widest ${
+                              isNote 
+                                ? 'px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon border border-transparent hover:border-adjung-maroon/10'
+                                : isEssay
+                                ? 'text-[#802334] hover:text-[#802334]/80 p-0 border-0 bg-transparent'
+                                : 'bg-[#802334] text-white hover:bg-[#802334]/95 px-4.5 py-2.5 border-0 shadow-sm rounded-sm'
+                            }`}
                           >
-                            Open Text
-                            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                            {isArticle ? 'Read Article' : isEssay ? 'Read Essay' : 'Open Text'}
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                           </button>
                         </div>
 

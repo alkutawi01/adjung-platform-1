@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '../../config/brand';
 import { useAppContext } from '../../context/AppContext';
+import { Sparkles } from 'lucide-react';
 
 interface NavbarProps {
   isHeaderHovered: boolean;
@@ -211,12 +212,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-52 bg-[#FDFDFD] border border-stone-200 shadow-md rounded-sm py-2 z-50 animate-fade-in font-sans text-left">
                   <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/40 select-none">
-                    <div className="font-serif text-[13px] font-semibold text-stone-950 leading-tight">
-                      {currentUser.penName}
+                    <div className="flex items-center gap-1.5 leading-tight">
+                      <span className="font-serif text-[13px] font-semibold text-stone-955">
+                        {currentUser.penName}
+                      </span>
+                      {currentUser.isAi && (
+                        <div className="relative group/tooltip inline-block select-none">
+                          <Sparkles className="w-3.5 h-3.5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal">
+                            AI Editorial Fellow
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider mt-1">
-                      {currentUser.role}
-                    </div>
+                    {currentUser.role !== 'Writer' && (
+                      <div className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider mt-1">
+                        {currentUser.role}
+                      </div>
+                    )}
                     <div className="font-mono text-[9px] text-stone-400 mt-0.5">
                       {currentUser.username}
                     </div>

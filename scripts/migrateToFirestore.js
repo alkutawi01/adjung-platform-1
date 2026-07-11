@@ -68,7 +68,8 @@ async function migrate() {
         bioSummary: u.bioSummary || '',
         suspended: u.isSuspended === 1,
         affiliation: u.affiliation || '',
-        password: u.password || 'password' // Preserved plain text password for lazy Auth creation
+        password: u.password || 'password', // Preserved plain text password for lazy Auth creation
+        createdAt: u.createdAt || new Date().toISOString().split('T')[0]
       });
       console.log(`✅ User migrated: ${u.username}`);
     }

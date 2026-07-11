@@ -200,6 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } else {
             setCurrentUser(found);
             setSelectedAuthorId(found.id);
+            SessionService.createSession(found, true);
           }
         }
       }

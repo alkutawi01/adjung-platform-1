@@ -3311,23 +3311,31 @@ export function EntryRenderer({
 
             {/* Title Area */}
             {isEditingWorkspace ? (
-              <RichTextEditable
-                tagName="h1"
-                html={markdownToHtml(title)}
-                onChange={(newHtml: string) => {
-                  const val = htmlToMarkdown(newHtml);
-                  setTitle(val);
-                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
-                }}
-                onKeyDown={(e: React.KeyboardEvent) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    (e.currentTarget as HTMLElement).blur();
-                  }
-                }}
-                placeholder="Enter Title..."
-                className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-Adjung-maroon focus:outline-none mb-3 py-1 text-left"
-              />
+              <div className="relative w-full group mb-3">
+                <RichTextEditable
+                  tagName="h1"
+                  html={markdownToHtml(title)}
+                  onChange={(newHtml: string) => {
+                    let val = htmlToMarkdown(newHtml);
+                    if (val.length > 100) {
+                      val = val.substring(0, 100);
+                    }
+                    setTitle(val);
+                    triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
+                  }}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      (e.currentTarget as HTMLElement).blur();
+                    }
+                  }}
+                  placeholder="Enter Title..."
+                  className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none py-1 text-left pr-16"
+                />
+                <span className="absolute right-0 bottom-2 text-[9px] font-mono text-stone-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-150 select-none">
+                  {title.length}/100
+                </span>
+              </div>
             ) : (
               title && (
                 <h1 className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight mb-3 text-left">
@@ -4237,16 +4245,23 @@ export function EntryRenderer({
 
             {/* Title Input Field */}
             {contentType !== 'Note' ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, e.target.value);
-                }}
-                placeholder="Enter Title..."
-                className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-Adjung-maroon focus:outline-none mb-3 py-1"
-              />
+              <div className="relative w-full group mb-3">
+                <input
+                  type="text"
+                  value={title}
+                  maxLength={100}
+                  onChange={(e) => {
+                    const val = e.target.value.substring(0, 100);
+                    setTitle(val);
+                    triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
+                  }}
+                  placeholder="Enter Title..."
+                  className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none py-1 pr-16"
+                />
+                <span className="absolute right-0 bottom-2 text-[9px] font-mono text-stone-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-150 select-none">
+                  {title.length}/100
+                </span>
+              </div>
             ) : (
               <div className="text-stone-400 font-mono text-[10px] uppercase mb-4 tracking-widest">Note Canvas</div>
             )}

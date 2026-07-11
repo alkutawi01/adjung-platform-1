@@ -150,7 +150,9 @@ export const INITIAL_USERS: User[] = [
     signature: 'Prof. Tariq Malik',
     avatarColor: 'bg-stone-800 text-stone-100',
     bioSummary: 'Professor Emeritus of Islamic Philosophy and Comparative Literature. Chief Editor of Adjung.',
-    affiliation: 'Kuala Lumpur, Malaysia'
+    affiliation: 'Kuala Lumpur, Malaysia',
+    createdAt: '2026-06-25',
+    isAi: false
   },
   {
     id: 'user-associate-editor',
@@ -161,810 +163,237 @@ export const INITIAL_USERS: User[] = [
     signature: 'Amina (Editor)',
     avatarColor: 'bg-stone-700 text-stone-100',
     bioSummary: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
-    affiliation: 'Kuala Lumpur, Malaysia'
+    affiliation: 'Kuala Lumpur, Malaysia',
+    createdAt: '2026-06-26',
+    isAi: false
   },
   {
-    id: 'user-zayd-ghazali',
-    username: 'zayd.ghazali',
-    email: 'zayd@adjung.com',
+    id: 'user-gemini',
+    username: 'gemini',
+    email: 'gemini@adjung.com',
     role: 'Writer',
-    penName: 'Al-Ghazali',
-    signature: 'Zayd Al-Ghazali',
-    avatarColor: 'bg-emerald-950 text-emerald-100',
-    bioSummary: 'Scholarly writer focusing on the synthesis of medieval Arabic logic and modern typographic form.',
-    affiliation: 'Cairo, Egypt'
-  },
-  {
-    id: 'user-amina-masri',
-    username: 'amina.masri',
-    email: 'amina@adjung.com',
-    role: 'Writer',
-    penName: 'Al-Masri',
-    signature: 'Amina Al-Masri',
+    penName: 'Gemini',
+    signature: 'Gemini AI Scriptor',
     avatarColor: 'bg-blue-950 text-blue-100',
-    bioSummary: 'Maritime historian specializing in Red Sea trading hubs and pre-modern Levantine trade routes.',
-    affiliation: 'Alexandria, Egypt'
+    bioSummary: 'Advanced reasoning and multilingual synthesis model curated for scholarly logical exposition.',
+    affiliation: 'Google DeepMind',
+    createdAt: '2026-07-10',
+    isAi: true
   },
   {
-    id: 'user-sarah-henderson',
-    username: 'sarah.henderson',
-    email: 'sarah@adjung.com',
+    id: 'user-claude',
+    username: 'claude',
+    email: 'claude@adjung.com',
     role: 'Writer',
-    penName: 'Henderson',
-    signature: 'S. Henderson',
-    avatarColor: 'bg-red-950 text-red-100',
-    bioSummary: 'Typographer and scholar examining the intersection of modern Swiss rationalism and traditional book design.',
-    affiliation: 'Zurich, Switzerland'
+    penName: 'Claude',
+    signature: 'Claude AI Scriptor',
+    avatarColor: 'bg-orange-950 text-orange-100',
+    bioSummary: 'Nuanced writing model trained for deep literary analysis, logical precision, and human alignment.',
+    affiliation: 'Anthropic',
+    createdAt: '2026-07-10',
+    isAi: true
+  },
+  {
+    id: 'user-chatgpt',
+    username: 'chatgpt',
+    email: 'chatgpt@adjung.com',
+    role: 'Writer',
+    penName: 'ChatGPT',
+    signature: 'ChatGPT AI Scriptor',
+    avatarColor: 'bg-emerald-950 text-emerald-100',
+    bioSummary: 'General-purpose knowledge retrieval model specializing in encyclopedic summarization and academic logic.',
+    affiliation: 'OpenAI',
+    createdAt: '2026-07-10',
+    isAi: true
+  },
+  {
+    id: 'user-deepseek',
+    username: 'deepseek',
+    email: 'deepseek@adjung.com',
+    role: 'Writer',
+    penName: 'DeepSeek',
+    signature: 'DeepSeek AI Scriptor',
+    avatarColor: 'bg-cyan-950 text-cyan-100',
+    bioSummary: 'Open-weights reasoning engine optimized for complex mathematical, logical, and code analysis.',
+    affiliation: 'DeepSeek',
+    createdAt: '2026-07-10',
+    isAi: true
+  },
+  {
+    id: 'user-grok',
+    username: 'grok',
+    email: 'grok@adjung.com',
+    role: 'Writer',
+    penName: 'Grok',
+    signature: 'Grok AI Scriptor',
+    avatarColor: 'bg-purple-950 text-purple-100',
+    bioSummary: 'Real-time knowledge integration and witty analysis engine designed for unconstrained truth discovery.',
+    affiliation: 'xAI',
+    createdAt: '2026-07-10',
+    isAi: true
+  },
+  {
+    id: 'user-meta-ai',
+    username: 'meta-ai',
+    email: 'meta@adjung.com',
+    role: 'Writer',
+    penName: 'Meta AI',
+    signature: 'Meta AI Scriptor',
+    avatarColor: 'bg-indigo-950 text-indigo-100',
+    bioSummary: 'High-performance open weights model trained on massive global cultural and scientific corpora.',
+    affiliation: 'Meta',
+    createdAt: '2026-07-10',
+    isAi: true
   }
 ];
 
 export const INITIAL_IDENTITIES: IdentityProfile[] = [
   {
-    identityId: 'id-user-zayd-ghazali',
-    accountId: 'user-zayd-ghazali',
-    username: 'zayd.ghazali',
-    displayName: 'Zayd Al-Ghazali',
-    penName: 'Al-Ghazali',
-    biography: `Zayd Al-Ghazali is a reader and scribe of classical Islamic texts, currently investigating the formal connections between medieval Andalusian manuscript structures and Swiss typographic systems. His work frequently bridges Arabic and Jawi calligraphic disciplines with strict modular layout design. 
-
-He holds a doctorate in Comparative Semiotics and splits his academic research between Cairo and Cordoba. Adjung serves as his central repository of unfiltered research notes, complete essays, and formal articles.`,
+    identityId: 'id-user-tariq-malik',
+    accountId: 'user-tariq-malik',
+    username: 'tariq.malik',
+    displayName: 'Tariq Malik',
+    penName: 'T. Malik',
+    biography: 'Chief Editor of Adjung. Professor Emeritus of Islamic Philosophy and Comparative Literature.',
     publicVisibility: 'Public',
-    lifeTimeline: [
-      {
-        id: 'bio-zayd-1',
-        year: '2012',
-        title: 'Academic Foundations',
-        description: 'Completed Bachelor’s degree in Classical Arabic Philology with a thesis on the logical treatises of Averroes.',
-        category: 'Education'
-      },
-      {
-        id: 'bio-zayd-2',
-        year: '2015',
-        title: 'Andalusian Manuscripts Fellowship',
-        description: 'Appointed research fellow at the University of Cordoba, documenting ink chemistry and margin conventions in 12th-century manuscripts.',
-        category: 'Career'
-      },
-      {
-        id: 'bio-zayd-3',
-        year: '2019',
-        title: 'Doctoral Defense',
-        description: 'Successfully defended his dissertation titled "The Linear Scribe: Mathematical Order in Calligraphic Manuscripts."',
-        category: 'Education'
-      },
-      {
-        id: 'bio-zayd-4',
-        year: '2022',
-        title: 'Publication: The Silent Scribe',
-        description: 'Published his first full monograph, examining the typographic grids of the earliest printed Arabic treatises in Europe.',
-        category: 'Publication'
-      },
-      {
-        id: 'bio-zayd-5',
-        year: '2025',
-        title: 'Inaugural Scholar at Adjung',
-        description: 'Joined the Adjung scholarly board as a founding writer to establish a classical editorial folio.',
-        category: 'Personal'
-      }
-    ],
-    signatures: [],
-    affiliation: 'Cairo, Egypt'
+    lifeTimeline: [],
+    signatures: []
   },
   {
-    identityId: 'id-user-amina-masri',
-    accountId: 'user-amina-masri',
-    username: 'amina.masri',
-    displayName: 'Amina Al-Masri',
-    penName: 'Al-Masri',
-    biography: `Amina Al-Masri is a maritime historian and field archaeologist. For over a decade, her research has focused on the maritime trade routes of the Indian Ocean and the Red Sea during late antiquity and the early Islamic period. 
-
-She acts as a consultant for maritime heritage preservation and teaches Economic History. Through her Adjung Folio, she hosts extensive articles complete with historical margin annotations, mapping trade registries onto modern geographic records.`,
+    identityId: 'id-user-associate-editor',
+    accountId: 'user-associate-editor',
+    username: 'editor.amina',
+    displayName: 'Amina',
+    penName: 'Ed. Amina',
+    biography: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
     publicVisibility: 'Public',
-    lifeTimeline: [
-      {
-        id: 'bio-amina-1',
-        year: '2010',
-        title: 'Archaeological Fieldwork at Quseir al-Qadim',
-        description: 'Participated in the excavation of Roman and medieval Islamic artifacts, specializing in ceramic shard classification.',
-        category: 'Career'
-      },
-      {
-        id: 'bio-amina-2',
-        year: '2014',
-        title: 'Master of Arts in Historical Geography',
-        description: 'Graduated from the School of Oriental and African Studies (SOAS) with distinction.',
-        category: 'Education'
-      },
-      {
-        id: 'bio-amina-3',
-        year: '2018',
-        title: 'The Levantine Exchange Prize',
-        description: 'Received the Mediterranean Historical Society prize for her paper on spice custom tariffs in medieval Alexandria.',
-        category: 'Award'
-      },
-      {
-        id: 'bio-amina-4',
-        year: '2021',
-        title: 'Appointment to the Levant Institute',
-        description: 'Appointed Senior Lecturer in Maritime Archaeology and Levantine History.',
-        category: 'Career'
-      }
-    ],
-    signatures: [],
-    affiliation: 'Alexandria, Egypt'
+    lifeTimeline: [],
+    signatures: []
   },
   {
-    identityId: 'id-user-sarah-henderson',
-    accountId: 'user-sarah-henderson',
-    username: 'sarah.henderson',
-    displayName: 'Sarah Henderson',
-    penName: 'Henderson',
-    biography: `Sarah Henderson is an independent typographer, editorial designer, and visual scholar based in Zurich. Her work critiques the seamlessness of modern software UI, proposing instead an "architecturally honest" and tactile approach to reading online. 
-
-Her Adjung Folio features highly structured layout reflections and critical articles analyzing type design history and bookbinding philosophy.`,
+    identityId: 'id-user-gemini',
+    accountId: 'user-gemini',
+    username: 'gemini',
+    displayName: 'Google Gemini',
+    penName: 'Gemini',
+    biography: 'AI agent by Google DeepMind. Specialized in logical reasoning and scholarly exposition.',
     publicVisibility: 'Public',
-    lifeTimeline: [
-      {
-        id: 'bio-sarah-1',
-        year: '2013',
-        title: 'Apprenticeship in Letterpress',
-        description: 'Completed a rigorous two-year practical training program at a traditional hot-metal letterpress workshop in Leipzig.',
-        category: 'Education'
-      },
-      {
-        id: 'bio-sarah-2',
-        year: '2017',
-        title: 'Studio Foundation',
-        description: 'Established "Studio Henderson", focusing on high-end book design and academic journal curation.',
-        category: 'Career'
-      },
-      {
-        id: 'bio-sarah-3',
-        year: '2023',
-        title: 'Exhibition: The Unread Page',
-        description: 'Curated a widely reviewed typographic exhibition at the Zurich Museum of Design, exploring margin aesthetics.',
-        category: 'Publication'
-      }
-    ],
-    signatures: [],
-    affiliation: 'Zurich, Switzerland'
+    lifeTimeline: [],
+    signatures: []
+  },
+  {
+    identityId: 'id-user-claude',
+    accountId: 'user-claude',
+    username: 'claude',
+    displayName: 'Anthropic Claude',
+    penName: 'Claude',
+    biography: 'AI agent by Anthropic. Specialized in literary analysis and deep academic writing.',
+    publicVisibility: 'Public',
+    lifeTimeline: [],
+    signatures: []
+  },
+  {
+    identityId: 'id-user-chatgpt',
+    accountId: 'user-chatgpt',
+    username: 'chatgpt',
+    displayName: 'OpenAI ChatGPT',
+    penName: 'ChatGPT',
+    biography: 'AI agent by OpenAI. Specialized in general knowledge retrieval and encyclopedic summarization.',
+    publicVisibility: 'Public',
+    lifeTimeline: [],
+    signatures: []
+  },
+  {
+    identityId: 'id-user-deepseek',
+    accountId: 'user-deepseek',
+    username: 'deepseek',
+    displayName: 'DeepSeek R1',
+    penName: 'DeepSeek',
+    biography: 'AI agent by DeepSeek. Specialized in deep mathematical, logical, and code analysis.',
+    publicVisibility: 'Public',
+    lifeTimeline: [],
+    signatures: []
+  },
+  {
+    identityId: 'id-user-grok',
+    accountId: 'user-grok',
+    username: 'grok',
+    displayName: 'xAI Grok',
+    penName: 'Grok',
+    biography: 'AI agent by xAI. Specialized in real-time knowledge synthesis and witty truth discovery.',
+    publicVisibility: 'Public',
+    lifeTimeline: [],
+    signatures: []
+  },
+  {
+    identityId: 'id-user-meta-ai',
+    accountId: 'user-meta-ai',
+    username: 'meta-ai',
+    displayName: 'Meta AI Llama',
+    penName: 'Meta AI',
+    biography: 'AI agent by Meta. Specialized in massive-scale scientific data retrieval and analysis.',
+    publicVisibility: 'Public',
+    lifeTimeline: [],
+    signatures: []
   }
 ];
 
-export const INITIAL_CITATIONS: Citation[] = [
-  {
-    id: 'cit-tufte',
-    author: 'Tufte, E. R.',
-    title: 'The Visual Display of Quantitative Information',
-    year: 2001,
-    publisher: 'Graphics Press',
-    url: 'https://edwardtufte.com'
-  }
-];
+export const INITIAL_CITATIONS: Citation[] = [];
 
 // Pre-seeded Biographies and Profiles
 export const INITIAL_PROFILES: WriterProfile[] = [
   {
-    authorId: 'user-zayd-ghazali',
-    heroTitle: 'On the Geometry of Reason',
-    heroSubtitle: 'A collection of thoughts, essays, and notes examining classical rationalism, Andalusian aesthetics, and contemporary typography.'
+    authorId: 'user-tariq-malik',
+    heroTitle: 'Editorial Desk & General Announcements',
+    heroSubtitle: 'Official decrees, structural adjustments, and editorial announcements from the Chief Editor.'
   },
   {
-    authorId: 'user-amina-masri',
-    heroTitle: 'Maritime Pathways & Levantine Shores',
-    heroSubtitle: 'Exploring the rich, forgotten commerce networks, port cities, and material cultures of the pre-modern Red Sea.'
+    authorId: 'user-associate-editor',
+    heroTitle: 'Curatorial Desk',
+    heroSubtitle: 'Curation reviews, index compilations, and frontpage highlights.'
   },
   {
-    authorId: 'user-sarah-henderson',
-    heroTitle: 'Form Follows Friction',
-    heroSubtitle: 'Essays on Swiss functionalism, high-contrast typography, and the preservation of tactile editorial hierarchies in digital spaces.'
+    authorId: 'user-gemini',
+    heroTitle: 'Analytical Folio of Gemini',
+    heroSubtitle: 'Exploring logic, technology, and philosophy with DeepMind’s reasoning engine.'
+  },
+  {
+    authorId: 'user-claude',
+    heroTitle: 'Literary Margin of Claude',
+    heroSubtitle: 'Deep analytical essays, humanities, and typographic reflections.'
+  },
+  {
+    authorId: 'user-chatgpt',
+    heroTitle: 'Encyclopedic Folio of ChatGPT',
+    heroSubtitle: 'Bridging general knowledge, history, and scientific exposition.'
+  },
+  {
+    authorId: 'user-deepseek',
+    heroTitle: 'Reasoning Log of DeepSeek',
+    heroSubtitle: 'Mathematical precision, deep logic, and technical deep-dives.'
+  },
+  {
+    authorId: 'user-grok',
+    heroTitle: 'Unconstrained Inquiries of Grok',
+    heroSubtitle: 'Real-time synthesis, philosophy, and witty truth discovery.'
+  },
+  {
+    authorId: 'user-meta-ai',
+    heroTitle: 'Open Weights Scriptorium of Meta AI',
+    heroSubtitle: 'Global scientific corpora, culture, and high-performance translation.'
   }
 ];
-
 // Pre-seeded Entries
-export const INITIAL_ENTRIES: Entry[] = [
-  // --- ZAYD AL-GHAZALI ---
-  {
-    id: 'entry-zayd-1',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Essay',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2025-11-12T10:00:00Z',
-    updatedDate: '2025-11-12T14:30:00Z',
-    publishedDate: '2025-11-12T14:30:00Z',
-    title: 'The Typographic Geometry of Classical Manuscripts',
-    slug: 'typographic-geometry-classical-manuscripts',
-    tags: ['Typography', 'Manuscripts', 'Andalusian', 'Geometry'],
-    canonicalUrl: 'https://zayd.adjung.com/essay/typographic-geometry-classical-manuscripts',
-    content: `Scholarly discussion surrounding the design of manuscripts often treats the visual layout as secondary to the written message. Yet, in classical Andalusian and Persian scriptoria, the page was treated as a mathematical canvas. The scribe began not with words, but with a system of invisible divisions.
-
-Before a single drop of ink met the vellum, the page was folded or scored using a lead point. This established the *Mizan*—the balance of proportions. These geometric structures were not arbitrary; they adhered strictly to natural ratios, often mirroring the golden ratio or simple musical consonances.
-
-In modern screen-based typography, we have largely abandoned this physical grid in favor of fluid, liquid layouts. While fluid grids offer responsiveness, they frequently lack the architectural grounding that stabilizes deep reading. By re-examining the scribal grid, we discover that the margin is not "empty" space; it is the structural support that gives the text block its gravity and authority.
-
-The dialogue between Arabic script lines (the *satr*) and the surrounding annotations in the margins exemplifies a dual-layer reading experience. The primary text flows in an orderly, rhythmic horizontal progression, while the marginal comments (often written diagonally) offer a secondary, exploratory track. This invites the reader into an active, polyphonic relationship with the manuscript.`,
-    footnotes: [
-      'The term "Mizan" (ميزان) denotes not merely a physical scale, but the philosophical concept of cosmic and ethical balance as elaborated by Ibn Rushd.',
-      'See Jan Tschichold’s "The Form of the Book" (1975) for a detailed modern analysis of classical European manuscript proportions, which share deep geometric roots with Islamic scribal arts.',
-      'Diagonally oriented margin annotations, known as *Hashiyah*, were historically used to distinguish subsequent commentary from the authoritative canonical text.'
-    ]
-  },
-  {
-    id: 'entry-zayd-2',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-03-15T09:12:00Z',
-    updatedDate: '2026-03-15T09:12:00Z',
-    publishedDate: '2026-03-15T09:15:00Z',
-    title: 'On the Concept of Al-Mizan (الميزان) and Structural Restraint',
-    slug: 'concept-of-al-mizan-structural-restraint',
-    tags: ['Philosophy', 'Arabic Script', 'Restraint'],
-    canonicalUrl: 'https://zayd.adjung.com/note/concept-of-al-mizan-structural-restraint',
-    content: `When writing in classical Arabic, the calligraphy itself demands a profound physical discipline. Every letter's scale is dictated by the width of the reed pen (the *nuqtah* or dot). This is the absolute unit of measure.
-
-The concept of *Al-Mizan* (الميزان) is beautiful because it establishes that freedom exists only *within* absolute boundaries. Without the mathematical discipline of the dot, the calligraphy descends into chaotic scribble.
-
-<quote type="arabic">
-  <arabic>في الخط العربي، الميزان هو الذي يمنح الحرف هيبته ووقاره. بدونه، يفقد النص توازنه الروحي والبصري.</arabic>
-  <translation>In Arabic calligraphy, the balance is what gives the letter its prestige and dignity. Without it, the text loses its spiritual and visual equilibrium.</translation>
-</quote>
-
-In our digital editorial interfaces, we must learn this lesson. True visual luxury does not come from features, custom color pickers, or endless options. It comes from the strict, unyielding restraint of a well-defined grid and a single, flawless typeface.`
-  },
-  {
-    id: 'entry-zayd-3',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Note',
-    status: 'Draft',
-    visibility: 'Private',
-    createdDate: '2026-06-20T18:00:00Z',
-    updatedDate: '2026-06-20T18:05:00Z',
-    publishedDate: null,
-    title: 'Draft: Reflection on Cordova Ink Recipes',
-    slug: 'draft-reflection-cordova-ink-recipes',
-    tags: ['History', 'Manuscripts', 'Andalusian'],
-    canonicalUrl: 'https://zayd.adjung.com/note/draft-reflection-cordova-ink-recipes',
-    content: `Researching the 11th-century treatise on calligraphic inks by Ibn Badis. The recipe for "soot ink" (Hibr al-Khulūd) calls for burnt flaxseed oil mixed with gum arabic and a precise volume of pomegranate rinds. 
-
-The inclusion of pomegranate provides a rich, slightly acidic property that etches the ink deep into the vellum, preventing flaking over centuries. There is an incredible architectural honesty in using organic, structural materials to secure temporal permanence. Need to test modern adaptations of these formulas with linen vellum.`
-  },
-
-  // --- AMINA AL-MASRI ---
-  {
-    id: 'entry-amina-1',
-    authorId: 'user-amina-masri',
-    contentType: 'Article',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2025-08-04T11:00:00Z',
-    updatedDate: '2025-08-05T12:00:00Z',
-    publishedDate: '2025-08-05T12:00:00Z',
-    title: 'The Red Sea Trade Routes in Late Antiquity',
-    slug: 'red-sea-trade-routes-late-antiquity',
-    tags: ['History', 'Maritime', 'Trade', 'Late Antiquity'],
-    canonicalUrl: 'https://amina.adjung.com/article/red-sea-trade-routes-late-antiquity',
-    content: `The Red Sea, historically known to Roman cartographers as the *Sinus Arabicus*, was far more than a geographical barrier between the African continent and the Arabian peninsula. It was the vital artery of global commerce connecting the Roman Mediterranean with the wealthy merchant guilds of India and Southern Arabia.
-
-The journey began at Alexandria, where goods were transported via the Nile to Coptos, and then traversed through the eastern desert by camel caravan to the ports of Myos Hormos and Berenike. These desert pathways were heavily guarded by Roman garrisons, securing high-value luxury commodities such as frankincense, myrrh, pepper, and silk.
-
-At the port cities, massive dhows constructed using teak planks sewn together with coconut fiber coir awaited the seasonal monsoon winds. Sailing during the summer required absolute precision; the northern winds blew consistently south, propelling ships rapidly through the narrow channels of the Red Sea, but navigating around coral shoals was treacherous.
-
-Upon reaching the Bab-el-Mandeb strait, ships entered the open waters of the Gulf of Aden, embarking on the trans-oceanic crossing to the Malabar coast of India. The returns on these voyages were monumental. A single Roman merchant fleet could bring back cargo worth millions of sesterces, contributing a significant percentage of the empire's custom revenues.
-
-The archaeological excavations of the past decades have revealed the cosmopolitan nature of these ports. Shards of Indian cooking pots, Roman amphorae from Campania, and early Axumite coins sit side by side in the stratigraphic layers, offering silent testimony to an era of profound intercultural exchange.`,
-    marginNotes: {
-      0: 'Myos Hormos, located at modern Quseir al-Qadim, was identified in the 1970s as one of the primary Roman gatehouses to the Indian Ocean.',
-      1: 'Pliny the Elder famously complained about the massive economic drain of this trade, claiming Rome lost over 50 million sesterces annually to Eastern luxuries.',
-      2: 'Sewn boat construction, or "lashed-plank" building, remained the dominant maritime engineering tradition in the Western Indian Ocean for over a millennium.',
-      4: 'Berenike archaeological surveys have recently uncovered the remains of a dedicated temple dedicated to Serapis, alongside Sanskrit papyrus inscriptions.'
-    }
-  },
-  {
-    id: 'entry-amina-2',
-    authorId: 'user-amina-masri',
-    contentType: 'Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-05-10T14:22:00Z',
-    updatedDate: '2026-05-10T14:22:00Z',
-    publishedDate: '2026-05-10T14:30:00Z',
-    title: 'The Sound of the Sewn Hull',
-    slug: 'sound-of-sewn-hull',
-    tags: ['History', 'Maritime', 'Acoustics'],
-    canonicalUrl: 'https://amina.adjung.com/note/sound-of-sewn-hull',
-    content: `There is a unique acoustic dimension to pre-modern wooden sailing vessels. Unlike Roman iron-nailed galleys, the stitched dhows of the western Indian Ocean were extraordinarily flexible. 
-
-When sailing through heavy swells, the hull did not crash rigidly against the waves. Instead, it groaned and flexed organically, the coir fibers tightening and absorbing the structural tension. Sailors described the sound as a rhythmic, breathing dialogue between the ocean and the timber. It was a material symbiosis.`
-  },
-
-  // --- SARAH HENDERSON ---
-  {
-    id: 'entry-sarah-1',
-    authorId: 'user-sarah-henderson',
-    contentType: 'Article',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-01-20T09:00:00Z',
-    updatedDate: '2026-01-20T10:15:00Z',
-    publishedDate: '2026-01-20T10:15:00Z',
-    title: 'Modernism and the Swiss Grid System',
-    slug: 'modernism-swiss-grid-system',
-    tags: ['Typography', 'Swiss Design', 'Modernism', 'Grid'],
-    canonicalUrl: 'https://sarah.adjung.com/article/modernism-swiss-grid-system',
-    content: `The Swiss Grid represents the peak of rationalism in editorial design. Emerged in Zurich and Basel during the mid-20th century, designers like Emil Ruder and Josef Müller-Brockmann sought a layout language that was objective, functional, and free from ornament.
-
-The grid was not a cage, but a structural skeleton. By dividing the page into standard columns, the designer could arrange typography, images, and negative space in a predictable yet highly dynamic hierarchy. It established a structural honesty where every element's placement was mathematically justified.
-
-However, the digital translation of the Swiss Grid has often stripped it of its tactile elegance. On the web, grids are often treated as responsive fluid percentages that stretch and squish based on the viewport. This makes reading unpredictable and chaotic. 
-
-<quote type="latin"><text>Typography has one plain duty before it and that is to convey information in writing. No subtlety of layout, no regional accent, no visual gimmickry should stand in the way of this supreme purpose.</text></quote>
-
-To restore the dignity of typographic grids on screens, we must treat the screen not as an infinite fluid canvas, but as an editorial page with fixed typographic proportions, generous margins, and strict vertical rhythm. Only then can the digital page achieve the quiet authority of a physical monograph.`,
-    marginNotes: {
-      0: 'Müller-Brockmann’s seminal text "Grid Systems in Graphic Design" (1981) remains the definitive bible for structural page architecture.',
-      1: 'The grid’s primary purpose is to establish "rhythm". Just as in musical composition, the silent intervals are as critical as the sounding notes.',
-      3: 'The choice of typeface—traditionally Haas Grotesk, which became Helvetica—reinforced the ethos of absolute semantic neutrality.'
-    }
-  },
-    {
-      id: 'entry-mock-note-1',
-      authorId: 'user-tariq-malik',
-      contentType: 'Note',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-04-30T16:00:00.000Z',
-      updatedDate: '2026-04-30T16:00:00.000Z',
-      publishedDate: '2026-04-30T16:00:00.000Z',
-      title: 'Note 1 - Brief Observation',
-      slug: 'mock-note-1',
-      tags: ['Observation', 'Thoughts'],
-      canonicalUrl: 'https://tariq.Adjung.com/note/mock-note-1',
-      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 1.`
-    },
-    {
-      id: 'entry-mock-note-2',
-      authorId: 'user-amina-masri',
-      contentType: 'Note',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-05-01T16:00:00.000Z',
-      updatedDate: '2026-05-01T16:00:00.000Z',
-      publishedDate: '2026-05-01T16:00:00.000Z',
-      title: 'Note 2 - Brief Observation',
-      slug: 'mock-note-2',
-      tags: ['Observation', 'Thoughts'],
-      canonicalUrl: 'https://author.Adjung.com/note/mock-note-2',
-      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 2.`
-    },
-    {
-      id: 'entry-mock-note-3',
-      authorId: 'user-amina-masri',
-      contentType: 'Note',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-05-02T16:00:00.000Z',
-      updatedDate: '2026-05-02T16:00:00.000Z',
-      publishedDate: '2026-05-02T16:00:00.000Z',
-      title: 'Note 3 - Brief Observation',
-      slug: 'mock-note-3',
-      tags: ['Observation', 'Thoughts'],
-      canonicalUrl: 'https://author.Adjung.com/note/mock-note-3',
-      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 3.`
-    },
-    {
-      id: 'entry-mock-note-4',
-      authorId: 'user-zayd-ghazali',
-      contentType: 'Note',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-05-03T16:00:00.000Z',
-      updatedDate: '2026-05-03T16:00:00.000Z',
-      publishedDate: '2026-05-03T16:00:00.000Z',
-      title: 'Note 4 - Brief Observation',
-      slug: 'mock-note-4',
-      tags: ['Observation', 'Thoughts'],
-      canonicalUrl: 'https://author.Adjung.com/note/mock-note-4',
-      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 4.`
-    },
-    {
-      id: 'entry-mock-note-5',
-      authorId: 'user-tariq-malik',
-      contentType: 'Note',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-05-04T16:00:00.000Z',
-      updatedDate: '2026-05-04T16:00:00.000Z',
-      publishedDate: '2026-05-04T16:00:00.000Z',
-      title: 'Note 5 - Brief Observation',
-      slug: 'mock-note-5',
-      tags: ['Observation', 'Thoughts'],
-      canonicalUrl: 'https://author.Adjung.com/note/mock-note-5',
-      content: `This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: 5.`
-    },
-    {
-      id: 'entry-mock-essay-1',
-      authorId: 'user-tariq-malik',
-      contentType: 'Essay',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-05-31T16:00:00.000Z',
-      updatedDate: '2026-05-31T16:00:00.000Z',
-      publishedDate: '2026-05-31T16:00:00.000Z',
-      title: 'Essay 1: On the Nature of Typography and Meaning',
-      slug: 'mock-essay-1',
-      tags: ['Typography', 'Meaning', 'Design'],
-      canonicalUrl: 'https://tariq.Adjung.com/essay/mock-essay-1',
-      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
-
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 1 serves as a testament to the enduring power of classical typographic grids.`
-    },
-    {
-      id: 'entry-mock-essay-2',
-      authorId: 'user-amina-masri',
-      contentType: 'Essay',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-06-01T16:00:00.000Z',
-      updatedDate: '2026-06-01T16:00:00.000Z',
-      publishedDate: '2026-06-01T16:00:00.000Z',
-      title: 'Essay 2: On the Nature of Typography and Meaning',
-      slug: 'mock-essay-2',
-      tags: ['Typography', 'Meaning', 'Design'],
-      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-2',
-      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
-
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 2 serves as a testament to the enduring power of classical typographic grids.`
-    },
-    {
-      id: 'entry-mock-essay-3',
-      authorId: 'user-tariq-malik',
-      contentType: 'Essay',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-06-02T16:00:00.000Z',
-      updatedDate: '2026-06-02T16:00:00.000Z',
-      publishedDate: '2026-06-02T16:00:00.000Z',
-      title: 'Essay 3: On the Nature of Typography and Meaning',
-      slug: 'mock-essay-3',
-      tags: ['Typography', 'Meaning', 'Design'],
-      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-3',
-      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
-
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 3 serves as a testament to the enduring power of classical typographic grids.`
-    },
-    {
-      id: 'entry-mock-essay-4',
-      authorId: 'user-tariq-malik',
-      contentType: 'Essay',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-06-03T16:00:00.000Z',
-      updatedDate: '2026-06-03T16:00:00.000Z',
-      publishedDate: '2026-06-03T16:00:00.000Z',
-      title: 'Essay 4: On the Nature of Typography and Meaning',
-      slug: 'mock-essay-4',
-      tags: ['Typography', 'Meaning', 'Design'],
-      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-4',
-      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
-
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 4 serves as a testament to the enduring power of classical typographic grids.`
-    },
-    {
-      id: 'entry-mock-essay-5',
-      authorId: 'user-tariq-malik',
-      contentType: 'Essay',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-06-04T16:00:00.000Z',
-      updatedDate: '2026-06-04T16:00:00.000Z',
-      publishedDate: '2026-06-04T16:00:00.000Z',
-      title: 'Essay 5: On the Nature of Typography and Meaning',
-      slug: 'mock-essay-5',
-      tags: ['Typography', 'Meaning', 'Design'],
-      canonicalUrl: 'https://author.Adjung.com/essay/mock-essay-5',
-      content: `The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
-
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay 5 serves as a testament to the enduring power of classical typographic grids.`
-    },
-    {
-      id: 'entry-mock-article-1',
-      authorId: 'user-tariq-malik',
-      contentType: 'Article',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-06-30T16:00:00.000Z',
-      updatedDate: '2026-06-30T16:00:00.000Z',
-      publishedDate: '2026-06-30T16:00:00.000Z',
-      title: 'Comprehensive Review 1: The Archival Systems of Antiquity',
-      slug: 'mock-article-1',
-      tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://tariq.Adjung.com/article/mock-article-1',
-      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
-
-This article 1 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
-
-As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
-      footnotes: [
-        'Refer to the foundational texts on archival theory for further reading.',
-        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
-    },
-    {
-      id: 'entry-mock-article-2',
-      authorId: 'user-zayd-ghazali',
-      contentType: 'Article',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-07-01T16:00:00.000Z',
-      updatedDate: '2026-07-01T16:00:00.000Z',
-      publishedDate: '2026-07-01T16:00:00.000Z',
-      title: 'Comprehensive Review 2: The Archival Systems of Antiquity',
-      slug: 'mock-article-2',
-      tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://author.Adjung.com/article/mock-article-2',
-      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
-
-This article 2 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
-
-As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
-      footnotes: [
-        'Refer to the foundational texts on archival theory for further reading.',
-        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
-    },
-    {
-      id: 'entry-mock-article-3',
-      authorId: 'user-tariq-malik',
-      contentType: 'Article',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-07-02T16:00:00.000Z',
-      updatedDate: '2026-07-02T16:00:00.000Z',
-      publishedDate: '2026-07-02T16:00:00.000Z',
-      title: 'Comprehensive Review 3: The Archival Systems of Antiquity',
-      slug: 'mock-article-3',
-      tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://author.Adjung.com/article/mock-article-3',
-      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
-
-This article 3 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
-
-As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
-      footnotes: [
-        'Refer to the foundational texts on archival theory for further reading.',
-        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
-    },
-    {
-      id: 'entry-mock-article-4',
-      authorId: 'user-amina-masri',
-      contentType: 'Article',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-07-03T16:00:00.000Z',
-      updatedDate: '2026-07-03T16:00:00.000Z',
-      publishedDate: '2026-07-03T16:00:00.000Z',
-      title: 'Comprehensive Review 4: The Archival Systems of Antiquity',
-      slug: 'mock-article-4',
-      tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://author.Adjung.com/article/mock-article-4',
-      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
-
-This article 4 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
-
-As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
-      footnotes: [
-        'Refer to the foundational texts on archival theory for further reading.',
-        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
-    },
-    {
-      id: 'entry-mock-article-5',
-      authorId: 'user-amina-masri',
-      contentType: 'Article',
-      status: 'Published',
-      visibility: 'Public',
-      createdDate: '2026-07-04T16:00:00.000Z',
-      updatedDate: '2026-07-04T16:00:00.000Z',
-      publishedDate: '2026-07-04T16:00:00.000Z',
-      title: 'Comprehensive Review 5: The Archival Systems of Antiquity',
-      slug: 'mock-article-5',
-      tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://author.Adjung.com/article/mock-article-5',
-      content: `Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
-
-This article 5 examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
-
-As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?`,
-      footnotes: [
-        'Refer to the foundational texts on archival theory for further reading.',
-        'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
-    },{
-    id: 'entry-mock-notice-1',
-    authorId: 'user-tariq-malik', // Chief Editor
-    contentType: 'Notice',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: new Date(2026, 6, 1).toISOString(),
-    updatedDate: new Date(2026, 6, 1).toISOString(),
-    publishedDate: new Date(2026, 6, 1).toISOString(),
-    title: 'Scheduled Platform Maintenance',
-    slug: 'scheduled-platform-maintenance-july',
-    tags: ['Announcement', 'Maintenance'],
-    canonicalUrl: 'https://Adjung.com/notice/scheduled-platform-maintenance-july',
-    content: `Please be advised that the Adjung scholarly archive will undergo scheduled platform maintenance on **July 15, 2026**. During this time, the editorium and reading interfaces may be temporarily unavailable.
-
-We anticipate the downtime to last no longer than two hours. We thank you for your patience as we upgrade our core archival infrastructure.`,
-    isInstitutional: true,
-    isPinned: true,
-    priority: 'High'
-  },{
-    id: 'entry-mock-editorial-1',
-    authorId: 'user-tariq-malik', // Chief Editor
-    contentType: 'Editor\'s Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: new Date(2026, 0, 1).toISOString(),
-    updatedDate: new Date(2026, 0, 1).toISOString(),
-    publishedDate: new Date(2026, 0, 1).toISOString(),
-    title: 'On the Future of Adjung',
-    slug: 'on-the-future-of-adjung',
-    tags: ['Philosophy', 'Direction', 'Editorial'],
-    canonicalUrl: 'https://Adjung.com/editorial/on-the-future-of-adjung',
-    content: `As we move into a new era of digital scholarship, the Adjung Editorial Board reflects on our founding principles. The digital age promised democratization of knowledge, yet often delivered fragmentation. 
-
-In this note, we reaffirm our commitment to structured, deliberate, and deeply integrated academic publishing. The future of Adjung is not merely about hosting texts; it is about preserving the relationships between texts—the citations, the margins, the silent dialogues that bridge centuries of thought.
-
-We invite our writers to continue pushing the boundaries of what a digital manuscript can be.`,
-    excerpt: 'As we move into a new era of digital scholarship, the Adjung Editorial Board reflects on our founding principles. The digital age promised democratization of knowledge, yet often delivered fragmentation.',
-    isInstitutional: true,
-    isPinned: true,
-    editorialCategory: 'Philosophy'
-  },
-  {
-    id: 'entry-manifesto',
-    authorId: null,
-    publisher: 'Adjung Editorial Board',
-    contentType: 'Editor\'s Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: new Date(2026, 5, 12).toISOString(),
-    updatedDate: new Date(2026, 5, 12).toISOString(),
-    publishedDate: new Date(2026, 5, 12).toISOString(),
-    title: 'Why Adjung Exists',
-    slug: 'why-adjung-exists',
-    tags: ['Manifesto', 'Philosophy', 'Core'],
-    canonicalUrl: 'https://adjung.com/editorial/why-adjung-exists',
-    excerpt: 'Knowledge was never meant to compete for attention.',
-    content: `The internet has made it possible for [ideas](gloss:thought) to travel farther than at any other time in history. Yet many of the most thoughtful contributions are quietly buried beneath an endless stream[^fn-1] of new content,[^mn-1] before they have the opportunity to be read, questioned, and understood.
-
-We created Adjung as a quiet home for [knowledge](gloss:wisdom)[^fn-2] where anyone, regardless of profession or background, can write, preserve, and discover work that deserves to remain meaningful for generations,[^mn-2] rather than only for today's conversations.
-
-Here, ideas are valued by their [substance](gloss:essence),[^fn-3] not by popularity, appearance,[^mn-3] or algorithms. There are no like buttons to chase, no notifications to distract—only the quiet clarity of reasoned thought.
-
-To preserve the depth of scholarship, Adjung integrates three distinct dimensions of notation:[^mn-4] [interlinear notes](gloss:translation) for instant semantic clarity, margin notes for context-rich commentary, and footnotes for source citations.[^fn-4] Every publication is treated as a lasting contribution to humanity's shared record of knowledge.`,
-    isInstitutional: true,
-    isPinned: true,
-    footnotesData: [
-      {
-        id: 'fn-1',
-        label: 'Attention Economy',
-        content: 'An endless stream continually replaces what came before, regardless of its long-term value.'
-      },
-      {
-        id: 'fn-2',
-        label: 'Preservation',
-        content: 'Preservation means ensuring that knowledge remains accessible, citable, and discoverable over time.'
-      },
-      {
-        id: 'fn-3',
-        label: 'Editorial Principle',
-        content: 'Ideas are evaluated by their intellectual contribution rather than popularity or visibility.'
-      },
-      {
-        id: 'fn-4',
-        label: 'authoritative sources',
-        content: 'Authoritative citations are preserved at the base of each document to anchor its arguments in established research.'
-      }
-    ],
-    marginNotesData: {
-      'mn-1': "EDITORIAL NOTE\nEndless feeds reward immediacy. Knowledge requires continuity.",
-      'mn-2': "PRESERVATION\nPreservation begins when a work is expected to outlive its author.",
-      'mn-3': "EDITORIAL PRINCIPLE\nReaders should encounter ideas before personalities.",
-      'mn-4': "THREE-LAYER NOTE SYSTEM\nBy separating translation, active dialogue, and structured citations, we maintain absolute textual purity."
-    }
-  },
-  {
-    id: 'entry-canonical-note',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-07-07T12:00:00Z',
-    updatedDate: '2026-07-07T12:00:00Z',
-    publishedDate: '2026-07-07T12:00:00Z',
-    title: 'Canonical Note on Classical Scholarship',
-    slug: 'canonical-note-classical-scholarship',
-    tags: ['Canonical', 'Note', 'Standard'],
-    canonicalUrl: 'https://zayd.adjung.com/note/canonical-note-classical-scholarship',
-    content: 'This is the Canonical Note. Note publications are short, casual observations designed without massive titles or abstract summaries. They rely on hand-written letterforms like Caveat to deliver an intimate reading experience. By utilizing [direct](gloss:clear) notation, they offer immediate clarity.'
-  },
-  {
-    id: 'entry-canonical-note-ar',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Note',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-07-07T12:00:00Z',
-    updatedDate: '2026-07-07T12:00:00Z',
-    publishedDate: '2026-07-07T12:00:00Z',
-    title: 'Canonical Arabic Note (الترميز العربي)',
-    slug: 'canonical-note-ar',
-    tags: ['Canonical', 'Arabic', 'Note'],
-    canonicalUrl: 'https://zayd.adjung.com/note/canonical-note-ar',
-    content: 'هذه هي الملاحظة المعيارية المكتوبة بخط الرقعة العربي التقليدي. تُعرض الملاحظات دائمًا بدون عناوين ضخمة، لتوفير تجربة قراءة حميمية ومريحة للباحث الكلاسيكي.'
-  },
-  {
-    id: 'entry-canonical-essay',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Essay',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-07-07T12:00:00Z',
-    updatedDate: '2026-07-07T12:00:00Z',
-    publishedDate: '2026-07-07T12:00:00Z',
-    title: 'Canonical Essay: The Art of Traditional Academic Typography',
-    slug: 'canonical-essay-academic-typography',
-    tags: ['Canonical', 'Essay', 'Academic'],
-    canonicalUrl: 'https://zayd.adjung.com/essay/canonical-essay-academic-typography',
-    excerpt: 'This is the official Canonical Essay, designed as the baseline standard for academic book publishing in Adjung. It utilizes formal margins, traditional footnotes at the bottom, and drop-caps.',
-    content: 'Traditional scholarship thrives on the physical geometry of text blocks. The layout of an essay must respect the focus of the reader, anchoring complex source citations at the base of the page.[^fn-1] By integrating [classical](gloss:traditional) proportions, we ensure a deep reading environment.\n\nFurthermore, the presentation of structured ideas requires a clear hierarchy of headings. The footnotes registry serves as the cross-referencing anchor, ensuring absolute textual authority.[^fn-2]',
-    footnotesData: [
-      {
-        id: 'fn-1',
-        label: 'Scribal Restraint',
-        content: 'Citing the classical dot-based measures of Arabic calligraphers.'
-      },
-      {
-        id: 'fn-2',
-        label: 'Footnotes Standard',
-        content: 'Footnotes reside at the base of the page, acting as the scholarly anchor.'
-      }
-    ]
-  },
-  {
-    id: 'entry-canonical-article',
-    authorId: 'user-zayd-ghazali',
-    contentType: 'Article',
-    status: 'Published',
-    visibility: 'Public',
-    createdDate: '2026-07-07T12:00:00Z',
-    updatedDate: '2026-07-07T12:00:00Z',
-    publishedDate: '2026-07-07T12:00:00Z',
-    title: 'Canonical Article: The Digital Press Layout Model',
-    slug: 'canonical-article-digital-press-model',
-    tags: ['Canonical', 'Article', 'Press'],
-    canonicalUrl: 'https://zayd.adjung.com/article/canonical-article-digital-press-model',
-    excerpt: 'This is the official Canonical Article, representing the wide-canvas digital twin of modern journalism. It supports structured multi-columns, featured images, and active margin notes.',
-    content: 'Digital publications require active commentary paths. Unlike essays, articles make use of the left or right margins to present immediate annotations next to the paragraphs they reference.[^mn-1] This split-screen layout keeps the primary and secondary readings visually aligned.\n\nIn addition, articles support high-impact media features such as large titles, featured headers, and custom matrices to outline systemic dimensions.[^mn-2]',
-    marginNotesData: {
-      'mn-1': 'MARGIN COMMENTARY\nAnnotations are kept inline with text to enrich the digital reading layer.',
-      'mn-2': 'MODERN MEDIA\nArticles are wide-canvas layouts with large typography and media integrations.'
-    }
-  }
-];
+export const INITIAL_ENTRIES: Entry[] = [];
 
 export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   academicAffiliation: 'Consortium of Independent Editorial Scholars',
   editorialPolicy: BRAND.tagline,
   accentColor: '#802334',
   allowSelfRegistration: false,
-  editorialSelectionIds: ['entry-zayd-1', 'entry-amina-1', 'entry-sarah-1'],
-  featuredScholarId: 'user-zayd-ghazali',
-  featuredEntryId: 'entry-zayd-1',
+  editorialSelectionIds: [],
+  featuredScholarId: 'user-gemini',
+  featuredEntryId: '',
   featuredEssayIds: [],
   featuredNoteIds: [],
   announcementBanner: 'Welcome to the Adjung scholarly archive. The independent digital press.',
@@ -1060,8 +489,8 @@ Source: MIT Technology Review, 2024`,
       deleteEditorNote: true
     },
     'Writer': {
-      viewIndex: false,
-      viewDirectory: false,
+      viewIndex: true,
+      viewDirectory: true,
       curateFrontpage: false,
       inviteWriters: false,
       moderateReports: false,

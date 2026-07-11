@@ -66,6 +66,8 @@ export interface User {
   bioSummary?: string;
   suspended?: boolean;
   affiliation?: string;
+  createdAt?: string; // ISO timestamp or YYYY-MM-DD
+  isAi?: boolean;
 }
 
 export type PublicationClass = 'Scholarly' | 'Institutional';
@@ -185,6 +187,7 @@ export interface Entry {
   referenceSortOrder?: 'alphabetical' | 'appearance';
   referenceStyle?: string;
   signatureVersionId?: string;
+  language?: string;
   
   // Institutional Metadata
   priority?: 'High' | 'Normal' | 'Low';

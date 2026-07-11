@@ -394,7 +394,30 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-8 bg-stone-950/80 backdrop-blur-sm">
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 bg-stone-900 border-0 sm:border border-stone-800 rounded-none sm:rounded-lg p-4 sm:p-5 shadow-2xl text-stone-200 w-full max-w-4xl h-full sm:h-auto xl:h-[480px] max-h-screen sm:max-h-[95vh] overflow-y-auto xl:overflow-hidden">
+      <div className="flex flex-col bg-stone-900 border-0 sm:border border-stone-800 rounded-none sm:rounded-lg p-4 sm:p-5 shadow-2xl text-stone-200 w-full max-w-4xl h-full sm:h-auto xl:h-[530px] max-h-screen sm:max-h-[95vh] overflow-hidden">
+        
+        {/* Modal Header */}
+        <div className="flex justify-between items-center border-b border-stone-800/80 pb-3 mb-4 w-full select-none shrink-0">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-[#802334]" />
+            <h2 className="font-serif text-[16px] text-stone-100">Signature Studio</h2>
+          </div>
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-stone-400 hover:text-stone-200 transition-colors cursor-pointer p-1.5 hover:bg-stone-850/50 rounded border border-stone-800"
+              title="Close modal"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Content Panel */}
+        <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 flex-grow overflow-y-auto xl:overflow-hidden">
       
       {/* Settings Panel */}
       {showSettings && (
@@ -706,9 +729,9 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
       <div className="flex-1 min-w-0 flex flex-col gap-4 xl:h-full">
         
         {/* Mode Toggle & Inline Typography Input */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6 w-full">
           {/* Mode Toggle */}
-          <div className="flex bg-stone-950/30 p-1 rounded border border-stone-850 w-fit shrink-0">
+          <div className="flex bg-stone-950/30 p-1 rounded border border-stone-850 w-fit shrink-0 sm:mt-0.5">
             <button 
               type="button"
               onClick={() => setSignatureMode('draw')}
@@ -731,8 +754,8 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
 
           {/* Quick Input for Typography Mode */}
           {signatureMode === 'type' && (
-            <div className="flex-1 max-w-md flex flex-col gap-1">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 max-w-md flex flex-col gap-1.5 w-full">
+              <div className="flex items-center gap-2.5">
                 <input
                   type="text"
                   value={typedText}
@@ -746,11 +769,11 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                   placeholder="Type your signature here..."
                   className="w-full bg-stone-950/40 border border-stone-850 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-Adjung-maroon font-serif"
                 />
-                <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-1.5 py-1 rounded border border-stone-850">
+                <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-2 py-1.5 rounded border border-stone-850">
                   {typedText.length}/15
                 </span>
               </div>
-              <span className="font-mono text-[8px] text-stone-500 italic">
+              <span className="font-mono text-[8px] text-stone-500 italic pl-1">
                 A-Z, a-z & spaces only (max. 15 characters)
               </span>
             </div>
@@ -888,6 +911,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
         </div>
 
       </div>
+    </div>
     </div>
     </div>
   );

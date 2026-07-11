@@ -40,7 +40,9 @@ const initializeSchema = () => {
           avatarColor TEXT,
           bioSummary TEXT,
           isSuspended INTEGER DEFAULT 0,
-          password TEXT DEFAULT 'password'
+          password TEXT DEFAULT 'password',
+          createdAt TEXT,
+          isAi INTEGER DEFAULT 0
         )
       `);
 
@@ -131,6 +133,11 @@ const initializeSchema = () => {
       db.run("ALTER TABLE system_settings ADD COLUMN featuredEssayIds TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN featuredNoteIds TEXT", () => {});
       db.run("ALTER TABLE users ADD COLUMN affiliation TEXT", () => {});
+      db.run("ALTER TABLE users ADD COLUMN isAi INTEGER DEFAULT 0", () => {});
+      db.run("ALTER TABLE users ADD COLUMN createdAt TEXT", () => {
+        db.run("UPDATE users SET createdAt = '2026-06-25' WHERE id = 'user-tariq-malik' AND createdAt IS NULL", () => {});
+        db.run("UPDATE users SET createdAt = '2026-06-26' WHERE id = 'user-associate-editor' AND createdAt IS NULL", () => {});
+      });
       db.run("ALTER TABLE identities ADD COLUMN affiliation TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN worldClockHolidaysText TEXT", () => {});
       db.run("ALTER TABLE system_settings ADD COLUMN worldClockHolidaysGoogleDocUrl TEXT", () => {});
@@ -189,21 +196,44 @@ const seedDatabase = async () => {
     });
   };
 
-  const usersCount = await checkUsersCount();
-  if (usersCount > 0) {
-    console.log('Database already contains seed data. Bypassing seed operation.');
-    return;
+  const needsReseed = await new Promise((resolve) => {
+    db.get("SELECT COUNT(*) as count FROM users WHERE id = 'user-gemini'", [], (err, row) => {
+      if (!row || row.count === 0) resolve(true);
+      else resolve(false);
+    });
+  });
+
+  if (needsReseed) {
+    console.log('Detected obsolete mock data. Wiping and reseeding database...');
+    await new Promise((resolve) => {
+      db.serialize(() => {
+        db.run("DELETE FROM profiles");
+        db.run("DELETE FROM identities");
+        db.run("DELETE FROM entries");
+        db.run("DELETE FROM system_settings");
+        db.run("DELETE FROM logs");
+        db.run("DELETE FROM release_logs");
+        db.run("DELETE FROM policies");
+        db.run("DELETE FROM users", [], () => resolve());
+      });
+    });
+  } else {
+    const usersCount = await checkUsersCount();
+    if (usersCount > 0) {
+      console.log('Database already contains seed data. Bypassing seed operation.');
+      return;
+    }
   }
 
-  console.log('Database is empty. Seeding initial academic seed data...');
+  console.log('Database is empty or cleared. Seeding initial academic seed data...');
   db.serialize(() => {
     // 1. Seed Users
     const stmtUser = db.prepare(`
-      INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended, createdAt, isAi)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     mockDb.getUsers().forEach(u => {
-      stmtUser.run(u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0);
+      stmtUser.run(u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.createdAt || new Date().toISOString().split('T')[0], u.isAi ? 1 : 0);
     });
     stmtUser.finalize();
 
@@ -445,7 +475,8 @@ app.get('/api/db-state', async (req, res) => {
 
     const users = usersRows.map((u) => ({
       ...u,
-      suspended: u.isSuspended === 1
+      suspended: u.isSuspended === 1,
+      isAi: u.isAi === 1
     }));
 
     const profiles = profilesRows;
@@ -701,19 +732,20 @@ app.post('/api/users', async (req, res) => {
     if (checkExists) {
       await dbRun(`
         UPDATE users SET
-          username = ?, email = ?, role = ?, penName = ?, signature = ?, avatarColor = ?, bioSummary = ?, isSuspended = ?, affiliation = ?
+          username = ?, email = ?, role = ?, penName = ?, signature = ?, avatarColor = ?, bioSummary = ?, isSuspended = ?, affiliation = ?, isAi = ?
           ${u.password ? ', password = ?' : ''}
         WHERE id = ?
       `, [
-        u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.affiliation,
+        u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.affiliation, u.isAi ? 1 : 0,
         ...(u.password ? [u.password] : []), u.id
       ]);
     } else {
+      const regDate = u.createdAt || new Date().toISOString().split('T')[0];
       await dbRun(`
-        INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended, password, affiliation)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, username, email, role, penName, signature, avatarColor, bioSummary, isSuspended, password, affiliation, createdAt, isAi)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.password || 'password', u.affiliation
+        u.id, u.username, u.email, u.role, u.penName, u.signature, u.avatarColor, u.bioSummary, u.suspended ? 1 : 0, u.password || 'password', u.affiliation, regDate, u.isAi ? 1 : 0
       ]);
     }
 

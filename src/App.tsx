@@ -34,7 +34,8 @@ import {
   Plus,
   Search,
   Mail,
-  Send
+  Send,
+  Sparkles
 } from 'lucide-react';
 
 import { FolioTimeline } from './components/portal/FolioTimeline';
@@ -58,6 +59,7 @@ import { Editorium } from './components/studio/Editorium';
 import { Directory } from './components/portal/Directory';
 import { IdentityStudio } from './components/portal/IdentityStudio';
 import { LoadingScreen } from './components/common/LoadingScreen';
+import { RestrictedAccessView } from './components/common/RestrictedAccessView';
 import { ElasticMarginRow } from './components/rendering/ElasticMarginRow';
 import { AnimatedSignature } from './components/desk/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
@@ -995,13 +997,13 @@ export default function App() {
     try {
       const authenticatedUser = await AuthService.signIn(usernameInput, passwordInput, rememberMe);
       setCurrentUser(authenticatedUser);
-      setSelectedAuthorId(authenticatedUser.id);
+      setSelectedAuthorId('');
       setUsernameInput('');
       setPasswordInput('');
       setShowLoginModal(false);
       
-      // Redirect to Folio upon login
-      setActiveTab('folio');
+      // Redirect to Frontpage upon login
+      setActiveTab('frontpage');
       setEditingEntry(null);
       setSelectedEntry(null);
       showToast(`Welcome back, ${authenticatedUser.penName}!`, 'success');
@@ -1015,8 +1017,8 @@ export default function App() {
     try {
       const authenticatedUser = await AuthService.signInWithPreset(username);
       setCurrentUser(authenticatedUser);
-      setSelectedAuthorId(authenticatedUser.id);
-      setActiveTab('folio');
+      setSelectedAuthorId('');
+      setActiveTab('frontpage');
       setEditingEntry(null);
       setSelectedEntry(null);
       setShowLoginModal(false);
@@ -1216,11 +1218,10 @@ export default function App() {
   };
 
   // Add Biography Timeline Item
-  const handleAddBioItem = (e: React.FormEvent) => {
+  const handleAddBioItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    const profile = db.getProfileByAuthorId(currentUser.id);
     const newItem: BiographyItem = {
       id: generateUUID(),
       year: newBioYear || '2026',
@@ -1235,10 +1236,17 @@ export default function App() {
         ...identity,
         lifeTimeline: [...identity.lifeTimeline, newItem].sort((a, b) => parseInt(a.year) - parseInt(b.year))
       };
-      db.updateIdentity(updatedIdentity);
+      
+      try {
+        await firestoreService.saveIdentity(updatedIdentity);
+        db.updateIdentity(updatedIdentity);
+        refreshDbState();
+        showToast('Biography updated', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal menyimpan milestone ke server.', 'error');
+      }
     }
-    refreshDbState();
-    showToast('Biography updated', 'success');
     
     // Reset modal states
     setShowAddBioModal(false);
@@ -1248,7 +1256,7 @@ export default function App() {
   };
 
   // Remove Biography Timeline Item
-  const handleRemoveBioItem = (itemId: string) => {
+  const handleRemoveBioItem = async (itemId: string) => {
     if (!currentUser) return;
     const identity = db.getIdentityByAccountId(currentUser.id);
     if (identity) {
@@ -1256,10 +1264,17 @@ export default function App() {
         ...identity,
         lifeTimeline: identity.lifeTimeline.filter(item => item.id !== itemId)
       };
-      db.updateIdentity(updatedIdentity);
+      
+      try {
+        await firestoreService.saveIdentity(updatedIdentity);
+        db.updateIdentity(updatedIdentity);
+        refreshDbState();
+        showToast('Biography updated', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal memadam milestone di server.', 'error');
+      }
     }
-    refreshDbState();
-    showToast('Biography updated', 'success');
   };
 
   // Editorium: Send invitation to a scholar
@@ -1543,16 +1558,26 @@ Editorial Board of Adjung`;
                 PERSONAL SITE
               </span>
               
-              <h1 
-                onClick={() => {
-                  setSelectedEntry(null);
-                  setEditingEntry(null);
-                  setActiveTab('folio');
-                }}
-                className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-stone-900 cursor-pointer hover:opacity-95 inline-block select-none leading-none"
-              >
-                {currentAuthor.penName}
-              </h1>
+              <div className="flex items-center justify-center gap-2.5">
+                <h1 
+                  onClick={() => {
+                    setSelectedEntry(null);
+                    setEditingEntry(null);
+                    setActiveTab('folio');
+                  }}
+                  className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-stone-900 cursor-pointer hover:opacity-95 select-none leading-none"
+                >
+                  {currentAuthor.penName}
+                </h1>
+                {currentAuthor.isAi && (
+                  <div className="relative group/tooltip inline-block align-middle select-none">
+                    <Sparkles className="w-5 h-5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-900 text-stone-100 text-[10px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                      AI Editorial Fellow
+                    </div>
+                  </div>
+                )}
+              </div>
               
               {/* The subdomain kept as an elegant central element of the identity integrated naturally without bullets */}
               <div className="mt-2.5">
@@ -1565,26 +1590,6 @@ Editorial Board of Adjung`;
         </header>
       )}
 
-      {/* ==================== 2B. PLATFORM DIRECTORY HEADER ==================== */}
-      {activeTab === 'directory' && (
-        <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
-          <div className="max-w-6xl mx-auto text-center relative">
-            <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
-              <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
-                PLATFORM DIRECTORY
-              </span>
-              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-stone-900 inline-block select-none leading-none">
-                Writers Directory
-              </h1>
-              <div className="mt-2.5">
-                <span className="font-mono text-[11px] text-stone-500 lowercase tracking-wide block">
-                  Search and browse registered Adjung writers.
-                </span>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
 
       {/* ==================== 3. MAIN DYNAMIC WORKSPACE ==================== */}
       <main className="flex-grow max-w-6xl w-full mx-auto px-4 md:px-8 mt-6">
@@ -1703,29 +1708,58 @@ Editorial Board of Adjung`;
 
         {/* ACTIVE MODULE 3B: DIRECTORY (Searchable public directory of all platform members) */}
         {activeTab === 'directory' && (
-          <Directory 
-            users={users}
-            onSelectMember={(userId, targetTab) => {
-              setSelectedAuthorId(userId);
-              setActiveTab(targetTab);
-              setSelectedEntry(null);
-              setEditingEntry(null);
-            }}
-          />
+          !currentUser ? (
+            <RestrictedAccessView
+              pageName="Directory"
+              onSignInClick={() => {
+                setLoginError('');
+                setShowLoginModal(true);
+              }}
+              onSignUpClick={() => {
+                setShowSignUpWizard(true);
+              }}
+            />
+          ) : (
+            <Directory 
+              users={users}
+              entries={entries}
+              onSelectMember={(userId, targetTab) => {
+                setSelectedAuthorId(userId);
+                setActiveTab(targetTab);
+                setSelectedEntry(null);
+                setEditingEntry(null);
+              }}
+            />
+          )
         )}
 
         {/* ACTIVE MODULE 4: INDEX (Editor/Admin only dynamically generated published entries list) */}
-        {activeTab === 'index' && currentUser && hasPermission('viewIndex') && (
-          <div className="max-w-6xl mx-auto">
-            <EditorialIndex
-              entries={entries}
-              users={users}
-              setSelectedEntry={setSelectedEntry}
-              systemSettings={systemSettings}
-              initialSearchQuery={indexSearchQuery}
-              onSearchQueryChange={setIndexSearchQuery}
+        {activeTab === 'index' && (
+          !currentUser ? (
+            <RestrictedAccessView
+              pageName="Shared Index"
+              onSignInClick={() => {
+                setLoginError('');
+                setShowLoginModal(true);
+              }}
+              onSignUpClick={() => {
+                setShowSignUpWizard(true);
+              }}
             />
-          </div>
+          ) : (
+            hasPermission('viewIndex') && (
+              <div className="max-w-6xl mx-auto">
+                <EditorialIndex
+                  entries={entries}
+                  users={users}
+                  setSelectedEntry={setSelectedEntry}
+                  systemSettings={systemSettings}
+                  initialSearchQuery={indexSearchQuery}
+                  onSearchQueryChange={setIndexSearchQuery}
+                />
+              </div>
+            )
+          )
         )}
 
         {/* ACTIVE MODULE 5: EDITORIUM (Editor settings and administrative workspace) */}

@@ -33,7 +33,9 @@ export const firestoreService = {
           avatarColor: data.avatarColor || '',
           bioSummary: data.bioSummary || '',
           suspended: !!data.suspended,
-          affiliation: data.affiliation || ''
+          affiliation: data.affiliation || '',
+          createdAt: data.createdAt || '',
+          isAi: !!data.isAi
         });
       });
 
@@ -148,7 +150,9 @@ export const firestoreService = {
       avatarColor: user.avatarColor || '',
       bioSummary: user.bioSummary || '',
       suspended: !!user.suspended,
-      affiliation: user.affiliation || ''
+      affiliation: user.affiliation || '',
+      createdAt: user.createdAt || new Date().toISOString().split('T')[0],
+      isAi: !!user.isAi
     }, { merge: true });
   },
 

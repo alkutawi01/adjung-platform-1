@@ -135,6 +135,9 @@ export function Editorium() {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
   const [boardSearchQuery, setBoardSearchQuery] = useState('');
+  const [appointEditorQuery, setAppointEditorQuery] = useState('');
+  const [suspensionSearchVal, setSuspensionSearchVal] = useState('');
+  const [foundSuspendUser, setFoundSuspendUser] = useState<User | null>(null);
 
   const [selectedPolicyEditId, setSelectedPolicyEditId] = useState(db.getPolicies()[0]?.id || '');
   const [policyEditSections, setPolicyEditSections] = useState<PolicySection[]>(db.getPolicies()[0]?.sections || []);
@@ -148,7 +151,21 @@ export function Editorium() {
   }, [selectedPolicyEditId, users]);
 
   // Filtering board members and general users
-  const boardMembers = users.filter(u => u.role === 'Chief Editor' || u.role === 'Editor');
+  const boardMembers = React.useMemo(() => {
+    const list = users.filter(u => u.role === 'Chief Editor' || u.role === 'Editor');
+    list.sort((a, b) => {
+      const roleOrder: Record<string, number> = {
+        'Chief Editor': 1,
+        'Editor': 2
+      };
+      const orderA = roleOrder[a.role] || 3;
+      const orderB = roleOrder[b.role] || 3;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.penName.localeCompare(b.penName);
+    });
+    return list;
+  }, [users]);
+
   const [selectedBoardMemberId, setSelectedBoardMemberId] = useState<string | null>(
     boardMembers.length > 0 ? boardMembers[0].id : null
   );
@@ -533,8 +550,7 @@ Source: MIT Technology Review, 2024
           {renderTabButton('platform', 'Platform', <Database className="w-3.5 h-3.5" />)}
           {renderTabButton('landing', 'Landing', <Globe className="w-3.5 h-3.5" />)}
           {renderTabButton('frontpage', 'Frontpage', <Layers className="w-3.5 h-3.5" />)}
-          {renderTabButton('directory', 'Directory', <Search className="w-3.5 h-3.5" />)}
-          {renderTabButton('index', 'Index', <ListOrdered className="w-3.5 h-3.5" />)}
+          {renderTabButton('index', 'Publications', <ListOrdered className="w-3.5 h-3.5" />)}
           {renderTabButton('editorial', 'Editorial', <Award className="w-3.5 h-3.5" />)}
           {renderTabButton('users', 'Users', <UserCheck className="w-3.5 h-3.5" />)}
           {renderTabButton('roles', 'Roles', <Lock className="w-3.5 h-3.5" />)}
@@ -1328,7 +1344,7 @@ Source: MIT Technology Review, 2024
             <div className="lg:col-span-6 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
               <div className="border-b border-stone-100 pb-2">
                 <h4 className="font-serif text-base font-semibold text-stone-900 flex items-center gap-1.5 select-none">
-                  <TrendingUp className="w-4 h-4 text-adjung-maroon" /> Scholarly Format Distribution
+                  <TrendingUp className="w-4 h-4 text-adjung-maroon" /> Format Distribution
                 </h4>
                 <p className="text-stone-500 text-[10px] font-mono uppercase tracking-wider mt-0.5">Proportion of entry types in the public indexed archive</p>
               </div>
@@ -1337,7 +1353,7 @@ Source: MIT Technology Review, 2024
                 {/* Notes Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between font-mono text-[10px]">
-                    <span className="text-stone-600 font-semibold">Philosophical Notes</span>
+                    <span className="text-stone-600 font-semibold">Notes</span>
                     <span className="text-stone-700">{notesCount} ({totalEntries > 0 ? Math.round((notesCount/totalEntries)*100) : 0}%)</span>
                   </div>
                   <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden">
@@ -1348,7 +1364,7 @@ Source: MIT Technology Review, 2024
                 {/* Essays Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between font-mono text-[10px]">
-                    <span className="text-stone-600 font-semibold">Discursive Essays</span>
+                    <span className="text-stone-600 font-semibold">Essays</span>
                     <span className="text-stone-700">{essaysCount} ({totalEntries > 0 ? Math.round((essaysCount/totalEntries)*100) : 0}%)</span>
                   </div>
                   <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden">
@@ -1359,7 +1375,7 @@ Source: MIT Technology Review, 2024
                 {/* Articles Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between font-mono text-[10px]">
-                    <span className="text-stone-600 font-semibold">Marginalia Articles</span>
+                    <span className="text-stone-600 font-semibold">Articles</span>
                     <span className="text-stone-700">{articlesCount} ({totalEntries > 0 ? Math.round((articlesCount/totalEntries)*100) : 0}%)</span>
                   </div>
                   <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden">
@@ -1442,11 +1458,165 @@ Source: MIT Technology Review, 2024
               </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Editorial policy input */}
-          <div className="lg:col-span-5 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
+
+          {/* Editorial Board Directory - Now at the top, full-width with list and details side-by-side */}
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
+            <div className="border-b border-stone-100 pb-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+                  <UserCheck className="w-4 h-4 text-adjung-maroon" /> Editorial Board of Editors
+                </h3>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Manage administrative roles and access criteria for editors</p>
+              </div>
+
+              {/* Appoint Editor Form (Chief Editor only or manageRbac permission) */}
+              {hasPermission('manageRbac') && (
+                <div className="flex gap-2 items-center text-xs w-full md:w-auto">
+                  <input
+                    type="text"
+                    placeholder="Enter Pen Name or Username to appoint..."
+                    value={appointEditorQuery}
+                    onChange={(e) => setAppointEditorQuery(e.target.value)}
+                    className="border border-stone-200 p-1.5 rounded text-[10px] focus:outline-none focus:border-adjung-maroon font-sans bg-white w-full md:w-48"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!appointEditorQuery.trim()) return;
+                      const cleanQuery = appointEditorQuery.trim().toLowerCase().replace(/^@/, '');
+                      const target = users.find(u => 
+                        u.username.toLowerCase() === cleanQuery ||
+                        u.penName.toLowerCase() === cleanQuery
+                      );
+                      if (!target) {
+                        showToast('Scholar not found in database.', 'error');
+                        return;
+                      }
+                      if (target.role === 'Editor' || target.role === 'Chief Editor') {
+                        showToast(`${target.penName} is already on the Editorial Board.`, 'info');
+                        return;
+                      }
+                      handleChangeUserRole(target.id, 'Editor');
+                      showToast(`Successfully appointed ${target.penName} as Editor.`, 'success');
+                      setAppointEditorQuery('');
+                      refreshDbState();
+                    }}
+                    className="px-3 py-1.5 bg-adjung-maroon text-white font-mono uppercase tracking-wider text-[9px] hover:opacity-95 transition cursor-pointer rounded shrink-0"
+                  >
+                    + Appoint Editor
+                  </button>
+                </div>
+              )}
+
+              <div className="relative shrink-0">
+                <input
+                  type="text"
+                  placeholder="Search editors..."
+                  value={boardSearchQuery}
+                  onChange={(e) => setBoardSearchQuery(e.target.value)}
+                  className="border border-stone-200 p-1.5 pl-6 rounded text-[10px] focus:outline-none focus:border-adjung-maroon font-sans bg-white w-32"
+                />
+                <Search className="w-3 h-3 text-stone-400 absolute left-2 top-2.5" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left panel: Board list */}
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {boardMembers
+                  .filter(u => {
+                    const q = boardSearchQuery.trim().toLowerCase();
+                    return !q || u.penName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+                  })
+                  .map(u => (
+                    <div
+                      key={u.id}
+                      onClick={() => setSelectedBoardMemberId(u.id)}
+                      className={`p-3 border rounded transition cursor-pointer flex items-center justify-between hover:bg-stone-50 hover:border-adjung-maroon ${
+                        selectedBoardMemberId === u.id
+                          ? 'bg-adjung-maroon/[0.03] border-adjung-maroon shadow-sm ring-1 ring-adjung-maroon/20'
+                          : 'bg-white border-stone-150'
+                      }`}
+                    >
+                      <div className="space-y-0.5 text-left">
+                        <span className="font-serif font-semibold text-stone-800 text-xs block">{u.penName}</span>
+                        <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400">{u.role}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Right panel: Editor Details */}
+              <div className="bg-stone-50 p-4 rounded border border-stone-150 space-y-4 text-left text-xs">
+                {selectedBoardMemberId && users.find(u => u.id === selectedBoardMemberId) ? (
+                  (() => {
+                    const editor = users.find(u => u.id === selectedBoardMemberId)!;
+                    return (
+                      <div className="space-y-3 font-sans">
+                        <h4 className="font-serif font-bold text-sm text-stone-850 flex items-center justify-between">
+                          <span>{editor.penName}</span>
+                          <span className="font-signature text-xl text-adjung-maroon">{editor.signature}</span>
+                        </h4>
+                        <div className="space-y-1 text-stone-600 font-mono text-[10px]">
+                          <div>Username: @{editor.username}</div>
+                          <div>Email: {editor.email || 'N/A'}</div>
+                          <div>Role: <span className="text-adjung-maroon font-bold">{editor.role}</span></div>
+                        </div>
+
+                        {/* Actions block */}
+                        <div className="pt-2 border-t border-stone-200 flex flex-col gap-1.5">
+                          {hasPermission('manageRbac') && editor.id !== currentUser.id && editor.role === 'Editor' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to revoke ${editor.penName}'s editorial status?`)) {
+                                  handleChangeUserRole(editor.id, 'Writer');
+                                  showToast(`Revoked ${editor.penName}'s editorial status. Demoted to Writer.`, 'info');
+                                  refreshDbState();
+                                }
+                              }}
+                              className="bg-white hover:bg-red-50 border border-red-200 text-red-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center cursor-pointer mb-1"
+                            >
+                              Revoke Editor Status
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAuthorId(editor.id);
+                              setActiveTab('folio');
+                              setSelectedEntry(null);
+                              setEditingEntry(null);
+                            }}
+                            className="bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center"
+                          >
+                            View Folio
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAuthorId(editor.id);
+                              setActiveTab('bio');
+                              setSelectedEntry(null);
+                              setEditingEntry(null);
+                            }}
+                            className="bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center"
+                          >
+                            View Biography
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <p className="italic text-stone-400 py-12 text-center font-serif">No editor selected.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Central Editorial Policy & Platform Policies Editor - Now at the bottom */}
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
             <div className="border-b border-stone-100 pb-2">
               <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
                 <Sliders className="w-4 h-4 text-adjung-maroon" /> Central Editorial Policy
@@ -1548,130 +1718,7 @@ Source: MIT Technology Review, 2024
               </div>
             </div>
           </div>
-
-          {/* Editorial Board Directory */}
-          <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
-            <div className="border-b border-stone-100 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
-                  <UserCheck className="w-4 h-4 text-adjung-maroon" /> Editorial Board of Editors
-                </h3>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Manage administrative roles and access criteria for editors</p>
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search editors..."
-                  value={boardSearchQuery}
-                  onChange={(e) => setBoardSearchQuery(e.target.value)}
-                  className="border border-stone-200 p-1.5 pl-6 rounded text-[10px] focus:outline-none focus:border-adjung-maroon font-sans bg-white w-32"
-                />
-                <Search className="w-3 h-3 text-stone-400 absolute left-2 top-2.5" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left panel: Board list */}
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                {boardMembers
-                  .filter(u => {
-                    const q = boardSearchQuery.trim().toLowerCase();
-                    return !q || u.penName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
-                  })
-                  .map(u => (
-                    <div
-                      key={u.id}
-                      onClick={() => setSelectedBoardMemberId(u.id)}
-                      className={`p-3 border rounded transition cursor-pointer flex items-center justify-between hover:bg-stone-50 hover:border-adjung-maroon ${
-                        selectedBoardMemberId === u.id
-                          ? 'bg-adjung-maroon/[0.03] border-adjung-maroon shadow-sm ring-1 ring-adjung-maroon/20'
-                          : 'bg-white border-stone-150'
-                      }`}
-                    >
-                      <div className="space-y-0.5 text-left">
-                        <span className="font-serif font-semibold text-stone-800 text-xs block">{u.penName}</span>
-                        <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400">{u.role}</span>
-                      </div>
-                      <div className="h-10 w-28 flex items-center justify-end mix-blend-multiply select-none pointer-events-none shrink-0">
-                        {(() => {
-                          const sig = db.getIdentityByAccountId(u.id)?.signatures.find(s => s.status === 'Default');
-                          if (sig) {
-                            return (
-                              <SignatureRenderer 
-                                strokes={sig.strokes || []} 
-                                type={sig.type}
-                                typedText={sig.typedText}
-                                fontFamily={sig.fontFamily}
-                                typographyStyle={sig.typographyStyle}
-                                className="w-full h-full overflow-visible" 
-                                color="#802334" 
-                                strokeWidth={2.5} 
-                                enableBleed={true}
-                              />
-                            );
-                          }
-                          return <span className="font-signature text-sm text-adjung-maroon">{u.signature}</span>;
-                        })()}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-              {/* Right panel: Editor Details */}
-              <div className="bg-stone-50 p-4 rounded border border-stone-150 space-y-4 text-left text-xs">
-                {selectedBoardMemberId && users.find(u => u.id === selectedBoardMemberId) ? (
-                  (() => {
-                    const editor = users.find(u => u.id === selectedBoardMemberId)!;
-                    return (
-                      <div className="space-y-3 font-sans">
-                        <h4 className="font-serif font-bold text-sm text-stone-850 flex items-center justify-between">
-                          <span>{editor.penName}</span>
-                          <span className="font-signature text-xl text-adjung-maroon">{editor.signature}</span>
-                        </h4>
-                        <div className="space-y-1 text-stone-600 font-mono text-[10px]">
-                          <div>Username: @{editor.username}</div>
-                          <div>Email: {editor.email || 'N/A'}</div>
-                          <div>Role: <span className="text-adjung-maroon font-bold">{editor.role}</span></div>
-                        </div>
-
-                        {/* Actions block */}
-                        <div className="pt-2 border-t border-stone-200 flex flex-col gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedAuthorId(editor.id);
-                              setActiveTab('folio');
-                              setSelectedEntry(null);
-                              setEditingEntry(null);
-                            }}
-                            className="bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center"
-                          >
-                            View Folio
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedAuthorId(editor.id);
-                              setActiveTab('bio');
-                              setSelectedEntry(null);
-                              setEditingEntry(null);
-                            }}
-                            className="bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center"
-                          >
-                            View Biography
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <p className="italic text-stone-400 py-12 text-center font-serif">No editor selected.</p>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
       )}
 
       {/* ========================================================= */}
@@ -1679,99 +1726,145 @@ Source: MIT Technology Review, 2024
       {/* ========================================================= */}
       {editoriumActiveTab === 'users' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* User management directory search */}
+          {/* User management: Scholar Suspension Manager */}
           <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
-            <div className="border-b border-stone-100 pb-2 flex justify-between items-center">
-              <div>
-                <h3 className="font-serif text-lg font-semibold text-stone-900">Scholar Account Management</h3>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Suspend/Reactivate users, review, or adjust credential categories</p>
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search user accounts..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="border border-stone-200 p-1.5 pl-6 rounded text-[11px] focus:outline-none focus:border-adjung-maroon font-sans bg-white w-40"
-                />
-                <Search className="w-3 h-3 text-stone-400 absolute left-2 top-2.5" />
-              </div>
+            <div className="border-b border-stone-100 pb-2">
+              <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+                <ShieldAlert className="w-4.5 h-4.5 text-adjung-maroon" /> Scholar Suspension Manager
+              </h3>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Search and suspend scholar accounts, or manage suspended users</p>
             </div>
 
-            <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
-              {users
-                .filter(u => {
-                  const q = userSearchQuery.trim().toLowerCase();
-                  return !q || u.penName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
-                })
-                .map(u => {
-                  const isSelf = u.id === currentUser.id;
-                  return (
-                    <div key={u.id} className="p-3 border border-stone-150 rounded bg-[#FDFDFD] flex items-center justify-between gap-4">
-                      <div className="text-left space-y-0.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-serif font-bold text-[#111111] text-sm">{u.penName}</span>
-                          <span className={`text-[8px] font-mono uppercase px-1 rounded ${
-                            u.role === 'Chief Editor' 
-                              ? 'bg-adjung-maroon text-[#FDFDFD]' 
-                              : u.role === 'Editor'
-                              ? 'bg-amber-100 text-amber-900'
-                              : 'bg-stone-100 text-stone-600'
-                          }`}>
-                            {u.role}
-                          </span>
-                          {u.suspended && (
-                            <span className="text-red-700 font-mono text-[8px] uppercase bg-red-50 px-1 rounded border border-red-200/50">SUSPENDED</span>
-                          )}
-                        </div>
-                        <div className="font-mono text-[9px] text-stone-400 lowercase">@{u.username} • {u.email || 'No email'}</div>
-                      </div>
+            {/* Part 1: Search and Suspend Input */}
+            <div className="space-y-4 text-left text-xs font-sans">
+              <div className="space-y-1.5">
+                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">Search Scholar to Suspend</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-grow">
+                    <input
+                      type="text"
+                      placeholder="Enter Pen Name or Username (e.g. @zayd.ghazali)"
+                      value={suspensionSearchVal}
+                      onChange={(e) => {
+                        setSuspensionSearchVal(e.target.value);
+                        if (!e.target.value.trim()) {
+                          setFoundSuspendUser(null);
+                        }
+                      }}
+                      className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white"
+                    />
+                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!suspensionSearchVal.trim()) return;
+                      const cleanQuery = suspensionSearchVal.trim().toLowerCase().replace(/^@/, '');
+                      const found = users.find(u => 
+                        u.username.toLowerCase() === cleanQuery ||
+                        u.penName.toLowerCase() === cleanQuery
+                      );
+                      if (!found) {
+                        showToast('Scholar not found in database.', 'error');
+                        setFoundSuspendUser(null);
+                      } else {
+                        setFoundSuspendUser(found);
+                      }
+                    }}
+                    className="px-4 py-2 bg-stone-850 hover:bg-stone-900 text-white font-mono uppercase tracking-wider text-[10px] rounded transition cursor-pointer"
+                  >
+                    Find
+                  </button>
+                </div>
+              </div>
 
-                      {/* Controls */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {/* Change Role selection */}
-                        {hasPermission('manageRbac') && !isSelf ? (
-                          <select
-                            value={u.role}
-                            onChange={(e) => {
-                              handleChangeUserRole(u.id, e.target.value as any);
-                              refreshDbState();
-                            }}
-                            className="border border-stone-200 p-1 rounded text-[10px] bg-white focus:outline-none focus:border-adjung-maroon font-mono shadow-inner cursor-pointer"
-                          >
-                            <option value="Visitor">Visitor</option>
-                            <option value="Writer">Writer</option>
-                            <option value="Editor">Editor</option>
-                            <option value="Chief Editor">Chief Editor</option>
-                          </select>
-                        ) : null}
-
-                        {/* Suspend Toggle */}
-                        {hasPermission('manageRbac') && !isSelf ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleToggleUserSuspension(u.id);
-                              refreshDbState();
-                            }}
-                            className={`px-2 py-1 font-mono text-[9px] uppercase tracking-wider rounded border cursor-pointer ${
-                              u.suspended
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
-                            }`}
-                          >
-                            {u.suspended ? 'Reactivate' : 'Suspend'}
-                          </button>
-                        ) : null}
-
-                        {isSelf && (
-                          <span className="font-mono text-[9px] text-stone-400 italic">Self Account</span>
-                        )}
-                      </div>
+              {/* Display Found Scholar Details & Action */}
+              {foundSuspendUser && (
+                <div className="p-4 border border-stone-150 rounded bg-[#FDFDFD] space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <span className="font-serif font-bold text-[#111111] text-sm block">{foundSuspendUser.penName}</span>
+                      <span className="font-mono text-[9px] text-stone-400 block">@{foundSuspendUser.username} • {foundSuspendUser.email || 'No email'}</span>
+                      <span className={`inline-block text-[8px] font-mono uppercase px-1 rounded ${
+                        foundSuspendUser.role === 'Chief Editor' 
+                          ? 'bg-adjung-maroon text-[#FDFDFD]' 
+                          : foundSuspendUser.role === 'Editor'
+                          ? 'bg-amber-100 text-amber-900'
+                          : 'bg-stone-100 text-stone-600'
+                      }`}>
+                        {foundSuspendUser.role}
+                      </span>
                     </div>
-                  );
-                })}
+
+                    <div className="text-right space-y-1">
+                      <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">Listing Status</span>
+                      <span className={`text-[10px] font-semibold font-mono ${foundSuspendUser.suspended ? 'text-red-700 font-bold' : 'text-emerald-700 font-bold'}`}>
+                        {foundSuspendUser.suspended ? 'SUSPENDED' : 'ACTIVE & LISTED'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-stone-100 flex justify-end">
+                    {foundSuspendUser.id === currentUser.id ? (
+                      <span className="font-mono text-[9px] text-stone-400 italic">Self Account</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleToggleUserSuspension(foundSuspendUser.id);
+                          // Sync local found user state
+                          setFoundSuspendUser(prev => prev ? { ...prev, suspended: !prev.suspended } : null);
+                          showToast(`Suspension status updated for ${foundSuspendUser.penName}.`, 'success');
+                          refreshDbState();
+                        }}
+                        className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider rounded border cursor-pointer ${
+                          foundSuspendUser.suspended
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
+                        }`}
+                      >
+                        {foundSuspendUser.suspended ? 'Reactivate Scholar' : 'Suspend Scholar'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Part 2: Suspended Scholars List */}
+            <div className="space-y-3 pt-4 border-t border-stone-200">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold block">Suspended Scholars ({users.filter(u => u.suspended).length})</span>
+              </div>
+
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {users.filter(u => u.suspended).length > 0 ? (
+                  users.filter(u => u.suspended).map(u => (
+                    <div key={u.id} className="p-3 border border-red-100 bg-red-50/20 rounded flex items-center justify-between gap-4 text-left text-xs">
+                      <div>
+                        <span className="font-serif font-bold text-stone-800 block">{u.penName}</span>
+                        <span className="font-mono text-[9px] text-stone-400">@{u.username} • {u.role}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleToggleUserSuspension(u.id);
+                          if (foundSuspendUser && foundSuspendUser.id === u.id) {
+                            setFoundSuspendUser(prev => prev ? { ...prev, suspended: false } : null);
+                          }
+                          showToast(`Reactivated ${u.penName}.`, 'success');
+                          refreshDbState();
+                        }}
+                        className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded font-mono text-[9px] uppercase tracking-wider cursor-pointer"
+                      >
+                        Reactivate
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="italic text-stone-400 py-6 text-center font-serif">No scholars are currently suspended.</p>
+                )}
+              </div>
             </div>
           </div>
 
