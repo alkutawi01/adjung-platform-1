@@ -253,6 +253,13 @@ export interface SystemSettings {
   worldClockHolidaysGoogleDocUrl?: string;
   researchFindingsText?: string;
   researchFindingsGoogleDocUrl?: string;
+  googleDocSyncTimes?: string;
+  inTheNewsCachedText?: string;
+  inTheNewsLastFetched?: string;
+  worldClockCachedText?: string;
+  worldClockLastFetched?: string;
+  researchFindingsCachedText?: string;
+  researchFindingsLastFetched?: string;
 }
 
 export interface SystemLog {

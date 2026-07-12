@@ -1,7 +1,21 @@
 export default async function handler(req, res) {
-  const { url } = req.query;
+  let { url } = req.query;
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
+  }
+
+  // Ensure the URL is valid HTTP/HTTPS
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return res.status(400).json({ error: 'Invalid URL format' });
+  }
+
+  // Auto-rewrite standard Google Doc URLs to text export format for clean parsing
+  if (url.includes('docs.google.com/document/d/') && !url.includes('/export') && !url.includes('/pub')) {
+    let targetUrl = url.split('/edit')[0];
+    if (targetUrl.endsWith('/')) {
+      targetUrl = targetUrl.slice(0, -1);
+    }
+    url = `${targetUrl}/export?format=txt`;
   }
   try {
     const response = await fetch(url);

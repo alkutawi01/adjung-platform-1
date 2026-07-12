@@ -445,6 +445,13 @@ Source: Stanford Research Centre, 2026
 Finding: Regular digital disconnection restores neural pathways associated with empathy and reflection.
 Source: MIT Technology Review, 2024`,
   researchFindingsGoogleDocUrl: '',
+  googleDocSyncTimes: '12:10, 00:10',
+  inTheNewsCachedText: '',
+  inTheNewsLastFetched: '',
+  worldClockCachedText: '',
+  worldClockLastFetched: '',
+  researchFindingsCachedText: '',
+  researchFindingsLastFetched: '',
   rolePermissions: {
     'Chief Editor': {
       viewIndex: true,

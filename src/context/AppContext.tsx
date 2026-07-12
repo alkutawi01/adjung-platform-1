@@ -3,7 +3,7 @@ import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSetti
 import { db } from '../db/mockDb';
 import { AuthService, SessionService, RbacService } from '../services/authService';
 import { BRAND } from '../config/brand';
-import { generateUUID } from '../utils';
+import { generateUUID, shouldAutoFetch } from '../utils';
 import { firestoreService } from '../utils/firestoreService';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -143,7 +143,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await fetch(`/api/fetch-doc?url=${encodeURIComponent(url)}`);
       if (!res.ok) throw new Error('Fetch failed');
       const data = await res.json();
-      if (!data.text || data.text.includes('<!DOCTYPE html>') || data.text.includes('Sorry, the file you have requested does not exist.')) {
+      const lowerText = data.text ? data.text.toLowerCase() : '';
+      if (!data.text || lowerText.includes('<!doctype html>') || lowerText.includes('sorry, the file you have requested does not exist.')) {
         return { text: '', status: 'failed' };
       }
       return { text: data.text, status: 'success' };
@@ -172,20 +173,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (data.systemSettings) {
         const settings = data.systemSettings;
-        const [newsRes, holidaysRes, findingsRes] = await Promise.all([
-          fetchGoogleDocContent(settings.inTheNewsGoogleDocUrl),
-          fetchGoogleDocContent(settings.worldClockHolidaysGoogleDocUrl),
-          fetchGoogleDocContent(settings.researchFindingsGoogleDocUrl)
-        ]);
+        const syncTimes = settings.googleDocSyncTimes || '12:10, 00:10';
+        let needsSave = false;
+        const updatedSettings = { ...settings };
 
-        setInTheNewsGoogleDocText(newsRes.text);
-        setInTheNewsGoogleDocStatus(newsRes.status);
-        
-        setWorldClockHolidaysGoogleDocText(holidaysRes.text);
-        setWorldClockHolidaysGoogleDocStatus(holidaysRes.status);
+        // 1. In The News Doc Caching
+        let newsText = settings.inTheNewsCachedText || '';
+        let newsStatus = (settings.inTheNewsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        if (settings.inTheNewsGoogleDocUrl) {
+          if (shouldAutoFetch(settings.inTheNewsLastFetched, syncTimes)) {
+            const res = await fetchGoogleDocContent(settings.inTheNewsGoogleDocUrl);
+            newsText = res.text;
+            newsStatus = res.status;
+            updatedSettings.inTheNewsCachedText = res.text;
+            updatedSettings.inTheNewsLastFetched = new Date().toISOString();
+            needsSave = true;
+          }
+        }
+        setInTheNewsGoogleDocText(newsText);
+        setInTheNewsGoogleDocStatus(newsStatus);
 
-        setResearchFindingsGoogleDocText(findingsRes.text);
-        setResearchFindingsGoogleDocStatus(findingsRes.status);
+        // 2. World Clock Holidays Doc Caching
+        let holidaysText = settings.worldClockCachedText || '';
+        let holidaysStatus = (settings.worldClockLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        if (settings.worldClockHolidaysGoogleDocUrl) {
+          if (shouldAutoFetch(settings.worldClockLastFetched, syncTimes)) {
+            const res = await fetchGoogleDocContent(settings.worldClockHolidaysGoogleDocUrl);
+            holidaysText = res.text;
+            holidaysStatus = res.status;
+            updatedSettings.worldClockCachedText = res.text;
+            updatedSettings.worldClockLastFetched = new Date().toISOString();
+            needsSave = true;
+          }
+        }
+        setWorldClockHolidaysGoogleDocText(holidaysText);
+        setWorldClockHolidaysGoogleDocStatus(holidaysStatus);
+
+        // 3. Research Findings Doc Caching
+        let findingsText = settings.researchFindingsCachedText || '';
+        let findingsStatus = (settings.researchFindingsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        if (settings.researchFindingsGoogleDocUrl) {
+          if (shouldAutoFetch(settings.researchFindingsLastFetched, syncTimes)) {
+            const res = await fetchGoogleDocContent(settings.researchFindingsGoogleDocUrl);
+            findingsText = res.text;
+            findingsStatus = res.status;
+            updatedSettings.researchFindingsCachedText = res.text;
+            updatedSettings.researchFindingsLastFetched = new Date().toISOString();
+            needsSave = true;
+          }
+        }
+        setResearchFindingsGoogleDocText(findingsText);
+        setResearchFindingsGoogleDocStatus(findingsStatus);
+
+        if (needsSave) {
+          await firestoreService.saveSystemSettings(updatedSettings);
+          setSystemSettings(updatedSettings);
+          db.setSystemSettings(updatedSettings);
+        }
       }
 
       const activeSessionUser = SessionService.validateAndRetrieveSession();

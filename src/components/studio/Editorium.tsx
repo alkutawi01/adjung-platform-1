@@ -211,6 +211,7 @@ export function Editorium() {
   const [editorialAddInput, setEditorialAddInput] = useState('');
   const [inTheNewsRawText, setInTheNewsRawText] = useState(systemSettings.inTheNewsText || '');
   const [inTheNewsGoogleDocUrl, setInTheNewsGoogleDocUrl] = useState(systemSettings.inTheNewsGoogleDocUrl || '');
+  const [googleDocSyncTimes, setGoogleDocSyncTimes] = useState(systemSettings.googleDocSyncTimes || '12:10, 00:10');
   const [worldClockHolidaysRawText, setWorldClockHolidaysRawText] = useState(systemSettings.worldClockHolidaysText || '');
   const [worldClockHolidaysGoogleDocUrl, setWorldClockHolidaysGoogleDocUrl] = useState(systemSettings.worldClockHolidaysGoogleDocUrl || '');
   const [researchFindingsRawText, setResearchFindingsRawText] = useState(systemSettings.researchFindingsText || '');
@@ -228,6 +229,7 @@ export function Editorium() {
     if (systemSettings.layoutDensity) setLayoutDensity(systemSettings.layoutDensity);
     if (systemSettings.inTheNewsText !== undefined) setInTheNewsRawText(systemSettings.inTheNewsText);
     if (systemSettings.inTheNewsGoogleDocUrl !== undefined) setInTheNewsGoogleDocUrl(systemSettings.inTheNewsGoogleDocUrl);
+    if (systemSettings.googleDocSyncTimes !== undefined) setGoogleDocSyncTimes(systemSettings.googleDocSyncTimes);
     if (systemSettings.worldClockHolidaysText !== undefined) setWorldClockHolidaysRawText(systemSettings.worldClockHolidaysText);
     if (systemSettings.worldClockHolidaysGoogleDocUrl !== undefined) setWorldClockHolidaysGoogleDocUrl(systemSettings.worldClockHolidaysGoogleDocUrl);
     if (systemSettings.researchFindingsText !== undefined) setResearchFindingsRawText(systemSettings.researchFindingsText);
@@ -377,7 +379,9 @@ export function Editorium() {
     const updatedSettings = {
       ...systemSettings,
       inTheNewsText: inTheNewsRawText,
-      inTheNewsGoogleDocUrl: inTheNewsGoogleDocUrl
+      inTheNewsGoogleDocUrl: inTheNewsGoogleDocUrl,
+      googleDocSyncTimes: googleDocSyncTimes,
+      inTheNewsLastFetched: ''
     };
     setSystemSettings(updatedSettings);
     db.updateSystemSettings(updatedSettings);
@@ -414,7 +418,9 @@ url: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festiv
     const updatedSettings = {
       ...systemSettings,
       worldClockHolidaysText: worldClockHolidaysRawText,
-      worldClockHolidaysGoogleDocUrl: worldClockHolidaysGoogleDocUrl
+      worldClockHolidaysGoogleDocUrl: worldClockHolidaysGoogleDocUrl,
+      googleDocSyncTimes: googleDocSyncTimes,
+      worldClockLastFetched: ''
     };
     setSystemSettings(updatedSettings);
     db.updateSystemSettings(updatedSettings);
@@ -461,7 +467,9 @@ Status: Working
     const updatedSettings = {
       ...systemSettings,
       researchFindingsText: researchFindingsRawText,
-      researchFindingsGoogleDocUrl: researchFindingsGoogleDocUrl
+      researchFindingsGoogleDocUrl: researchFindingsGoogleDocUrl,
+      googleDocSyncTimes: googleDocSyncTimes,
+      researchFindingsLastFetched: ''
     };
     setSystemSettings(updatedSettings);
     db.updateSystemSettings(updatedSettings);
@@ -931,15 +939,30 @@ Source: MIT Technology Review, 2024
                   
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
                     <div className="lg:col-span-7 space-y-4">
-                      <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
-                        <input
-                          type="text"
-                          value={inTheNewsGoogleDocUrl}
-                          onChange={(e) => setInTheNewsGoogleDocUrl(e.target.value)}
-                          className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
-                          placeholder="https://docs.google.com/document/d/.../edit"
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
+                          <input
+                            type="text"
+                            value={inTheNewsGoogleDocUrl}
+                            onChange={(e) => setInTheNewsGoogleDocUrl(e.target.value)}
+                            className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                            placeholder="https://docs.google.com/document/d/.../edit"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Jadual Refresh Google Doc (Format 24j, cth: 12:10, 00:10)</label>
+                          <input
+                            type="text"
+                            value={googleDocSyncTimes}
+                            onChange={(e) => setGoogleDocSyncTimes(e.target.value)}
+                            className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                            placeholder="12:10, 00:10"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-2.5 mb-1">
                         {renderGoogleDocConnectionStatus(inTheNewsGoogleDocStatus, docItems.length)}
                       </div>
                       

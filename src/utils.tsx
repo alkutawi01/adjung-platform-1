@@ -1952,3 +1952,43 @@ export function parseResearchFindings(text: string): { items: ResearchFindingIte
   return { items, errors };
 }
 
+export function getMostRecentSyncThreshold(now: Date, syncTimesStr: string): Date {
+  const times = syncTimesStr
+    .split(',')
+    .map(t => t.trim())
+    .filter(t => /^\d{1,2}:\d{2}$/.test(t))
+    .map(t => {
+      const [h, m] = t.split(':').map(Number);
+      return { hours: h, minutes: m };
+    });
+
+  if (times.length === 0) {
+    times.push({ hours: 12, minutes: 10 });
+    times.push({ hours: 0, minutes: 10 });
+  }
+
+  const candidateDates: Date[] = [];
+
+  [0, 1].forEach(daysAgo => {
+    times.forEach(time => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - daysAgo);
+      d.setHours(time.hours, time.minutes, 0, 0);
+      candidateDates.push(d);
+    });
+  });
+
+  candidateDates.sort((a, b) => b.getTime() - a.getTime());
+
+  const found = candidateDates.find(d => d <= now);
+  return found || candidateDates[candidateDates.length - 1];
+}
+
+export function shouldAutoFetch(lastFetchedISO: string | null | undefined, syncTimesStr: string | undefined): boolean {
+  if (!lastFetchedISO) return true;
+  const lastFetched = new Date(lastFetchedISO);
+  const now = new Date();
+  const threshold = getMostRecentSyncThreshold(now, syncTimesStr || '12:10, 00:10');
+  return lastFetched < threshold;
+}
+
