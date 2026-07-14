@@ -25,7 +25,7 @@ export interface VisibilityRules {
 }
 
 export interface PresentationSpec {
-  contentType: 'Note' | 'Essay' | 'Article' | 'Notice' | "Editor's Note";
+  contentType: 'Note' | 'Essay' | 'Notice' | "Editor's Note";
   typography: TypographySpec;
   spacing: SpacingSpec;
   visibility: VisibilityRules;

@@ -5,6 +5,7 @@ import { BRAND } from '../../config/brand';
 import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
+import { EntryRenderer } from '../rendering/EntryRenderer';
 import { FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { firestoreService } from '../../utils/firestoreService';
@@ -273,37 +274,6 @@ export const FolioView: React.FC<FolioViewProps> = ({
           </div>
         </div>
 
-        {/* Categories filter bar */}
-        {allUniqueTags.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 border-b border-stone-300 pb-4 text-xs font-mono">
-            <span className="text-stone-400 uppercase tracking-wider mr-2">Sort Index:</span>
-            <button
-              type="button"
-              onClick={() => setSelectedTagFilter('All')}
-              className={`px-2.5 py-0.5 rounded transition ${
-                selectedTagFilter === 'All' 
-                  ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border border-adjung-maroon/20' 
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
-              }`}
-            >
-              All Entries ({authorPublishedEntries.length})
-            </button>
-            {allUniqueTags.map(tag => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTagFilter(tag)}
-                className={`px-2.5 py-0.5 rounded transition ${
-                  selectedTagFilter === tag 
-                    ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border border-adjung-maroon/20' 
-                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
-                }`}
-              >
-                #{tag} ({authorPublishedEntries.filter(e => e.tags.includes(tag)).length})
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Grouped timeline list */}
         {sortedYears.length === 0 ? (
@@ -314,175 +284,94 @@ export const FolioView: React.FC<FolioViewProps> = ({
           </div>
         ) : (
           <div className="space-y-12">
-            {sortedYears.map(year => (
-              <section key={year} className="relative pl-0 md:pl-28">
-                
-                {/* Left side year indicator (Floating anchor) */}
-                <div className="absolute left-0 top-1 text-center hidden md:block">
-                  <span className="font-serif text-2xl font-bold tracking-tight text-adjung-maroon block">
-                    {year}
-                  </span>
-                </div>
+            {sortedYears.map(year => {
+              // Filter entries for this year
+              const yearEntries = timelineGroupedByYear[year].filter(entry => 
+                selectedTagFilter === 'All' ? true : entry.tags.includes(selectedTagFilter)
+              );
 
-                <div className="border-t border-stone-200/50 pt-3 mb-3 md:hidden">
-                  <span className="font-serif text-xl font-bold tracking-tight text-adjung-maroon mr-2">{year}</span>
-                </div>
+              if (yearEntries.length === 0) return null;
 
-                {/* Timeline items list */}
-                <div className="space-y-6">
-                  {timelineGroupedByYear[year].map((item, idx) => {
-                    const dateObj = new Date(item.publishedDate || item.createdDate);
-                    const dayMonthStr = dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-                    const isNote = item.contentType === 'Note';
-                    const isEssay = item.contentType === 'Essay';
-                    const isArticle = item.contentType === 'Article';
-                    const isAr = isNote ? isArabicText(item.content) : isArabicText(item.title);
-                    const isExpanded = expandedNoteIds.includes(item.id);
-                    
-                    const containerClass = (() => {
-                      const base = `group flex flex-col md:flex-row md:items-start justify-between transition-all duration-300 w-full ${isAr && isNote ? 'text-right' : 'text-left'}`;
-                      if (isNote) {
-                        return `${base} px-6 py-5 md:px-8 md:py-6 bg-[#FAF8F5] border border-stone-300/85 border-l-4 border-l-[#802334] rounded-r shadow-[0_1.5px_4px_rgba(0,0,0,0.035),0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 my-5`;
-                      }
-                      if (isEssay) {
-                        return `${base} bg-transparent border-none border-b border-stone-200/60 pb-8 last:border-b-0 my-8`;
-                      }
-                      // Article
-                      return `${base} p-8 md:px-10 md:py-8 bg-[#FCFCFC] border border-stone-300 rounded-sm shadow-[0_2px_4px_rgba(0,0,0,0.015)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:-translate-y-0.5 my-6 gap-6`;
-                    })();
+              return (
+                <section key={year} className="relative pl-0 md:pl-28">
+                  {/* Left side year indicator (Floating anchor) */}
+                  <div className="absolute left-0 top-1 text-center hidden md:block">
+                    <span className="font-serif text-2xl font-bold tracking-tight text-adjung-maroon block">
+                      {year}
+                    </span>
+                  </div>
 
-                    return (
-                      <div 
-                        key={item.id} 
-                        id={`note-card-${item.id}`}
-                        className={containerClass}
-                      >
-                        
-                        <div className="space-y-3.5 flex-grow text-left w-full">
-                          {/* Metadata row */}
-                          {isNote && (
-                            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-stone-500 select-none">
-                              <span className="bg-[#FDFDFD] border border-stone-200 px-1.5 py-0.5 rounded">{dayMonthStr}</span>
-                              <span>•</span>
-                              <span className="text-adjung-maroon font-semibold uppercase tracking-wider text-[9px]">Note</span>
+                  <div className="border-t border-stone-200/50 pt-3 mb-3 md:hidden">
+                    <span className="font-serif text-xl font-bold tracking-tight text-adjung-maroon mr-2">{year}</span>
+                  </div>
+
+                  {/* Timeline items list */}
+                  <div className="space-y-6">
+                    {yearEntries.map((item) => {
+                      const dateObj = new Date(item.publishedDate || item.createdDate);
+                      const isAr = isArabicText(item.title || item.content);
+                      
+                      const formatDate = (d: Date) => {
+                        const day = d.getDate();
+                        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                      };
+
+                      return (
+                        <div 
+                          key={item.id}
+                          className="group bg-[#FDFDFD] border border-stone-200/80 rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between text-center select-text cursor-default relative overflow-hidden min-h-[180px] w-full"
+                        >
+                          {/* Center Content Area */}
+                          <div className="flex-1 flex flex-col justify-center items-center select-text">
+                            {/* Metadata */}
+                            <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-2 select-text">
+                              <span>{formatDate(dateObj)}</span>
                             </div>
-                          )}
-                          {isEssay && (
-                            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-stone-400 select-none">
-                              <span className="px-2 py-0.5 bg-stone-100/80 text-stone-600 rounded font-semibold">Essay</span>
-                              <span>•</span>
-                              <span>{dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                            </div>
-                          )}
-                          {isArticle && (
-                            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-stone-400 select-none">
-                              <span className="px-2 py-0.5 bg-adjung-maroon/5 text-adjung-maroon border border-adjung-maroon/10 rounded-sm font-bold">Article</span>
-                              <span>•</span>
-                              <span>{dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                            </div>
-                          )}
 
-                          {/* Title link */}
-                          {!isNote && item.title && (
-                            <h3 
-                              onClick={() => {
-                                handleRestrictedAction(() => setSelectedEntry(item));
-                              }}
-                              className={`${
-                                isEssay 
-                                  ? 'text-2xl md:text-3xl font-serif text-stone-900 cursor-pointer hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium'
-                                  : 'text-xl md:text-2xl font-serif text-stone-900 cursor-pointer hover:text-[#802334] transition-colors leading-tight tracking-tight font-semibold'
-                              } ${isAr ? 'font-arabic text-right' : ''}`}
-                            >
+                            {/* Title */}
+                            <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text ${isAr ? 'font-arabic' : ''}`}>
                               {parseInlineFormatting(item.title || '')}
                             </h3>
-                          )}
 
-                          {/* Preview/Full Content snippet with visual layout collapse */}
-                          <div 
-                            className="cursor-pointer" 
-                            onClick={(e) => {
-                              if (isNote) {
-                                handleRestrictedAction(() => toggleNote(item.id), 'expand');
-                              } else {
+                            {/* Author Name */}
+                            <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mt-1.5 mb-3.5 select-text">
+                              by {currentAuthor?.penName || currentAuthor?.displayName || 'Scholar'}
+                            </div>
+
+                            {/* Short Excerpt */}
+                            <div className="text-xs text-stone-500 font-serif leading-relaxed max-w-xl mx-auto line-clamp-3 select-text w-full text-left">
+                              <TimelineEntryCollapseRenderer
+                                item={item}
+                                isExpanded={false}
+                                onToggle={() => {}}
+                                onOpenText={() => {}}
+                                showInlineToggle={false}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Circular Action Button -> on the right */}
+                          <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 handleRestrictedAction(() => setSelectedEntry(item));
-                              }
-                            }}
-                          >
-                             <TimelineEntryCollapseRenderer
-                               item={item}
-                               isExpanded={isNote ? isExpanded : false}
-                               onToggle={() => {
-                                 if (isNote) {
-                                   handleRestrictedAction(() => toggleNote(item.id), 'expand');
-                                 } else {
-                                   handleRestrictedAction(() => setSelectedEntry(item));
-                                 }
-                               }}
-                               onOpenText={() => handleRestrictedAction(() => setSelectedEntry(item))}
-                               showInlineToggle={false}
-                               onLimitExceeded={(exceeded) => {
-                                 setNoteExceedsMap(prev => {
-                                   if (prev[item.id] === exceeded) return prev;
-                                   return { ...prev, [item.id]: exceeded };
-                                 });
-                               }}
-                             />
-                          </div>
-
-                          {/* Tag tokens */}
-                          <div className="flex flex-wrap gap-1.5 pt-1.5 select-none">
-                            {item.tags.map(t => (
-                              <span 
-                                key={t} 
-                                className={`font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-sm ${
-                                  isNote
-                                    ? 'bg-[#F4F1EC] text-stone-500 border border-stone-300/30'
-                                    : isEssay
-                                    ? 'border border-dashed border-stone-300 text-stone-400'
-                                    : 'bg-stone-100 text-stone-500'
-                                }`}
-                              >
-                                #{t}
-                              </span>
-                            ))}
+                              }}
+                              className="w-8 h-8 rounded-full border border-stone-200 hover:border-[#802334] bg-white flex items-center justify-center text-stone-400 hover:text-white hover:bg-[#802334] transition-all duration-200 cursor-pointer shadow-sm"
+                              title="Read full essay"
+                            >
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-
-                        {/* View trigger */}
-                        <div className="self-end md:self-center flex items-center gap-2.5 flex-shrink-0 mt-3 md:mt-0 select-none">
-                           {isNote && noteExceedsMap[item.id] && (
-                             <button
-                               type="button"
-                               onClick={() => handleRestrictedAction(() => toggleNote(item.id), 'expand')}
-                               className="px-3 py-1.5 rounded hover:bg-stone-100 text-stone-500 font-mono text-[10px] uppercase tracking-wider transition border border-stone-200/50 cursor-pointer"
-                             >
-                               {isExpanded ? 'Collapse' : 'Expand'}
-                             </button>
-                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleRestrictedAction(() => setSelectedEntry(item))}
-                            className={`flex items-center gap-1.5 transition duration-200 cursor-pointer font-semibold font-mono text-[10px] uppercase tracking-widest ${
-                              isNote 
-                                ? 'px-3 py-1.5 rounded hover:bg-adjung-maroon/5 text-stone-500 hover:text-adjung-maroon border border-transparent hover:border-adjung-maroon/10'
-                                : isEssay
-                                ? 'text-[#802334] hover:text-[#802334]/80 p-0 border-0 bg-transparent'
-                                : 'bg-[#802334] text-white hover:bg-[#802334]/95 px-4.5 py-2.5 border-0 shadow-sm rounded-sm'
-                            }`}
-                          >
-                            {isArticle ? 'Read Article' : isEssay ? 'Read Essay' : 'Open Text'}
-                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                          </button>
-                        </div>
-
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </section>
-            ))}
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,0 +1,52 @@
+/* Isolated Typography Engine Styles for RTL (Arabic / Jawi) */
+
+.script-rtl-ruby {
+  unicode-bidi: isolate;
+}
+
+ruby.script-rtl-word {
+  display: ruby !important;
+  ruby-position: over;
+  ruby-align: center;
+  unicode-bidi: isolate;
+  color: inherit;
+  text-align: center;
+}
+
+rt.script-rtl-gloss {
+  display: ruby-text !important;
+  font-family: var(--font-handwritten), "Caveat", cursive;
+  font-size: 0.725rem;
+  color: rgba(128, 35, 52, 0.92);
+  line-height: 1.1;
+  white-space: nowrap;
+  pointer-events: none;
+  unicode-bidi: isolate;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  user-select: none;
+  transition: color 0.2s ease;
+  direction: ltr; /* Default Latin gloss reads LTR */
+}
+
+rt.script-rtl-gloss.font-arabic-handwritten {
+  font-family: var(--font-arabic-handwritten), "Noto Sans Arabic", sans-serif;
+  font-size: 0.725rem;
+  direction: rtl; /* Arabic gloss reads RTL */
+}
+
+/* Hover highlights */
+.script-rtl-ruby:hover {
+  background-color: rgba(128, 35, 52, 0.04);
+  border-radius: 2px;
+  cursor: help;
+}
+
+.script-rtl-ruby:hover rt.script-rtl-gloss {
+  color: rgba(128, 35, 52, 0.95);
+}
+
+/* Base Amiri font rule for Arabic elements */
+.font-arabic {
+  font-family: var(--font-arabic), "Amiri", serif;
+}

@@ -46,7 +46,14 @@ export const RichTextEditable: React.FC<RichTextEditableProps> = ({
       contentEditable
       suppressContentEditableWarning
       className={className}
-      onFocus={() => setIsFocused(true)}
+      onFocus={() => {
+        setIsFocused(true);
+        try {
+          document.execCommand('defaultParagraphSeparator', false, 'p');
+        } catch (e) {
+          console.warn('[RichTextEditable] Failed to set defaultParagraphSeparator:', e);
+        }
+      }}
       onBlur={() => {
         setIsFocused(false);
         handleInput();

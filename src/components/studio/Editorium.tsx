@@ -305,8 +305,8 @@ export function Editorium() {
           showToast(`Error: Featured Article Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
           return;
         }
-        if (resolved.contentType !== 'Article') {
-          showToast(`Error: Featured Article Slot ${i + 1} ("${resolved.title}") must be of type Article. Found: ${resolved.contentType}.`, 'error');
+        if (resolved.contentType !== 'Article' && resolved.contentType !== 'Essay') {
+          showToast(`Error: Featured Article Slot ${i + 1} ("${resolved.title}") must be of type Essay or Article. Found: ${resolved.contentType}.`, 'error');
           return;
         }
       }
@@ -350,8 +350,8 @@ export function Editorium() {
           showToast(`Error: Featured Note Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
           return;
         }
-        if (resolved.contentType !== 'Note') {
-          showToast(`Error: Featured Note Slot ${i + 1} ("${resolved.title}") must be of type Note. Found: ${resolved.contentType}.`, 'error');
+        if (resolved.contentType !== 'Note' && resolved.contentType !== 'Essay') {
+          showToast(`Error: Featured Note Slot ${i + 1} ("${resolved.title}") must be of type Note or Essay. Found: ${resolved.contentType}.`, 'error');
           return;
         }
       }
@@ -728,10 +728,10 @@ Source: MIT Technology Review, 2024
                             if (!val) return <span className="text-stone-400">Empty Slot</span>;
                             const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
                             if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                            if (resolved.contentType !== 'Article') {
-                              return <span className="text-red-500">❌ Invalid Type: Must be an Article (resolved as {resolved.contentType})</span>;
+                            if (resolved.contentType !== 'Article' && resolved.contentType !== 'Essay') {
+                              return <span className="text-red-500">❌ Invalid Type: Must be an Essay or Article (resolved as {resolved.contentType})</span>;
                             }
-                            return <span className="text-emerald-600">✅ Article: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                            return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                           })()}
                         </div>
                       </div>
@@ -850,10 +850,10 @@ Source: MIT Technology Review, 2024
                             if (!val) return <span className="text-stone-400">Empty Slot</span>;
                             const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
                             if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                            if (resolved.contentType !== 'Note') {
-                              return <span className="text-red-500">❌ Invalid Type: Must be a Note (resolved as {resolved.contentType})</span>;
+                            if (resolved.contentType !== 'Note' && resolved.contentType !== 'Essay') {
+                              return <span className="text-red-500">❌ Invalid Type: Must be a Note or Essay (resolved as {resolved.contentType})</span>;
                             }
-                            return <span className="text-emerald-600">✅ Note: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                            return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                           })()}
                         </div>
                       </div>

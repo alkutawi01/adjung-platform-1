@@ -126,15 +126,15 @@ export const INITIAL_LOGS: SystemLog[] = [
   {
     id: 'log-3',
     timestamp: '2026-06-29T14:30:00Z',
-    operator: 'T. Malik',
+    operator: 'Izzat Anas',
     role: 'Chief Editor',
-    action: 'Assigned Editor role to Amina Masri for curation support.'
+    action: 'Initialized platform database.'
   },
   {
     id: 'log-4',
     timestamp: '2026-06-30T11:22:00Z',
-    operator: 'Ed. Amina',
-    role: 'Editor',
+    operator: 'Izzat Anas',
+    role: 'Chief Editor',
     action: 'Curated frontpage featured entries list.'
   }
 ];
@@ -142,29 +142,16 @@ export const INITIAL_LOGS: SystemLog[] = [
 // Pre-seeded Users
 export const INITIAL_USERS: User[] = [
   {
-    id: 'user-tariq-malik',
-    username: 'tariq.malik',
-    email: 'tariq@adjung.com',
+    id: 'user-izzat-anas',
+    username: 'izzatanas',
+    email: 'alkutawi01@gmail.com',
     role: 'Chief Editor',
-    penName: 'T. Malik',
-    signature: 'Prof. Tariq Malik',
+    penName: 'Izzat Anas',
+    signature: 'Izzat Anas',
     avatarColor: 'bg-stone-800 text-stone-100',
-    bioSummary: 'Professor Emeritus of Islamic Philosophy and Comparative Literature. Chief Editor of Adjung.',
-    affiliation: 'Kuala Lumpur, Malaysia',
-    createdAt: '2026-06-25',
-    isAi: false
-  },
-  {
-    id: 'user-associate-editor',
-    username: 'editor.amina',
-    email: 'amina_ed@adjung.com',
-    role: 'Editor',
-    penName: 'Ed. Amina',
-    signature: 'Amina (Editor)',
-    avatarColor: 'bg-stone-700 text-stone-100',
-    bioSummary: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
-    affiliation: 'Kuala Lumpur, Malaysia',
-    createdAt: '2026-06-26',
+    bioSummary: 'Chief Editor at Adjung.',
+    affiliation: 'Adjung Platform',
+    createdAt: '2026-05-15',
     isAi: false
   },
   {
@@ -249,23 +236,12 @@ export const INITIAL_USERS: User[] = [
 
 export const INITIAL_IDENTITIES: IdentityProfile[] = [
   {
-    identityId: 'id-user-tariq-malik',
-    accountId: 'user-tariq-malik',
-    username: 'tariq.malik',
-    displayName: 'Tariq Malik',
-    penName: 'T. Malik',
-    biography: 'Chief Editor of Adjung. Professor Emeritus of Islamic Philosophy and Comparative Literature.',
-    publicVisibility: 'Public',
-    lifeTimeline: [],
-    signatures: []
-  },
-  {
-    identityId: 'id-user-associate-editor',
-    accountId: 'user-associate-editor',
-    username: 'editor.amina',
-    displayName: 'Amina',
-    penName: 'Ed. Amina',
-    biography: 'Associate Editor at Adjung, curating published indices and frontpage folios.',
+    identityId: 'id-user-izzat-anas',
+    accountId: 'user-izzat-anas',
+    username: 'izzatanas',
+    displayName: 'Izzat Anas',
+    penName: 'Izzat Anas',
+    biography: 'Chief Editor of Adjung.',
     publicVisibility: 'Public',
     lifeTimeline: [],
     signatures: []
@@ -343,14 +319,9 @@ export const INITIAL_CITATIONS: Citation[] = [];
 // Pre-seeded Biographies and Profiles
 export const INITIAL_PROFILES: WriterProfile[] = [
   {
-    authorId: 'user-tariq-malik',
-    heroTitle: 'Editorial Desk & General Announcements',
+    authorId: 'user-izzat-anas',
+    heroTitle: 'Ketua Editor Desk & General Announcements',
     heroSubtitle: 'Official decrees, structural adjustments, and editorial announcements from the Chief Editor.'
-  },
-  {
-    authorId: 'user-associate-editor',
-    heroTitle: 'Curatorial Desk',
-    heroSubtitle: 'Curation reviews, index compilations, and frontpage highlights.'
   },
   {
     authorId: 'user-gemini',
@@ -602,8 +573,8 @@ class AdjungDb {
 
       if (storedEntries) {
         let loadedEntries = JSON.parse(storedEntries);
-        // Force merge INITIAL_ENTRIES if the mock entries are missing from local storage
-        if (loadedEntries.length < 17) {
+        // Force merge INITIAL_ENTRIES if stored database is completely empty and seed has entries
+        if (loadedEntries.length === 0 && INITIAL_ENTRIES.length > 0) {
           loadedEntries = [...INITIAL_ENTRIES];
         } else {
           // Always ensure new canonical entries are imported
@@ -794,31 +765,67 @@ class AdjungDb {
 
   // Save methods
   public saveUsersToStorage() {
-    localStorage.setItem('adjung_users', JSON.stringify(this.users));
+    try {
+      localStorage.setItem('adjung_users', JSON.stringify(this.users));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save users to storage:', e);
+    }
   }
   private saveProfilesToStorage() {
-    localStorage.setItem('adjung_profiles', JSON.stringify(this.profiles));
+    try {
+      localStorage.setItem('adjung_profiles', JSON.stringify(this.profiles));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save profiles to storage:', e);
+    }
   }
   private saveIdentitiesToStorage() {
-    localStorage.setItem('adjung_identities', JSON.stringify(this.identities));
+    try {
+      localStorage.setItem('adjung_identities', JSON.stringify(this.identities));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save identities to storage:', e);
+    }
   }
   private saveCitationsToStorage() {
-    localStorage.setItem('adjung_citations', JSON.stringify(this.citations));
+    try {
+      localStorage.setItem('adjung_citations', JSON.stringify(this.citations));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save citations to storage:', e);
+    }
   }
   private saveEntriesToStorage() {
-    localStorage.setItem('adjung_entries', JSON.stringify(this.entries));
+    try {
+      localStorage.setItem('adjung_entries', JSON.stringify(this.entries));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save entries to storage:', e);
+    }
   }
   private saveSettingsToStorage() {
-    localStorage.setItem('adjung_settings', JSON.stringify(this.systemSettings));
+    try {
+      localStorage.setItem('adjung_settings', JSON.stringify(this.systemSettings));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save settings to storage:', e);
+    }
   }
   private saveLogsToStorage() {
-    localStorage.setItem('adjung_logs', JSON.stringify(this.logs));
+    try {
+      localStorage.setItem('adjung_logs', JSON.stringify(this.logs));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save logs to storage:', e);
+    }
   }
   private saveReleaseLogsToStorage() {
-    localStorage.setItem('adjung_release_logs', JSON.stringify(this.releaseLogs));
+    try {
+      localStorage.setItem('adjung_release_logs', JSON.stringify(this.releaseLogs));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save release logs to storage:', e);
+    }
   }
   private savePoliciesToStorage() {
-    localStorage.setItem('adjung_policies', JSON.stringify(this.policies));
+    try {
+      localStorage.setItem('adjung_policies', JSON.stringify(this.policies));
+    } catch (e) {
+      console.error('[Adjung DB] Failed to save policies to storage:', e);
+    }
   }
 
   // --- RELEASE LOGS API ---

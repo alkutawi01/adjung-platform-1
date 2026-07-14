@@ -98,7 +98,8 @@ const initializeSchema = () => {
           marginNotesData TEXT,
           citations TEXT,
           revisions TEXT,
-          underReview INTEGER DEFAULT 0
+          underReview INTEGER DEFAULT 0,
+          layoutVariant TEXT
         )
       `);
 
@@ -178,6 +179,7 @@ const initializeSchema = () => {
         if (err) reject(err);
         else {
           db.run("ALTER TABLE entries ADD COLUMN underReview INTEGER DEFAULT 0;", () => {});
+          db.run("ALTER TABLE entries ADD COLUMN layoutVariant TEXT;", () => {});
           resolve();
         }
       });
@@ -259,8 +261,8 @@ const seedDatabase = async () => {
 
     // 4. Seed Entries
     const stmtEntry = db.prepare(`
-      INSERT INTO entries (id, authorId, title, slug, contentType, status, visibility, content, excerpt, featuredImage, publishedDate, createdDate, updatedDate, publicationClass, publisher, signatureVersionId, tags, footnotes, footnotesData, marginNotes, marginNotesData, citations, revisions)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO entries (id, authorId, title, slug, contentType, status, visibility, content, excerpt, featuredImage, publishedDate, createdDate, updatedDate, publicationClass, publisher, signatureVersionId, tags, footnotes, footnotesData, marginNotes, marginNotesData, citations, revisions, layoutVariant)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     mockDb.getEntries().forEach(e => {
       stmtEntry.run(
@@ -286,7 +288,8 @@ const seedDatabase = async () => {
         JSON.stringify(e.marginNotes || {}),
         JSON.stringify(e.marginNotesData || {}),
         JSON.stringify(e.citations || []),
-        JSON.stringify(e.revisions || [])
+        JSON.stringify(e.revisions || []),
+        e.layoutVariant || 'melintang'
       );
     });
     stmtEntry.finalize();
@@ -674,7 +677,7 @@ app.post('/api/entries', async (req, res) => {
           title = ?, slug = ?, contentType = ?, status = ?, visibility = ?, content = ?, excerpt = ?,
           featuredImage = ?, publishedDate = ?, updatedDate = ?, publicationClass = ?, publisher = ?,
           signatureVersionId = ?, tags = ?, footnotes = ?, footnotesData = ?, marginNotes = ?,
-          marginNotesData = ?, citations = ?, revisions = ?
+          marginNotesData = ?, citations = ?, revisions = ?, layoutVariant = ?
         WHERE id = ?
       `, [
         e.title, e.slug, e.contentType, e.status, e.visibility, e.content, e.excerpt || '',
@@ -682,7 +685,7 @@ app.post('/api/entries', async (req, res) => {
         e.signatureVersionId || '', JSON.stringify(e.tags || []), JSON.stringify(e.footnotes || []),
         JSON.stringify(e.footnotesData || {}), JSON.stringify(e.marginNotes || {}),
         JSON.stringify(e.marginNotesData || {}), JSON.stringify(e.citations || []),
-        JSON.stringify(e.revisions || []), e.id
+        JSON.stringify(e.revisions || []), e.layoutVariant || 'melintang', e.id
       ]);
     } else {
       const createdDate = new Date().toISOString();
@@ -691,15 +694,15 @@ app.post('/api/entries', async (req, res) => {
           id, authorId, title, slug, contentType, status, visibility, content, excerpt,
           featuredImage, publishedDate, createdDate, updatedDate, publicationClass, publisher,
           signatureVersionId, tags, footnotes, footnotesData, marginNotes, marginNotesData,
-          citations, revisions
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          citations, revisions, layoutVariant
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         e.id, e.authorId, e.title, e.slug, e.contentType, e.status, e.visibility, e.content, e.excerpt || '',
         e.featuredImage || '', publishedDate, createdDate, updatedDate, e.publicationClass, e.publisher || '',
         e.signatureVersionId || '', JSON.stringify(e.tags || []), JSON.stringify(e.footnotes || []),
         JSON.stringify(e.footnotesData || {}), JSON.stringify(e.marginNotes || {}),
         JSON.stringify(e.marginNotesData || {}), JSON.stringify(e.citations || []),
-        JSON.stringify(e.revisions || [])
+        JSON.stringify(e.revisions || []), e.layoutVariant || 'melintang'
       ]);
     }
 

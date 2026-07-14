@@ -1,8 +1,43 @@
 import React from 'react';
-import { Citation, EditorBlock, NewsItem, ParseError } from './types';
+import { Citation, EditorBlock, NewsItem, ParseError, User, Entry, IdentityProfile, TypographyContext } from './types';
 import { citationStyleRegistry, HarvardStylePlugin } from './services/citationStyles';
 
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+
+export function resolveTypographyContext(entry?: Partial<Entry> | null, contentText?: string, titleText?: string): TypographyContext {
+  let primaryScript = entry?.primaryScript;
+  let direction = entry?.direction;
+  
+  if (!primaryScript || !direction) {
+    const textToAnalyze = `${titleText || entry?.title || ''}\n${contentText || entry?.content || ''}`;
+    const isAr = isArabicText(textToAnalyze);
+    primaryScript = isAr ? 'arabic' : 'latin';
+    direction = isAr ? 'rtl' : 'ltr';
+  }
+  
+  return {
+    direction: direction as 'ltr' | 'rtl',
+    primaryScript: primaryScript,
+    renderer: direction === 'rtl' ? 'rtl' : 'latin',
+    annotationEngine: direction === 'rtl' ? 'ruby' : 'span'
+  };
+}
+
+export function wrapBadgesWithWords(htmlContent: string, typography?: TypographyContext): string {
+  if (typography?.annotationEngine === 'ruby') {
+    // RTL Pipeline uses bdi and ruby classes
+    return htmlContent.replace(
+      /((?:<bdi class="script-rtl-ruby"><ruby class="script-rtl-word">[^<]*<rt class="script-rtl-gloss">[^<]*<\/rt><\/ruby><\/bdi>|[^\s<>]+)[,.;:!?]?(?:<span class="(?:footnote|margin-note)-badge"[^>]*><\/span>)+)/g,
+      '<span class="whitespace-nowrap">$1</span>'
+    );
+  } else {
+    // LTR Pipeline uses span with absolute position
+    return htmlContent.replace(
+      /((?:<span class="interlinear-word"><span class="interlinear-gloss">[^<]*<\/span><bdi>[^<]*<\/bdi><\/span>|[^\s<>]+)[,.;:!?]?(?:<span class="(?:footnote|margin-note)-badge"[^>]*><\/span>)+)/g,
+      '<span class="whitespace-nowrap">$1</span>'
+    );
+  }
+}
 const LATIN_REGEX = /[a-zA-Z]/g;
 const ARABIC_PHRASE_REGEX = /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[\s.,،؟؛'"]+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/;
 
@@ -32,6 +67,7 @@ export function stripMarkdown(text: string): string {
     .replace(/`(.*?)`/g, '$1')
     .replace(/\+\+(.*?)\+\+/g, '$1')
     .replace(/<u>(.*?)<\/u>/g, '$1')
+    .replace(/<ruby>([\s\S]*?)<rt>[\s\S]*?<\/rt><\/ruby>/gi, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 }
 
@@ -84,7 +120,7 @@ export function handleMarkdownShortcut(
   }
 }
 
-export function markdownToHtml(md: string): string {
+export function markdownToHtml(md: string, typography?: TypographyContext): string {
   if (!md) return '';
   let content = md.replace(/\r\n/g, '\n');
   
@@ -130,7 +166,11 @@ export function markdownToHtml(md: string): string {
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
       if (url.startsWith('gloss:')) {
         const glossVal = url.substring(6);
-        return `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span>${label}</span>`;
+        if (typography?.annotationEngine === 'ruby') {
+          return `<bdi class="script-rtl-ruby"><ruby class="script-rtl-word">${label}<rt class="script-rtl-gloss">${glossVal}</rt></ruby></bdi>`;
+        } else {
+          return `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span><bdi>${label}</bdi></span>`;
+        }
       }
       return `<a href="${url}">${label}</a>`;
     });
@@ -166,7 +206,8 @@ export function htmlToMarkdown(html: string): string {
     .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
     .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
     .replace(/<u[^>]*>(.*?)<\/u>/gi, '++$1++')
-    .replace(/<span[^>]*class="interlinear-word"[^>]*><span[^>]*class="interlinear-gloss"[^>]*>(.*?)<\/span>(.*?)<\/span>/gi, '[$2](gloss:$1)')
+    .replace(/<bdi[^>]*class=["']?[^"'>]*(?:ruby-wrapper|script-rtl-ruby)[^"'>]*["']?[^>]*>\s*<ruby[^>]*class=["']?[^"'>]*(?:interlinear-word|script-rtl-word)[^"'>]*["']?[^>]*>\s*([\s\S]*?)\s*<rt[^>]*class=["']?[^"'>]*(?:interlinear-gloss|script-rtl-gloss)[^"'>]*["']?[^>]*>(.*?)<\/rt>\s*<\/ruby>\s*<\/bdi>/gi, '[$1](gloss:$2)')
+    .replace(/<span[^>]*class=["']?[^"'>]*interlinear-word[^"'>]*["']?[^>]*>\s*<span[^>]*class=["']?[^"'>]*interlinear-gloss[^"'>]*["']?[^>]*>(.*?)<\/span>\s*<bdi>([\s\S]*?)<\/bdi>\s*<\/span>/gi, '[$2](gloss:$1)')
     .replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
     .replace(/<[^>]+>/g, '')
     .replace(/\n\n\n+/g, '\n\n')
@@ -242,6 +283,23 @@ function tokenize(text: string): Token[] {
       flushText();
       tokens.push({ type: 'HTML_U_CLOSE', text: '</u>' });
       i += 4;
+    } else if (text.toLowerCase().startsWith('<ruby>', i)) {
+      const closeRuby = text.toLowerCase().indexOf('</ruby>', i);
+      if (closeRuby !== -1) {
+        const rubyContent = text.substring(i + 6, closeRuby);
+        const rtStart = rubyContent.toLowerCase().indexOf('<rt>');
+        const rtEnd = rubyContent.toLowerCase().indexOf('</rt>');
+        if (rtStart !== -1 && rtEnd !== -1) {
+          flushText();
+          const label = rubyContent.substring(0, rtStart);
+          const glossVal = rubyContent.substring(rtStart + 4, rtEnd);
+          tokens.push({ type: 'INTERLINEAR', text: label, gloss: glossVal });
+          i = closeRuby + 7;
+          continue;
+        }
+      }
+      currentText += text[i];
+      i += 1;
     } else if (text.startsWith('[', i)) {
       const closeBracket = text.indexOf('](', i);
       if (closeBracket !== -1) {
@@ -271,7 +329,7 @@ function tokenize(text: string): Token[] {
   return tokens;
 }
 
-function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactNode[] {
+function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: TypographyContext): React.ReactNode[] {
   let i = 0;
   const result: React.ReactNode[] = [];
   let keyIdx = 0;
@@ -285,7 +343,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
         if (!part) return null;
         if (ARABIC_PHRASE_REGEX.test(part)) {
           return (
-            <bdi key={`ar-${pIdx}`} dir="rtl" className="font-arabic font-normal inline-block" style={{ lineHeight: 'normal' }}>
+            <bdi key={`ar-${pIdx}`} dir="rtl" className="font-arabic font-normal inline" style={{ lineHeight: 'normal' }}>
               {part}
             </bdi>
           );
@@ -310,18 +368,31 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token'): React.ReactN
 
     if (token.type === 'INTERLINEAR') {
       const elementKey = `${keyPrefix}-${keyIdx++}`;
+      const useRuby = typography?.annotationEngine === 'ruby';
       const isGlossAr = isArabicText(token.gloss);
-      result.push(
-        <span key={elementKey} className="interlinear-word">
-          <span 
-            className={`interlinear-gloss ${isGlossAr ? 'font-arabic-handwritten text-xs' : ''}`}
-            style={isGlossAr ? { fontFamily: 'var(--font-arabic-handwritten)' } : undefined}
-          >
-            {token.gloss}
+      
+      if (useRuby) {
+        result.push(
+          <bdi key={elementKey} className="script-rtl-ruby">
+            <ruby className="script-rtl-word">
+              {token.text}
+              <rt 
+                className={`script-rtl-gloss ${isGlossAr ? 'font-arabic-handwritten text-xs' : ''}`}
+                style={isGlossAr ? { fontFamily: 'var(--font-arabic-handwritten)' } : undefined}
+              >
+                {token.gloss.replace(/\s+/g, '\u00A0')}
+              </rt>
+            </ruby>
+          </bdi>
+        );
+      } else {
+        result.push(
+          <span key={elementKey} className="interlinear-word">
+            <span className="interlinear-gloss">{token.gloss}</span>
+            <bdi>{token.text}</bdi>
           </span>
-          {token.text}
-        </span>
-      );
+        );
+      }
       i++;
       continue;
     }
@@ -551,7 +622,8 @@ export function parseInlineFormatting(
   footnotesMap: Record<string, number> = {},
   crossRefMap: Record<string, string> = {},
   citationStyle: string = 'harvard',
-  marginNotesMap: Record<string, number> = {}
+  marginNotesMap: Record<string, number> = {},
+  typography?: TypographyContext
 ): React.ReactNode {
   if (!text) return '';
 
@@ -635,14 +707,14 @@ export function parseInlineFormatting(
           const badgeNode = renderPartNode(nextPart, citations, sortOrder, citationsMap, footnotesMap, crossRefMap, citationStyle, marginNotesMap);
           nodes.push(
             <span key={`nowrap-${part.key}`} className="inline-block whitespace-nowrap">
-              {parseTokens(tokenize(textContent))}
+              {parseTokens(tokenize(textContent), `text-${part.key}`, typography)}
               {badgeNode}
             </span>
           );
           i++;
         }
       } else {
-        nodes.push(<React.Fragment key={part.key}>{parseTokens(tokenize(part.content))}</React.Fragment>);
+        nodes.push(<React.Fragment key={part.key}>{parseTokens(tokenize(part.content), `text-${part.key}`, typography)}</React.Fragment>);
       }
     } else {
       nodes.push(renderPartNode(part, citations, sortOrder, citationsMap, footnotesMap, crossRefMap, citationStyle, marginNotesMap));
@@ -659,6 +731,89 @@ export function generateCanonicalUrl(penName: string, type: string, slug: string
   const authorSubdomain = penName.toLowerCase().replace(/[^a-z0-9]/g, '');
   return `https://${authorSubdomain}.Adjung.com/${type.toLowerCase()}/${slug}`;
 }
+
+/**
+ * Evaluates whether an author has unlocked their custom subdomain on Adjung.
+ * Criteria:
+ * 1. Published both entry types: Essay and Note.
+ * 2. Completed biography: has bio text (non-default) and at least 1 milestone timeline item.
+ * 3. Account registered/active for at least 30 days.
+ */
+export function isSubdomainUnlocked(authorId: string, entries: Entry[], identity: IdentityProfile | null, userCreatedAt?: string, approvedEarly?: boolean): boolean {
+  if (approvedEarly) return true;
+  if (!authorId) return false;
+  
+  // AI Scriptors have pre-unlocked subdomains by design
+  if (
+    authorId === 'user-gemini' ||
+    authorId === 'user-claude' ||
+    authorId === 'user-chatgpt' ||
+    authorId === 'user-deepseek' ||
+    authorId === 'user-grok' ||
+    authorId === 'user-meta-ai'
+  ) {
+    return true;
+  }
+  
+  const hasNote = entries.some(e => e.authorId === authorId && e.status === 'Published' && e.contentType === 'Note');
+  const hasEssay = entries.some(e => e.authorId === authorId && e.status === 'Published' && e.contentType === 'Essay');
+  const hasBoth = hasNote && hasEssay;
+
+  const hasBioText = identity && identity.biography && identity.biography.trim().length > 0 && 
+    !identity.biography.includes('Biography of') && !identity.biography.includes('Biography for');
+  
+  const hasTimeline = identity && identity.lifeTimeline && identity.lifeTimeline.length > 0;
+
+  // Verify account is at least 30 days active
+  const createdAt = userCreatedAt ? new Date(userCreatedAt) : new Date();
+  const daysActive = Math.floor((new Date().getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const is30DaysActive = daysActive >= 30;
+
+  return !!(hasBoth && hasBioText && hasTimeline && is30DaysActive);
+}
+
+/**
+ * Resolves the current active public URL of a writer.
+ */
+export function getAuthorProfileUrl(author: User, entries: Entry[], identity: IdentityProfile | null): string {
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const domainSuffix = isLocal ? 'localhost:3000' : 'adjung.com';
+  
+  if (isSubdomainUnlocked(author.id, entries, identity, author.createdAt, author.subdomainApprovedEarly)) {
+    return isLocal 
+      ? `http://${author.username}.${domainSuffix}`
+      : `https://${author.username}.${domainSuffix}`;
+  }
+  
+  return isLocal
+    ? `http://${domainSuffix}/ps/${author.id}`
+    : `https://${domainSuffix}/ps/${author.id}`;
+}
+
+/**
+ * Resolves the canonical URL for a specific entry, respecting the subdomain unlock logic.
+ */
+export function resolveEntryCanonicalUrl(entry: Entry, authorUsername: string, allEntries: Entry[], identity: IdentityProfile | null, authorCreatedAt?: string, approvedEarly?: boolean): string {
+  if (entry.publicationClass === 'Institutional') {
+    const typeSlug = entry.contentType === 'Notice' ? 'notice' : 'editorial';
+    return `https://adjung.com/${typeSlug}/${entry.slug}`;
+  }
+  
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const domainSuffix = isLocal ? 'localhost:3000' : 'adjung.com';
+  
+  if (isSubdomainUnlocked(entry.authorId || '', allEntries, identity, authorCreatedAt, approvedEarly)) {
+    return isLocal 
+      ? `http://${authorUsername}.${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.slug}`
+      : `https://${authorUsername}.${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.slug}`;
+  }
+  
+  return isLocal
+    ? `http://${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.authorId}/${entry.slug}`
+    : `https://${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.authorId}/${entry.slug}`;
+}
+
+
 
 export interface ParagraphBlock {
   type: 'paragraph';
@@ -733,13 +888,31 @@ export type ContentBlock =
   | ArabicQuoteBlock
   | CalloutBlock;
 
+export function stripFrontmatter(content: string): string {
+  if (!content) return '';
+  const normalized = content.replace(/\r\n/g, '\n');
+  if (normalized.startsWith('---\n')) {
+    const endIdx = normalized.indexOf('\n---\n');
+    if (endIdx !== -1) {
+      return normalized.substring(endIdx + 5);
+    }
+    const endIdx2 = normalized.indexOf('\n---');
+    if (endIdx2 !== -1 && endIdx2 === normalized.length - 4) {
+      return '';
+    }
+  }
+  return content;
+}
+
 /**
  * Parses raw text content into an array of structured ContentBlocks.
  * Handles both the new explicit XML <quote> tags and legacy Markdown blockquotes.
  */
 export function parseContentToBlocks(content: string): ContentBlock[] {
+  const normalized = content ? content.replace(/\r\n/g, '\n') : '';
+  const cleanContent = stripFrontmatter(normalized);
   const blocks: ContentBlock[] = [];
-  if (!content) return [];
+  if (!cleanContent) return [];
 
   // Parse a single block segment
   const parseSingleSegment = (segment: string): ContentBlock => {
@@ -958,8 +1131,8 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
   };
 
   // If the content contains explicit XML quote tags or callout tags, parse them using a structured tag scanner
-  if (content.includes('<quote') || content.includes('<callout')) {
-    let remaining = content;
+  if (cleanContent.includes('<quote') || cleanContent.includes('<callout')) {
+    let remaining = cleanContent;
     while (remaining.length > 0) {
       const quoteStartIdx = remaining.indexOf('<quote');
       const calloutStartIdx = remaining.indexOf('<callout');
@@ -1116,7 +1289,7 @@ export function parseContentToBlocks(content: string): ContentBlock[] {
   }
 
   // Legacy parser: split content by paragraphs and parse each segment
-  const paragraphs = content.split(/\n\n+/).filter(Boolean);
+  const paragraphs = cleanContent.split(/\n\n+/).filter(Boolean);
   for (const p of paragraphs) {
     blocks.push(parseSingleSegment(p));
   }

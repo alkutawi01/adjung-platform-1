@@ -118,32 +118,88 @@ export function BiographyView({
         </div>
 
         {/* Signature stamp card representation */}
-        <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-8 lg:pt-0 lg:pl-8 text-center select-none">
+        <div style={{ fontSize: '14px' }} className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-8 lg:pt-0 lg:pl-8 text-center select-none">
           <span className="font-sans text-[9px] uppercase tracking-widest text-[#111111]/40 block mb-2">Signature</span>
-          <div className="h-32 flex items-center justify-center z-10 overflow-visible">
+          
+          {/* Signature Graphic Area with Baseline */}
+          <div className="relative w-[22em] h-[6.47em] mx-auto overflow-visible mix-blend-multiply flex items-center justify-center shrink-0">
             {(() => {
-              const defaultSig = authorProfile.signatures.find(s => s.status === 'Default');
-              return (
-                <SignatureRenderer 
-                  strokes={defaultSig?.strokes || []}
-                  type={defaultSig?.type || 'drawn'}
-                  typedText={defaultSig?.typedText || currentAuthor.signature}
-                  fontFamily={defaultSig?.fontFamily}
-                  typographyStyle={defaultSig?.typographyStyle}
-                  penStyle={defaultSig?.penStyle}
-                  className="w-full h-full overflow-visible origin-center"
-                  color="#802334"
-                  strokeWidth={2.5}
-                  enableBleed={true}
-                />
-              );
+              const sig = authorProfile.signatures.find(s => s.status === 'Default');
+              const type = sig?.type || 'drawn';
+              const strokes = sig?.strokes || [];
+              const typedText = sig?.typedText || currentAuthor.signature || '';
+
+              if (type === 'typed' || strokes.length === 0) {
+                const cw = sig?.penStyle?.canvasWidth || 680;
+                const ch = sig?.penStyle?.canvasHeight || 200;
+                const yOff = sig?.typographyStyle?.yOffset ?? 30;
+                
+                // Calculate the actual font size to determine a safe bounding box height
+                const baseSize = !typedText ? 48 : (typedText.length > 25 ? 24 : (typedText.length > 18 ? 32 : (typedText.length > 12 ? 40 : 48)));
+                const scale = sig?.typographyStyle?.scale || 1;
+                const actualFontSize = baseSize * scale;
+                
+                // Dynamically adjust the viewBox height to perfectly wrap the text without chopping
+                const viewBoxHeight = Math.max(120, actualFontSize * 2.8);
+                const cropY = (ch / 2) + yOff - (viewBoxHeight / 2);
+
+                return (
+                  <div className="w-full h-full flex items-center justify-center z-10 relative">
+                    <svg 
+                      viewBox={`0 ${cropY} ${cw} ${viewBoxHeight}`}
+                      className="w-full h-full drop-shadow-sm origin-center"
+                    >
+                      <foreignObject width={cw} height={ch} y={0}>
+                        <div className="flex items-center justify-center w-full h-full">
+                          <span 
+                            style={{ 
+                              fontFamily: sig?.fontFamily || 'cursive', 
+                              fontSize: `${actualFontSize}px`, 
+                              color: "#802334", 
+                              letterSpacing: `${(sig?.typographyStyle?.letterSpacing || 0) * scale}px`, 
+                              fontWeight: sig?.typographyStyle?.fontWeight || 500, 
+                              transform: `translateY(${yOff}px) rotate(${sig?.typographyStyle?.slantAngle || 0}deg)`,
+                              transformOrigin: 'center center',
+                              whiteSpace: 'nowrap',
+                              lineHeight: 1
+                            }}
+                            className="text-center block"
+                          >
+                            {typedText || 'Sign Here'}
+                          </span>
+                        </div>
+                      </foreignObject>
+                    </svg>
+                  </div>
+                );
+              } else {
+                return (
+                  <SignatureRenderer 
+                    representation={sig?.representation}
+                    strokes={strokes}
+                    type="drawn"
+                    typedText=""
+                    fontFamily={sig?.fontFamily}
+                    typographyStyle={sig?.typographyStyle}
+                    penStyle={sig?.penStyle}
+                    renderBaselineLayout={false}
+                    className="w-full h-full overflow-visible"
+                    color="#802334"
+                    strokeWidth={2.5}
+                    enableBleed={true}
+                  />
+                );
+              }
             })()}
           </div>
-          <div className="border-t border-stone-300/80 pt-4 mt-2 space-y-2">
+          
+          <div className="border-t border-stone-300/80 pt-4 mt-[0.5em] space-y-2">
             <div>
               <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Pen Name</span>
               <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                <span className="font-serif font-semibold text-[#111111] text-sm">{currentAuthor.penName}</span>
+                <span className="font-sans text-[1em] uppercase tracking-widest text-black font-semibold leading-none text-center w-full">
+                  {currentAuthor.penName}
+                </span>
                 {currentAuthor.isAi && (
                   <div className="relative group/tooltip inline-block select-none">
                     <Sparkles className="w-3.5 h-3.5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />

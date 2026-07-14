@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry, SystemSettings } from '../../types';
-import { parseInlineFormatting, toRoman, markdownToHtml } from '../../utils';
+import { parseInlineFormatting, toRoman, markdownToHtml, wrapBadgesWithWords, resolveTypographyContext } from '../../utils';
 import { PhilosophyCarousel } from '../common/PhilosophyCarousel';
 import { ElasticMarginRow } from '../rendering/ElasticMarginRow';
 import { AnimatedSignature } from '../desk/AnimatedSignature';
@@ -30,7 +30,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
   const manifestoEntry = entries.find((e) => e.id === 'entry-manifesto');
 
   const renderManifestoParagraph = (markdownText: string, idx: number) => {
-    const htmlContent = markdownToHtml(markdownText).replace(/^<p>/, '').replace(/<\/p>$/, '');
+    const typography = resolveTypographyContext(null, markdownText);
+    const htmlContent = markdownToHtml(markdownText, typography).replace(/^<p>/, '').replace(/<\/p>$/, '');
     const cleanText = htmlContent.replace(/<[^>]*>/g, '');
     if (idx === 0 && cleanText.length > 0) {
       const firstLetter = cleanText.charAt(0);
@@ -41,23 +42,16 @@ export const LandingView: React.FC<LandingViewProps> = ({
           <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
             {firstLetter}
           </span>
-          <span dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(rest) }} />
+          <span dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(rest, typography) }} />
         </p>
       );
     }
     return (
-      <p
+      <p 
         key={idx}
         className="leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(htmlContent) }}
+        dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(htmlContent, typography) }}
       />
-    );
-  };
-
-  const wrapBadgesWithWords = (html: string) => {
-    return html.replace(
-      /((?:<span class="interlinear-word"><span class="interlinear-gloss">[^<]*<\/span>[^<]*<\/span>|[^\s<>]+)[,.;:!?]?(?:<span class="(?:footnote|margin-note)-badge"[^>]*><\/span>)+)/g,
-      '<span class="whitespace-nowrap">$1</span>'
     );
   };
 
@@ -131,10 +125,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <div className="h-px w-12 bg-stone-200"></div>
           </div>
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-[#802334] transition-colors px-4">
-            {parseInlineFormatting(featuredEntry.title)}
+            {parseInlineFormatting(featuredEntry.title, undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </h2>
           <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
-            {featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...'}
+            {parseInlineFormatting(featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...', undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </p>
         </div>
       )}

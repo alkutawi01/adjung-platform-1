@@ -14,6 +14,7 @@ interface NavbarProps {
   setShowLoginModal: (show: boolean) => void;
   setLoginError: (err: string) => void;
   handleLogout: () => void;
+  setShowSwitchScriptorModal: (show: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,9 +28,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   setShowLoginModal,
   setLoginError,
   handleLogout,
+  setShowSwitchScriptorModal,
 }) => {
   const {
     currentUser,
+    originalUser,
     activeTab,
     setActiveTab,
     selectedAuthorId,
@@ -37,6 +40,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     setSelectedEntry,
     setEditingEntry,
     hasPermission,
+    switchActingAccount,
+    revertToOriginalAccount,
+    users,
   } = useAppContext();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -82,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav 
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
-      className={`w-full sticky top-0 z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
+      className={`w-full sticky ${originalUser ? 'top-[36px]' : 'top-0'} z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
         isHeaderHovered ? 'duration-200' : 'duration-[1500ms]'
       } ${
         isFloating 
@@ -282,6 +288,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                         Editorium
                       </button>
                     )}
+
+                    {/* Account Switching Section */}
+                    {(() => {
+                      const effectiveUser = originalUser || currentUser;
+                      const canSwitch = effectiveUser && (effectiveUser.role === 'Chief Editor' || effectiveUser.role === 'Editor');
+                      if (!canSwitch) return null;
+
+                      return (
+                        <>
+                          <div className="h-px bg-stone-100 my-1" />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              setShowSwitchScriptorModal(true);
+                            }}
+                            className="w-full text-left px-4 py-1.5 text-xs text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
+                          >
+                            Switch Scriptor...
+                          </button>
+                        </>
+                      );
+                    })()}
 
                     <div className="h-px bg-stone-100 my-1" />
 

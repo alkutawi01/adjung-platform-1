@@ -1,3 +1,6 @@
 # Adjung Workspace Custom Rules
 
 - **Italics Rule**: Jangan sesekali italickan mana2 ayat atau perkataan melainkan bersebab (Never italicize any sentence or word unless there is a specific, justified reason).
+- **Keseragaman Kekotak Entri**: Pastikan dimensi kotak, terutamanya 'panjang' (ketinggian, padding menegak, dan margin), bagi kekotak `Note` dan `Essay` sentiasa 100% sama. Jangan sesekali menggunakan nilai padding (`p-8`, `mb-12`, dll) yang berbeza (hardcoded) untuk Note; sentiasa rujuk kepada pembolehubah ruang yang sama (contoh: `activeSpec.spacing.canvasPadding`) untuk semua jenis entri. Mesti wajib ada nombor siri di birai kanan.
+- **Pengesahan Import Wajib (No White Screen of Death)**: Setiap kali menyuntik fungsi, komponen, atau pembolehubah baharu ke dalam mana-mana fail, anda WAJIB memeriksa bahagian atas fail tersebut untuk memastikan ia telah di-import. Jika belum, anda MESTI memasukkan sintaks import yang betul serentak dengan pengubahsuaian kod tersebut. Jangan biarkan ralat `ReferenceError` merosakkan aplikasi!
+- **Larangan Simulasi Tanpa Arahan**: Jangan sesekali melancarkan browser subagent (browser_subagent) atau menjalankan sebarang bentuk simulasi visual/pelayar melainkan diarahkan secara eksplisit oleh pengguna.

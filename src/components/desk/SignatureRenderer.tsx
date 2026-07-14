@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { VectorStroke } from '../../types';
+import { VectorStroke, PublishedRepresentation } from '../../types';
 
 interface SignatureRendererProps {
   strokes: VectorStroke[][];
@@ -10,6 +10,8 @@ interface SignatureRendererProps {
   color?: string;
   strokeWidth?: number; // Base width fallback
   enableBleed?: boolean; // Toggles the organic ink bleed filter
+  renderBaselineLayout?: boolean; // Controls visual guidelines
+  representation?: PublishedRepresentation; // SVG representation from database
   typographyStyle?: {
     letterSpacing?: number;
     fontWeight?: number;
@@ -34,12 +36,30 @@ export function SignatureRenderer({
   color = "#802334", // Adjung-maroon
   strokeWidth = 3.2, // Enhanced default thickness
   enableBleed = true,
+  renderBaselineLayout = false,
+  representation,
   typographyStyle,
   penStyle
 }: SignatureRendererProps) {
   
   const id = useId();
   const filterId = `ink-bleed-${id.replace(/:/g, '-')}`;
+
+  // === SVG FAST PATH ===
+  // Jika representation mengandungi svgData (canonical SVG string yang dikompil semasa save),
+  // render sebagai data URL dalam <img> supaya ia mengisi container dengan betul.
+  if (representation?.svgData) {
+    const svgBase64 = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(representation.svgData)}`;
+    return (
+      <img
+        src={svgBase64}
+        alt="signature"
+        className={className}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+      />
+    );
+  }
+
 
   const hasStrokes = strokes && strokes.length > 0 && !strokes.every(s => s.length === 0);
 

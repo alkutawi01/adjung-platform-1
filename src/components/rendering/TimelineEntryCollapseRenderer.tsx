@@ -1,20 +1,26 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
-import { Entry } from '../../types';
+import { Entry, EntryLayoutVariant } from '../../types';
 import { parseContentToBlocks, isArabicText, parseInlineFormatting, getFootnotesReadingOrderMap, getMarginNotesReadingOrderMap } from '../../utils';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
 
 interface TimelineEntryCollapseRendererProps {
   item: Entry;
   isExpanded: boolean;
-  onToggle: () => void;
+  onToggle?: () => void;
   maxHeight?: number;
   onOpenText?: () => void;
   presentationSpec?: PresentationSpec;
   showInlineToggle?: boolean;
   onLimitExceeded?: (exceeded: boolean) => void;
+  layoutVariant?: EntryLayoutVariant;
 }
 
-function truncatePreviewContent(content: string): { text: string; exceeded: boolean } {
+function truncatePreviewContent(
+  content: string,
+  maxLinesLimit: number,
+  maxCharsLimit: number,
+  maxWordsLimit: number
+): { text: string; exceeded: boolean } {
   if (!content) return { text: '', exceeded: false };
 
   const rawLines = content.split('\n');
@@ -27,13 +33,13 @@ function truncatePreviewContent(content: string): { text: string; exceeded: bool
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
 
-    if (lineCount >= 6) {
+    if (lineCount >= maxLinesLimit) {
       exceeded = true;
       break;
     }
 
     if (line.trim() === '') {
-      if (charCount + 1 > 500) {
+      if (charCount + 1 > maxCharsLimit) {
         exceeded = true;
         break;
       }
@@ -51,18 +57,18 @@ function truncatePreviewContent(content: string): { text: string; exceeded: bool
 
       const isWhitespace = /^\s+$/.test(word);
       if (isWhitespace) {
-        if (charCount + word.length > 500) {
+        if (charCount + word.length > maxCharsLimit) {
           exceeded = true;
           break;
         }
         reconstructedLine += word;
         charCount += word.length;
       } else {
-        if (wordCount >= 100) {
+        if (wordCount >= maxWordsLimit) {
           exceeded = true;
           break;
         }
-        if (charCount + word.length > 500) {
+        if (charCount + word.length > maxCharsLimit) {
           exceeded = true;
           break;
         }
@@ -80,7 +86,7 @@ function truncatePreviewContent(content: string): { text: string; exceeded: bool
     }
 
     if (i < rawLines.length - 1) {
-      if (charCount + 1 > 500) {
+      if (charCount + 1 > maxCharsLimit) {
         exceeded = true;
         break;
       }
@@ -91,7 +97,7 @@ function truncatePreviewContent(content: string): { text: string; exceeded: bool
   let truncatedText = finalLines.join('\n');
   if (exceeded || truncatedText.length < content.length) {
     exceeded = true;
-    truncatedText = truncatedText.trim() + '...';
+    truncatedText = truncatedText.trim();
   }
 
   return { text: truncatedText, exceeded };
@@ -101,17 +107,53 @@ export function TimelineEntryCollapseRenderer({
   item,
   isExpanded,
   onToggle,
-  maxHeight = 220,
   onOpenText,
   presentationSpec,
   showInlineToggle = true,
   onLimitExceeded,
+  layoutVariant: propLayoutVariant,
 }: TimelineEntryCollapseRendererProps) {
   const activeSpec = presentationSpec || getPresentationSpec(item.contentType);
   const [exceedsLimit, setExceedsLimit] = useState<boolean>(false);
   const measureContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const { text: truncatedContent, exceeded: contentExceeded } = truncatePreviewContent(item.content);
+  const layoutVariant = propLayoutVariant || item.layoutVariant || 'melintang';
+
+  let maxLines = 6;
+  let maxChars = 500;
+  let maxWords = 100;
+  let defaultMaxHeight = 220;
+
+  if (layoutVariant === 'menegak') {
+    maxLines = 13;
+    maxChars = 1000;
+    maxWords = 200;
+    defaultMaxHeight = 440;
+  } else if (layoutVariant === 'penuh') {
+    maxLines = 99999;
+    maxChars = 999999;
+    maxWords = 999999;
+    defaultMaxHeight = 99999;
+  }
+
+  const [clampLines, setClampLines] = useState<number>(maxLines);
+  const prevContentRef = useRef<string>(item.content);
+  const prevVariantRef = useRef<string>(layoutVariant);
+
+  useLayoutEffect(() => {
+    if (prevContentRef.current !== item.content || prevVariantRef.current !== layoutVariant) {
+      setClampLines(maxLines);
+      prevContentRef.current = item.content;
+      prevVariantRef.current = layoutVariant;
+    }
+  }, [item.content, layoutVariant, maxLines]);
+
+  const { text: truncatedContent, exceeded: contentExceeded } = truncatePreviewContent(
+    item.content,
+    clampLines,
+    maxChars,
+    maxWords
+  );
 
   const fullContentBlocks = parseContentToBlocks(item.content);
   const previewContentBlocks = parseContentToBlocks(truncatedContent);
@@ -120,21 +162,62 @@ export function TimelineEntryCollapseRenderer({
   const mMap = getMarginNotesReadingOrderMap(item.content).map;
 
   useLayoutEffect(() => {
+    if (isExpanded || layoutVariant === 'penuh') return;
+
     const measureContainer = measureContainerRef.current;
     if (!measureContainer) return;
 
-    const visuallyClamped = measureContainer.scrollHeight > measureContainer.clientHeight;
-    const exceeded = contentExceeded || visuallyClamped;
-
-    setExceedsLimit(exceeded);
-
-    if (onLimitExceeded) {
-      const timer = setTimeout(() => {
-        onLimitExceeded(exceeded);
-      }, 0);
-      return () => clearTimeout(timer);
+    let cardRoot = measureContainer.parentElement;
+    while (cardRoot) {
+      const className = cardRoot.className || '';
+      if (
+        className.includes('laid-paper') ||
+        className.includes('deckled-white') ||
+        className.includes('flex-grow')
+      ) {
+        break;
+      }
+      cardRoot = cardRoot.parentElement;
     }
-  }, [item.content, contentExceeded, onLimitExceeded]);
+
+    if (!cardRoot) return;
+
+    let timerId: any = null;
+
+    const check = () => {
+      if (cardRoot.clientHeight <= 100) return;
+      const cardOverflows = cardRoot.scrollHeight > cardRoot.clientHeight;
+      if (cardOverflows && clampLines > 1) {
+        setClampLines(prev => prev - 1);
+        setExceedsLimit(true);
+      } else if (!cardOverflows && clampLines < maxLines && (cardRoot.clientHeight - cardRoot.scrollHeight > 30)) {
+        setClampLines(prev => prev + 1);
+      } else {
+        const visuallyClamped = measureContainer.scrollHeight > measureContainer.clientHeight;
+        const exceeded = contentExceeded || visuallyClamped || clampLines < maxLines;
+        setExceedsLimit(exceeded);
+
+        if (onLimitExceeded) {
+          timerId = setTimeout(() => {
+            onLimitExceeded(exceeded);
+          }, 0);
+        }
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+      check();
+    });
+    observer.observe(cardRoot);
+    observer.observe(measureContainer);
+
+    check();
+
+    return () => {
+      observer.disconnect();
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [clampLines, contentExceeded, onLimitExceeded, isExpanded, layoutVariant, maxLines]);
 
   const renderSingleBlock = (block: any, pIdx: number) => {
     if (block.type === 'heading') {
@@ -274,34 +357,37 @@ export function TimelineEntryCollapseRenderer({
     }
 
     const isParaAr = isArabicText(block.text);
+    const isLastBlock = pIdx === previewContentBlocks.length - 1;
     return (
       <p 
         key={pIdx}
         dir={isParaAr ? 'rtl' : 'ltr'}
         className={`${
           isParaAr 
-            ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base' 
-            : `${activeSpec.typography.bodyFont} text-left ${
-                item.contentType === 'Note' ? 'text-[15.5px] md:text-[16.5px]' : 'text-xs md:text-sm'
-              } text-stone-650 leading-relaxed`
+            ? 'font-arabic text-right text-stone-900 leading-loose text-[18.5px]' 
+            : item.contentType === 'Note'
+              ? 'font-handwritten text-left text-[18.5px] text-black leading-relaxed'
+              : 'font-serif font-light text-left text-[14px] leading-relaxed text-stone-650'
         }`}
       >
         {parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
+        {!isExpanded && exceedsLimit && isLastBlock && (
+          <span className="text-[#802334] font-bold ml-1 mr-1 select-none" style={{ pointerEvents: 'none' }}>...</span>
+        )}
       </p>
     );
   };
 
   return (
     <div className="relative w-full">
-      {/* Hidden measuring container styled with line-clamp-6 to measure visual clamping */}
       <div 
         ref={measureContainerRef}
-        className="absolute opacity-0 pointer-events-none select-none w-full line-clamp-6"
+        className="absolute opacity-0 pointer-events-none select-none w-full"
         style={{ 
           top: -9999, 
           left: -9999,
           display: '-webkit-box',
-          WebkitLineClamp: 6,
+          WebkitLineClamp: maxLines,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden'
         }}
@@ -341,15 +427,7 @@ export function TimelineEntryCollapseRenderer({
           </div>
         ) : (
           <div className="space-y-3">
-            <div 
-              className="space-y-3 line-clamp-6"
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 6,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
-              }}
-            >
+            <div className="space-y-3">
               {previewContentBlocks.map((block, idx) => renderSingleBlock(block, idx))}
             </div>
             {exceedsLimit && showInlineToggle && (

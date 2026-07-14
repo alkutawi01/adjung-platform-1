@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, IdentityProfile } from '../../types';
 import { db } from '../../db/mockDb';
 import { SignatureManager } from '../desk/SignatureManager';
-import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe } from 'lucide-react';
+import { isSubdomainUnlocked } from '../../utils';
 
 import { useAppContext } from '../../context/AppContext';
 import { firestoreService } from '../../utils/firestoreService';
@@ -300,6 +301,77 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
 
         {/* Right Column: Signature System */}
         <div className="lg:col-span-5 space-y-6">
+          
+          {/* Subdomain Activation Progress */}
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-4">
+            <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-stone-700 flex items-center gap-2 border-b pb-3 mb-2">
+              <Globe className="w-4 h-4 text-adjung-maroon" /> Subdomain Status
+            </h3>
+            
+            <div className="flex items-center justify-between py-1.5 px-2.5 rounded bg-stone-50 border border-stone-100">
+              <span className="text-xs font-serif font-bold text-stone-900">
+                {username}.adjung.com
+              </span>
+              {isSubdomainUnlocked(currentUser.id, db.getEntries(), identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-emerald-250">
+                  Unlocked
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-amber-250">
+                  Reserved
+                </span>
+              )}
+            </div>
+            
+            {!isSubdomainUnlocked(currentUser.id, db.getEntries(), identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) && (
+              <p className="text-[11px] text-stone-500 font-sans leading-relaxed">
+                Your custom subdomain is reserved. Complete the conditions below to unlock and publish using your custom address.
+              </p>
+            )}
+
+            <div className="space-y-3 pt-2">
+              <span className="block text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">
+                Unlock Requirements
+              </span>
+              
+              <div className="space-y-2 text-left">
+                {(() => {
+                  const allEntries = db.getEntries();
+                  const hasNote = allEntries.some(e => e.authorId === currentUser.id && e.status === 'Published' && e.contentType === 'Note');
+                  const hasEssay = allEntries.some(e => e.authorId === currentUser.id && e.status === 'Published' && e.contentType === 'Essay');
+                  const hasBioText = identity && identity.biography && identity.biography.trim().length > 0 && 
+                    !identity.biography.includes('Biography of') && !identity.biography.includes('Biography for');
+                  const hasTimeline = identity && identity.lifeTimeline && identity.lifeTimeline.length > 0;
+
+                  const userCreated = currentUser.createdAt ? new Date(currentUser.createdAt) : new Date();
+                  const daysActive = Math.floor((new Date().getTime() - userCreated.getTime()) / (1000 * 60 * 60 * 24));
+                  const is30DaysActive = daysActive >= 30;
+
+                  const items = [
+                    { label: "Publish a Note", done: hasNote },
+                    { label: "Publish an Essay", done: hasEssay },
+                    { label: "Fill Biography Text", done: hasBioText },
+                    { label: "Add Biography Milestone", done: hasTimeline },
+                    { label: `Account active for 30 days (Currently ${daysActive} days)`, done: is30DaysActive }
+                  ];
+
+                  return items.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs font-serif">
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                        item.done ? 'bg-emerald-50 border-emerald-400 text-emerald-600 font-bold' : 'bg-stone-50 border-stone-200 text-stone-300'
+                      }`}>
+                        {item.done ? '✓' : ''}
+                      </span>
+                      <span className={item.done ? 'text-stone-400 line-through' : 'text-stone-705'}>
+                        {item.label}
+                      </span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
             <SignatureManager identity={identity} onIdentityUpdate={handleIdentityUpdateFromSignature} />
           </div>

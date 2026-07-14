@@ -206,5 +206,8 @@ export class AuthService {
   static signOut(): void {
     fbSignOut(auth).catch(err => console.error('Firebase signout failed:', err));
     SessionService.destroySession();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('Adjung_acting_user_id');
+    }
   }
 }

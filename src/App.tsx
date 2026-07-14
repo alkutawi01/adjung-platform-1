@@ -13,7 +13,7 @@ import SignUpWizard from './components/common/SignUpWizard';
 import { updatePassword } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { firestoreService } from './utils/firestoreService';
-import { 
+import {
   Compass,
   User as UserIcon,
   ChevronLeft,
@@ -68,12 +68,12 @@ import { BRAND } from './config/brand';
 function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorStroke[][] | undefined {
   const identity = db.getIdentityByAccountId(authorId);
   if (!identity) return undefined;
-  
+
   if (entry?.signatureVersionId) {
     const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
     if (sig) return sig.strokes;
   }
-  
+
   const defaultSig = identity.signatures.find(s => s.status === 'Default');
   if (defaultSig && defaultSig.type === 'drawn') return defaultSig.strokes;
   return undefined;
@@ -119,24 +119,22 @@ function renderFrontpageBlock(block: any, pIdx: number) {
     const textNode = parseInlineFormatting(block.text);
     if (block.level === 1) {
       return (
-        <h3 
-          key={pIdx} 
-          dir={isAr ? 'rtl' : 'ltr'} 
-          className={`font-serif text-stone-900 font-semibold my-2.5 ${
-            isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
-          }`}
+        <h3
+          key={pIdx}
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={`font-serif text-stone-900 font-semibold my-2.5 ${isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
+            }`}
         >
           {textNode}
         </h3>
       );
     } else {
       return (
-        <h4 
-          key={pIdx} 
-          dir={isAr ? 'rtl' : 'ltr'} 
-          className={`font-serif text-stone-850 font-medium my-2 ${
-            isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
-          }`}
+        <h4
+          key={pIdx}
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={`font-serif text-stone-850 font-medium my-2 ${isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
+            }`}
         >
           {textNode}
         </h4>
@@ -151,8 +149,8 @@ function renderFrontpageBlock(block: any, pIdx: number) {
       const textNode = parseInlineFormatting(listItem.text);
       if (isChecklist) {
         return (
-          <li 
-            key={itemIdx} 
+          <li
+            key={itemIdx}
             className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
           >
             <input type="checkbox" checked={listItem.checked} disabled className="h-3 w-3 rounded text-adjung-maroon cursor-default" />
@@ -246,14 +244,13 @@ function renderFrontpageBlock(block: any, pIdx: number) {
 
   const isParaAr = isArabicText(block.text);
   return (
-    <p 
+    <p
       key={pIdx}
       dir={isParaAr ? 'rtl' : 'ltr'}
-      className={`${
-        isParaAr 
-          ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base' 
+      className={`${isParaAr
+          ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base'
           : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
-      }`}
+        }`}
     >
       {parseInlineFormatting(block.text)}
     </p>
@@ -274,6 +271,8 @@ export default function App() {
     initializing,
     currentUser,
     setCurrentUser,
+    originalUser,
+    revertToOriginalAccount,
     selectedAuthorId,
     setSelectedAuthorId,
     activeTab,
@@ -331,7 +330,7 @@ export default function App() {
   const [showInterlinear, setShowInterlinear] = useState(true);
   const lastScrollY = useRef(0);
   const [expandedFrontpageNotes, setExpandedFrontpageNotes] = useState<string[]>([]);
-  
+
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
   const [isRouteSynced, setIsRouteSynced] = useState(false);
@@ -349,7 +348,7 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  
+
   // Sync Account Edit states when Account Modal is shown
 
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -532,7 +531,7 @@ export default function App() {
     // If subdomain is active, we enforce selectedAuthorId
     if (authorFromSubdomain) {
       setSelectedAuthorId(authorFromSubdomain.id);
-      
+
       if (parts.length === 0) {
         setActiveTab('folio');
         setSelectedEntry(null);
@@ -746,7 +745,7 @@ export default function App() {
       heroSubtitle: editWriterHeroSubtitle,
     };
     db.updateProfile(updatedProfile);
-    
+
     const identity = db.getIdentityByAccountId(writer.id);
     if (identity) {
       db.updateIdentity({
@@ -1001,7 +1000,7 @@ export default function App() {
       setUsernameInput('');
       setPasswordInput('');
       setShowLoginModal(false);
-      
+
       // Redirect to Frontpage upon login
       setActiveTab('frontpage');
       setEditingEntry(null);
@@ -1062,13 +1061,13 @@ export default function App() {
 
     const newId = generateUUID();
     const tempTitle = type === 'Note' ? '' : `Untitled ${type}`;
-    const defaultContent = type === 'Article' 
+    const defaultContent = type === 'Article'
       ? 'This is the first paragraph of your scholarly article.\n\nThis is the second paragraph of your article. Margin notes are displayed adjacent to their respective paragraph.'
       : type === 'Essay'
-      ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text.\n\nAnother paragraph expanding on your thesis.'
-      : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
-        : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
-        : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
+        ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text.\n\nAnother paragraph expanding on your thesis.'
+        : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
+          : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
+            : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
 
     const slugSuffix = Date.now().toString().slice(-4);
     const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
@@ -1126,7 +1125,7 @@ export default function App() {
         biography: deskBioText
       });
     }
-    
+
     refreshDbState();
     showToast('Writing profile updated successfully', 'success');
   };
@@ -1194,27 +1193,27 @@ export default function App() {
       firestoreService.saveUser(userToSave),
       updateAuthPassword()
     ])
-    .then(() => {
-      localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
-      if (accountPassword) {
-        localStorage.setItem(`adjung_password_${currentUser.id}`, accountPassword);
-      }
-      db.updateUser(updatedUser);
-      setCurrentUser(updatedUser);
-      firestoreService.saveLog({
-        id: `log-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        operator: currentUser.penName,
-        role: currentUser.role,
-        action: `Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`
-      }).then(() => refreshDbState());
-      setShowAccountModal(false);
-      showToast('Account credentials updated successfully', 'success');
-    })
-    .catch(err => {
-      console.error(err);
-      setAccountError('Gagal mengemas kini kredensial di server.');
-    });
+      .then(() => {
+        localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
+        if (accountPassword) {
+          localStorage.setItem(`adjung_password_${currentUser.id}`, accountPassword);
+        }
+        db.updateUser(updatedUser);
+        setCurrentUser(updatedUser);
+        firestoreService.saveLog({
+          id: `log-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          operator: currentUser.penName,
+          role: currentUser.role,
+          action: `Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`
+        }).then(() => refreshDbState());
+        setShowAccountModal(false);
+        showToast('Account credentials updated successfully', 'success');
+      })
+      .catch(err => {
+        console.error(err);
+        setAccountError('Gagal mengemas kini kredensial di server.');
+      });
   };
 
   // Add Biography Timeline Item
@@ -1236,7 +1235,7 @@ export default function App() {
         ...identity,
         lifeTimeline: [...identity.lifeTimeline, newItem].sort((a, b) => parseInt(a.year) - parseInt(b.year))
       };
-      
+
       try {
         await firestoreService.saveIdentity(updatedIdentity);
         db.updateIdentity(updatedIdentity);
@@ -1247,7 +1246,7 @@ export default function App() {
         showToast('Gagal menyimpan milestone ke server.', 'error');
       }
     }
-    
+
     // Reset modal states
     setShowAddBioModal(false);
     setNewBioYear('');
@@ -1264,7 +1263,7 @@ export default function App() {
         ...identity,
         lifeTimeline: identity.lifeTimeline.filter(item => item.id !== itemId)
       };
-      
+
       try {
         await firestoreService.saveIdentity(updatedIdentity);
         db.updateIdentity(updatedIdentity);
@@ -1326,14 +1325,14 @@ Editorial Board of Adjung`;
     }
 
     const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '.');
-    
+
     // Check reserved usernames
     const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
     if (RESERVED_PATHS.includes(formattedUsername)) {
       showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
       return;
     }
-    
+
     // Check for duplicate username
     const exists = users.some(u => u.username.toLowerCase() === formattedUsername);
     if (exists) {
@@ -1364,7 +1363,7 @@ Editorial Board of Adjung`;
       heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.'
     };
     db.updateProfile(updatedProfile);
-    
+
     const identity = db.getIdentityByAccountId(newUserId);
     if (identity) {
       db.updateIdentity({
@@ -1387,14 +1386,14 @@ Editorial Board of Adjung`;
     const { username, displayName, penName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
 
     const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
-    
+
     // Check reserved usernames
     const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
     if (RESERVED_PATHS.includes(formattedUsername)) {
       showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
       return;
     }
-    
+
     // Check for duplicate username
     const exists = users.some(u => u.username.toLowerCase() === formattedUsername);
     if (exists) {
@@ -1425,7 +1424,7 @@ Editorial Board of Adjung`;
       heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
     };
     db.updateProfile(updatedProfile);
-    
+
     const identity = db.getIdentityByAccountId(newUserId);
     if (identity) {
       // bioContent removed
@@ -1468,8 +1467,8 @@ Editorial Board of Adjung`;
 
   // Filter timeline entries by selected category/tag
   const allUniqueTags = Array.from(new Set(authorPublishedEntries.flatMap(e => e.tags)));
-  const filteredTimelineEntries = selectedTagFilter === 'All' 
-    ? authorPublishedEntries 
+  const filteredTimelineEntries = selectedTagFilter === 'All'
+    ? authorPublishedEntries
     : authorPublishedEntries.filter(e => e.tags.includes(selectedTagFilter));
 
   // Sort entries for timeline: Grouped by Year, and within Year by Date descending
@@ -1515,508 +1514,526 @@ Editorial Board of Adjung`;
         >
           {/* Top Thin Reading Progress Bar */}
           <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-[#802334]/5 z-50 pointer-events-none">
-            <div 
+            <div
               className="h-full bg-[#802334] transition-all duration-75 ease-out"
               style={{ width: `${maxScroll > 0 ? Math.min(100, Math.max(0, (scrollY / maxScroll) * 100)) : 0}%` }}
             />
           </div>
-      
-      {/* Elegant Editorial Toast Notification */}
-      {toast && (
-        <div 
-          onClick={() => setToastVisible(false)}
-          className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${
-            toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-          }`}
-        >
-          <div className="bg-[#FDFDFD] border border-stone-200/80 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-serif text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
-            <span className="text-[#802334] font-semibold">✓</span>
-            <span className="tracking-wide">{toast.message}</span>
-          </div>
-        </div>
-      )}
-           {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
-      <Navbar
-        isHeaderHovered={isHeaderHovered}
-        setIsHeaderHovered={setIsHeaderHovered}
-        isFloating={isFloating}
-        showNavbar={showNavbar}
-        scrollY={scrollY}
-        maxScroll={maxScroll}
-        setShowAccountModal={setShowAccountModal}
-        setShowLoginModal={setShowLoginModal}
-        setLoginError={setLoginError}
-        handleLogout={handleLogout}
-      />
-      {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
-      {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
-        <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
-          <div className="max-w-6xl mx-auto text-center relative">
-                        {/* Main classical visual focus: The Author's Identity with refined lines */}
-            <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
-              <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
-                PERSONAL SITE
-              </span>
-              
-              <div className="flex items-center justify-center gap-2.5">
-                <h1 
-                  onClick={() => {
+
+          {/* Elegant Editorial Toast Notification */}
+          {toast && (
+            <div
+              onClick={() => setToastVisible(false)}
+              className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+                }`}
+            >
+              <div className="bg-[#FDFDFD] border border-stone-200/80 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-serif text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
+                <span className="text-[#802334] font-semibold">✓</span>
+                <span className="tracking-wide">{toast.message}</span>
+              </div>
+            </div>
+          )}
+          {/* ==================== 1. IMPERSONATION BANNER ==================== */}
+          {originalUser && (
+            <div className="w-full h-9 bg-amber-50 border-b border-amber-200/60 text-amber-900 px-4 md:px-8 flex items-center justify-between text-xs select-none sticky top-0 z-50 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <span className="font-sans font-medium">
+                  Acting Scriptor: <span className="font-semibold text-[#802334]">{currentUser?.penName}</span> (Original: {originalUser.penName})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={revertToOriginalAccount}
+                className="text-[10px] font-mono uppercase font-bold tracking-wider hover:underline text-[#802334] cursor-pointer"
+              >
+                Revert to Original Account →
+              </button>
+            </div>
+          )}
+
+          {/* ==================== 1. BRAND & NAVIGATION (Unified navbar shell) ==================== */}
+          <Navbar
+            isHeaderHovered={isHeaderHovered}
+            setIsHeaderHovered={setIsHeaderHovered}
+            isFloating={isFloating}
+            showNavbar={showNavbar}
+            scrollY={scrollY}
+            maxScroll={maxScroll}
+            setShowAccountModal={setShowAccountModal}
+            setShowLoginModal={setShowLoginModal}
+            setLoginError={setLoginError}
+            handleLogout={handleLogout}
+          />
+          {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
+          {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
+            <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
+              <div className="max-w-6xl mx-auto text-center relative">
+                {/* Main classical visual focus: The Author's Identity with refined lines */}
+                <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
+                  <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-stone-400 mb-2">
+                    PERSONAL SITE
+                  </span>
+
+                  <div className="flex items-center justify-center gap-2.5">
+                    <h1
+                      onClick={() => {
+                        setSelectedEntry(null);
+                        setEditingEntry(null);
+                        setActiveTab('folio');
+                      }}
+                      className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-stone-900 cursor-pointer hover:opacity-95 select-none leading-none"
+                    >
+                      {currentAuthor.penName}
+                    </h1>
+                    {currentAuthor.isAi && (
+                      <div className="relative group/tooltip inline-block align-middle select-none">
+                        <Sparkles className="w-5 h-5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-900 text-stone-100 text-[10px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                          AI Editorial Fellow
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* The subdomain kept as an elegant central element of the identity integrated naturally without bullets */}
+                  <div className="mt-2.5">
+                    <span className="font-mono text-[11px] text-stone-500 lowercase tracking-wide block select-all">
+                      {currentAuthor.username}.adjung.com
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </header>
+          )}
+
+
+          {/* ==================== 3. MAIN DYNAMIC WORKSPACE ==================== */}
+          <main className="flex-grow max-w-6xl w-full mx-auto px-4 md:px-8 mt-6">
+
+            {/* VIEW AN INDIVIDUAL PUBLISHED MANUAL FROM FOLIO OR INDEX */}
+            {selectedEntry && !editingEntry && (
+              <div className="max-w-4xl mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEntry(null)}
+                  className="mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                  {selectedEntry.publicationClass === 'Institutional'
+                    ? (selectedEntry.contentType === 'Notice' ? 'Return to Notices' : "Return to Editor's Notes")
+                    : 'Return to Folio'}
+                </button>
+                <EntryRenderer
+                  entry={selectedEntry}
+                  mode="view"
+                  authorName={selectedEntry.publicationClass === 'Institutional'
+                    ? (selectedEntry.publisher || 'Adjung Editorial Board')
+                    : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer')}
+                  authorSignature={selectedEntry.publicationClass === 'Institutional'
+                    ? ''
+                    : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
+                  authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
+                    ? []
+                    : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '')}
+                  authorSignatureFont={selectedEntry.publicationClass === 'Institutional'
+                    ? ''
+                    : resolveSignatureFont(selectedEntry.authorId || '')}
+                  authorDigitalSignature={selectedEntry.publicationClass === 'Institutional'
+                    ? undefined
+                    : resolveDigitalSignature(selectedEntry.authorId || '', selectedEntry)}
+                />
+              </div>
+            )}
+
+            {/* ACTIVE MODULE 1: FOLIO VIEW (Continuous editorial timeline grouped by year) */}
+            {activeTab === 'folio' && !selectedEntry && (
+              <FolioView
+                currentAuthor={currentAuthor}
+                authorProfile={authorProfile}
+                selectedEntry={selectedEntry}
+                systemSettings={systemSettings}
+                allUniqueTags={allUniqueTags}
+                selectedTagFilter={selectedTagFilter}
+                setSelectedTagFilter={setSelectedTagFilter}
+                authorPublishedEntries={authorPublishedEntries}
+                sortedYears={sortedYears}
+                timelineGroupedByYear={timelineGroupedByYear}
+                expandedNoteIds={expandedNoteIds}
+                toggleNote={toggleNote}
+                setSelectedEntry={setSelectedEntry}
+                setSelectedAuthorId={setSelectedAuthorId}
+                setActiveTab={setActiveTab}
+                setShowLoginModal={setShowLoginModal}
+                setLoginError={setLoginError}
+              />
+            )}
+
+            {/* ACTIVE MODULE 2: BIOGRAPHY VIEW (Classical blocks & timeline) */}
+            {activeTab === 'bio' && (
+              !currentAuthor ? (
+                <div className="max-w-2xl mx-auto text-center py-16 px-4 space-y-8 select-none">
+                  <div className="space-y-3">
+                    <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-adjung-maroon mb-2">
+                      Biography Records
+                    </span>
+                    <h2 className="font-serif text-3xl font-light text-stone-900 leading-tight">
+                      Scholarly Biographies
+                    </h2>
+                    <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
+                    <p className="font-serif italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
+                      Explore life journeys, publications, academic appointments, and achievements of our resident scholars.
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <p className="font-sans text-xs text-stone-500 max-w-sm mx-auto mb-6">
+                      Please choose a member from the directory to view their complete academic biography and research milestones.
+                    </p>
+                    {hasPermission('viewDirectory') && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('directory')}
+                        className="bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] font-mono text-xs uppercase tracking-wider px-6 py-3 rounded shadow transition cursor-pointer"
+                      >
+                        Open Scholar Directory
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                authorIdentity && (
+                  <BiographyView
+                    authorProfile={authorIdentity}
+                    currentAuthor={currentAuthor}
+                    currentUser={currentUser}
+                    selectedAuthorId={selectedAuthorId || ''}
+                    setEditingBioItem={setEditingBioItem}
+                    setShowAddBioModal={setShowAddBioModal}
+                    handleRemoveBioItem={handleRemoveBioItem}
+                  />
+                )
+              )
+            )}
+
+            {/* ACTIVE MODULE 3: WRITING DESK (Owner-only canonical editing/draft workspace) */}
+            {activeTab === 'desk' && currentUser && (
+              <div className="max-w-5xl mx-auto space-y-12">
+                <WritingDesk />
+              </div>
+            )}
+
+            {/* ACTIVE MODULE 3B: DIRECTORY (Searchable public directory of all platform members) */}
+            {activeTab === 'directory' && (
+              !currentUser ? (
+                <RestrictedAccessView
+                  pageName="Directory"
+                  onSignInClick={() => {
+                    setLoginError('');
+                    setShowLoginModal(true);
+                  }}
+                  onSignUpClick={() => {
+                    setShowSignUpWizard(true);
+                  }}
+                />
+              ) : (
+                <Directory
+                  users={users}
+                  entries={entries}
+                  onSelectMember={(userId, targetTab) => {
+                    setSelectedAuthorId(userId);
+                    setActiveTab(targetTab);
                     setSelectedEntry(null);
                     setEditingEntry(null);
-                    setActiveTab('folio');
                   }}
-                  className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-stone-900 cursor-pointer hover:opacity-95 select-none leading-none"
-                >
-                  {currentAuthor.penName}
-                </h1>
-                {currentAuthor.isAi && (
-                  <div className="relative group/tooltip inline-block align-middle select-none">
-                    <Sparkles className="w-5 h-5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-900 text-stone-100 text-[10px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                      AI Editorial Fellow
+                />
+              )
+            )}
+
+            {/* ACTIVE MODULE 4: INDEX (Editor/Admin only dynamically generated published entries list) */}
+            {activeTab === 'index' && (
+              !currentUser ? (
+                <RestrictedAccessView
+                  pageName="Shared Index"
+                  onSignInClick={() => {
+                    setLoginError('');
+                    setShowLoginModal(true);
+                  }}
+                  onSignUpClick={() => {
+                    setShowSignUpWizard(true);
+                  }}
+                />
+              ) : (
+                hasPermission('viewIndex') && (
+                  <div className="max-w-6xl mx-auto">
+                    <EditorialIndex
+                      entries={entries}
+                      users={users}
+                      setSelectedEntry={setSelectedEntry}
+                      systemSettings={systemSettings}
+                      initialSearchQuery={indexSearchQuery}
+                      onSearchQueryChange={setIndexSearchQuery}
+                    />
+                  </div>
+                )
+              )
+            )}
+
+            {/* ACTIVE MODULE 5: EDITORIUM (Editor settings and administrative workspace) */}
+            {activeTab === 'editorium' && currentUser && hasPermission('curateFrontpage') && (
+              <Editorium />
+            )}
+
+            {/* ACTIVE MODULE: INSTITUTIONAL NOTICES */}
+            {activeTab === 'notices' && !selectedEntry && (
+              <NoticesView entries={entries} setSelectedEntry={setSelectedEntry} />
+            )}
+
+            {/* ACTIVE MODULE: EDITORIAL NOTES */}
+            {activeTab === 'editorial' && !selectedEntry && (
+              <EditorialNotesView entries={entries} setSelectedEntry={setSelectedEntry} />
+            )}
+
+            {/* ACTIVE MODULE: VERSION HISTORY */}
+            {activeTab === 'changelog' && (
+              <ChangelogView />
+            )}
+
+
+
+            {/* ACTIVE MODULE: POLICIES */}
+            {activeTab === 'policies' && (
+              <PoliciesView policies={db.getPolicies()} />
+            )}
+
+
+            {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
+            {activeTab === 'landing' && (
+              <LandingView
+                entries={entries}
+                systemSettings={systemSettings}
+                setActiveTab={setActiveTab}
+                setSelectedEntry={setSelectedEntry}
+                setSelectedAuthorId={setSelectedAuthorId}
+                setShowLoginModal={setShowLoginModal}
+                setLoginError={setLoginError}
+                researchFindingsGoogleDocText={researchFindingsGoogleDocText}
+              />
+            )}
+
+            {/* ACTIVE MODULE 0B: CURATED FRONTPAGE (Platform public index of publications & scholars) */}
+            {activeTab === 'frontpage' && !selectedEntry && (
+              <FrontpageView
+                entries={entries}
+                users={users}
+                systemSettings={systemSettings}
+                setSelectedEntry={setSelectedEntry}
+                setSelectedAuthorId={setSelectedAuthorId}
+                setActiveTab={setActiveTab}
+                currentUser={currentUser}
+                inTheNewsGoogleDocText={inTheNewsGoogleDocText}
+                worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
+                setIndexSearchQuery={setIndexSearchQuery}
+              />
+            )}
+
+          </main>
+
+          {/* ==================== 4. SIGN IN / AUTH OVERLAY MODAL ==================== */}
+          <LoginModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            loginError={loginError}
+            setLoginError={setLoginError}
+            usernameInput={usernameInput}
+            setUsernameInput={setUsernameInput}
+            passwordInput={passwordInput}
+            setPasswordInput={setPasswordInput}
+            handleLogin={handleLogin}
+            rememberMe={rememberMe}
+            setRememberMe={setRememberMe}
+            setShowSignUpWizard={setShowSignUpWizard}
+          />
+
+          {/* ==================== 4B. ACCOUNT DETAILS MODAL ==================== */}
+          <AccountModal
+            isOpen={showAccountModal}
+            onClose={() => setShowAccountModal(false)}
+            currentUser={currentUser}
+            accountEmail={accountEmail}
+            setAccountEmail={setAccountEmail}
+            accountUsername={accountUsername}
+            setAccountUsername={setAccountUsername}
+            accountPassword={accountPassword}
+            setAccountPassword={setAccountPassword}
+            accountConfirmPassword={accountConfirmPassword}
+            setAccountConfirmPassword={setAccountConfirmPassword}
+            accountError={accountError}
+            handleSaveAccountSettings={handleSaveAccountSettings}
+          />
+
+          {/* ==================== 5. ADD TIMELINE ITEM MODAL (Shown only in Biography when Owner) ==================== */}
+          {showAddBioModal && (
+            <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border">
+                <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+                  <h3 className="font-serif text-xl text-adjung-maroon">Add Milestone</h3>
+                  <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Save Milestone</p>
+                </div>
+                <form onSubmit={handleAddBioItem} className="p-6 space-y-4 text-xs font-sans">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-1">
+                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Year</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 2024"
+                        value={newBioYear}
+                        onChange={(e) => setNewBioYear(e.target.value)}
+                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Classification</label>
+                      <select
+                        value={newBioCategory}
+                        onChange={(e) => setNewBioCategory(e.target.value as BiographyItem['category'])}
+                        className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon"
+                      >
+                        <option value="Education">Education</option>
+                        <option value="Career">Career</option>
+                        <option value="Publication">Publication</option>
+                        <option value="Award">Award</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                   </div>
-                )}
-              </div>
-              
-              {/* The subdomain kept as an elegant central element of the identity integrated naturally without bullets */}
-              <div className="mt-2.5">
-                <span className="font-mono text-[11px] text-stone-500 lowercase tracking-wide block select-all">
-                  {currentAuthor.username}.adjung.com
-                </span>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
 
+                  <div>
+                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Milestone Title</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Master’s Defense on Calligraphic Grids"
+                      value={newBioTitle}
+                      onChange={(e) => setNewBioTitle(e.target.value)}
+                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm"
+                      required
+                    />
+                  </div>
 
-      {/* ==================== 3. MAIN DYNAMIC WORKSPACE ==================== */}
-      <main className="flex-grow max-w-6xl w-full mx-auto px-4 md:px-8 mt-6">
-        
-        {/* VIEW AN INDIVIDUAL PUBLISHED MANUAL FROM FOLIO OR INDEX */}
-        {selectedEntry && !editingEntry && (
-          <div className="max-w-4xl mx-auto">
-            <button
-              type="button"
-              onClick={() => setSelectedEntry(null)}
-              className="mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              {selectedEntry.publicationClass === 'Institutional'
-                ? (selectedEntry.contentType === 'Notice' ? 'Return to Notices' : "Return to Editor's Notes")
-                : 'Return to Folio'}
-            </button>
-            <EntryRenderer 
-              entry={selectedEntry} 
-              mode="view" 
-              authorName={selectedEntry.publicationClass === 'Institutional'
-                ? (selectedEntry.publisher || 'Adjung Editorial Board')
-                : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer')}
-              authorSignature={selectedEntry.publicationClass === 'Institutional'
-                ? ''
-                : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
-              authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
-                ? []
-                : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '')}
-              authorSignatureFont={selectedEntry.publicationClass === 'Institutional'
-                ? ''
-                : resolveSignatureFont(selectedEntry.authorId || '')}
-              authorDigitalSignature={selectedEntry.publicationClass === 'Institutional'
-                ? undefined
-                : resolveDigitalSignature(selectedEntry.authorId || '', selectedEntry)}
-            />
-          </div>
-        )}
+                  <div>
+                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Comprehensive Description</label>
+                    <textarea
+                      placeholder="Provide precise details of the scholarly achievement or event..."
+                      value={newBioDesc}
+                      onChange={(e) => setNewBioDesc(e.target.value)}
+                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[80px]"
+                      required
+                    />
+                  </div>
 
-        {/* ACTIVE MODULE 1: FOLIO VIEW (Continuous editorial timeline grouped by year) */}
-        {activeTab === 'folio' && !selectedEntry && (
-          <FolioView
-            currentAuthor={currentAuthor}
-            authorProfile={authorProfile}
-            selectedEntry={selectedEntry}
-            systemSettings={systemSettings}
-            allUniqueTags={allUniqueTags}
-            selectedTagFilter={selectedTagFilter}
-            setSelectedTagFilter={setSelectedTagFilter}
-            authorPublishedEntries={authorPublishedEntries}
-            sortedYears={sortedYears}
-            timelineGroupedByYear={timelineGroupedByYear}
-            expandedNoteIds={expandedNoteIds}
-            toggleNote={toggleNote}
-            setSelectedEntry={setSelectedEntry}
-            setSelectedAuthorId={setSelectedAuthorId}
-            setActiveTab={setActiveTab}
-            setShowLoginModal={setShowLoginModal}
-            setLoginError={setLoginError}
-          />
-        )}
-
-        {/* ACTIVE MODULE 2: BIOGRAPHY VIEW (Classical blocks & timeline) */}
-        {activeTab === 'bio' && (
-          !currentAuthor ? (
-            <div className="max-w-2xl mx-auto text-center py-16 px-4 space-y-8 select-none">
-              <div className="space-y-3">
-                <span className="block font-mono text-[8px] md:text-[9px] uppercase tracking-[0.25em] text-adjung-maroon mb-2">
-                  Biography Records
-                </span>
-                <h2 className="font-serif text-3xl font-light text-stone-900 leading-tight">
-                  Scholarly Biographies
-                </h2>
-                <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
-                <p className="font-serif italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
-                  Explore life journeys, publications, academic appointments, and achievements of our resident scholars.
-                </p>
-              </div>
-
-              <div className="pt-4">
-                <p className="font-sans text-xs text-stone-500 max-w-sm mx-auto mb-6">
-                  Please choose a member from the directory to view their complete academic biography and research milestones.
-                </p>
-                {hasPermission('viewDirectory') && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('directory')}
-                    className="bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] font-mono text-xs uppercase tracking-wider px-6 py-3 rounded shadow transition cursor-pointer"
-                  >
-                    Open Scholar Directory
-                  </button>
-                )}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddBioModal(false)}
+                      className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2 rounded text-xs font-mono uppercase tracking-wider transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="w-2/3 bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition font-semibold"
+                    >
+                      Record Milestone
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-          ) : (
-            authorIdentity && (
-              <BiographyView
-                authorProfile={authorIdentity}
-                currentAuthor={currentAuthor}
-                currentUser={currentUser}
-                selectedAuthorId={selectedAuthorId || ''}
-                setEditingBioItem={setEditingBioItem}
-                setShowAddBioModal={setShowAddBioModal}
-                handleRemoveBioItem={handleRemoveBioItem}
-              />
-            )
-          )
-        )}
+          )}
 
-        {/* ACTIVE MODULE 3: WRITING DESK (Owner-only canonical editing/draft workspace) */}
-        {activeTab === 'desk' && currentUser && (
-          <div className="max-w-5xl mx-auto space-y-12">
-            <WritingDesk />
-          </div>
-        )}
+          {/* ==================== INVITATION SENT TRANSMISSION MODAL ==================== */}
+          {generatedInvitation && (
+            <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-lg w-full overflow-hidden scholarly-border my-8">
+                <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block animate-pulse mr-2" />
+                  <h3 className="font-serif text-2xl text-adjung-maroon inline-block">Invitation Transmitted</h3>
+                  <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Simulated Scholar Mail Delivery Server</p>
+                </div>
 
-        {/* ACTIVE MODULE 3B: DIRECTORY (Searchable public directory of all platform members) */}
-        {activeTab === 'directory' && (
-          !currentUser ? (
-            <RestrictedAccessView
-              pageName="Directory"
-              onSignInClick={() => {
-                setLoginError('');
-                setShowLoginModal(true);
-              }}
-              onSignUpClick={() => {
-                setShowSignUpWizard(true);
-              }}
-            />
-          ) : (
-            <Directory 
-              users={users}
-              entries={entries}
-              onSelectMember={(userId, targetTab) => {
-                setSelectedAuthorId(userId);
-                setActiveTab(targetTab);
-                setSelectedEntry(null);
-                setEditingEntry(null);
-              }}
-            />
-          )
-        )}
+                <div className="p-6 space-y-6 text-xs font-sans">
+                  <div className="bg-stone-50 border border-stone-200 p-4 rounded text-left space-y-2">
+                    <div className="flex justify-between items-center text-[10px] font-mono text-stone-500 border-b pb-2">
+                      <span>MTA Status: <span className="text-emerald-600 font-bold">SMTP OK (250)</span></span>
+                      <span>Delivered: Just Now</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 text-[11px] font-mono">
+                      <span className="text-stone-400">Recipient:</span>
+                      <span className="col-span-3 text-stone-800 font-semibold">{generatedInvitation.name}</span>
+                      <span className="text-stone-400">Address:</span>
+                      <span className="col-span-3 text-stone-800 font-semibold select-all">{generatedInvitation.email}</span>
+                    </div>
+                  </div>
 
-        {/* ACTIVE MODULE 4: INDEX (Editor/Admin only dynamically generated published entries list) */}
-        {activeTab === 'index' && (
-          !currentUser ? (
-            <RestrictedAccessView
-              pageName="Shared Index"
-              onSignInClick={() => {
-                setLoginError('');
-                setShowLoginModal(true);
-              }}
-              onSignUpClick={() => {
-                setShowSignUpWizard(true);
-              }}
-            />
-          ) : (
-            hasPermission('viewIndex') && (
-              <div className="max-w-6xl mx-auto">
-                <EditorialIndex
-                  entries={entries}
-                  users={users}
-                  setSelectedEntry={setSelectedEntry}
-                  systemSettings={systemSettings}
-                  initialSearchQuery={indexSearchQuery}
-                  onSearchQueryChange={setIndexSearchQuery}
-                />
+                  {/* Styled vintage email envelope card */}
+                  <div className="border border-amber-200/50 bg-[#FBF9F4] p-6 rounded shadow-sm relative overflow-hidden text-stone-800 select-all font-serif">
+                    <div className="absolute top-0 right-0 w-24 h-24 border-r-2 border-t-2 border-amber-900/10 rotate-12 translate-x-12 -translate-y-12 select-none pointer-events-none" />
+                    <div className="space-y-4 whitespace-pre-line text-justify leading-relaxed pr-2 text-stone-700">
+                      {generatedInvitation.emailBody}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded text-left leading-relaxed text-[11px] text-amber-900 font-sans flex gap-2.5">
+                    <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block mb-0.5">Evaluator Simulation Mode</span>
+                      <span>Since this is a simulated sandbox, we have generated the formal email dispatch. Click the button below to simulate the recipient opening their invitation link and configuring their personal Folio.</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setGeneratedInvitation(null)}
+                      className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-3 rounded text-xs font-mono uppercase tracking-wider transition"
+                    >
+                      Close Scriptorium
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInvitedRegistrationData({
+                          name: generatedInvitation.name,
+                          email: generatedInvitation.email,
+                          username: generatedInvitation.name.toLowerCase().replace(/\s+/g, '.'),
+                          penName: generatedInvitation.name,
+                          signature: generatedInvitation.name,
+                          heroTitle: `Disquisitions on Reason & Form`,
+                          heroSubtitle: `Selected philosophical treatises, essays, and notes authored by ${generatedInvitation.name}.`,
+                          bioText: `${generatedInvitation.name} is an independent writer and scholar newly registered on Adjung, dedicated to formal research and traditional literary studies.`
+                        });
+                        setGeneratedInvitation(null);
+                      }}
+                      className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-3 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <ArrowRight className="w-4 h-4" /> Simulate Link Click & Register
+                    </button>
+                  </div>
+                </div>
               </div>
-            )
-          )
-        )}
+            </div>
+          )}
 
-        {/* ACTIVE MODULE 5: EDITORIUM (Editor settings and administrative workspace) */}
-        {activeTab === 'editorium' && currentUser && hasPermission('curateFrontpage') && (
-          <Editorium />
-        )}
-
-        {/* ACTIVE MODULE: INSTITUTIONAL NOTICES */}
-        {activeTab === 'notices' && !selectedEntry && (
-          <NoticesView entries={entries} setSelectedEntry={setSelectedEntry} />
-        )}
-
-        {/* ACTIVE MODULE: EDITORIAL NOTES */}
-        {activeTab === 'editorial' && !selectedEntry && (
-          <EditorialNotesView entries={entries} setSelectedEntry={setSelectedEntry} />
-        )}
-
-        {/* ACTIVE MODULE: VERSION HISTORY */}
-        {activeTab === 'changelog' && (
-          <ChangelogView />
-        )}
-
-
-
-        {/* ACTIVE MODULE: POLICIES */}
-        {activeTab === 'policies' && (
-          <PoliciesView policies={db.getPolicies()} />
-        )}
-
-
-        {/* ACTIVE MODULE 0A: LANDING PAGE (Unauthenticated, pure public overview) */}
-        {activeTab === 'landing' && (
-          <LandingView
-            entries={entries}
+          {/* ==================== ACADEMIC REGISTRATION WIZARD ==================== */}      {showSignUpWizard && (<SignUpWizard onClose={() => setShowSignUpWizard(false)} onComplete={handleWizardComplete} />)}
+          {/* ==================== 6. ACADEMIC FOOTER ==================== */}
+          <Footer
             systemSettings={systemSettings}
             setActiveTab={setActiveTab}
             setSelectedEntry={setSelectedEntry}
-            setSelectedAuthorId={setSelectedAuthorId}
-            setShowLoginModal={setShowLoginModal}
-            setLoginError={setLoginError}
-            researchFindingsGoogleDocText={researchFindingsGoogleDocText}
+            setEditingEntry={setEditingEntry}
           />
-        )}
-
-        {/* ACTIVE MODULE 0B: CURATED FRONTPAGE (Platform public index of publications & scholars) */}
-        {activeTab === 'frontpage' && !selectedEntry && (
-          <FrontpageView
-            entries={entries}
-            users={users}
-            systemSettings={systemSettings}
-            setSelectedEntry={setSelectedEntry}
-            setSelectedAuthorId={setSelectedAuthorId}
-            setActiveTab={setActiveTab}
-            currentUser={currentUser}
-            inTheNewsGoogleDocText={inTheNewsGoogleDocText}
-            worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
-            setIndexSearchQuery={setIndexSearchQuery}
-          />
-        )}
-
-      </main>
-
-      {/* ==================== 4. SIGN IN / AUTH OVERLAY MODAL ==================== */}
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        loginError={loginError}
-        setLoginError={setLoginError}
-        usernameInput={usernameInput}
-        setUsernameInput={setUsernameInput}
-        passwordInput={passwordInput}
-        setPasswordInput={setPasswordInput}
-        handleLogin={handleLogin}
-        rememberMe={rememberMe}
-        setRememberMe={setRememberMe}
-        setShowSignUpWizard={setShowSignUpWizard}
-      />
-
-      {/* ==================== 4B. ACCOUNT DETAILS MODAL ==================== */}
-      <AccountModal
-        isOpen={showAccountModal}
-        onClose={() => setShowAccountModal(false)}
-        currentUser={currentUser}
-        accountEmail={accountEmail}
-        setAccountEmail={setAccountEmail}
-        accountUsername={accountUsername}
-        setAccountUsername={setAccountUsername}
-        accountPassword={accountPassword}
-        setAccountPassword={setAccountPassword}
-        accountConfirmPassword={accountConfirmPassword}
-        setAccountConfirmPassword={setAccountConfirmPassword}
-        accountError={accountError}
-        handleSaveAccountSettings={handleSaveAccountSettings}
-      />
-
-      {/* ==================== 5. ADD TIMELINE ITEM MODAL (Shown only in Biography when Owner) ==================== */}
-      {showAddBioModal && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border">
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-xl text-adjung-maroon">Add Milestone</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Save Milestone</p>
-            </div>
-            <form onSubmit={handleAddBioItem} className="p-6 space-y-4 text-xs font-sans">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Year</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 2024"
-                    value={newBioYear}
-                    onChange={(e) => setNewBioYear(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono"
-                    required
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Classification</label>
-                  <select
-                    value={newBioCategory}
-                    onChange={(e) => setNewBioCategory(e.target.value as BiographyItem['category'])}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon"
-                  >
-                    <option value="Education">Education</option>
-                    <option value="Career">Career</option>
-                    <option value="Publication">Publication</option>
-                    <option value="Award">Award</option>
-                    <option value="Personal">Personal</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Milestone Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Master’s Defense on Calligraphic Grids"
-                  value={newBioTitle}
-                  onChange={(e) => setNewBioTitle(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Comprehensive Description</label>
-                <textarea
-                  placeholder="Provide precise details of the scholarly achievement or event..."
-                  value={newBioDesc}
-                  onChange={(e) => setNewBioDesc(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[80px]"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddBioModal(false)}
-                  className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2 rounded text-xs font-mono uppercase tracking-wider transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-2/3 bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition font-semibold"
-                >
-                  Record Milestone
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== INVITATION SENT TRANSMISSION MODAL ==================== */}
-      {generatedInvitation && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-lg w-full overflow-hidden scholarly-border my-8">
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block animate-pulse mr-2" />
-              <h3 className="font-serif text-2xl text-adjung-maroon inline-block">Invitation Transmitted</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Simulated Scholar Mail Delivery Server</p>
-            </div>
-
-            <div className="p-6 space-y-6 text-xs font-sans">
-              <div className="bg-stone-50 border border-stone-200 p-4 rounded text-left space-y-2">
-                <div className="flex justify-between items-center text-[10px] font-mono text-stone-500 border-b pb-2">
-                  <span>MTA Status: <span className="text-emerald-600 font-bold">SMTP OK (250)</span></span>
-                  <span>Delivered: Just Now</span>
-                </div>
-                <div className="grid grid-cols-4 gap-1 text-[11px] font-mono">
-                  <span className="text-stone-400">Recipient:</span>
-                  <span className="col-span-3 text-stone-800 font-semibold">{generatedInvitation.name}</span>
-                  <span className="text-stone-400">Address:</span>
-                  <span className="col-span-3 text-stone-800 font-semibold select-all">{generatedInvitation.email}</span>
-                </div>
-              </div>
-
-              {/* Styled vintage email envelope card */}
-              <div className="border border-amber-200/50 bg-[#FBF9F4] p-6 rounded shadow-sm relative overflow-hidden text-stone-800 select-all font-serif">
-                <div className="absolute top-0 right-0 w-24 h-24 border-r-2 border-t-2 border-amber-900/10 rotate-12 translate-x-12 -translate-y-12 select-none pointer-events-none" />
-                <div className="space-y-4 whitespace-pre-line text-justify leading-relaxed pr-2 text-stone-700">
-                  {generatedInvitation.emailBody}
-                </div>
-              </div>
-
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded text-left leading-relaxed text-[11px] text-amber-900 font-sans flex gap-2.5">
-                <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold block mb-0.5">Evaluator Simulation Mode</span>
-                  <span>Since this is a simulated sandbox, we have generated the formal email dispatch. Click the button below to simulate the recipient opening their invitation link and configuring their personal Folio.</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setGeneratedInvitation(null)}
-                  className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-3 rounded text-xs font-mono uppercase tracking-wider transition"
-                >
-                  Close Scriptorium
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInvitedRegistrationData({
-                      name: generatedInvitation.name,
-                      email: generatedInvitation.email,
-                      username: generatedInvitation.name.toLowerCase().replace(/\s+/g, '.'),
-                      penName: generatedInvitation.name,
-                      signature: generatedInvitation.name,
-                      heroTitle: `Disquisitions on Reason & Form`,
-                      heroSubtitle: `Selected philosophical treatises, essays, and notes authored by ${generatedInvitation.name}.`,
-                      bioText: `${generatedInvitation.name} is an independent writer and scholar newly registered on Adjung, dedicated to formal research and traditional literary studies.`
-                    });
-                    setGeneratedInvitation(null);
-                  }}
-                  className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-3 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <ArrowRight className="w-4 h-4" /> Simulate Link Click & Register
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== ACADEMIC REGISTRATION WIZARD ==================== */}      {showSignUpWizard && (        <SignUpWizard          onClose={() => setShowSignUpWizard(false)}          onComplete={handleWizardComplete}        />      )}
-      {/* ==================== 6. ACADEMIC FOOTER ==================== */}
-      <Footer
-        systemSettings={systemSettings}
-        setActiveTab={setActiveTab}
-        setSelectedEntry={setSelectedEntry}
-        setEditingEntry={setEditingEntry}
-      />
 
         </motion.div>
       )}

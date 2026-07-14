@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Compass, BookOpen, FileText, Sparkles } from 'lucide-react';
 import { User, Entry } from '../../types';
 import { db } from '../../db/mockDb';
-import { isArabicText } from '../../utils';
+import { isArabicText, isSubdomainUnlocked } from '../../utils';
 
 interface DirectoryProps {
   users: User[];
@@ -260,9 +260,13 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
-              {sortedUsers.map((u) => {
+               {sortedUsers.map((u) => {
                 const uMeta = getUserMetadata(u.id);
-                const domain = `${u.penName.toLowerCase().replace(/\s+/g, '')}.adjung.com`;
+                const identity = db.getIdentityByAccountId(u.id);
+                const unlocked = isSubdomainUnlocked(u.id, entries, identity, u.createdAt, u.subdomainApprovedEarly);
+                const domain = unlocked 
+                  ? `${u.username}.adjung.com` 
+                  : `adjung.com/ps/${u.id} (Reserved)`;
 
                 return (
                   <tr 

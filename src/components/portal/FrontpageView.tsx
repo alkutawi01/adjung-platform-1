@@ -795,7 +795,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         <section className="py-10">
           <div className="flex items-center justify-between mb-8">
             <span className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold">
-              FEATURED ARTICLES
+              FEATURED ESSAYS
             </span>
             {canCurate && (
               <button
@@ -982,7 +982,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div>
               <p className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-4">
-                NEWEST ESSAYS & ARTICLES
+                NEWEST ESSAYS
               </p>
               {newestEssays.map(coll => (
                 <p 

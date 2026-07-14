@@ -3,7 +3,7 @@ import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSetti
 import { db } from '../db/mockDb';
 import { AuthService, SessionService, RbacService } from '../services/authService';
 import { BRAND } from '../config/brand';
-import { generateUUID, shouldAutoFetch } from '../utils';
+import { generateUUID, shouldAutoFetch, resolveEntryCanonicalUrl } from '../utils';
 import { firestoreService } from '../utils/firestoreService';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -56,11 +56,14 @@ interface AppContextType {
   
   // Navigation & Session
   currentUser: User | null;
+  originalUser: User | null;
   selectedAuthorId: string;
   activeTab: ActiveTabType;
   selectedEntry: Entry | null;
   editingEntry: Entry | null;
   editoriumActiveTab: EditoriumTabType;
+  switchActingAccount: (targetUserId: string) => void;
+  revertToOriginalAccount: () => void;
   
   // Setter actions
   setCurrentUser: (user: User | null) => void;
@@ -124,6 +127,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ActiveTabType>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
@@ -159,17 +163,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       if (data.users) db.setUsers(data.users);
       if (data.profiles) db.setProfiles(data.profiles);
-      if (data.entries) db.setEntries(data.entries);
       if (data.identities) db.setIdentities(data.identities);
       if (data.logs) db.setLogs(data.logs);
       if (data.systemSettings) {
         db.setSystemSettings(data.systemSettings);
         setSystemSettings(data.systemSettings);
       }
-
-      setUsers(data.users);
-      setProfiles(data.profiles);
-      setEntries(data.entries);
+      setUsers(data.users || []);
+      setProfiles(data.profiles || []);
+      if (data.entries) {
+        const localEntries = db.getEntries();
+        const mergedEntries = [...data.entries];
+        
+        localEntries.forEach(localEntry => {
+          const remoteIdx = mergedEntries.findIndex(e => e.id === localEntry.id);
+          if (remoteIdx === -1) {
+            mergedEntries.push(localEntry);
+          } else {
+            const remoteEntry = mergedEntries[remoteIdx];
+            const localTime = new Date(localEntry.updatedDate || 0).getTime();
+            const remoteTime = new Date(remoteEntry.updatedDate || 0).getTime();
+            if (localTime > remoteTime) {
+              mergedEntries[remoteIdx] = localEntry;
+            }
+          }
+        });
+        
+        db.setEntries(mergedEntries);
+        setEntries(mergedEntries);
+      }
 
       if (data.systemSettings) {
         const settings = data.systemSettings;
@@ -238,12 +260,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (found) {
           if (found.suspended) {
             setCurrentUser(null);
+            setOriginalUser(null);
             setSelectedAuthorId('');
             setActiveTab('landing');
+            localStorage.removeItem('Adjung_acting_user_id');
             SessionService.destroySession();
           } else {
-            setCurrentUser(found);
-            setSelectedAuthorId(found.id);
+            const actingUserId = localStorage.getItem('Adjung_acting_user_id');
+            const actingUser = actingUserId ? data.users.find(u => u.id === actingUserId) : null;
+            if (actingUser) {
+              setCurrentUser(actingUser);
+              setSelectedAuthorId(actingUser.id);
+              setOriginalUser(found);
+            } else {
+              setCurrentUser(found);
+              setSelectedAuthorId(found.id);
+              setOriginalUser(null);
+            }
             SessionService.createSession(found, true);
           }
         }
@@ -283,29 +316,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const data = await firestoreService.fetchDbState();
         const resolvedUser = data.users.find(u => u.email.toLowerCase() === fbUser.email?.toLowerCase());
         if (resolvedUser && !resolvedUser.suspended) {
-          setCurrentUser(resolvedUser);
-          setSelectedAuthorId(resolvedUser.id);
+          const actingUserId = localStorage.getItem('Adjung_acting_user_id');
+          const actingUser = actingUserId ? data.users.find(u => u.id === actingUserId) : null;
+          if (actingUser) {
+            setCurrentUser(actingUser);
+            setSelectedAuthorId(actingUser.id);
+            setOriginalUser(resolvedUser);
+          } else {
+            setCurrentUser(resolvedUser);
+            setSelectedAuthorId(resolvedUser.id);
+            setOriginalUser(null);
+          }
           SessionService.createSession(resolvedUser, true);
         } else {
           setCurrentUser(null);
+          setOriginalUser(null);
           setSelectedAuthorId('');
+          localStorage.removeItem('Adjung_acting_user_id');
           SessionService.destroySession();
         }
       } else {
         // Fallback to local session check if not logged in to Firebase yet (lazy session validation)
         const activeSessionUser = SessionService.validateAndRetrieveSession();
         if (activeSessionUser) {
-          setCurrentUser(activeSessionUser);
-          setSelectedAuthorId(activeSessionUser.id);
+          const actingUserId = localStorage.getItem('Adjung_acting_user_id');
+          const actingUser = actingUserId ? users.find(u => u.id === actingUserId) : null;
+          if (actingUser) {
+            setCurrentUser(actingUser);
+            setSelectedAuthorId(actingUser.id);
+            setOriginalUser(activeSessionUser);
+          } else {
+            setCurrentUser(activeSessionUser);
+            setSelectedAuthorId(activeSessionUser.id);
+            setOriginalUser(null);
+          }
         } else {
           setCurrentUser(null);
+          setOriginalUser(null);
           setSelectedAuthorId('');
+          localStorage.removeItem('Adjung_acting_user_id');
           SessionService.destroySession();
         }
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [users]);
 
   // Startup Session Restore & Verification
   useEffect(() => {
@@ -375,28 +430,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('[GUARD] Redirecting because no viewDirectory permission -> landing');
       setActiveTab('landing');
     }
+
+    if (activeTab === 'editorium' && !hasPermission('curateFrontpage')) {
+      console.log('[GUARD] Redirecting because no curateFrontpage permission -> frontpage');
+      setActiveTab('frontpage');
+    }
   }, [currentUser, activeTab, systemSettings, selectedAuthorId, initializing]);
 
   // DB actions
   const saveEntry = (updatedEntry: Entry) => {
+    db.saveEntry(updatedEntry);
+    setEntries(db.getEntries());
+    if (editingEntry?.id === updatedEntry.id) {
+      setEditingEntry(updatedEntry);
+    }
+    if (selectedEntry?.id === updatedEntry.id) {
+      setSelectedEntry(updatedEntry);
+    }
+
     firestoreService.saveEntry(updatedEntry)
       .then(() => {
         refreshDbState();
-        if (editingEntry?.id === updatedEntry.id) {
-          setEditingEntry(updatedEntry);
-        }
       })
-      .catch(err => console.error('Failed to save entry:', err));
+      .catch(err => {
+        console.error('Failed to save entry to Firestore:', err);
+        setEntries(db.getEntries());
+      });
   };
 
   const deleteEntry = (entryId: string) => {
+    db.deleteEntry(entryId);
+    setEntries(db.getEntries());
+
     firestoreService.deleteEntry(entryId)
       .then(() => {
         refreshDbState();
         setEditingEntry(null);
         setSelectedEntry(null);
       })
-      .catch(err => console.error('Failed to delete entry:', err));
+      .catch(err => {
+        console.error('Failed to delete entry from Firestore:', err);
+        setEntries(db.getEntries());
+      });
   };
 
   const createNewEntry = (type: EntryType) => {
@@ -404,10 +479,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newId = generateUUID();
     const tempTitle = type === 'Note' ? '' : `Untitled ${type}`;
-    const defaultContent = type === 'Article' 
-      ? 'This is the first paragraph of your scholarly article.\n\nThis is the second paragraph of your article. Margin notes are displayed adjacent to their respective paragraph.'
-      : type === 'Essay'
-      ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text.\n\nAnother paragraph expanding on your thesis.'
+    const defaultContent = type === 'Essay'
+      ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text. Margin notes can also be placed[^mn-1] along the side margins.\n\nAnother paragraph expanding on your thesis.'
       : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
         : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
         : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
@@ -426,20 +499,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       publishedDate: null,
       title: tempTitle,
       slug: entrySlug,
-      tags: ['Scholarship'],
-      canonicalUrl: `https://${currentUser.penName.toLowerCase().replace(/\s+/g, '')}.adjung.com/${type.toLowerCase()}/${type === 'Note' ? 'note-' + slugSuffix : 'untitled'}`,
+      tags: [],
+      canonicalUrl: resolveEntryCanonicalUrl(
+        { id: newId, authorId: currentUser.id, contentType: type, slug: entrySlug, status: 'Draft', visibility: 'Private', createdDate: new Date().toISOString(), updatedDate: new Date().toISOString(), publishedDate: null, title: tempTitle, tags: [], content: defaultContent } as Entry,
+        currentUser.username,
+        db.getEntries(),
+        db.getIdentityByAccountId(currentUser.id),
+        currentUser.createdAt,
+        currentUser.subdomainApprovedEarly
+      ),
       content: defaultContent,
       footnotes: type === 'Essay' ? ['Your first footnote description citation goes here.'] : undefined,
-      marginNotes: type === 'Article' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
+      marginNotesData: type === 'Essay' ? { 'mn-1': 'A scholarly side comment on the essay.' } : undefined
     };
+
+    db.saveEntry(newEntry);
+    setEntries(db.getEntries());
+    setEditingEntry(newEntry);
+    setActiveTab('desk');
 
     firestoreService.saveEntry(newEntry)
       .then(() => {
         refreshDbState();
-        setEditingEntry(newEntry);
-        setActiveTab('desk');
       })
-      .catch(err => console.error('Failed to create entry:', err));
+      .catch(err => {
+        console.error('Failed to create entry in Firestore:', err);
+        setEntries(db.getEntries());
+      });
   };
 
   const resetDatabase = () => {
@@ -592,6 +678,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }).catch(err => console.error('Failed to update writer settings:', err));
   };
+  
+  const switchActingAccount = (targetUserId: string) => {
+    const target = users.find(u => u.id === targetUserId);
+    if (!target) return;
+    
+    if (!originalUser) {
+      setOriginalUser(currentUser);
+    }
+    setCurrentUser(target);
+    setSelectedAuthorId(target.id);
+    localStorage.setItem('Adjung_acting_user_id', target.id);
+    
+    setActiveTab('frontpage');
+    setSelectedEntry(null);
+    setEditingEntry(null);
+    showToast(`Switched account: acting as ${target.penName}`, 'success');
+  };
+
+  const revertToOriginalAccount = () => {
+    if (!originalUser) return;
+    
+    setCurrentUser(originalUser);
+    setSelectedAuthorId(originalUser.id);
+    setOriginalUser(null);
+    localStorage.removeItem('Adjung_acting_user_id');
+    
+    setActiveTab('frontpage');
+    setSelectedEntry(null);
+    setEditingEntry(null);
+    showToast(`Returned to original account: ${originalUser.penName}`, 'success');
+  };
 
   return (
     <AppContext.Provider value={{
@@ -609,11 +726,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       initializing,
       
       currentUser,
+      originalUser,
       selectedAuthorId,
       activeTab,
       selectedEntry,
       editingEntry,
       editoriumActiveTab,
+      switchActingAccount,
+      revertToOriginalAccount,
       
       setCurrentUser,
       setSelectedAuthorId,

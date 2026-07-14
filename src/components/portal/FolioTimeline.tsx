@@ -73,7 +73,7 @@ export function FolioTimeline({
                   : 'text-[#111111]/50 hover:text-[#111111]'
               }`}
             >
-              #{tag} ({authorPublishedEntries.filter(e => e.tags.includes(tag)).length})
+              #{tag.replace(/^#+/, '')} ({authorPublishedEntries.filter(e => e.tags.includes(tag)).length})
             </button>
           ))}
         </div>
@@ -146,13 +146,6 @@ export function FolioTimeline({
                               isExpanded={expandedIds.includes(item.id)}
                               onToggle={() => toggleExpand(item.id)}
                             />
-                          </div>
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {item.tags.map(t => (
-                              <span key={t} className="text-[9px] uppercase border border-[#111111]/20 px-2 py-0.5 rounded-full opacity-60 font-sans tracking-wide">
-                                #{t}
-                              </span>
-                            ))}
                           </div>
                         </div>
                       </div>

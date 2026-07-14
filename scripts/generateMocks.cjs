@@ -13,6 +13,7 @@ const mockEntries = [];
 for (let i = 1; i <= 5; i++) {
   const authorId = authors[0]; // Ensure Tariq gets at least 1 note
   const date = new Date(2026, 4, i).toISOString();
+  const variant = ['melintang', 'menegak', 'kompak', 'kompak', 'menegak'][i - 1];
   mockEntries.push(`
     {
       id: 'entry-mock-note-${i}',
@@ -27,13 +28,15 @@ for (let i = 1; i <= 5; i++) {
       slug: 'mock-note-${i}',
       tags: ['Observation', 'Thoughts'],
       canonicalUrl: 'https://${i === 1 ? 'tariq' : 'author'}.Adjung.com/note/mock-note-${i}',
-      content: \`This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: ${i}.\`
+      content: \`This is a brief thought recorded in the margins of daily research. Often, the most profound insights are not found in the center of the page, but in the scattered notes and marginalia that encircle the main text. Note index: ${i}.\`,
+      layoutVariant: '${variant}'
     }`);
 }
 
 // Generate 5 Essays
 for (let i = 1; i <= 5; i++) {
   const date = new Date(2026, 5, i).toISOString();
+  const variant = ['penuh', 'melintang', 'menegak', 'kompak', 'melintang'][i - 1];
   mockEntries.push(`
     {
       id: 'entry-mock-essay-${i}',
@@ -50,40 +53,47 @@ for (let i = 1; i <= 5; i++) {
       canonicalUrl: 'https://${i === 1 ? 'tariq' : 'author'}.Adjung.com/essay/mock-essay-${i}',
       content: \`The exploration of typography is essentially the exploration of voice. How does a letterform speak? In this essay, we delve into the intricate relationship between the visual shape of words and their semantic weight. 
 
-It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay ${i} serves as a testament to the enduring power of classical typographic grids.\`
+It is argued that the modernist approach stripped away the historical resonances that once anchored texts in their cultural contexts. When we restore these subtleties, the text breathes again. This essay ${i} serves as a testament to the enduring power of classical typographic grids.\`,
+      layoutVariant: '${variant}'
     }`);
 }
 
-// Generate 5 Articles
+// Generate 5 Essays (migrated from Articles format to test margin notes & footnotes)
 for (let i = 1; i <= 5; i++) {
   const date = new Date(2026, 6, i).toISOString();
+  const variant = ['melintang', 'menegak', 'kompak', 'melintang', 'menegak'][i - 1];
   mockEntries.push(`
     {
-      id: 'entry-mock-article-${i}',
+      id: 'entry-mock-essay-art-${i}',
       authorId: '${i === 1 ? 'user-tariq-malik' : getRandomAuthor()}',
-      contentType: 'Article',
+      contentType: 'Essay',
       status: 'Published',
       visibility: 'Public',
       createdDate: '${date}',
       updatedDate: '${date}',
       publishedDate: '${date}',
       title: 'Comprehensive Review ${i}: The Archival Systems of Antiquity',
-      slug: 'mock-article-${i}',
+      slug: 'mock-essay-art-${i}',
       tags: ['Archive', 'History', 'Systems'],
-      canonicalUrl: 'https://${i === 1 ? 'tariq' : 'author'}.Adjung.com/article/mock-article-${i}',
-      content: \`Archives are not merely repositories of the past; they are the active mechanisms by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
+      canonicalUrl: 'https://${i === 1 ? 'tariq' : 'author'}.Adjung.com/essay/mock-essay-art-${i}',
+      content: \`Archives are not merely repositories of the past; they are the active mechanisms[^mn-mock-${i}] by which the future is structured. In reviewing the ancient libraries of Alexandria and Cordoba, we see a deliberate system of cataloging that mirrors the cosmic order perceived by their curators.
 
-This article ${i} examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
+This essay ${i} examines the architectural and epistemological frameworks that supported these vast collections. We find that the classification of knowledge dictates the boundaries of thought itself. The physical layout of the scrolls influenced the intellectual pathways of the scholars who walked those halls.
 
 As we build digital archives today, we must ask ourselves: what intellectual pathways are our databases encouraging, and which are they obscuring?\`,
       footnotes: [
         'Refer to the foundational texts on archival theory for further reading.',
         'The classification systems of antiquity often prioritized theological or philosophical hierarchies over alphabetical ordering.'
-      ]
+      ],
+      marginNotesData: {
+        'mn-mock-${i}': 'A scholarly side comment on ancient archives.'
+      },
+      layoutVariant: '${variant}'
     }`);
 }
 
-const dbPath = path.join(__dirname, 'src', 'db', 'mockDb.ts');
+
+const dbPath = path.join(__dirname, '..', 'src', 'db', 'mockDb.ts');
 let content = fs.readFileSync(dbPath, 'utf8');
 
 // Reliable insertion using regex replacement

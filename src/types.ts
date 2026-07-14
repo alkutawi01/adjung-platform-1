@@ -19,6 +19,7 @@ export interface DigitalSignature {
     nibAngle?: number;
     inkFlowWeight?: number;
     baselineY?: number;
+    canvasWidth?: number;
     canvasHeight?: number;
     inkColor?: string;
     paperTexture?: string;
@@ -30,6 +31,8 @@ export interface DigitalSignature {
     scale?: number;
     yOffset?: number;
   };
+  editorState?: any;
+  representation?: PublishedRepresentation;
 }
 
 
@@ -68,6 +71,7 @@ export interface User {
   affiliation?: string;
   createdAt?: string; // ISO timestamp or YYYY-MM-DD
   isAi?: boolean;
+  subdomainApprovedEarly?: boolean;
 }
 
 export type PublicationClass = 'Scholarly' | 'Institutional';
@@ -188,6 +192,9 @@ export interface Entry {
   referenceStyle?: string;
   signatureVersionId?: string;
   language?: string;
+  primaryScript?: string;
+  direction?: string;
+  layoutVariant?: EntryLayoutVariant;
   
   // Institutional Metadata
   priority?: 'High' | 'Normal' | 'Low';
@@ -283,3 +290,57 @@ export interface ParseError {
   index: number;
   error: string;
 }
+
+export type EntryLayoutVariant = 'melintang' | 'menegak' | 'kompak' | 'penuh';
+
+export interface PublishedRepresentation {
+  id: string;
+  version: number;
+  representationType: string;
+  representationData: unknown;
+  svgData?: string;
+  template?: string;
+  metadata?: {
+    compiledAt: string;
+    pipelineVersion?: string;
+    sourceEditor?: string;
+    specVersion?: string;
+    sourceTemplate?: string;
+  };
+}
+
+export interface PublicationRepresentation {
+  id: string;
+  version?: number;
+  representationType?: string;
+  representationData?: unknown;
+  layers: PublicationLayer[];
+  template?: string;
+  metadata?: {
+    compiledAt: string;
+    pipelineVersion?: string;
+    sourceEditor?: string;
+    specVersion?: string;
+    sourceTemplate?: string;
+  };
+}
+
+export interface PublicationLayer {
+  id: string;
+  layout: 'single-column' | 'two-column' | 'three-column' | 'asymmetric-split';
+  gaps: {
+    top: string;
+    bottom: string;
+    between: string;
+  };
+  divider?: 'horizontal-rule' | 'dashed-rule' | 'none';
+  entries: { id: string; span?: number; }[];
+}
+
+export interface TypographyContext {
+  direction: 'ltr' | 'rtl';
+  primaryScript: string;
+  renderer: 'rtl' | 'latin';
+  annotationEngine: 'ruby' | 'span';
+}
+

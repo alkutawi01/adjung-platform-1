@@ -42,6 +42,7 @@ export function SignatureLayout({
         {/* The Signature SVG */}
         <div className="absolute inset-0 pointer-events-none z-10 overflow-visible">
           <SignatureRenderer 
+            representation={signature?.representation}
             strokes={signature?.strokes || strokes || []} 
             type={signature?.type || 'drawn'}
             typedText={signature?.typedText}

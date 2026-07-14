@@ -1,17 +1,15 @@
 import { PresentationSpec } from './specs';
 import { noteSpec } from './noteSpec';
 import { essaySpec } from './essaySpec';
-import { articleSpec } from './articleSpec';
 
 export * from './specs';
 export { noteSpec } from './noteSpec';
 export { essaySpec } from './essaySpec';
-export { articleSpec } from './articleSpec';
 
 export const noticeSpec: PresentationSpec = {
   contentType: 'Notice',
   typography: {
-    bodyFont: 'font-serif text-[#111111] leading-relaxed text-base md:text-lg font-light',
+    bodyFont: 'font-serif text-[#111111] leading-relaxed text-xs font-light',
     signatureFont: 'font-signature text-3xl'
   },
   spacing: {
@@ -36,7 +34,7 @@ export const noticeSpec: PresentationSpec = {
 export const editorsNoteSpec: PresentationSpec = {
   contentType: "Editor's Note",
   typography: {
-    bodyFont: 'font-serif text-[#111111] leading-relaxed text-justify text-base md:text-lg font-light',
+    bodyFont: 'font-serif text-[#111111] leading-relaxed text-justify text-xs font-light',
     signatureFont: 'font-signature text-4xl'
   },
   spacing: {
@@ -61,7 +59,6 @@ export const editorsNoteSpec: PresentationSpec = {
 export const presentationSpecs: Record<string, PresentationSpec> = {
   'Note': noteSpec,
   'Essay': essaySpec,
-  'Article': articleSpec,
   'Notice': noticeSpec,
   "Editor's Note": editorsNoteSpec
 };
