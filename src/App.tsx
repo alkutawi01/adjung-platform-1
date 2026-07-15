@@ -10,6 +10,7 @@ import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks
 import { SignatureLayout } from './components/desk/SignatureLayout';
 import { SignatureRenderer } from './components/desk/SignatureRenderer';
 import SignUpWizard from './components/common/SignUpWizard';
+import { MobileSignCanvas } from './components/desk/MobileSignCanvas';
 import { updatePassword } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { firestoreService } from './utils/firestoreService';
@@ -1491,6 +1492,10 @@ Editorial Board of Adjung`;
       return d2 - d1;
     });
   });
+
+  if (!initializing && window.location.pathname.startsWith('/mobile-sign')) {
+    return <MobileSignCanvas />;
+  }
 
   return (
     <AnimatePresence mode="wait">

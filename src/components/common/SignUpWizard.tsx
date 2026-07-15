@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, QrCode, Laptop, Smartphone, Check, RefreshCw, PenTool, Type, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { SignaturePad } from '../desk/SignaturePad';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 
 // The steps of the wizard
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 const TITLES = [
   '',
   'Welcome',
@@ -13,6 +15,7 @@ const TITLES = [
   'Your Identity',
   'Verification',
   'About You',
+  'Academic Profile',
   'Your Personal Site',
   'Your Signature',
   'Welcome to Adjung'
@@ -37,6 +40,9 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
     username: '',
     email: '',
     biography: '',
+    professionalTitle: '',
+    institution: '',
+    areasOfInterest: '',
     domain: '',
     signatureType: 'draw',
     signatureData: ''
@@ -100,7 +106,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
             >
               <div className="space-y-4 max-w-md">
                 <span className="block font-mono text-[9px] uppercase tracking-[0.35em] text-[#FDFBF7]/60 font-semibold">
-                  SECTION {currentStep + 1} OF 09
+                  SECTION {currentStep + 1} OF 10
                 </span>
                 <motion.h2 
                   initial={{ opacity: 0, y: 10 }}
@@ -123,7 +129,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
         </AnimatePresence>
 
         {/* Elegant Close Button */}
-        {currentStep < 9 && !showOverlay && (
+        {currentStep < 10 && !showOverlay && (
           <button
             type="button"
             onClick={onClose}
@@ -137,7 +143,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
         )}
 
         {/* Elegant Publication Header with Progress Bar */}
-        {currentStep < 9 && (
+        {currentStep < 10 && (
           <div className="border-b border-stone-200/60 p-5 bg-[#FFFFFF] flex justify-between items-center select-none relative">
             <div className="flex items-center gap-3">
               {currentStep > 1 && (
@@ -152,7 +158,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
               )}
               <div className="flex items-center gap-2">
                 <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-adjung-maroon font-bold">
-                  {String(currentStep).padStart(2, '0')} / 09
+                  {String(currentStep).padStart(2, '0')} / 10
                 </span>
                 <span className="text-stone-300 font-light font-sans text-xs">|</span>
                 <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-stone-500 font-medium">
@@ -179,16 +185,17 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
             {currentStep === 4 && <Step4Identity key="s4" formData={formData} setFormData={setFormData} onNext={() => goNext(5)} />}
             {currentStep === 5 && <Step5Verification key="s5v" formData={formData} onNext={() => goNext(6)} goBack={goBack} />}
             {currentStep === 6 && <Step6Biography key="s6" formData={formData} setFormData={setFormData} onNext={() => goNext(7)} />}
-            {currentStep === 7 && <Step7PersonalSite key="s7" formData={formData} setFormData={setFormData} onNext={() => goNext(8)} />}
-            {currentStep === 8 && <Step8Signature key="s8" formData={formData} setFormData={setFormData} onNext={() => goNext(9)} />}
-            {currentStep === 9 && <Step9Complete key="s9" onComplete={handleComplete} />}
+            {currentStep === 7 && <Step6aAcademicProfile key="s6a" formData={formData} setFormData={setFormData} onNext={() => goNext(8)} />}
+            {currentStep === 8 && <Step7PersonalSite key="s7" formData={formData} setFormData={setFormData} onNext={() => goNext(9)} />}
+            {currentStep === 9 && <Step8Signature key="s8" formData={formData} setFormData={setFormData} onNext={() => goNext(10)} />}
+            {currentStep === 10 && <Step9Complete key="s9" onComplete={handleComplete} />}
           </AnimatePresence>
         </main>
 
         {/* Elegant Pagination Indicators (Dots Rail at the very bottom edge) */}
-        {currentStep < 9 && (
+        {currentStep < 10 && (
           <div className="border-t border-stone-200/40 py-3.5 bg-[#FFFFFF] flex justify-center items-center gap-2 select-none">
-            {Array.from({ length: 9 }).map((_, i) => (
+            {Array.from({ length: 10 }).map((_, i) => (
               <div 
                 key={i}
                 className={`transition-all duration-300 rounded-full ${
@@ -969,8 +976,52 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [typedText, setTypedText] = useState(formData.displayName || '');
+  const [sessionId, setSessionId] = useState<string>('');
 
   const hasRecordedSignature = !!formData.signatureData;
+
+  // Real-time Firestore sync listener
+  useEffect(() => {
+    if (mode === 'qr') {
+      const newSessionId = `sync-session-${Date.now()}`;
+      setSessionId(newSessionId);
+
+      const docRef = doc(firestore, 'signature_sync', newSessionId);
+      const unsubscribe = onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && data.status === 'completed') {
+            setIsSyncing(true);
+            setSyncProgress(0);
+            
+            // Animate progress transition
+            const interval = setInterval(() => {
+              setSyncProgress((prev) => {
+                if (prev >= 100) {
+                  clearInterval(interval);
+                  setTimeout(() => {
+                    setIsSyncing(false);
+                    setFormData({
+                      ...formData,
+                      signatureType: 'draw',
+                      signatureData: { strokes: data.strokes, type: 'drawn' }
+                    });
+                    setMode('choose');
+                  }, 400);
+                  return 100;
+                }
+                return prev + 25;
+              });
+            }, 100);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [mode]);
 
   const handleSaveDrawn = (data: any) => {
     setFormData({
@@ -1014,6 +1065,10 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
       });
     }, 250);
   };
+
+  const mobileSignUrl = sessionId 
+    ? `${window.location.origin}/mobile-sign?session=${sessionId}`
+    : '';
 
   return (
     <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center w-full py-1 h-full justify-between">
@@ -1194,30 +1249,20 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
                   <span className="font-mono text-[7px] text-stone-400 tracking-widest uppercase">Secured Room</span>
                 </div>
                 
-                {/* Simulated QR Code via vector SVG */}
-                <div className="w-32 h-32 bg-stone-50 border border-stone-150 rounded flex items-center justify-center p-2 mt-2 relative group">
-                  <svg viewBox="0 0 100 100" className="w-full h-full text-stone-800">
-                    {/* QR Finder patterns */}
-                    <rect x="5" y="5" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="6" />
-                    <rect x="11" y="11" width="13" height="13" fill="currentColor" />
-                    <rect x="70" y="5" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="6" />
-                    <rect x="76" y="11" width="13" height="13" fill="currentColor" />
-                    <rect x="5" y="70" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="6" />
-                    <rect x="11" y="76" width="13" height="13" fill="currentColor" />
-                    {/* Random scholarly QR elements */}
-                    <rect x="40" y="10" width="10" height="15" fill="currentColor" />
-                    <rect x="45" y="30" width="15" height="10" fill="currentColor" />
-                    <rect x="10" y="45" width="15" height="10" fill="currentColor" />
-                    <rect x="75" y="45" width="15" height="15" fill="currentColor" />
-                    <rect x="35" y="50" width="25" height="10" fill="currentColor" />
-                    <rect x="40" y="70" width="15" height="20" fill="currentColor" />
-                    <rect x="70" y="75" width="10" height="15" fill="currentColor" />
-                    {/* Scanning red line animation */}
-                    <line x1="0" y1="50" x2="100" y2="50" stroke="#802334" strokeWidth="2.5" className="animate-bounce" />
-                  </svg>
-                </div>
+                {/* Real QR Code via external API */}
+                {sessionId ? (
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(mobileSignUrl)}`}
+                    alt="QR Code for mobile signature"
+                    className="w-32 h-32 mt-2 select-none border border-stone-150 p-1 bg-white rounded"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-stone-50 border border-stone-150 rounded flex items-center justify-center p-2 mt-2">
+                    <Loader2 className="w-6 h-6 text-stone-300 animate-spin" />
+                  </div>
+                )}
                 
-                <span className="font-mono text-[9px] text-stone-400 font-bold tracking-widest mt-3">SESSION: ADJ-{(formData.displayName || 'Z').substring(0,2).toUpperCase()}-99A</span>
+                <span className="font-mono text-[9px] text-stone-400 font-bold tracking-widest mt-3">SESSION: {sessionId ? sessionId.replace('sync-session-', 'ADJ-') : 'PENDING'}</span>
               </div>
 
               {/* Instructions and connection simulation trigger */}
@@ -1233,6 +1278,14 @@ function Step8Signature({ formData, setFormData, onNext }: any) {
                   <p className="text-[12px] text-stone-600 font-serif leading-relaxed">
                     The signature drawn on your phone screen will be synchronized directly to this computer.
                   </p>
+                </div>
+
+                {/* Direct Testing URL */}
+                <div className="bg-stone-50 border border-stone-200/80 p-2 rounded text-[10px] text-stone-500 font-sans leading-relaxed select-all">
+                  <span className="font-bold text-stone-700 block mb-0.5">Direct link (for local testing):</span>
+                  <a href={mobileSignUrl} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline break-all block">
+                    {mobileSignUrl}
+                  </a>
                 </div>
 
                 {/* Simulated trigger button */}
@@ -1368,6 +1421,68 @@ function Step9Complete({ onComplete }: { onComplete: () => void, key?: string })
         )}
       </AnimatePresence>
 
+    </motion.section>
+  );
+}
+
+function Step6aAcademicProfile({ formData, setFormData, onNext }: any) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onNext();
+  };
+
+  return (
+    <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center w-full py-1 h-full justify-between">
+      <div className="text-center w-full">
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-2 tracking-tight">Academic Profile</h2>
+        <p className="text-stone-500 text-center text-xs mb-6 max-w-xs mx-auto leading-relaxed font-sans select-none">
+          Provide your professional title, institution affiliation, and primary areas of interest.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md font-sans flex-grow flex flex-col justify-center">
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Professional Title</label>
+          <input 
+            type="text" 
+            value={formData.professionalTitle || ''}
+            onChange={e => setFormData({...formData, professionalTitle: e.target.value})}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60" 
+            placeholder="e.g. Associate Professor, Independent Scholar"
+          />
+        </div>
+
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Institution / Affiliation</label>
+          <input 
+            type="text" 
+            value={formData.institution || ''}
+            onChange={e => setFormData({...formData, institution: e.target.value})}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60" 
+            placeholder="e.g. Universiti Kebangsaan Malaysia"
+          />
+        </div>
+
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Areas of Interest</label>
+          <input 
+            type="text" 
+            value={formData.areasOfInterest || ''}
+            onChange={e => setFormData({...formData, areasOfInterest: e.target.value})}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60" 
+            placeholder="e.g. History, Epistemology, Islamic Philosophy"
+          />
+        </div>
+
+        <div className="pt-6 flex justify-center">
+          <button 
+            type="submit" 
+            className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
+          >
+            Continue
+          </button>
+        </div>
+      </form>
     </motion.section>
   );
 }
