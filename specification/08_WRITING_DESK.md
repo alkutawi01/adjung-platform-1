@@ -1,4 +1,4 @@
-# WRITING DESK
+# Desk
 
 Document ID: SPEC-008 Version: 1.0 (Draft) Status: Official Draft
 
@@ -7,10 +7,10 @@ Philosophy - SPEC-007 Publication Model
 
 # 1. Purpose
 
-This document defines the Writing Desk, the primary authoring
+This document defines the Desk, the primary authoring
 environment of Adjung.
 
-The Writing Desk is designed for thoughtful knowledge creation rather
+The Desk is designed for thoughtful knowledge creation rather
 than fast content posting.
 
 # 2. Philosophy
@@ -37,7 +37,7 @@ specification.
 
 # 5. Core Capabilities
 
-The Writing Desk should support:
+The Desk should support:
 
 - Rich text editing
 - Autosave

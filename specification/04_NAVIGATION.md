@@ -34,7 +34,7 @@ Core destinations include:
 
 - Home
 - Discover
-- Writing Desk
+- Desk
 - Publications
 - Folio
 - Biography

@@ -71,7 +71,7 @@ Editorial actions should be auditable where appropriate, including:
 Editorium integrates with:
 
 - Publication Model
-- Writing Desk
+- Desk
 - Identity System
 - Access Policy
 

@@ -49,7 +49,7 @@ The author’s personal and professional profile.
 Editorium  
 The editorial environment of Adjung.
 
-Writing Desk  
+Desk  
 The primary authoring workspace.
 
 Frontpage  

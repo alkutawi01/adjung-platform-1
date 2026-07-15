@@ -6,17 +6,17 @@ Status: Official Engineering Architecture
 Depends On:  
 - SPEC-000 Adjung Constitution  
 - SPEC-001 Product Philosophy  
-- SPEC-008 Writing Desk  
+- SPEC-008 Desk  
 - SPEC-023 Writing Experience  
 
 ---
 
 ## 1. Overall System Architecture
 
-The software architecture of the Adjung Writing Desk coordinates the life cycle of an entry as a structured, state-driven model. Rather than managing unstructured text fields, the system coordinates actions through five main subsystems:
+The software architecture of the Adjung Desk coordinates the life cycle of an entry as a structured, state-driven model. Rather than managing unstructured text fields, the system coordinates actions through five main subsystems:
 
 ```
-Writing Desk (State & Input Controller)
+Desk (State & Input Controller)
          │
          ▼
   Document Model (Hierarchical Semantic Blocks)
@@ -33,7 +33,7 @@ Writing Desk (State & Input Controller)
 
 ### Subsystem Responsibilities
 
-1. **Writing Desk (Controller)**: Handles raw input events, keyboard shortcuts, text selection tracking, and event synchronization.
+1. **Desk (Controller)**: Handles raw input events, keyboard shortcuts, text selection tracking, and event synchronization.
 2. **Document Model**: Houses the document state as a strictly defined tree of semantic blocks, completely decoupled from styling or HTML code.
 3. **Annotation Engine**: Registers, indexes, and calculates layout attachments for side and bottom annotations (footnotes, margin notes).
 4. **Rendering Engine**: Renders blocks into interactive elements (Edit Mode) or static text (Read Mode), sharing identical styles.
@@ -193,7 +193,7 @@ On smaller devices, the mobile layout relies on a single vertical scroll:
 
 ## 9. Extension Points
 
-The Writing Desk architecture exposes clean hook registries for future integrations:
+The Desk architecture exposes clean hook registries for future integrations:
 
 * **Signature Engine**: Appends cryptographic editorial sign-offs to published records.
 * **Paper Clip & Bookmarks**: Pins external documents or references to individual blocks.

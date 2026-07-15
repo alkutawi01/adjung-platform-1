@@ -23,7 +23,7 @@ Layer 1 — Foundation - Constitution - Product Philosophy - Policies
 
 Layer 2 — Core Domain - Identity - Publication - Editorial - Knowledge
 
-Layer 3 — User Experience - Navigation - Writing Desk - Folio -
+Layer 3 — User Experience - Navigation - Desk - Folio -
 Frontpage
 
 Layer 4 — Platform Services - Search - Metadata - Indexing -
@@ -35,7 +35,7 @@ Layer 5 — Infrastructure - Storage - Authentication - APIs - AI Services
 
 - Identity System
 - Publication Model
-- Writing Desk
+- Desk
 - Folio
 - Biography
 - Editorium

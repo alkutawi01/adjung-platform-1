@@ -287,7 +287,7 @@ Adjung recognises two classes of editorial objects.
 ### 9.1 Publication Types
 
 Publication Types are the output of authorship. They are created by
-Authors on the Writing Desk and published under the Author's name.
+Authors on the Desk and published under the Author's name.
 
 Adjung officially recognises two Publication Types:
 
@@ -539,7 +539,7 @@ without requiring revision.
 | AI governance and safety rules | SPEC-035 |
 | Publication Lifecycle states | SPEC-007 |
 | Presentation Specifications | SPEC-007 |
-| Writing Desk architecture | SPEC-008 |
+| Desk architecture | SPEC-008 |
 
 ---
 

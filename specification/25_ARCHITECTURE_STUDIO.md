@@ -16,11 +16,11 @@ The Architecture Studio is the conceptual blueprint and development control cent
    * *Purpose:* Core document node of the repository.
    * *Subtypes:* `Note`, `Essay`, `Article`, `Notice`, `Editor's Note`.
    * *Governed by:* `Editorium`
-   * *Authored in:* `Writing Desk`
+   * *Authored in:* `Desk`
 2. **Author**
    * *Purpose:* Scholarly contributor and owner of private key identity.
    * *Has:* `Folio`, `Biography`
-3. **Writing Desk**
+3. **Desk**
    * *Purpose:* Authoring workspace for composing rich markdown or structured XML.
 4. **Editorium**
    * *Purpose:* Editorial board workspace for platform configuration and discovery curations.
@@ -33,7 +33,7 @@ The Architecture Studio is the conceptual blueprint and development control cent
 
 ### 3.2 Relation Matrix
 * `Publication` ➔ *belongs to* ➔ `Author`
-* `Publication` ➔ *edited by* ➔ `Writing Desk`
+* `Publication` ➔ *edited by* ➔ `Desk`
 * `Publication` ➔ *governed by* ➔ `Editorium`
 * `Publication` ➔ *displayed in* ➔ `Frontpage` / `Folio`
 * `Publication` ➔ *protected by* ➔ `RBAC Policies`
@@ -41,7 +41,7 @@ The Architecture Studio is the conceptual blueprint and development control cent
 ## 4. The Presentation Matrix
 A central reference blueprint mapping where and how each publication type is represented on the platform:
 
-| Publication Type | Writing Desk | Publication Page | Frontpage | Folio | Biography | Search | Archive | PDF |
+| Publication Type | Desk | Publication Page | Frontpage | Folio | Biography | Search | Archive | PDF |
 |---|---|---|---|---|---|---|---|---|
 | **Note** | Full Text Canvas | Full Page View | Card | Compact Card | List Entry | Result | Yes | Yes |
 | **Essay** | Full Text Canvas | Full Page View (Margins) | Featured Card | Featured Card | List Entry | Result | Yes | Yes |
@@ -52,7 +52,7 @@ A central reference blueprint mapping where and how each publication type is rep
 ## 5. Impact Analysis Protocol
 When any architectural concept is updated or proposed for deletion, the studio triggers a simulation of the downstream components affected:
 * **Biography Modification:** Impacts `Profile`, `Publication`, `Folio`, `Search`, `Metadata`, `Routes`, `API`, `Database`, `Permissions`.
-* **Publication Modification:** Impacts `Folio`, `Writing Desk`, `Frontpage`, `Search Index`, `Citation Engine`, `Export module`.
+* **Publication Modification:** Impacts `Folio`, `Desk`, `Frontpage`, `Search Index`, `Citation Engine`, `Export module`.
 
 ## 6. Implementation & Roadmap
 * **Phase 1 (Knowledge Model):** Concept definitions and relationship matrix established (Current).

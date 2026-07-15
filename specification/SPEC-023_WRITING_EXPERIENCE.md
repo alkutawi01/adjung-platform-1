@@ -7,7 +7,7 @@ Depends On:
 - SPEC-000 Adjung Constitution  
 - SPEC-001 Product Philosophy  
 - SPEC-007 Publication Model  
-- SPEC-008 Writing Desk  
+- SPEC-008 Desk  
 
 ---
 
@@ -15,13 +15,13 @@ Depends On:
 
 The modern digital writing experience is too often fractured. Traditional CMS editors split the author’s cognitive focus between a raw editing form and a separate "Live Preview" tab. This artificial division forces constant context switching.
 
-Adjung rejects this duality. The Writing Desk is not a separate application layer; it is simply the draft state of the published Entry. Writing and reading should share the exact same canvas and visual style. The draft version of an entry must look and behave like the final published version, changing only its state, not its visual soul.
+Adjung rejects this duality. The Desk is not a separate application layer; it is simply the draft state of the published Entry. Writing and reading should share the exact same canvas and visual style. The draft version of an entry must look and behave like the final published version, changing only its state, not its visual soul.
 
 ---
 
 ## 2. Design Philosophy
 
-The Entry-First Writing Desk is governed by the following core principles:
+The Entry-First Desk is governed by the following core principles:
 
 1. **The Entry Comes Before the Interface**  
    The primary visual element is the Entry itself (its Title, Body, and Objects). UI controls, buttons, sidebars, and admin widgets must fade into the background, allowing the entry to command absolute focus.
@@ -39,7 +39,7 @@ The Entry-First Writing Desk is governed by the following core principles:
 
 ## 3. Entry-First Design
 
-The structural unit of the Writing Desk is the **Entry**, consisting of four primary components:
+The structural unit of the Desk is the **Entry**, consisting of four primary components:
 
 * **Title**  
   The main display heading, sharing the same classical serif typography and visual hierarchy in both edit and publish states.
@@ -54,7 +54,7 @@ The structural unit of the Writing Desk is the **Entry**, consisting of four pri
 
 ## 4. Contextual Editing
 
-The Writing Desk does not display permanently visible formatting grids, sidebars, or heavy header bars.
+The Desk does not display permanently visible formatting grids, sidebars, or heavy header bars.
 
 * **No Permanent Formatting Toolbar**  
   The canvas remains pristine and free of fixed text styling grids.

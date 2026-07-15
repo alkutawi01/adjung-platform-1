@@ -43,7 +43,7 @@ Read the documents in numerical order.
 6.  Routing
 7.  Identity System
 8.  Publication Model
-9.  Writing Desk
+9.  Desk
 10. Folio
 11. Biography
 12. Editorium

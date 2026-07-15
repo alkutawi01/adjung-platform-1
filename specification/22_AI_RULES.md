@@ -3,7 +3,7 @@
 Document ID: SPEC-022 Version: 1.0 (Draft) Status: Official Draft
 
 Depends On: - SPEC-000 Adjung Constitution - SPEC-001 Product
-Philosophy - SPEC-008 Writing Desk - SPEC-020 Editorial Style
+Philosophy - SPEC-008 Desk - SPEC-020 Editorial Style
 
 # 1. Purpose
 
