@@ -17,9 +17,9 @@ export function compilePublication(
   const nextId = () => `layer-${layerCounter++}`;
 
   if (template === 'focus') {
-    const essaysAndArticles = sorted.filter(e => e.contentType === 'Essay' || e.contentType === 'Article');
+    const essaysAndArticles = sorted.filter(e => e.contentType === 'Essay');
     const notes = sorted.filter(e => e.contentType === 'Note');
-    const others = sorted.filter(e => e.contentType !== 'Essay' && e.contentType !== 'Article' && e.contentType !== 'Note');
+    const others = sorted.filter(e => e.contentType !== 'Essay' && e.contentType !== 'Note');
     
     // 1. Add all essays/articles as single-column layers
     essaysAndArticles.forEach(item => {
@@ -85,7 +85,7 @@ export function compilePublication(
     while (index < sorted.length) {
       const step = layers.length % 3;
       if (step === 0 && index < sorted.length) {
-        const essayIdx = sorted.findIndex((e, i) => i >= index && (e.contentType === 'Essay' || e.contentType === 'Article'));
+        const essayIdx = sorted.findIndex((e, i) => i >= index && e.contentType === 'Essay');
         const noteIdx = sorted.findIndex((e, i) => i >= index && e.contentType === 'Note');
         if (essayIdx !== -1 && noteIdx !== -1) {
           const firstIdx = Math.min(essayIdx, noteIdx);

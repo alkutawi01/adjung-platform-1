@@ -57,7 +57,7 @@ export const firestoreService = {
           publicationClass: data.publicationClass,
           authorId: data.authorId,
           publisher: data.publisher,
-          contentType: data.contentType || 'Article',
+          contentType: data.contentType || 'Essay',
           status: data.status || 'Draft',
           visibility: data.visibility || 'Public',
           createdDate: data.createdDate || new Date().toISOString(),

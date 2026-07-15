@@ -262,7 +262,7 @@ export function WritingDesk({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => createNewEntry('Article')}
+              onClick={() => createNewEntry('Essay')}
               className="px-3 py-1.5 bg-[#802334] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
             >
               + Essay
@@ -311,7 +311,7 @@ export function WritingDesk({
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-[#802334] font-semibold">{draft.contentType === 'Article' ? 'Essay' : draft.contentType}</span>
+                          <span className="text-[#802334] font-semibold">{draft.contentType}</span>
                           <span>•</span>
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
@@ -359,7 +359,7 @@ export function WritingDesk({
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-[#802334] font-semibold">{pub.contentType === 'Article' ? 'Essay' : pub.contentType}</span>
+                          <span className="text-[#802334] font-semibold">{pub.contentType}</span>
                           <span>•</span>
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>

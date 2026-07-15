@@ -1062,13 +1062,11 @@ export default function App() {
 
     const newId = generateUUID();
     const tempTitle = type === 'Note' ? '' : `Untitled ${type}`;
-    const defaultContent = type === 'Article'
-      ? 'This is the first paragraph of your scholarly article.\n\nThis is the second paragraph of your article. Margin notes are displayed adjacent to their respective paragraph.'
-      : type === 'Essay'
-        ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text.\n\nAnother paragraph expanding on your thesis.'
-        : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
-          : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
-            : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
+    const defaultContent = type === 'Essay'
+      ? 'This is the first paragraph of your scholarly essay.\n\nThis is the second paragraph of your essay. Margin notes are displayed adjacent to their respective paragraph.'
+      : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
+        : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
+          : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
 
     const slugSuffix = Date.now().toString().slice(-4);
     const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
@@ -1088,7 +1086,7 @@ export default function App() {
       canonicalUrl: `https://${currentUser.penName.toLowerCase().replace(/\s+/g, '')}.adjung.com/${type.toLowerCase()}/${type === 'Note' ? 'note-' + slugSuffix : 'untitled'}`,
       content: defaultContent,
       footnotes: type === 'Essay' ? ['Your first footnote description citation goes here.'] : undefined,
-      marginNotes: type === 'Article' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
+      marginNotes: type === 'Essay' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
     };
 
     db.saveEntry(newEntry);

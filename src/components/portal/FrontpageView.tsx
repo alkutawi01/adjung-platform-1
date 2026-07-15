@@ -500,7 +500,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     });
   }
 
-  // Featured Notes (2 entries)
+  // Featured Notes (3 entries)
   const noteSelections = (systemSettings.featuredNoteIds || [])
     .map(id => entries.find(e => e.id === id && e.status === 'Published'))
     .filter(Boolean) as Entry[];
@@ -511,7 +511,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     return { id: n.id, title: n.title || n.content.substring(0, 80) + '...', author: name, sig: auth?.signature || getInitials(name), entryObj: n };
   });
 
-  while (displayNotes.length < 2) {
+  while (displayNotes.length < 3) {
     displayNotes.push({
       id: `empty-note-${displayNotes.length}`,
       title: '',

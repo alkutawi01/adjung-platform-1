@@ -75,7 +75,7 @@ export interface User {
 }
 
 export type PublicationClass = 'Scholarly' | 'Institutional';
-export type ScholarlyType = 'Note' | 'Essay' | 'Article';
+export type ScholarlyType = 'Note' | 'Essay';
 export type InstitutionalType = 'Notice' | 'Editor\'s Note';
 export type EntryType = ScholarlyType | InstitutionalType;
 export type EntryStatus = 'Draft' | 'Published' | 'Archived';

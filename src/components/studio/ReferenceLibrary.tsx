@@ -477,7 +477,6 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 >
                   {t.contentType === 'Note' && <FileText className="w-4 h-4 text-stone-450" />}
                   {t.contentType === 'Essay' && <BookOpen className="w-4 h-4 text-stone-450" />}
-                  {t.contentType === 'Article' && <Layers className="w-4 h-4 text-stone-450" />}
                   {t.title.replace('Canonical ', '')}
                 </button>
               ))}
@@ -529,7 +528,6 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     >
                       <option value="Note">Note</option>
                       <option value="Essay">Essay</option>
-                      <option value="Article">Article</option>
                       <option value="Notice">Notice</option>
                       <option value="Editor's Note">Editor's Note</option>
                     </select>

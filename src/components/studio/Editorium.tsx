@@ -31,6 +31,11 @@ import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
 import { firestoreService } from '../../utils/firestoreService';
+import { PlatformIdentityTab } from './tabs/PlatformIdentityTab';
+import { FrontpageCurationTab } from './tabs/FrontpageCurationTab';
+import { UserManagementTab } from './tabs/UserManagementTab';
+import { RolesPoliciesTab } from './tabs/RolesPoliciesTab';
+import { SystemLogsTab } from './tabs/SystemLogsTab';
 
 const resolveEntryFromInput = (input: string, entries: Entry[]): Entry | undefined => {
   if (!input) return undefined;
@@ -133,11 +138,8 @@ export function Editorium() {
 
   // Sub-states and Search States
   const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [logsSearchQuery, setLogsSearchQuery] = useState('');
   const [boardSearchQuery, setBoardSearchQuery] = useState('');
   const [appointEditorQuery, setAppointEditorQuery] = useState('');
-  const [suspensionSearchVal, setSuspensionSearchVal] = useState('');
-  const [foundSuspendUser, setFoundSuspendUser] = useState<User | null>(null);
 
   const [selectedPolicyEditId, setSelectedPolicyEditId] = useState(db.getPolicies()[0]?.id || '');
   const [policyEditSections, setPolicyEditSections] = useState<PolicySection[]>(db.getPolicies()[0]?.sections || []);
@@ -174,14 +176,6 @@ export function Editorium() {
     users.length > 0 ? users[0].id : null
   );
 
-  // Invitation form states
-  const [inviteName, setInviteName] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteMessage, setInviteMessage] = useState('');
-  const [generatedInvitation, setGeneratedInvitation] = useState<{
-    signupUrl: string;
-    emailBody: string;
-  } | null>(null);
 
   // Frontpage curation sub-states synced with systemSettings
   const [featuredScholarId, setFeaturedScholarId] = useState<string>(
@@ -243,28 +237,6 @@ export function Editorium() {
     }
   }, [users, selectedBoardMemberId]);
 
-  // Handle invitation form submission
-  const handleSendInvitation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteName.trim() || !inviteEmail.trim()) return;
-
-    const signupUrl = `https://adjung.com/invite/register?name=${encodeURIComponent(inviteName.trim())}&email=${encodeURIComponent(inviteEmail.trim())}`;
-    const emailBody = `Salutations ${inviteName.trim()},\n\nYou are cordially invited by the Chief Editor of Adjung to join our publishing platform as an independent Writer.\n\nName: ${inviteName.trim()}\nEmail: ${inviteEmail.trim()}\n${inviteMessage.trim() ? `\nMessage from the Chief Editor:\n"${inviteMessage.trim()}"\n` : ''}\nTo accept this invitation and initialize your personal scholarly Folio, please click the link below to choose your Username and signature:\n${signupUrl}\n\nRespectfully,\nEditorial Board of Adjung`;
-
-    setGeneratedInvitation({
-      signupUrl,
-      emailBody
-    });
-
-    // Log the invitation
-    db.addLog(`Generated scholarly invitation for '${inviteName.trim()}' (${inviteEmail.trim()}).`, currentUser.penName, currentUser.role);
-    refreshDbState();
-
-    setInviteName('');
-    setInviteEmail('');
-    setInviteMessage('');
-    showToast(`Invitation created for ${inviteName.trim()}`, 'success');
-  };
 
   const renderGoogleDocConnectionStatus = (status: string, itemsCount: number) => {
     if (status === 'success') {
@@ -305,8 +277,8 @@ export function Editorium() {
           showToast(`Error: Featured Article Slot ${i + 1} ("${val}") cannot be resolved to any published entry.`, 'error');
           return;
         }
-        if (resolved.contentType !== 'Article' && resolved.contentType !== 'Essay') {
-          showToast(`Error: Featured Article Slot ${i + 1} ("${resolved.title}") must be of type Essay or Article. Found: ${resolved.contentType}.`, 'error');
+        if (resolved.contentType !== 'Essay') {
+          showToast(`Error: Featured Article Slot ${i + 1} ("${resolved.title}") must be of type Essay. Found: ${resolved.contentType}.`, 'error');
           return;
         }
       }
@@ -319,8 +291,8 @@ export function Editorium() {
         showToast(`Error: Featured Entry ("${featuredEntryId}") cannot be resolved to any published entry.`, 'error');
         return;
       }
-      if (resolved.contentType !== 'Essay' && resolved.contentType !== 'Article') {
-        showToast(`Error: Featured Entry ("${resolved.title}") must be of type Essay or Article. Found: ${resolved.contentType}.`, 'error');
+      if (resolved.contentType !== 'Essay') {
+        showToast(`Error: Featured Entry ("${resolved.title}") must be of type Essay. Found: ${resolved.contentType}.`, 'error');
         return;
       }
     }
@@ -341,8 +313,8 @@ export function Editorium() {
       }
     }
 
-    // Validate Featured Notes (2 slots)
-    for (let i = 0; i < 2; i++) {
+    // Validate Featured Notes (3 slots)
+    for (let i = 0; i < 3; i++) {
       const val = featuredNoteIds[i];
       if (val) {
         const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
@@ -514,7 +486,6 @@ Source: MIT Technology Review, 2024
 
   const notesCount = entries.filter(e => e.contentType === 'Note').length;
   const essaysCount = entries.filter(e => e.contentType === 'Essay').length;
-  const articlesCount = entries.filter(e => e.contentType === 'Article').length;
 
   const totalMembers = users.length;
 
@@ -576,582 +547,67 @@ Source: MIT Technology Review, 2024
       {/* 1. PLATFORM                                               */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'platform' && (
-        <div className="space-y-6">
-          <div className="bg-[#FDFDFD] border border-stone-200 rounded p-6 shadow-sm space-y-6">
-            <div className="border-b border-stone-100 pb-3">
-              <h3 className="font-serif text-lg font-semibold text-stone-950">Platform Identity & Configuration</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Configure global press branding, frontpage styling, and metadata settings</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-sans">
-              {/* Academic Affiliation */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Academic Affiliation</label>
-                  <input
-                    type="text"
-                    value={systemSettings.academicAffiliation}
-                    disabled={!hasPermission('manageSettings')}
-                    onChange={(e) => {
-                      const updated = { ...systemSettings, academicAffiliation: e.target.value };
-                      setSystemSettings(updated);
-                      db.updateSystemSettings(updated);
-                    }}
-                    className={`w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon text-xs ${
-                      !hasPermission('manageSettings') ? 'bg-stone-50 text-stone-500 cursor-not-allowed' : 'bg-white text-stone-900'
-                    }`}
-                  />
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">Establishes the host educational institution displayed in footnotes and headers.</span>
-                </div>
-
-                {/* Accent Color Selection */}
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">System-Wide Accent Theme</label>
-                  <div className="flex items-center gap-3">
-                    <span className="w-4 h-4 rounded-full bg-adjung-maroon border border-adjung-maroon/20 inline-block" />
-                    <span className="font-mono text-stone-700 uppercase">Adjung Maroon (#802334)</span>
-                    <span className="text-stone-400 font-mono text-[9px] bg-stone-100 px-1.5 py-0.5 rounded ml-auto">ESTABLISHED BRAND</span>
-                  </div>
-                </div>
-
-                {/* Calligraphic tag checkbox */}
-                <div className="pt-2">
-                  <div className="flex items-start gap-2.5">
-                    <input
-                      type="checkbox"
-                      id="arabic-accent-cb"
-                      checked={enableArabicAccent}
-                      onChange={(e) => setEnableArabicAccent(e.target.checked)}
-                      className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer mt-0.5"
-                    />
-                    <div>
-                      <label htmlFor="arabic-accent-cb" className="font-mono text-[10px] uppercase tracking-wider text-stone-600 font-semibold cursor-pointer">
-                        Enable Calligraphic Script Tag Seals
-                      </label>
-                      <span className="text-stone-400 text-[9px] font-mono block mt-0.5 leading-normal">
-                        Highlights Arabic, Ottoman Turkish, or Jawi script publications with beautiful calligraphic tag stamps on the Frontpage.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Frontpage settings */}
-              <div className="space-y-4">
-                {/* Banner text */}
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Header Announcement Banner Text</label>
-                  <textarea
-                    value={announcementBanner}
-                    onChange={(e) => setAnnouncementBanner(e.target.value)}
-                    className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs leading-relaxed focus:outline-none focus:border-adjung-maroon min-h-[70px]"
-                    placeholder="Enter welcome or alert text displayed on the Frontpage..."
-                  />
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">Renders a high-density banner at the top of the Frontpage for general announcements.</span>
-                </div>
-
-                {/* Layout density slider/buttons */}
-                <div>
-                  <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Frontpage Grid Layout Density</span>
-                  <div className="flex items-center gap-2">
-                    {(['Standard', 'Compact', 'Classical'] as const).map(density => (
-                      <button
-                        key={density}
-                        type="button"
-                        onClick={() => setLayoutDensity(density)}
-                        className={`px-3 py-1.5 font-mono text-[10px] rounded transition ${
-                          layoutDensity === density
-                            ? 'bg-adjung-maroon text-white font-bold shadow-sm'
-                            : 'bg-stone-50 text-stone-600 hover:bg-stone-100 border border-stone-200'
-                        }`}
-                      >
-                        {density} Grid
-                      </button>
-                    ))}
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-1.5 block">Alters card spacing, margin parameters, and typographic scaling of the home scriptorium feed.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Summary Block */}
-            <div className="w-full bg-stone-50 border border-stone-200 p-4 rounded text-xs text-stone-600 leading-normal font-serif flex items-start gap-2.5">
-              <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>Brand Status: Active & Operational.</strong> Changes to the academic affiliation or tag seals are immediately written to the local storage mock database and synchronized across all open browser context views.
-              </div>
-            </div>
-          </div>
-        </div>
+        <PlatformIdentityTab
+          systemSettings={systemSettings}
+          setSystemSettings={setSystemSettings}
+          enableArabicAccent={enableArabicAccent}
+          setEnableArabicAccent={setEnableArabicAccent}
+          announcementBanner={announcementBanner}
+          setAnnouncementBanner={setAnnouncementBanner}
+          layoutDensity={layoutDensity}
+          setLayoutDensity={setLayoutDensity}
+          hasPermission={hasPermission}
+        />
       )}
 
       {/* ========================================================= */}
       {/* 2. FRONTPAGE                                              */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'frontpage' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Curation Form */}
-          <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
-            <div className="border-b border-stone-100 pb-3">
-              <h3 className="font-serif text-lg font-semibold text-stone-950">Frontpage Curation & Pinning</h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Promote featured research or scholars to the main public landing feed</p>
-            </div>
-
-            <div className="space-y-4 text-xs font-sans">
-                {/* 3 Slots for Featured Articles */}
-                <div className="pt-4 border-t border-stone-200 space-y-3">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
-                    Featured Articles (3 Slots)
-                  </label>
-                  <div className="space-y-3">
-                    {[0, 1, 2].map((idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex gap-2 items-center">
-                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                          <input
-                            type="text"
-                            value={editorialSelectionIds[idx] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const resolved = resolveEntryFromInput(val, publishedEntries);
-                              const updated = [...editorialSelectionIds];
-                              updated[idx] = resolved ? resolved.id : val;
-                              setEditorialSelectionIds(updated);
-                            }}
-                            placeholder="Enter Entry ID, Slug, or URL..."
-                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
-                          />
-                        </div>
-                        <div className="pl-14 text-[9px] font-mono text-left">
-                          {(() => {
-                            const val = editorialSelectionIds[idx];
-                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
-                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                            if (resolved.contentType !== 'Article' && resolved.contentType !== 'Essay') {
-                              return <span className="text-red-500">❌ Invalid Type: Must be an Essay or Article (resolved as {resolved.contentType})</span>;
-                            }
-                            return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
-                          })()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
-                    Curated entries displayed on the Frontpage under "Featured Articles".
-                  </span>
-                </div>
-
-                {/* 1 Slot for Featured Entry */}
-                <div className="pt-4 border-t border-stone-200 space-y-2">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
-                    Featured Entry
-                  </label>
-                  <div className="space-y-1">
-                    <input
-                      type="text"
-                      value={featuredEntryId || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const resolved = resolveEntryFromInput(val, publishedEntries);
-                        setFeaturedEntryId(resolved ? resolved.id : val);
-                      }}
-                      placeholder="Enter Entry ID, Slug, or URL..."
-                      className="w-full border border-stone-200 p-2.5 rounded bg-white font-mono text-xs focus:outline-none focus:border-adjung-maroon"
-                    />
-                    <div className="text-[9px] font-mono text-left pl-2">
-                      {(() => {
-                        if (!featuredEntryId) return <span className="text-stone-400">None Selected</span>;
-                        const resolved = publishedEntries.find(e => e.id === featuredEntryId || e.slug === featuredEntryId);
-                        if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                        if (resolved.contentType !== 'Essay' && resolved.contentType !== 'Article') {
-                          return <span className="text-red-500">❌ Invalid Type: Must be an Essay or Article (resolved as {resolved.contentType})</span>;
-                        }
-                        return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
-                      })()}
-                    </div>
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
-                    Pins this publication at the absolute pinnacle of the public landing archive timeline.
-                  </span>
-                </div>
-
-                {/* 3 Slots for Featured Essays */}
-                <div className="pt-4 border-t border-stone-200 space-y-3">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
-                    Featured Essays (3 Slots)
-                  </label>
-                  <div className="space-y-3">
-                    {[0, 1, 2].map((idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex gap-2 items-center">
-                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                          <input
-                            type="text"
-                            value={featuredEssayIds[idx] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const resolved = resolveEntryFromInput(val, publishedEntries);
-                              const updated = [...featuredEssayIds];
-                              updated[idx] = resolved ? resolved.id : val;
-                              setFeaturedEssayIds(updated);
-                            }}
-                            placeholder="Enter Entry ID, Slug, or URL..."
-                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
-                          />
-                        </div>
-                        <div className="pl-14 text-[9px] font-mono text-left">
-                          {(() => {
-                            const val = featuredEssayIds[idx];
-                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
-                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                            if (resolved.contentType !== 'Essay') {
-                              return <span className="text-red-500">❌ Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
-                            }
-                            return <span className="text-emerald-600">✅ Essay: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
-                          })()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
-                    Curated essays displayed on the Frontpage under "Featured Essays".
-                  </span>
-                </div>
-
-                {/* 2 Slots for Featured Notes */}
-                <div className="pt-4 border-t border-stone-200 space-y-3">
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold">
-                    Featured Notes (2 Slots)
-                  </label>
-                  <div className="space-y-3">
-                    {[0, 1].map((idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex gap-2 items-center">
-                          <span className="font-mono text-stone-400 text-[10px] w-12 flex-shrink-0 text-left">Slot {idx + 1}:</span>
-                          <input
-                            type="text"
-                            value={featuredNoteIds[idx] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const resolved = resolveEntryFromInput(val, publishedEntries);
-                              const updated = [...featuredNoteIds];
-                              updated[idx] = resolved ? resolved.id : val;
-                              setFeaturedNoteIds(updated);
-                            }}
-                            placeholder="Enter Entry ID, Slug, or URL..."
-                            className="flex-1 border border-stone-200 p-2 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon font-mono"
-                          />
-                        </div>
-                        <div className="pl-14 text-[9px] font-mono text-left">
-                          {(() => {
-                            const val = featuredNoteIds[idx];
-                            if (!val) return <span className="text-stone-400">Empty Slot</span>;
-                            const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                            if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
-                            if (resolved.contentType !== 'Note' && resolved.contentType !== 'Essay') {
-                              return <span className="text-red-500">❌ Invalid Type: Must be a Note or Essay (resolved as {resolved.contentType})</span>;
-                            }
-                            return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
-                          })()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-stone-400 text-[9px] font-mono mt-1 block">
-                    Curated notes displayed on the Frontpage under "Featured Notes".
-                  </span>
-                </div>
-
-              <button
-                type="button"
-                onClick={handleSaveCuration}
-                className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm mt-4 cursor-pointer"
-              >
-                Apply Curation Settings
-              </button>
-            </div>
-          </div>
-
-          {/* Live Mockup */}
-          <div className="lg:col-span-5 space-y-4">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Frontpage Curation Mockup</span>
-            <div className="bg-[#FDFDFD] border border-stone-300 p-5 rounded scholarly-border shadow-inner text-left space-y-4 select-none relative overflow-hidden">
-              <div className="border-b pb-2 flex justify-between items-center text-[8px] font-mono text-stone-400">
-                <span>ADJUNG SCHOLARLY PRESS</span>
-                <span>LAYOUT: {layoutDensity.toUpperCase()}</span>
-              </div>
-
-              {announcementBanner && (
-                <div className="bg-adjung-maroon/5 border-l-2 border-adjung-maroon p-2 text-[9px] text-stone-600 italic">
-                  "{announcementBanner}"
-                </div>
-              )}
-
-              {/* Scholar Highlight is omitted to match the Frontpage layout */}
-
-              {/* Article Preview */}
-              <div className="border-t pt-3 space-y-1">
-                <span className="font-mono text-[7px] uppercase tracking-wider text-stone-400 font-semibold block">Featured Entry</span>
-                <h5 className="font-serif font-bold text-stone-800 text-xs line-clamp-1">
-                  {(() => {
-                    const ent = publishedEntries.find(e => e.id === featuredEntryId);
-                    if (!ent) return 'None Selected';
-                    return ent.title ? parseInlineFormatting(ent.title) : ent.content.slice(0, 30) + '...';
-                  })()}
-                </h5>
-                <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-400">
-                  <span>{publishedEntries.find(e => e.id === featuredEntryId)?.contentType || 'Article'}</span>
-                  <span>•</span>
-                  <span>By {users.find(u => u.id === (publishedEntries.find(e => e.id === featuredEntryId)?.authorId || ''))?.penName || 'Scholar'}</span>
-                  {enableArabicAccent && <span className="text-[#802334] font-semibold">AR-TAG</span>}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* In The News digest raw editor */}
-          {(() => {
-            const { items: docItems, errors: docErrors } = parseInTheNews(inTheNewsGoogleDocText);
-            const { items: localItems, errors: localErrors } = parseInTheNews(inTheNewsRawText);
-            const newsParsedItems = [...docItems, ...localItems];
-            const newsParseErrors = [...docErrors, ...localErrors];
-            return (
-              <div className="lg:col-span-12 mt-4 border-t border-stone-200 pt-6">
-                <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
-                  <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
-                    <div>
-                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">In The News Digest</h3>
-                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate global developments (displays up to 50 items from Source A & B, separated by ---)</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleDownloadTemplate}
-                        className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 rounded transition cursor-pointer font-semibold"
-                      >
-                        Download Template (.txt)
-                      </button>
-                      <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
-                    <div className="lg:col-span-7 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
-                          <input
-                            type="text"
-                            value={inTheNewsGoogleDocUrl}
-                            onChange={(e) => setInTheNewsGoogleDocUrl(e.target.value)}
-                            className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
-                            placeholder="https://docs.google.com/document/d/.../edit"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Jadual Refresh Google Doc (Format 24j, cth: 12:10, 00:10)</label>
-                          <input
-                            type="text"
-                            value={googleDocSyncTimes}
-                            onChange={(e) => setGoogleDocSyncTimes(e.target.value)}
-                            className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
-                            placeholder="12:10, 00:10"
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-2.5 mb-1">
-                        {renderGoogleDocConnectionStatus(inTheNewsGoogleDocStatus, docItems.length)}
-                      </div>
-                      
-                      <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text (Source B)</label>
-                        <textarea
-                          value={inTheNewsRawText}
-                          onChange={(e) => setInTheNewsRawText(e.target.value)}
-                          className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[350px] resize-y bg-[#FAFAF9]"
-                          placeholder="Desk: Astronomy&#10;Title: NASA Reviews Hubble Space Telescope&#10;Brief: NASA evaluates operations into 2030s...&#10;Source: Nature&#10;URL: https://nature.com/...&#10;&#10;---&#10;&#10;Desk: Libraries&#10;..."
-                        />
-                      </div>
-                      
-                      <button
-                        type="button"
-                        onClick={handleSaveNewsDigest}
-                        className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm cursor-pointer"
-                      >
-                        Update In The News Digest
-                      </button>
-                    </div>
-                    
-                    <div className="lg:col-span-5 space-y-4">
-                      <div className="space-y-2">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
-                        {newsParseErrors.length > 0 ? (
-                          <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
-                            <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
-                            <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
-                              {newsParseErrors.map((err, i) => (
-                                <li key={i}>
-                                  News Item {err.index}: {err.error}
-                                </li>
-                              ))}
-                            </ul>
-                            <p className="text-[9px] text-red-400 mt-1">Note: Items with errors are automatically skipped. The landing page will load only valid items.</p>
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-2 text-left">
-                            <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
-                            <span className="font-mono text-[9px] uppercase font-bold tracking-wider">Digest Status: All Items Valid</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({newsParsedItems.length})</span>
-                        {newsParsedItems.length === 0 ? (
-                          <p className="font-serif italic text-stone-400 text-xs">No valid news items parsed. Add items above.</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {newsParsedItems.map((item, i) => (
-                              <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded font-bold" style={{ color: getDeskAccentColor(item.desk), border: `1px solid ${getDeskAccentColor(item.desk)}22` }}>
-                                    {item.desk}
-                                  </span>
-                                  <span className="font-mono text-[8px] text-stone-400">Item #{item.rawIndex}</span>
-                                </div>
-                                <h6 className="font-serif font-bold text-stone-850 line-clamp-1">{item.title}</h6>
-                                <p className="font-serif text-[11px] text-stone-500 line-clamp-2 leading-relaxed">{item.brief}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* World Clock Calendars & Holidays digest raw editor */}
-          {(() => {
-            const { items: docItems, errors: docErrors } = parseWorldClockHolidays(worldClockHolidaysGoogleDocText);
-            const { items: localItems, errors: localErrors } = parseWorldClockHolidays(worldClockHolidaysRawText);
-            const holidayParsedItems = [...docItems, ...localItems];
-            const holidayParseErrors = [...docErrors, ...localErrors];
-            return (
-              <div className="lg:col-span-12 mt-6 border-t border-stone-200 pt-6">
-                <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
-                  <div className="border-b border-stone-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left">
-                    <div>
-                      <h3 className="font-serif text-lg font-semibold text-[#1F1F1F]">World Clock Calendars & Holidays Digest</h3>
-                      <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Curate city working statuses and public holidays (separated by ---)</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleDownloadHolidaysTemplate}
-                        className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 rounded transition cursor-pointer font-semibold"
-                      >
-                        Download Template (.txt)
-                      </button>
-                      <span className="font-mono text-[9px] uppercase px-2 py-1 bg-stone-100 text-stone-600 rounded w-fit select-none">Version 1.0 Spec</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
-                    <div className="lg:col-span-7 space-y-4">
-                      <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc URL (Source A)</label>
-                        <input
-                          type="text"
-                          value={worldClockHolidaysGoogleDocUrl}
-                          onChange={(e) => setWorldClockHolidaysGoogleDocUrl(e.target.value)}
-                          className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
-                          placeholder="https://docs.google.com/document/d/.../edit"
-                        />
-                        {renderGoogleDocConnectionStatus(worldClockHolidaysGoogleDocStatus, docItems.length)}
-                      </div>
-                      
-                      <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Raw Digest Text (Source B)</label>
-                        <textarea
-                          value={worldClockHolidaysRawText}
-                          onChange={(e) => setWorldClockHolidaysRawText(e.target.value)}
-                          className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[300px] resize-y bg-[#FAFAF9]"
-                          placeholder="City: Kuala Lumpur&#10;Date: 31/08/26&#10;Status: Holiday&#10;Holiday Name: National Day&#10;&#10;---&#10;&#10;City: Mecca&#10;Date: 25/01/48&#10;Status: Holiday&#10;Holiday Name: Prophet's Birthday"
-                        />
-                      </div>
-                      
-                      <button
-                        type="button"
-                        onClick={handleSaveWorldClockHolidays}
-                        className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm cursor-pointer"
-                      >
-                        Update World Clock Digest
-                      </button>
-                    </div>
-                    
-                    <div className="lg:col-span-5 space-y-4">
-                      <div className="space-y-2">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
-                        {holidayParseErrors.length > 0 ? (
-                          <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
-                            <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
-                            <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
-                              {holidayParseErrors.map((err, i) => (
-                                <li key={i}>
-                                  Item {err.index}: {err.error}
-                                </li>
-                              ))}
-                            </ul>
-                            <p className="text-[9px] text-red-400 mt-1">Note: Items with errors are skipped. Clocks will fall back to default calendars.</p>
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-2 text-left">
-                            <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
-                            <span className="font-mono text-[9px] uppercase font-bold tracking-wider">Digest Status: All Items Valid</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({holidayParsedItems.length})</span>
-                        {holidayParsedItems.length === 0 ? (
-                          <p className="font-serif italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {holidayParsedItems.map((item, i) => (
-                              <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-sans font-bold text-[#7B2737]">{item.city}</span>
-                                  <span className="font-mono text-[8px] tracking-wider bg-stone-200 px-1 py-0.5 rounded font-semibold text-stone-600 uppercase">
-                                    {item.status}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-stone-500 font-mono text-[10px]">
-                                  <span>Date: {item.dateStr}</span>
-                                  {item.holidayName && <span>Name: {item.holidayName}</span>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
+        <FrontpageCurationTab
+          featuredScholarId={featuredScholarId}
+          setFeaturedScholarId={setFeaturedScholarId}
+          featuredEntryId={featuredEntryId}
+          setFeaturedEntryId={setFeaturedEntryId}
+          editorialSelectionIds={editorialSelectionIds}
+          setEditorialSelectionIds={setEditorialSelectionIds}
+          featuredEssayIds={featuredEssayIds}
+          setFeaturedEssayIds={setFeaturedEssayIds}
+          featuredNoteIds={featuredNoteIds}
+          setFeaturedNoteIds={setFeaturedNoteIds}
+          announcementBanner={announcementBanner}
+          setAnnouncementBanner={setAnnouncementBanner}
+          enableArabicAccent={enableArabicAccent}
+          setEnableArabicAccent={setEnableArabicAccent}
+          layoutDensity={layoutDensity}
+          setLayoutDensity={setLayoutDensity}
+          inTheNewsGoogleDocUrl={inTheNewsGoogleDocUrl}
+          setInTheNewsGoogleDocUrl={setInTheNewsGoogleDocUrl}
+          googleDocSyncTimes={googleDocSyncTimes}
+          setGoogleDocSyncTimes={setGoogleDocSyncTimes}
+          inTheNewsRawText={inTheNewsRawText}
+          setInTheNewsRawText={setInTheNewsRawText}
+          inTheNewsGoogleDocText={inTheNewsGoogleDocText}
+          inTheNewsGoogleDocStatus={inTheNewsGoogleDocStatus}
+          worldClockHolidaysGoogleDocUrl={worldClockHolidaysGoogleDocUrl}
+          setWorldClockHolidaysGoogleDocUrl={setWorldClockHolidaysGoogleDocUrl}
+          worldClockHolidaysRawText={worldClockHolidaysRawText}
+          setWorldClockHolidaysRawText={setWorldClockHolidaysRawText}
+          worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
+          worldClockHolidaysGoogleDocStatus={worldClockHolidaysGoogleDocStatus}
+          publishedEntries={publishedEntries}
+          users={users}
+          handleSaveCuration={handleSaveCuration}
+          handleSaveNewsDigest={handleSaveNewsDigest}
+          handleSaveWorldClockHolidays={handleSaveWorldClockHolidays}
+          handleDownloadTemplate={handleDownloadTemplate}
+          handleDownloadHolidaysTemplate={handleDownloadHolidaysTemplate}
+          renderGoogleDocConnectionStatus={renderGoogleDocConnectionStatus}
+        />
       )}
 
       {/* ========================================================= */}
-      {/* 2. LANDING                                                */}
+      {/* 3. LANDING                                                */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'landing' && (
         <div className="space-y-6">
@@ -1395,16 +851,6 @@ Source: MIT Technology Review, 2024
                   </div>
                 </div>
 
-                {/* Articles Bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between font-mono text-[10px]">
-                    <span className="text-stone-600 font-semibold">Articles</span>
-                    <span className="text-stone-700">{articlesCount} ({totalEntries > 0 ? Math.round((articlesCount/totalEntries)*100) : 0}%)</span>
-                  </div>
-                  <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden">
-                    <div className="bg-stone-800 h-full rounded-full" style={{ width: `${totalEntries > 0 ? (articlesCount/totalEntries)*100 : 0}%` }} />
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -1748,607 +1194,28 @@ Source: MIT Technology Review, 2024
       {/* 6. USERS                                                  */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'users' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* User management: Scholar Suspension Manager */}
-          <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
-            <div className="border-b border-stone-100 pb-2">
-              <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
-                <ShieldAlert className="w-4.5 h-4.5 text-adjung-maroon" /> Scholar Suspension Manager
-              </h3>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Search and suspend scholar accounts, or manage suspended users</p>
-            </div>
-
-            {/* Part 1: Search and Suspend Input */}
-            <div className="space-y-4 text-left text-xs font-sans">
-              <div className="space-y-1.5">
-                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">Search Scholar to Suspend</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-grow">
-                    <input
-                      type="text"
-                      placeholder="Enter Pen Name or Username (e.g. @zayd.ghazali)"
-                      value={suspensionSearchVal}
-                      onChange={(e) => {
-                        setSuspensionSearchVal(e.target.value);
-                        if (!e.target.value.trim()) {
-                          setFoundSuspendUser(null);
-                        }
-                      }}
-                      className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white"
-                    />
-                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!suspensionSearchVal.trim()) return;
-                      const cleanQuery = suspensionSearchVal.trim().toLowerCase().replace(/^@/, '');
-                      const found = users.find(u => 
-                        u.username.toLowerCase() === cleanQuery ||
-                        u.penName.toLowerCase() === cleanQuery
-                      );
-                      if (!found) {
-                        showToast('Scholar not found in database.', 'error');
-                        setFoundSuspendUser(null);
-                      } else {
-                        setFoundSuspendUser(found);
-                      }
-                    }}
-                    className="px-4 py-2 bg-stone-850 hover:bg-stone-900 text-white font-mono uppercase tracking-wider text-[10px] rounded transition cursor-pointer"
-                  >
-                    Find
-                  </button>
-                </div>
-              </div>
-
-              {/* Display Found Scholar Details & Action */}
-              {foundSuspendUser && (
-                <div className="p-4 border border-stone-150 rounded bg-[#FDFDFD] space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <span className="font-serif font-bold text-[#111111] text-sm block">{foundSuspendUser.penName}</span>
-                      <span className="font-mono text-[9px] text-stone-400 block">@{foundSuspendUser.username} • {foundSuspendUser.email || 'No email'}</span>
-                      <span className={`inline-block text-[8px] font-mono uppercase px-1 rounded ${
-                        foundSuspendUser.role === 'Chief Editor' 
-                          ? 'bg-adjung-maroon text-[#FDFDFD]' 
-                          : foundSuspendUser.role === 'Editor'
-                          ? 'bg-amber-100 text-amber-900'
-                          : 'bg-stone-100 text-stone-600'
-                      }`}>
-                        {foundSuspendUser.role}
-                      </span>
-                    </div>
-
-                    <div className="text-right space-y-1">
-                      <span className="block font-mono text-[8px] uppercase tracking-wider text-stone-400">Listing Status</span>
-                      <span className={`text-[10px] font-semibold font-mono ${foundSuspendUser.suspended ? 'text-red-700 font-bold' : 'text-emerald-700 font-bold'}`}>
-                        {foundSuspendUser.suspended ? 'SUSPENDED' : 'ACTIVE & LISTED'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-stone-100 flex justify-end">
-                    {foundSuspendUser.id === currentUser.id ? (
-                      <span className="font-mono text-[9px] text-stone-400 italic">Self Account</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleToggleUserSuspension(foundSuspendUser.id);
-                          // Sync local found user state
-                          setFoundSuspendUser(prev => prev ? { ...prev, suspended: !prev.suspended } : null);
-                          showToast(`Suspension status updated for ${foundSuspendUser.penName}.`, 'success');
-                          refreshDbState();
-                        }}
-                        className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider rounded border cursor-pointer ${
-                          foundSuspendUser.suspended
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
-                        }`}
-                      >
-                        {foundSuspendUser.suspended ? 'Reactivate Scholar' : 'Suspend Scholar'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Part 2: Suspended Scholars List */}
-            <div className="space-y-3 pt-4 border-t border-stone-200">
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold block">Suspended Scholars ({users.filter(u => u.suspended).length})</span>
-              </div>
-
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                {users.filter(u => u.suspended).length > 0 ? (
-                  users.filter(u => u.suspended).map(u => (
-                    <div key={u.id} className="p-3 border border-red-100 bg-red-50/20 rounded flex items-center justify-between gap-4 text-left text-xs">
-                      <div>
-                        <span className="font-serif font-bold text-stone-800 block">{u.penName}</span>
-                        <span className="font-mono text-[9px] text-stone-400">@{u.username} • {u.role}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleToggleUserSuspension(u.id);
-                          if (foundSuspendUser && foundSuspendUser.id === u.id) {
-                            setFoundSuspendUser(prev => prev ? { ...prev, suspended: false } : null);
-                          }
-                          showToast(`Reactivated ${u.penName}.`, 'success');
-                          refreshDbState();
-                        }}
-                        className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded font-mono text-[9px] uppercase tracking-wider cursor-pointer"
-                      >
-                        Reactivate
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="italic text-stone-400 py-6 text-center font-serif">No scholars are currently suspended.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Send scholars invitation form */}
-          <div className="lg:col-span-5 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
-            <div className="border-b border-stone-100 pb-2">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-700 flex items-center gap-1.5 select-none">
-                <Mail className="w-4 h-4 text-adjung-maroon" /> Invite Scholar to Platfom
-              </h3>
-              <p className="text-stone-500 text-[10px] mt-0.5 leading-normal">Generate invitation letters and signup link criteria for external scholars</p>
-            </div>
-
-            {!hasPermission('inviteWriters') ? (
-              <div className="p-4 bg-amber-50 border border-amber-150 text-amber-900 rounded text-xs leading-relaxed text-left flex gap-2">
-                <Lock className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold block mb-0.5">Invitation Privileges Locked</span>
-                  <span>Your administrative role does not possess the 'Invite Writers' privilege. Please request Chief Editor clearance.</span>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSendInvitation} className="space-y-3.5 text-xs font-sans text-left">
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Full Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Professor Al-Qurtubi"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Username (Email)</label>
-                  <input
-                    type="email"
-                    placeholder="e.g. qurtubi@adjung.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Custom Message / Citation</label>
-                  <textarea
-                    placeholder="Provide context or a citation to include with the invitation card..."
-                    value={inviteMessage}
-                    onChange={(e) => setInviteMessage(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white min-h-[60px]"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm mt-2 cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" /> Generate Invitation
-                </button>
-              </form>
-            )}
-
-            {generatedInvitation && (
-              <div className="mt-5 p-4 bg-stone-50 border border-stone-200 rounded text-left space-y-3 text-xs">
-                <span className="font-mono text-[9px] uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold">Invitation Generated</span>
-                <div className="space-y-1">
-                  <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block font-bold">Acceptance URL (Simulated Sign-up Link)</span>
-                  <input
-                    type="text"
-                    readOnly
-                    value={generatedInvitation.signupUrl}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none font-mono text-[9.5px] bg-white text-stone-700 select-all"
-                    onClick={(e) => (e.target as any).select()}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block font-bold">Formal Invitation Body</span>
-                  <textarea
-                    readOnly
-                    value={generatedInvitation.emailBody}
-                    rows={8}
-                    className="w-full border border-stone-200 p-2 rounded font-sans text-[10px] bg-white leading-relaxed text-stone-600 select-all"
-                    onClick={(e) => (e.target as any).select()}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <UserManagementTab
+          currentUser={currentUser}
+          users={users}
+          handleToggleUserSuspension={handleToggleUserSuspension}
+          showToast={showToast}
+          refreshDbState={refreshDbState}
+          hasPermission={hasPermission}
+        />
       )}
 
       {/* ========================================================= */}
       {/* 7. ROLES (RBAC MATRIX)                                    */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'roles' && (
-        !hasPermission('manageRbac') ? (
-          <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
-            <Lock className="w-12 h-12 text-[#802334] mx-auto mb-2 animate-pulse" />
-            <span className="font-serif italic text-stone-500 block text-lg font-semibold">RBAC Management Locked</span>
-            <p className="text-stone-500 text-xs font-sans leading-relaxed">
-              Your administrative account (Role: <strong className="text-adjung-maroon">{currentUser.role}</strong>) does not have the necessary <strong>Manage RBAC</strong> privileges. Please contact the Chief Editor to adjust your role assignments.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
-              <div className="border-b border-stone-100 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="text-left space-y-1">
-                  <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5">
-                    <Lock className="w-5 h-5 text-[#802334]" />
-                    Role-Based Access Control (RBAC) Matrix
-                  </h3>
-                  <p className="font-mono text-[10px] text-stone-400 uppercase tracking-wider">
-                    Configure administrative permissions assigned to each core system role
-                  </p>
-                </div>
-                <div className="bg-stone-50 border border-stone-200 px-3 py-1.5 rounded text-[11px] font-mono text-stone-600 max-w-xs text-left">
-                  <strong>Safety Note:</strong> Foundation roles are permanent. They can neither be renamed nor deleted.
-                </div>
-              </div>
-
-              {/* Configurable Permissions Grid */}
-              <div className="overflow-x-auto border border-stone-200 rounded">
-                <table className="w-full text-left border-collapse font-sans text-xs">
-                  <thead>
-                    <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500">
-                      <th className="p-3.5 pl-4">Administrative Permission</th>
-                      <th className="p-3.5 text-center">Visitor</th>
-                      <th className="p-3.5 text-center">Writer</th>
-                      <th className="p-3.5 text-center">Editor</th>
-                      <th className="p-3.5 text-center">Chief Editor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-150">
-                    {/* Row 1: View Directory */}
-                    <tr className="hover:bg-stone-50/40 transition">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">View Directory</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows accessing the global searchable list of platform scholars and authors.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.viewDirectory ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={hasPerm}
-                              disabled={!isCE}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    viewDirectory: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'View Directory' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 2: Curate Frontpage */}
-                    <tr className="hover:bg-stone-50/40 transition">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Curate Frontpage</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows pinning featured scholars, articles, and editing main announcements.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.curateFrontpage ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={hasPerm}
-                              disabled={!isCE}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    curateFrontpage: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Curate Frontpage' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 3: Invite Writers */}
-                    <tr className="hover:bg-stone-50/40 transition">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Invite Writers</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows generating formal scholar invitation letters and secure sign-up URLs.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.inviteWriters ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={hasPerm}
-                              disabled={!isCE}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    inviteWriters: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Invite Writers' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 4: Moderate Reports */}
-                    <tr className="hover:bg-stone-50/40 transition">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Moderate Reports</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows accessing reported content logs, hiding posts, or flag management.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.moderateReports ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={hasPerm}
-                              disabled={!isCE}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    moderateReports: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Moderate Reports' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 5: Manage Settings */}
-                    <tr className="hover:bg-stone-50/40 transition border-t border-stone-100">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Manage Settings</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows modifying platform details, academic affiliation, custom styling, and editorial policies.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.manageSettings ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        const isLockedForRole = role === 'Chief Editor';
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isLockedForRole ? true : hasPerm}
-                              disabled={!isCE || isLockedForRole}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    manageSettings: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Manage Settings' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 6: Manage RBAC */}
-                    <tr className="hover:bg-stone-50/40 transition border-t border-stone-100">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Manage RBAC</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows modifying role assignments, inviting scholars, and editing system-wide permissions.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.manageRbac ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        const isLockedForRole = role === 'Chief Editor';
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isLockedForRole ? true : hasPerm}
-                              disabled={!isCE || isLockedForRole}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    manageRbac: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Manage RBAC' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-
-                    {/* Row 7: Manage Logs */}
-                    <tr className="hover:bg-stone-50/40 transition border-t border-stone-100">
-                      <td className="p-3.5 pl-4 text-left">
-                        <span className="font-bold text-stone-800 block text-sm">Manage Logs</span>
-                        <span className="text-stone-500 text-[11px] block mt-0.5">Allows accessing, auditing, and managing chronological system audit log reports.</span>
-                      </td>
-                      {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
-                        const hasPerm = systemSettings.rolePermissions?.[role]?.manageLogs ?? false;
-                        const isCE = hasPermission('manageRbac');
-                        const isLockedForRole = role === 'Chief Editor';
-                        return (
-                          <td key={role} className="p-3.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isLockedForRole ? true : hasPerm}
-                              disabled={!isCE || isLockedForRole}
-                              onChange={(e) => {
-                                const updatedPermissions = {
-                                  ...systemSettings.rolePermissions,
-                                  [role]: {
-                                    ...(systemSettings.rolePermissions?.[role] || {}),
-                                    manageLogs: e.target.checked
-                                  }
-                                };
-                                const updatedSettings = {
-                                  ...systemSettings,
-                                  rolePermissions: updatedPermissions as any
-                                };
-                                setSystemSettings(updatedSettings);
-                                db.updateSystemSettings(updatedSettings);
-                                db.addLog(`Modified 'Manage Logs' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
-                                refreshDbState();
-                                showToast(`Permission updated for ${role}`, 'success');
-                              }}
-                              className="w-4 h-4 text-adjung-maroon border-stone-300 rounded focus:ring-adjung-maroon cursor-pointer disabled:cursor-not-allowed"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Locked Core Permissions */}
-            <div className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-4 text-left">
-              <h4 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-700 border-b pb-2 flex items-center gap-1.5 select-none">
-                <Lock className="w-4 h-4 text-stone-400" /> Locked Core Permissions (Architectural Safety)
-              </h4>
-              <p className="font-sans text-xs text-stone-500 leading-relaxed">
-                Certain permissions are hardcoded into Adjung's system architecture and cannot be modified by any platform administrator. This enforces platform safety and ensures absolute authorship integrity:
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans">
-                <div className="bg-stone-50 p-4 border border-stone-200/60 rounded space-y-1">
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-red-700 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded font-bold inline-block">PERMANENT LOCK</span>
-                  <h5 className="font-bold text-stone-800">Intellectual Property Integrity</h5>
-                  <p className="text-stone-500 text-[11px] leading-relaxed">
-                    Writers, Editors, and Chief Editors are strictly forbidden from modifying or editing another scholar's original intellectual work (Essays, Articles, Biographies, or Folios).
-                  </p>
-                </div>
-
-                <div className="bg-stone-50 p-4 border border-stone-200/60 rounded space-y-1">
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-red-700 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded font-bold inline-block">PERMANENT LOCK</span>
-                  <h5 className="font-bold text-stone-800">At Least One Chief Editor</h5>
-                  <p className="text-stone-500 text-[11px] leading-relaxed">
-                    The platform requires at least one active, non-suspended Chief Editor to always exist in order to avoid administrative deadlocks or lockout states.
-                  </p>
-                </div>
-
-                <div className="bg-stone-50 p-4 border border-stone-200/60 rounded space-y-1">
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-red-700 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded font-bold inline-block">PERMANENT LOCK</span>
-                  <h5 className="font-bold text-stone-800">Self-Administration Safeguards</h5>
-                  <p className="text-stone-500 text-[11px] leading-relaxed">
-                    An administrator is structurally prevented from demoting, deauthorizing, or suspending their own account to guarantee self-administration safety.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
+        <RolesPoliciesTab
+          currentUser={currentUser}
+          systemSettings={systemSettings}
+          setSystemSettings={setSystemSettings}
+          showToast={showToast}
+          refreshDbState={refreshDbState}
+          hasPermission={hasPermission}
+        />
       )}
 
       {/* ========================================================= */}
@@ -2468,108 +1335,12 @@ Source: MIT Technology Review, 2024
       {/* 9. SYSTEM (LOGS)                                          */}
       {/* ========================================================= */}
       {editoriumActiveTab === 'system' && (
-        !hasPermission('manageLogs') ? (
-          <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
-            <Lock className="w-12 h-12 text-[#802334] mx-auto mb-2 animate-pulse" />
-            <span className="font-serif italic text-stone-500 block text-lg font-semibold">Audit Logs Locked</span>
-            <p className="text-stone-500 text-xs font-sans leading-relaxed">
-              Your administrative account (Role: <strong className="text-adjung-maroon">{currentUser.role}</strong>) does not have the necessary <strong>Manage Logs</strong> privileges. Please contact the Chief Editor to adjust your permissions.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
-              <div className="border-b border-stone-100 pb-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="text-left space-y-1">
-                  <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5">
-                    <FileText className="w-5 h-5 text-adjung-maroon" />
-                    System Audit Logs
-                  </h3>
-                  <p className="font-mono text-[10px] text-stone-400 uppercase tracking-wider">
-                    Chronological journal of administrative actions, safety events, and curator logs
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search logs..."
-                      value={logsSearchQuery}
-                      onChange={(e) => setLogsSearchQuery(e.target.value)}
-                      className="border border-stone-200 p-1.5 pl-7 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white"
-                    />
-                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2 top-2.5" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      refreshDbState();
-                      showToast('Audit trail synchronized.', 'info');
-                    }}
-                    className="bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-mono text-[10px] uppercase tracking-wider py-1.5 px-3 rounded shadow-sm cursor-pointer"
-                  >
-                    Sync Trail
-                  </button>
-                </div>
-              </div>
-
-              {/* Logs Table */}
-              <div className="overflow-x-auto border border-stone-200 rounded">
-                <table className="w-full text-left border-collapse font-sans text-xs">
-                  <thead>
-                    <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500">
-                      <th className="p-3.5 pl-4">Timestamp</th>
-                      <th className="p-3.5">Operator</th>
-                      <th className="p-3.5">Administrative Role</th>
-                      <th className="p-3.5">Action Executed</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-150 font-sans text-xs text-stone-700">
-                    {db.getLogs()
-                      .filter(log => {
-                        const query = logsSearchQuery.trim().toLowerCase();
-                        return !query || 
-                          log.operator.toLowerCase().includes(query) ||
-                          log.role.toLowerCase().includes(query) ||
-                          log.action.toLowerCase().includes(query);
-                      })
-                      .map((log) => (
-                        <tr key={log.id} className="hover:bg-stone-50/40 transition">
-                          <td className="p-3.5 pl-4 font-mono text-[11px] text-stone-500 whitespace-nowrap">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </td>
-                          <td className="p-3.5 font-bold text-stone-800">
-                            {log.operator}
-                          </td>
-                          <td className="p-3.5">
-                            <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded ${
-                              log.role === 'Chief Editor'
-                                ? 'bg-adjung-maroon text-[#FDFDFD] font-semibold'
-                                : log.role === 'Editor'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-200/50'
-                                : 'bg-stone-100 text-stone-600'
-                            }`}>
-                              {log.role}
-                            </span>
-                          </td>
-                          <td className="p-3.5 font-serif text-sm text-stone-800 text-left">
-                            {log.action}
-                          </td>
-                        </tr>
-                      ))}
-                    {db.getLogs().length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="p-8 text-center italic text-stone-400">
-                          No system audit records found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )
+        <SystemLogsTab
+          currentUser={currentUser}
+          showToast={showToast}
+          refreshDbState={refreshDbState}
+          hasPermission={hasPermission}
+        />
       )}
 
       {/* ========================================================= */}

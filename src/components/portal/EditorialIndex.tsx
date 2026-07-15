@@ -21,7 +21,7 @@ export function EditorialIndex({
   onSearchQueryChange,
 }: EditorialIndexProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [typeFilter, setTypeFilter] = useState<'All' | 'Article' | 'Essay' | 'Note'>('All');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Essay' | 'Note'>('All');
   const [languageFilter, setLanguageFilter] = useState<string>('All');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title-az' | 'title-za'>('newest');
@@ -178,7 +178,7 @@ export function EditorialIndex({
           {/* Type Filters */}
           <div className="flex flex-wrap items-center gap-1 text-xs font-mono select-none">
             <span className="text-[#111111]/40 uppercase tracking-wider mr-2 text-[10px]">Type:</span>
-            {(['All', 'Article', 'Essay'] as const).map(type => (
+            {(['All', 'Essay', 'Note'] as const).map(type => (
               <button
                 key={type}
                 type="button"
@@ -189,7 +189,7 @@ export function EditorialIndex({
                     : 'bg-white text-stone-600 border-stone-200 hover:text-[#802334] hover:border-stone-300'
                 }`}
               >
-                {type === 'Article' ? 'Essay' : (type === 'Essay' ? 'Classical Essay' : type)}
+                {type}
               </button>
             ))}
           </div>
@@ -274,7 +274,7 @@ export function EditorialIndex({
                         parseInlineFormatting(item.title)
                       )}
                     </td>
-                    <td className="p-3 font-sans"><span className="text-[#802334] font-semibold">{item.contentType === 'Article' ? 'Essay' : item.contentType}</span></td>
+                    <td className="p-3 font-sans"><span className="text-[#802334] font-semibold">{item.contentType}</span></td>
                     <td className="p-3 font-mono text-[#111111]/50 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
                     <td className="p-3 font-mono text-[#111111]/40 text-[10px] pr-4">{item.slug}</td>
                   </tr>

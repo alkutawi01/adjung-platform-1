@@ -13,6 +13,9 @@ import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { firestoreService } from '../../utils/firestoreService';
 import { RichTextEditable } from './RichTextEditable';
 import { FloatingFormatToolbar } from './FloatingFormatToolbar';
+import { TableOfContents } from './TableOfContents';
+import { FootnotesCitationsSection } from './FootnotesCitationsSection';
+import { EntryActionsMenu } from './EntryActionsMenu';
 
 interface EntryRendererProps {
   entry: Entry;
@@ -763,7 +766,7 @@ export function EntryRenderer({
     if (blockIdx === -1) return;
 
     let block: ContentBlock;
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const para = paragraphs[blockIdx];
       block = parseContentToBlocks(para)[0] || { type: 'paragraph', text: para };
     } else {
@@ -786,7 +789,7 @@ export function EntryRenderer({
   const handleValueChange = (textareaId: string, newValue: string, footnotesToSave = footnotes) => {
     if (textareaId.startsWith('editorial-content-textarea-visual-')) {
       updateVisualBlockText(textareaId, newValue);
-    } else if ((contentType === 'Essay' || contentType === 'Article') && textareaId.startsWith('editorial-content-textarea-')) {
+    } else if ((contentType === 'Essay') && textareaId.startsWith('editorial-content-textarea-')) {
       const blockIdx = parseInt(textareaId.replace('editorial-content-textarea-', ''), 10);
       handleContentChange(blockIdx, newValue);
     } else {
@@ -1020,7 +1023,7 @@ export function EntryRenderer({
   };
 
   const getFullContentString = () => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       return paragraphs.join('\n\n');
     }
     return content;
@@ -1033,7 +1036,7 @@ export function EntryRenderer({
     currentType = contentType
   ): string | null => {
     // 1. Check entry content limit
-    const cleanContent = (currentType === 'Essay' || currentType === 'Article') 
+    const cleanContent = (currentType === 'Essay') 
       ? paragraphs.join('\n\n') 
       : currentContent;
     const strippedContent = cleanContent.replace(/<[^>]*>/g, ' ');
@@ -1042,12 +1045,12 @@ export function EntryRenderer({
     if (currentType === 'Note' && wordCount > 100) {
       return `Note exceeds the maximum limit of 100 words (Current: ${wordCount} words). Please shorten your note.`;
     }
-    if ((currentType === 'Essay' || currentType === 'Article') && wordCount > 10000) {
+    if ((currentType === 'Essay') && wordCount > 10000) {
       return `Essay/Article exceeds the maximum limit of 10,000 words (Current: ${wordCount} words). Please shorten your writing.`;
     }
 
     // 2. Check each footnote limit
-    if (currentType === 'Essay' || currentType === 'Article') {
+    if (currentType === 'Essay') {
       for (let i = 0; i < currentFootnotes.length; i++) {
         const fnWords = getWordCount(currentFootnotes[i]);
         if (fnWords > 1000) {
@@ -1057,7 +1060,7 @@ export function EntryRenderer({
     }
 
     // 3. Check each margin note limit
-    if (currentType === 'Essay' || currentType === 'Article') {
+    if (currentType === 'Essay') {
       const keys = Object.keys(currentMarginNotes);
       for (const key of keys) {
         const idx = parseInt(key, 10);
@@ -1086,7 +1089,7 @@ export function EntryRenderer({
     const inserted = beforeText + selectedText + afterText;
     const newValue = val.substring(0, start) + inserted + val.substring(end);
 
-    if ((contentType === 'Essay' || contentType === 'Article') && activeTextareaIdx !== null) {
+    if ((contentType === 'Essay') && activeTextareaIdx !== null) {
       handleContentChange(activeTextareaIdx, newValue);
     } else {
       setContent(newValue);
@@ -1111,7 +1114,7 @@ export function EntryRenderer({
     const after = val.substring(lineStart);
 
     const newValue = before + prefix + after;
-    if ((contentType === 'Essay' || contentType === 'Article') && activeTextareaIdx !== null) {
+    if ((contentType === 'Essay') && activeTextareaIdx !== null) {
       handleContentChange(activeTextareaIdx, newValue);
     } else {
       setContent(newValue);
@@ -1274,9 +1277,9 @@ export function EntryRenderer({
           tags: updatedTags,
           slug: updatedSlug,
           content: updatedContent,
-          footnotes: (updatedType === 'Essay' || updatedType === 'Article') ? updatedFootnotes : undefined,
-          footnotesData: (updatedType === 'Essay' || updatedType === 'Article') ? updatedFootnotesData : undefined,
-          marginNotes: (updatedType === 'Essay' || updatedType === 'Article') ? updatedMarginNotes : undefined,
+          footnotes: (updatedType === 'Essay') ? updatedFootnotes : undefined,
+          footnotesData: (updatedType === 'Essay') ? updatedFootnotesData : undefined,
+          marginNotes: (updatedType === 'Essay') ? updatedMarginNotes : undefined,
           marginNotesData: updatedMarginNotesData,
           excerpt: updatedExcerpt,
           featuredImage: updatedFeaturedImage,
@@ -1314,8 +1317,8 @@ export function EntryRenderer({
           content: stateRef.current.content,
           excerpt: stateRef.current.excerpt,
           featuredImage: stateRef.current.featuredImage,
-          footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
-          marginNotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.marginNotes : undefined,
+          footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+          marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
           marginNotesData: stateRef.current.marginNotesData,
           status: updatedStatus,
           visibility: updatedVisibility,
@@ -1337,8 +1340,8 @@ export function EntryRenderer({
         tags: stateRef.current.tags,
         slug: stateRef.current.slug,
         content: stateRef.current.content,
-        footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
-        marginNotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.marginNotes : undefined,
+        footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+        marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
         marginNotesData: stateRef.current.marginNotesData,
         excerpt: stateRef.current.excerpt,
         featuredImage: stateRef.current.featuredImage,
@@ -1445,8 +1448,8 @@ export function EntryRenderer({
       content: stateRef.current.content,
       excerpt: stateRef.current.excerpt,
       featuredImage: stateRef.current.featuredImage,
-      footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
-      marginNotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.marginNotes : undefined,
+      footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+      marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
       status: stateRef.current.status,
       visibility: stateRef.current.visibility,
       tags: stateRef.current.tags,
@@ -1473,9 +1476,9 @@ export function EntryRenderer({
       content: stateRef.current.content,
       excerpt: stateRef.current.excerpt,
       featuredImage: stateRef.current.featuredImage,
-      footnotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotes : undefined,
-      footnotesData: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.footnotesData : undefined,
-      marginNotes: (stateRef.current.contentType === 'Essay' || stateRef.current.contentType === 'Article') ? stateRef.current.marginNotes : undefined,
+      footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+      footnotesData: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotesData : undefined,
+      marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
       marginNotesData: stateRef.current.marginNotesData,
       status: stateRef.current.status,
       visibility: stateRef.current.visibility,
@@ -1497,7 +1500,7 @@ export function EntryRenderer({
     setTags(rev.tags);
     setSlug(rev.slug);
 
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const parts = rev.content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
       setParagraphs(parts.length > 0 ? parts : [rev.content]);
     }
@@ -1515,9 +1518,9 @@ export function EntryRenderer({
       tags: rev.tags,
       slug: rev.slug,
       content: rev.content,
-      footnotes: (contentType === 'Essay' || contentType === 'Article') ? rev.footnotes : undefined,
-      footnotesData: (contentType === 'Essay' || contentType === 'Article') ? rev.footnotesData : undefined,
-      marginNotes: (contentType === 'Essay' || contentType === 'Article') ? rev.marginNotes : undefined,
+      footnotes: (contentType === 'Essay') ? rev.footnotes : undefined,
+      footnotesData: (contentType === 'Essay') ? rev.footnotesData : undefined,
+      marginNotes: (contentType === 'Essay') ? rev.marginNotes : undefined,
       marginNotesData: rev.marginNotesData,
       excerpt: rev.excerpt,
       featuredImage: rev.featuredImage,
@@ -1759,7 +1762,7 @@ export function EntryRenderer({
   };
 
   const handleUpdateContentImage = (blockIndex: number, newUrl: string, newAlt: string) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const updated = [...paragraphs];
       updated[blockIndex] = `![${newAlt.trim()}](${newUrl.trim()})`;
       setParagraphs(updated);
@@ -2377,45 +2380,17 @@ export function EntryRenderer({
   };
 
   const renderTableOfContents = () => {
-    if (contentType === 'Note') return null;
-    
-    const allBlocks = parseContentToBlocks(getFullContentString());
-    const headings = allBlocks.filter(b => b.type === 'heading') as HeadingBlock[];
-    
-    if (headings.length === 0) return null;
-    
     return (
-      <div className="mb-8 border border-stone-200/80 p-4 rounded bg-stone-50/20 text-left font-sans text-xs">
-        <details className="group" open>
-          <summary className="font-mono text-[9px] uppercase tracking-wider text-Adjung-maroon font-bold cursor-pointer list-none flex items-center justify-between">
-            <span>Table of Contents Outline</span>
-            <span className="text-stone-400 group-open:hidden">show</span>
-            <span className="text-stone-400 hidden group-open:inline">hide</span>
-          </summary>
-          
-          <ul className="mt-3.5 space-y-2 border-t border-stone-200/50 pt-3">
-            {headings.map((h, hIdx) => {
-              const levelIndent = h.level === 1 ? '' : (h.level === 2 ? 'pl-4 border-l border-stone-200' : 'pl-8 border-l border-stone-200');
-              const levelMarker = h.level === 1 ? '§' : (h.level === 2 ? '•' : '◦');
-              
-              return (
-                <li key={`toc-${hIdx}`} className={`${levelIndent} text-stone-600 hover:text-Adjung-maroon font-serif`}>
-                  <a href={`#heading-${hIdx}`} className="flex items-baseline gap-1.5 transition-colors">
-                    <span className="font-mono text-[9px] text-Adjung-maroon/60 select-none">{levelMarker}</span>
-                    <span className="text-xs">{parseInlineFormatting(h.text)}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
-      </div>
+      <TableOfContents
+        contentType={contentType}
+        fullContent={getFullContentString()}
+      />
     );
   };
 
   // Visual Mode Helper Actions
   const handleVisualBlockChange = (blockIdx: number, updatedBlock: ContentBlock) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const serialized = serializeBlocks([updatedBlock]);
       const updatedParagraphs = [...paragraphs];
       updatedParagraphs[blockIdx] = serialized;
@@ -2436,7 +2411,7 @@ export function EntryRenderer({
 
   const handleMoveBlockUp = (idx: number) => {
     if (idx === 0) return;
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const updated = [...paragraphs];
       const temp = updated[idx];
       updated[idx] = updated[idx - 1];
@@ -2461,7 +2436,7 @@ export function EntryRenderer({
   };
 
   const handleMoveBlockDown = (idx: number) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       if (idx === paragraphs.length - 1) return;
       const updated = [...paragraphs];
       const temp = updated[idx];
@@ -2488,7 +2463,7 @@ export function EntryRenderer({
   };
 
   const handleDuplicateBlock = (idx: number) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const updated = [...paragraphs];
       updated.splice(idx + 1, 0, paragraphs[idx]);
       setParagraphs(updated);
@@ -2507,7 +2482,7 @@ export function EntryRenderer({
   };
 
   const handleInsertBlockBelow = (idx: number) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const updated = [...paragraphs];
       updated.splice(idx + 1, 0, 'New paragraph content.');
       setParagraphs(updated);
@@ -2528,7 +2503,7 @@ export function EntryRenderer({
   };
 
   const handleDeleteBlock = (idx: number) => {
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       if (paragraphs.length <= 1) return;
       const updated = paragraphs.filter((_, i) => i !== idx);
       setParagraphs(updated);
@@ -2574,7 +2549,7 @@ export function EntryRenderer({
       newBlockText = '<quote type="arabic">\n  <arabic>اكتب النص العربي هنا</arabic>\n  <translation>Terjemahan di sini...</translation>\n</quote>';
     }
 
-    if (contentType === 'Essay' || contentType === 'Article') {
+    if (contentType === 'Essay') {
       const updated = [...paragraphs, newBlockText];
       setParagraphs(updated);
       const newContent = updated.join('\n\n');
@@ -2691,7 +2666,7 @@ export function EntryRenderer({
             />
           </div>
           
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
@@ -2783,7 +2758,7 @@ export function EntryRenderer({
             </div>
           )}
           
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
@@ -2859,7 +2834,7 @@ export function EntryRenderer({
             </div>
           </div>
           
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
@@ -2927,7 +2902,7 @@ export function EntryRenderer({
             )}
           </div>
           
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
@@ -3033,7 +3008,7 @@ export function EntryRenderer({
               e.stopPropagation();
               handleMoveBlockDown(idx);
             }}
-            disabled={idx === ((contentType === 'Essay' || contentType === 'Article') ? paragraphs.length - 1 : parseContentToBlocks(content).length - 1)}
+            disabled={idx === ((contentType === 'Essay') ? paragraphs.length - 1 : parseContentToBlocks(content).length - 1)}
             className="p-1 hover:text-Adjung-maroon hover:bg-stone-50 rounded transition disabled:opacity-30 disabled:hover:bg-transparent"
             title="Move down"
           >
@@ -3108,7 +3083,7 @@ export function EntryRenderer({
             className="w-full min-h-[180px] bg-stone-50/40 hover:bg-stone-50/70 focus:bg-white border border-stone-200/85 focus:border-Adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
           />
 
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
               <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-4">
                 Essay Margin Notes Registry (Source Mode)
@@ -3150,7 +3125,7 @@ export function EntryRenderer({
             </div>
           )}
 
-          {(contentType === 'Essay' || contentType === 'Article') && (
+          {(contentType === 'Essay') && (
             <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold">
@@ -3235,7 +3210,7 @@ export function EntryRenderer({
    * This is used for BOTH reading/viewing and the Writing Desk's live preview.
    */
   const renderPublishedContent = () => {
-    const isArticle = contentType === 'Essay' || contentType === 'Article';
+    const isArticle = contentType === 'Essay';
     const isNote = contentType === 'Note';
 
     const allEntries = db.getEntriesByAuthor(entry.authorId || '');
@@ -3313,99 +3288,19 @@ export function EntryRenderer({
                 <span>{readingTimeStr}</span>
               </div>
               
-              <div 
-                className="relative"
-                onMouseLeave={() => setShowActionsMenu(false)}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowActionsMenu(!showActionsMenu)}
-                  className="text-stone-500 hover:text-[#802334] font-bold text-sm tracking-normal px-2 transition-colors cursor-pointer select-none bg-transparent border-0"
-                  title="Actions Menu"
-                >
-                  ⋯
-                </button>
-                {showActionsMenu && (
-                  <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-stone-200 rounded shadow-md py-1 z-50 text-left normal-case tracking-normal">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = getCanonicalUrl();
-                        navigator.clipboard.writeText(url);
-                        showToast('Canonical link copied to clipboard!', 'success');
-                        setShowActionsMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Copy Link
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const citeText = `${authorName}. (${new Date(entry.publishedDate || entry.createdDate).getFullYear()}). ${title || 'Untitled'}. Adjung. Retrieved from ${getCanonicalUrl()}`;
-                        navigator.clipboard.writeText(citeText);
-                        showToast('Citation copied to clipboard (APA Format)!', 'success');
-                        setShowActionsMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Citation
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.print();
-                        setShowActionsMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Print
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.print();
-                        setShowActionsMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Export PDF
-                    </button>
-                    {currentUser?.id === entry.authorId && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingEntry(entry);
-                            setSelectedEntry(null);
-                            setActiveTab('desk');
-                            setShowActionsMenu(false);
-                          }}
-                          className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans font-medium text-[#802334]"
-                        >
-                          Edit
-                        </button>
-                        <div className="h-px bg-stone-100 my-1" />
-                      </>
-                    )}
-                    <div className="h-px bg-stone-100 my-1" />
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-300 cursor-not-allowed flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Revision History (KIV)
-                    </button>
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full text-left px-3 py-1.5 text-xs text-stone-300 cursor-not-allowed flex items-center gap-2 border-0 bg-transparent font-sans"
-                    >
-                      Report Error (KIV)
-                    </button>
-                  </div>
-                )}
-              </div>
+              <EntryActionsMenu
+                showActionsMenu={showActionsMenu}
+                setShowActionsMenu={setShowActionsMenu}
+                entry={entry}
+                getCanonicalUrl={getCanonicalUrl}
+                showToast={showToast}
+                authorName={authorName}
+                title={title}
+                currentUser={currentUser}
+                setEditingEntry={setEditingEntry}
+                setSelectedEntry={setSelectedEntry}
+                setActiveTab={setActiveTab}
+              />
             </div>
 
             {/* Featured Image */}
@@ -3506,9 +3401,9 @@ export function EntryRenderer({
         {renderTableOfContents()}
 
         {/* Content Area Grid */}
-        <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : ((contentType === 'Essay' || contentType === 'Article') ? 'max-w-5xl mx-auto' : 'max-w-3xl mx-auto')} relative`}>
+        <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : ((contentType === 'Essay') ? 'max-w-5xl mx-auto' : 'max-w-3xl mx-auto')} relative`}>
           
-          <div className={`${mode === 'edit' ? ((contentType === 'Essay' || contentType === 'Article') ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-xs leading-relaxed tracking-normal font-serif relative`}>
+          <div className={`${mode === 'edit' ? ((contentType === 'Essay') ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-xs leading-relaxed tracking-normal font-serif relative`}>
             
             {/* Custom context menu trigger in edit mode */}
             {mode === 'edit' && contextCoords && (
@@ -3526,7 +3421,7 @@ export function EntryRenderer({
                 >
                   Insert Footnote
                 </button>
-                {(contentType === 'Essay' || contentType === 'Article') && (
+                {(contentType === 'Essay') && (
                   <button 
                     onMouseDown={(e) => {
                       e.preventDefault();
@@ -3574,7 +3469,7 @@ export function EntryRenderer({
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertInterlinearVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Interlinear Note (Gloss)">Gloss</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertLinkVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Link">Link</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Auto Number)">FN</button>
-                {(contentType === 'Essay' || contentType === 'Article') && (
+                {(contentType === 'Essay') && (
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('margin-note')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Margin Note">MN</button>
                 )}
               </div>
@@ -3606,7 +3501,7 @@ export function EntryRenderer({
                   const citeMap = getCitationsMap();
                   const fMap = getFootnotesReadingOrderMap().map;
                   const mOrderMap = getMarginNotesReadingOrderMap().map;
-                  const showMarginNotes = contentType === 'Essay' || contentType === 'Article';
+                  const showMarginNotes = contentType === 'Essay';
                   
                   const viewParagraphs = content.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
                   return viewParagraphs.map((para, index) => {
@@ -3655,7 +3550,7 @@ export function EntryRenderer({
           </div>
 
           {/* Right margin notes sidebar */}
-          {(contentType === 'Essay' || contentType === 'Article') && mode === 'edit' && (
+          {(contentType === 'Essay') && mode === 'edit' && (
             <div className="hidden lg:block lg:col-span-4 relative">
               {(() => {
                 const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
@@ -3812,220 +3707,34 @@ export function EntryRenderer({
           </div>
         )}
 
-        {/* Margin Notes Fallback for Smaller Screens */}
-        {contentType === 'Article' && (
-          <div className="lg:hidden mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700 animate-fade-in">
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-stone-100 select-none">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
-                Scholarly Margin Notes
-              </h3>
-            </div>
-            
-            {(() => {
-               const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
-               const citeMap = getCitationsMap();
-               const fMap = getFootnotesReadingOrderMap().map;
-               if (occurrences.length === 0) {
-                 return (
-                   <div className="text-stone-400 font-serif italic text-sm py-4">
-                     No margin notes registered yet. Right-click inside text editor to insert margin notes.
-                   </div>
-                 );
-               }
-               return (
-                 <div className="space-y-4">
-                   {occurrences.map(id => (
-                     <div key={id} className="bg-white border border-stone-100 p-4 rounded-md shadow-sm relative">
-                       <div className="absolute top-4 left-4 select-none">
-                          <span className="font-sans text-[10px] font-medium align-super text-Adjung-maroon">
-                            ({toRoman(mMap[id]).toLowerCase()})
-                          </span>
-                        </div>
-                       <div className="pl-14">
-                         {mode === 'edit' ? (
-                           <div>
-                             <textarea
-                               value={marginNotesData[id] || ''}
-                               onChange={(e) => {
-                                 const val = e.target.value;
-                                 const updated = { ...marginNotesData, [id]: val };
-                                 setMarginNotesData(updated);
-                                 triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
-                               }}
-                               placeholder="Add margin note here..."
-                               rows={2}
-                               className="w-full bg-stone-50 border border-stone-200 focus:border-Adjung-maroon rounded p-2 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
-                             />
-                             <div className="mt-2 text-right">
-                               <button 
-                                 type="button" 
-                                 onClick={() => deleteNote(id, 'margin-note')}
-                                 className="text-stone-400 hover:text-red-600 text-[10px] font-mono uppercase tracking-wider transition-colors"
-                               >
-                                 Delete Note
-                               </button>
-                             </div>
-                           </div>
-                         ) : (
-                           <div className="font-serif text-sm leading-relaxed text-stone-600">
-                             {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mMap)}
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               );
-            })()}
-          </div>
-        )}
-
-        {/* Footnotes Section */}
-        {activeSpec.visibility.showFootnotes && getOrderedFootnotesToRender().length > 0 && (
-          <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
-                Scholarly Footnotes & Citations
-              </h3>
-              {mode === 'edit' && (
-                <span className="text-[9px] font-mono text-stone-400">Total registered: {getOrderedFootnotesToRender().length}</span>
-              )}
-            </div>
-
-            {mode === 'edit' ? (
-              <div className="space-y-4">
-                {getOrderedFootnotesToRender().map((item) => {
-                  return (
-                    <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
-                      <span className="font-mono text-xs text-Adjung-maroon font-semibold w-5 mt-1.5 select-none">
-                        [{item.displayNum}]
-                      </span>
-                      <div className="flex-grow space-y-1">
-                        <div className="flex items-center justify-between select-none">
-                          <span className="text-[8px] font-mono uppercase text-stone-400">Footnote Text (Internal ID: [^{item.originalId}])</span>
-                          <span className={getWordCount(item.text) > 1000 ? "text-red-600 font-semibold font-mono text-[9px]" : "text-stone-400 font-mono text-[9px]"}>
-                            {getWordCount(item.text)}/1000 words
-                          </span>
-                        </div>
-                        <textarea
-                          value={item.text}
-                          onChange={(e) => {
-                            handleFootnoteChange(item.originalId, e.target.value);
-                          }}
-                          rows={2}
-                          className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-Adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
-                          placeholder={`Enter footnote ${item.displayNum} text content...`}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFootnote(item.originalId)}
-                        className="text-stone-300 hover:text-red-700 p-1 rounded mt-1 select-none cursor-pointer"
-                        title="Remove Footnote"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <ol className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
-                {getOrderedFootnotesToRender().map((item, idx) => {
-                  const fMap = getFootnotesReadingOrderMap().map;
-                  const citeMap = getCitationsMap();
-                  return (
-                    <li 
-                      key={idx} 
-                      id={item.originalId.startsWith('fn-') ? `footnote-dest-${item.originalId}` : `footnote-dest-legacy-${item.originalId}`} 
-                      className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700"
-                    >
-                      <span 
-                        className="font-sans text-[10px] font-medium align-super text-Adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-Adjung-maroon/80"
-                        title="Go back to citation"
-                        onClick={() => {
-                          const refId = item.originalId.startsWith('fn-') ? `fnref-${item.originalId}` : `fnref-legacy-${item.originalId}`;
-                          const refEl = document.getElementById(refId);
-                          if (refEl) {
-                            refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            refEl.classList.remove('citation-flash');
-                            void refEl.offsetWidth; // Trigger reflow
-                            refEl.classList.add('citation-flash');
-                            setTimeout(() => refEl.classList.remove('citation-flash'), 2500);
-                          }
-                        }}
-                      >
-                        ({item.displayNum})
-                      </span>
-                      
-                      <div className="flex-grow text-left text-stone-700">
-                        {parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap)}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
-        )}
-
-        {/* References & Bibliography */}
-        {activeSpec.visibility.showCitations && citations.length > 0 && (
-          <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
-                References & Bibliography
-              </h3>
-              <span className="font-mono text-[9px] text-stone-400 uppercase">
-                Sorted by {referenceSortOrder === 'alphabetical' ? 'Author' : 'Appearance'}
-              </span>
-            </div>
-
-            <ul className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
-              {(() => {
-                const citeMap = getCitationsMap();
-                const sorted = [...citations].sort((a, b) => {
-                  if (referenceSortOrder === 'alphabetical') {
-                    return a.author.localeCompare(b.author);
-                  } else {
-                    const aIdx = citeMap[a.id] || 9999;
-                    const bIdx = citeMap[b.id] || 9999;
-                    return aIdx - bIdx;
-                  }
-                });
-
-                return sorted.map((cit, idx) => {
-                  const displayIdx = citeMap[cit.id] || idx + 1;
-                  return (
-                    <li 
-                      key={cit.id} 
-                      id={`reference-${cit.id}`}
-                      className="text-stone-700 text-left hover:bg-stone-50/50 p-1.5 rounded transition flex items-baseline gap-2"
-                    >
-                      <span className="font-mono text-xs text-Adjung-maroon font-medium select-none">
-                        {referenceSortOrder === 'appearance' ? `[${displayIdx}]` : '•'}
-                      </span>
-                      <div className="flex-grow">
-                        <strong className="font-sans font-semibold text-stone-900">{cit.author}</strong> ({cit.year}). 
-                        <span> "{cit.title}."</span> <em>{cit.publisher}</em>.
-                        {cit.url && (
-                          <a href={cit.url} target="_blank" rel="noopener noreferrer" className="text-Adjung-maroon hover:underline ml-1.5 font-mono text-[10px] break-all">
-                            [Link]
-                          </a>
-                        )}
-                        {cit.doi && (
-                          <span className="text-stone-400 ml-1.5 font-mono text-[10px]">
-                            doi:{cit.doi}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  );
-                });
-              })()}
-            </ul>
-          </div>
-        )}
+        <FootnotesCitationsSection
+          contentType={contentType}
+          mode={mode}
+          marginNotesData={marginNotesData}
+          setMarginNotesData={setMarginNotesData}
+          deleteNote={deleteNote}
+          footnotes={footnotes}
+          footnotesData={footnotesData}
+          activeSpec={activeSpec}
+          orderedFootnotes={getOrderedFootnotesToRender()}
+          handleFootnoteChange={handleFootnoteChange}
+          handleRemoveFootnote={handleRemoveFootnote}
+          citations={citations}
+          referenceSortOrder={referenceSortOrder}
+          marginNotesReadingOrder={getMarginNotesReadingOrderMap()}
+          citationsMap={getCitationsMap()}
+          footnotesReadingOrder={getFootnotesReadingOrderMap()}
+          triggerSave={triggerSave}
+          content={content}
+          status={status}
+          visibility={visibility}
+          tags={tags}
+          slug={slug}
+          title={title}
+          excerpt={excerpt}
+          featuredImage={featuredImage}
+          revisions={revisions}
+        />
 
 
         {activeSpec.visibility.showNoteFooter && (
@@ -4078,7 +3787,7 @@ export function EntryRenderer({
    * but rather having Draft and Published share the same gorgeous, high-contrast, distraction-free visual canvas.
    */
   const renderEditableContent = () => {
-    const isArticle = contentType === 'Article';
+    const isArticle = contentType === 'Essay';
     const citeMap = getCitationsMap();
 
     const PlusMenu = () => (
@@ -4292,7 +4001,7 @@ export function EntryRenderer({
             {/* Metadata Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-Adjung-maroon">{contentType === 'Article' ? 'Essay' : contentType}</span>
+                <span className="font-semibold text-Adjung-maroon">{contentType}</span>
                 <span className="text-stone-300">|</span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
@@ -4805,8 +4514,8 @@ export function EntryRenderer({
           {/* Core Writing Body */}
           <div className="text-[#111111] font-serif leading-relaxed tracking-normal text-[15px] md:text-base relative min-h-[350px]">
             
-            {/* Note & Essay - Large unified editing viewport */}
-            {(contentType === 'Note' || contentType === 'Essay') && (
+            {/* Note - Large unified editing viewport */}
+            {contentType === 'Note' && (
               <div className="space-y-4">
                 <textarea
                   id="editorial-content-textarea"
@@ -4827,14 +4536,14 @@ export function EntryRenderer({
                     <PlusMenu />
                   </div>
                   <div className="text-[10px] font-mono text-stone-400">
-                    Characters: {getCharCount(content)} | Words: {getWordCount(content)}/{(contentType === 'Note' ? 100 : contentType === 'Essay' ? 1000 : 10000).toLocaleString()}
+                    Characters: {getCharCount(content)} | Words: {getWordCount(content)}/100
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Article - Sequenced modular block editor */}
-            {contentType === 'Article' && (
+            {/* Essay - Sequenced modular block editor */}
+            {contentType === 'Essay' && (
               <div className="space-y-6">
                 {paragraphs.map((para, index) => {
                   const blocksOfPara = parseContentToBlocks(para);
@@ -5102,7 +4811,7 @@ export function EntryRenderer({
           </div>
 
           {/* Footnotes Workspace Section */}
-          {(contentType === 'Essay' || contentType === 'Article') && footnotes.length > 0 && (
+          {(contentType === 'Essay') && footnotes.length > 0 && (
             <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
@@ -5312,12 +5021,12 @@ export function EntryRenderer({
                       }}
                       className="w-full border border-stone-200 bg-white p-1.5 rounded focus:outline-none focus:border-Adjung-maroon font-serif text-sm"
                     >
-                      <option value="Essay">Classical Essay (supports footnotes)</option>
-                      <option value="Article">Essay (supports margin notes & footnotes)</option>
+                      <option value="Note">Note (concise reflection)</option>
+                      <option value="Essay">Essay (supports margin notes & footnotes)</option>
                     </select>
                     <p className="text-[10px] text-stone-400 mt-1">
-                      {contentType === 'Essay' && 'Classical long form (max 1000 words). Supports bottom footnotes (max 1000 words each).'}
-                      {contentType === 'Article' && 'Highly structured (max 10,000 words). Supports side margin notes (max 50 words each) and bottom footnotes (max 1000 words each).'}
+                      {contentType === 'Note' && 'Concise reflection or observation (max 100 words).'}
+                      {contentType === 'Essay' && 'Structured long form (max 10,000 words). Supports side margin notes and bottom footnotes.'}
                     </p>
                   </div>
 
@@ -5567,13 +5276,10 @@ export function EntryRenderer({
                   <Info className="w-3.5 h-3.5 text-Adjung-maroon flex-shrink-0 mt-0.5" />
                   <div>
                     {contentType === 'Note' && (
-                      <span><strong>Note writing mode:</strong> Write your text freely. Notes are succinct, rapid reflections. Arabic/Jawi scripts are auto-formatted with dominant-language right-to-left layout alignment.</span>
+                      <span><strong>Note writing mode:</strong> Write your text freely. Notes are succinct, rapid reflections (max 100 words). Arabic/Jawi scripts are auto-formatted with dominant-language right-to-left layout alignment.</span>
                     )}
                     {contentType === 'Essay' && (
-                      <span><strong>Essay writing mode:</strong> Ideal for long-form literature. Insert footnote markers using <code>[^1]</code>, <code>[^2]</code>, etc. inside paragraphs. Register bottom citations below.</span>
-                    )}
-                    {contentType === 'Article' && (
-                      <span><strong>Article writing mode:</strong> Multi-paragraph publication. Write paragraph blocks with corresponding margin commentary notes that align horizontally on desktop screens.</span>
+                      <span><strong>Essay writing mode:</strong> Structured multi-paragraph publication (max 10,000 words). Write paragraph blocks with corresponding margin commentary notes that align horizontally on desktop screens, or register bottom citations and footnotes.</span>
                     )}
                   </div>
                 </div>
