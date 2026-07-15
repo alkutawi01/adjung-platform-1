@@ -1,0 +1,464 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ChevronLeft, QrCode, Laptop, Smartphone, Check, PenTool, Type, Loader2 } from 'lucide-react';
+import { SignaturePad } from '../../desk/SignaturePad';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore } from '../../../config/firebase';
+import SimulatedMobileCanvas from './SimulatedMobileCanvas';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.3 } }
+};
+
+// Helper to render drawn strokes as beautiful smooth vector SVG path
+const renderStrokesToSvg = (strokes: any[], strokeColor = '#802334') => {
+  if (!strokes || strokes.length === 0) return null;
+  
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  strokes.forEach(stroke => {
+    stroke.forEach((p: any) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+  });
+  
+  const padding = 12;
+  const width = Math.max(100, (maxX - minX) + padding * 2);
+  const height = Math.max(60, (maxY - minY) + padding * 2);
+  
+  const paths = strokes.map((stroke, i) => {
+    if (stroke.length === 0) return null;
+    let d = `M ${stroke[0].x - minX + padding} ${stroke[0].y - minY + padding}`;
+    for (let j = 1; j < stroke.length; j++) {
+      d += ` L ${stroke[j].x - minX + padding} ${stroke[j].y - minY + padding}`;
+    }
+    return (
+      <path
+        key={i}
+        d={d}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  });
+  
+  return (
+    <svg 
+      viewBox={`0 0 ${width} ${height}`} 
+      className="max-h-full max-w-full mx-auto"
+      style={{ height: '80px' }}
+    >
+      {paths}
+    </svg>
+  );
+};
+
+interface Step8SignatureProps {
+  formData: any;
+  setFormData: (data: any) => void;
+  onNext: () => void;
+  key?: string;
+}
+
+export default function Step8Signature({ formData, setFormData, onNext }: Step8SignatureProps) {
+  const [mode, setMode] = useState<'choose' | 'draw' | 'typo' | 'qr'>('choose');
+  const [isDrawingPadOpen, setIsDrawingPadOpen] = useState(false);
+  const [showSimulatedPhone, setShowSimulatedPhone] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [typedText, setTypedText] = useState(formData.displayName || '');
+  const [sessionId, setSessionId] = useState<string>('');
+
+  const hasRecordedSignature = !!formData.signatureData;
+
+  // Real-time Firestore sync listener
+  useEffect(() => {
+    if (mode === 'qr') {
+      const newSessionId = `sync-session-${Date.now()}`;
+      setSessionId(newSessionId);
+
+      const docRef = doc(firestore, 'signature_sync', newSessionId);
+      const unsubscribe = onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && data.status === 'completed') {
+            setIsSyncing(true);
+            setSyncProgress(0);
+            
+            // Animate progress transition
+            const interval = setInterval(() => {
+              setSyncProgress((prev) => {
+                if (prev >= 100) {
+                  clearInterval(interval);
+                  setTimeout(() => {
+                    setIsSyncing(false);
+                    setFormData({
+                      ...formData,
+                      signatureType: 'draw',
+                      signatureData: { strokes: data.strokes, type: 'drawn' }
+                    });
+                    setMode('choose');
+                  }, 400);
+                  return 100;
+                }
+                return prev + 25;
+              });
+            }, 100);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [mode]);
+
+  const handleSaveDrawn = (data: any) => {
+    setFormData({
+      ...formData,
+      signatureType: 'draw',
+      signatureData: data
+    });
+    setIsDrawingPadOpen(false);
+  };
+
+  const handleSaveTypo = () => {
+    setFormData({
+      ...formData,
+      signatureType: 'typo',
+      signatureData: typedText || formData.displayName
+    });
+    setMode('choose');
+  };
+
+  const handleSimulateMobileSign = (strokes: any[]) => {
+    setIsSyncing(true);
+    setSyncProgress(0);
+    setShowSimulatedPhone(false);
+    
+    const interval = setInterval(() => {
+      setSyncProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsSyncing(false);
+            setFormData({
+              ...formData,
+              signatureType: 'draw',
+              signatureData: { strokes, type: 'drawn' }
+            });
+            setMode('choose');
+          }, 400);
+          return 100;
+        }
+        return prev + 25;
+      });
+    }, 250);
+  };
+
+  const mobileSignUrl = sessionId 
+    ? `${window.location.origin}/mobile-sign?session=${sessionId}`
+    : '';
+
+  return (
+    <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center w-full py-1 h-full justify-between">
+      
+      {/* Title block */}
+      <div className="text-center w-full">
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Your Signature</h2>
+        <p className="text-stone-500 text-xs mb-6 max-w-sm mx-auto leading-relaxed font-sans select-none font-normal">
+          Your signature accompanies your published works as a mark of genuine human authorship.
+        </p>
+      </div>
+
+      {/* Main active interactive block */}
+      <div className="w-full flex-1 flex flex-col justify-center items-center px-2">
+        
+        {/* Syncing Progress Overlay */}
+        {isSyncing && (
+          <div className="bg-white border border-stone-200/80 p-8 rounded-sm text-center shadow-lg w-full max-w-md flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="w-8 h-8 text-adjung-maroon animate-spin" />
+            <div className="space-y-1">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400 font-bold">SIGNATURE SYNCHRONIZATION</p>
+              <p className="font-serif italic text-sm text-stone-600 font-normal">Copying signature data from mobile device...</p>
+            </div>
+            <div className="w-48 bg-stone-100 h-1 rounded-full overflow-hidden relative">
+              <div className="bg-adjung-maroon h-full transition-all duration-300" style={{ width: `${syncProgress}%` }} />
+            </div>
+            <span className="font-mono text-xs text-stone-500 font-bold">{syncProgress}%</span>
+          </div>
+        )}
+
+        {/* Dashboard Choice State */}
+        {!isSyncing && mode === 'choose' && (
+          <div className="w-full space-y-4 max-w-md">
+            
+            {/* If signature exists, display certificate card */}
+            {hasRecordedSignature ? (
+              <div className="border border-stone-200/80 bg-white p-5 rounded-sm shadow-sm relative overflow-hidden select-none">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-adjung-maroon" />
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <span className="font-mono text-[8px] uppercase tracking-widest bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 font-bold">
+                      {formData.signatureType === 'typo' ? 'Typographic Signature' : 'Handdrawn Signature'}
+                    </span>
+                    <h4 className="font-serif text-sm font-semibold text-stone-900 mt-1.5">Aesthetic Seal Registered</h4>
+                  </div>
+                  <Check className="w-4 h-4 text-green-600" />
+                </div>
+
+                {/* The visual preview of the signature */}
+                <div className="bg-stone-50 border border-stone-150 h-28 rounded flex items-center justify-center relative overflow-hidden p-4">
+                  <div className="absolute inset-0 bg-[radial-gradient(#802334/0.015_1px,transparent_1px)] [background-size:12px_12px]" />
+                  {formData.signatureType === 'typo' ? (
+                    <span className="font-signature text-4xl text-adjung-maroon select-none">
+                      {formData.signatureData}
+                    </span>
+                  ) : (
+                    renderStrokesToSvg(formData.signatureData?.strokes)
+                  )}
+                  <span className="absolute bottom-2 right-3 font-mono text-[7px] text-stone-300 tracking-wider">ADJUNG SECURE</span>
+                </div>
+
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-stone-100">
+                  <span className="font-mono text-[7px] text-stone-400">HASH: ADJ-SHA256-{(formData.displayName || 'x').substring(0, 3).toUpperCase()}-77AC</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, signatureType: 'draw', signatureData: '' });
+                      setMode('choose');
+                    }}
+                    className="text-[10px] font-mono uppercase text-adjung-maroon hover:underline font-bold text-adjung-maroon/90 font-normal"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Empty selection state
+              <div className="space-y-3">
+                <button 
+                  type="button" 
+                  className="w-full border border-stone-200 bg-white p-4 text-left hover:border-adjung-maroon focus:border-adjung-maroon hover:shadow-md transition-all duration-300 flex items-center justify-between rounded-sm cursor-pointer group" 
+                  onClick={() => setIsDrawingPadOpen(true)}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <PenTool className="w-4 h-4 text-adjung-maroon/80" /> Draw signature on PC / tablet
+                    </span>
+                    <span className="text-xs text-stone-400 mt-1 font-sans">Use touch trackpad or mouse cursor</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-stone-300 group-hover:text-adjung-maroon rotate-180 transition-transform" />
+                </button>
+                
+                <button 
+                  type="button" 
+                  className="w-full border border-stone-200 bg-white p-4 text-left hover:border-adjung-maroon focus:border-adjung-maroon hover:shadow-md transition-all duration-300 flex items-center justify-between rounded-sm cursor-pointer group" 
+                  onClick={() => setMode('typo')}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <Type className="w-4 h-4 text-adjung-maroon/80" /> Typographic signature
+                    </span>
+                    <span className="text-xs text-stone-400 mt-1 font-sans">Generate stylized signature from your pen name</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-stone-300 group-hover:text-adjung-maroon rotate-180 transition-transform" />
+                </button>
+
+                <button 
+                  type="button" 
+                  className="w-full border border-stone-200 bg-white p-4 text-left hover:border-adjung-maroon focus:border-adjung-maroon hover:shadow-md transition-all duration-300 flex items-center justify-between rounded-sm cursor-pointer group" 
+                  onClick={() => setMode('qr')}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-adjung-maroon/80" /> Draw on mobile (Scan QR)
+                    </span>
+                    <span className="text-xs text-stone-400 mt-1 font-sans">Scan to sign easily on your smartphone touch screen</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-stone-300 group-hover:text-adjung-maroon rotate-180 transition-transform" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Typographic Creator Step */}
+        {!isSyncing && mode === 'typo' && (
+          <div className="w-full mb-4 text-center max-w-md space-y-4">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-2 select-none">Stylized Typographic Mark</p>
+            
+            <div className="border border-stone-200 bg-white h-36 flex items-center justify-center rounded-sm shadow-inner relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(#802334/0.02_1px,transparent_1px)] [background-size:16px_16px]" />
+              <span className="font-signature text-5xl text-adjung-maroon px-6 z-10 select-none">
+                {typedText || 'Your Name'}
+              </span>
+            </div>
+
+            <div className="text-left space-y-1.5">
+              <label className="block text-[9px] font-mono uppercase tracking-wider text-stone-400">Pen & Short Name</label>
+              <input 
+                type="text" 
+                value={typedText}
+                onChange={e => setTypedText(e.target.value)}
+                maxLength={20}
+                className="w-full border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon transition-all font-serif"
+                placeholder="E.g. Al-Ghazali"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button 
+                type="button" 
+                className="flex-1 py-2 border border-stone-200 text-stone-500 font-mono text-[10px] uppercase rounded-sm hover:bg-stone-50 transition cursor-pointer" 
+                onClick={() => setMode('choose')}
+              >
+                Back
+              </button>
+              <button 
+                type="button" 
+                className="flex-1 py-2 bg-adjung-maroon text-[#FDFDFD] font-mono text-[10px] uppercase rounded-sm hover:bg-stone-900 transition font-bold cursor-pointer"
+                onClick={handleSaveTypo}
+              >
+                Use This Signature
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* QR Mobile Synchronization View */}
+        {!isSyncing && mode === 'qr' && (
+          <div className="w-full max-w-lg space-y-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              
+              {/* QR Panel representation */}
+              <div className="border border-stone-200 bg-white p-4 rounded-sm flex flex-col items-center text-center shadow-sm relative">
+                <div className="absolute top-2 left-2 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-adjung-maroon rounded-full animate-ping" />
+                  <span className="font-mono text-[7px] text-stone-400 tracking-widest uppercase">Secured Room</span>
+                </div>
+                
+                {/* Real QR Code via external API */}
+                {sessionId ? (
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(mobileSignUrl)}`}
+                    alt="QR Code for mobile signature"
+                    className="w-32 h-32 mt-2 select-none border border-stone-150 p-1 bg-white rounded"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-stone-50 border border-stone-150 rounded flex items-center justify-center p-2 mt-2">
+                    <Loader2 className="w-6 h-6 text-stone-300 animate-spin" />
+                  </div>
+                )}
+                
+                <span className="font-mono text-[9px] text-stone-400 font-bold tracking-widest mt-3">SESSION: {sessionId ? sessionId.replace('sync-session-', 'ADJ-') : 'PENDING'}</span>
+              </div>
+
+              {/* Instructions and connection simulation trigger */}
+              <div className="space-y-3">
+                <div className="flex gap-2.5 items-start">
+                  <Smartphone className="w-5 h-5 text-adjung-maroon shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-stone-600 font-serif leading-relaxed font-normal">
+                    Scan the QR code on the left with your smartphone's camera to open the mobile <span className="font-sans font-semibold text-stone-800">Calligraphy Pad</span>.
+                  </p>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <Laptop className="w-5 h-5 text-stone-400 shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-stone-600 font-serif leading-relaxed font-normal">
+                    The signature drawn on your phone screen will be synchronized directly to this computer.
+                  </p>
+                </div>
+
+                {/* Direct Testing URL */}
+                <div className="bg-stone-50 border border-stone-200/80 p-2 rounded text-[10px] text-stone-500 font-sans leading-relaxed select-all">
+                  <span className="font-bold text-stone-700 block mb-0.5">Direct link (for local testing):</span>
+                  <a href={mobileSignUrl} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline break-all block">
+                    {mobileSignUrl}
+                  </a>
+                </div>
+
+                {/* Simulated trigger button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSimulatedPhone(true)}
+                    className="w-full py-2 bg-stone-900 hover:bg-adjung-maroon text-white font-mono text-[10px] uppercase rounded-sm transition-all flex items-center justify-center gap-1.5 font-bold cursor-pointer shadow-sm border border-stone-800"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" /> Simulate Smartphone
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="pt-2 flex justify-center">
+              <button 
+                type="button" 
+                className="px-6 py-1.5 border border-stone-200 text-stone-500 font-mono text-[10px] uppercase rounded-sm hover:bg-stone-50 transition cursor-pointer" 
+                onClick={() => setMode('choose')}
+              >
+                Back to Options
+              </button>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* Floating Smartphone Mockup Overlay inside the wizard */}
+      <AnimatePresence>
+        {showSimulatedPhone && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-0 bg-[#0c0a09]/85 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
+          >
+            <SimulatedMobileCanvas 
+              onSave={handleSimulateMobileSign} 
+              onCancel={() => setShowSimulatedPhone(false)} 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full screen drawing modal via native SignaturePad component (resolves issue 1!) */}
+      {isDrawingPadOpen && (
+        <SignaturePad 
+          onSave={handleSaveDrawn} 
+          onCancel={() => setIsDrawingPadOpen(false)} 
+          defaultName={formData.displayName || formData.username}
+        />
+      )}
+
+      {/* Footer Navigation controls */}
+      <div className="w-full border-t border-stone-150 pt-4 mt-2 flex justify-between items-center bg-[#FFFFFF] select-none">
+        <span className="text-[11px] text-stone-400 font-serif italic font-normal">
+          {hasRecordedSignature ? '✓ Signature logged successfully' : 'Please authenticate with a signature'}
+        </span>
+        <button 
+          disabled={!hasRecordedSignature}
+          onClick={onNext} 
+          className={`px-10 py-3 font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm font-bold ${
+            hasRecordedSignature 
+              ? 'bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] cursor-pointer shadow-sm' 
+              : 'bg-stone-100 border border-stone-200 text-stone-300 cursor-not-allowed'
+          }`}
+        >
+          Continue
+        </button>
+      </div>
+
+    </motion.section>
+  );
+}

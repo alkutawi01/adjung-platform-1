@@ -20,10 +20,12 @@ The specification exists to:
 ``` text
 specification/
 ├── README.md
-├── 00_ADJUNG_CONSTITUTION.md
+├── 00_ADJUNG_CONSTITUTION.md       ← Supreme governing document (v2.0 RC1)
 ├── 01_PRODUCT_PHILOSOPHY.md
+├── 02_ARCHITECTURE.md
 ├── ...
 ├── 22_AI_RULES.md
+├── 27_SECTION_LAYOUT_ENGINE.md
 ├── adr/
 ├── appendix/
 └── diagrams/
@@ -33,7 +35,7 @@ specification/
 
 Read the documents in numerical order.
 
-1.  Constitution
+1.  Constitution (SPEC-000 v2.0 RC1)
 2.  Product Philosophy
 3.  Architecture
 4.  Domain Architecture
@@ -49,13 +51,10 @@ Read the documents in numerical order.
 14. Frontpage
 15. RBAC
 16. Access Policy
-17. XML Schema
-18. Metadata
-19. Database Model
-20. UI System
-21. Editorial Style
-22. Terminology
-23. AI Rules
+17. Editorial Style
+18. Terminology
+19. AI Rules
+20. Section Layout Engine (SPEC-027)
 
 ## Specification Rules
 
@@ -69,10 +68,26 @@ Read the documents in numerical order.
 
 Current Status:
 
-Adjung Official Specification v1.0 (Skeleton)
+Adjung Official Specification — Constitution v2.0 RC1
 
-Future versions will progressively expand each specification without
-changing its core intent.
+The Constitution governs all other specifications. Where any
+specification conflicts with the Constitution, the Constitution prevails.
+
+## Delegated Specifications (Planned)
+
+The following specification documents are planned and delegated from
+the Constitution v2.0. They do not yet exist but are reserved:
+
+| Document | Matter |
+|---|---|
+| SPEC-028 | Blueprint grammar and Stanza definitions |
+| SPEC-029 | Composition Budget rules per Section |
+| SPEC-030 | Section Readiness conditions |
+| SPEC-031 | Editorial Rhythm rules |
+| SPEC-032 | Taxonomy of Editorial Asset classes |
+| SPEC-033 | Composition Refresh Policy |
+| SPEC-034 | Platform application topology |
+| SPEC-035 | AI governance and safety rules |
 
 ------------------------------------------------------------------------
 
