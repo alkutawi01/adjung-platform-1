@@ -57,14 +57,17 @@ All of these are written. This layer is in good shape and is not the bottleneck.
 | Capability | Status | Required |
 |---|---|---|
 | Login (Supabase Auth) | ✅ Built, verified live | MVP |
-| Register (real account, not just DB row) | 🚧 Partial — SignUpWizard/invite flow writes to `users` table but never calls `supabase.auth.signUp()`; new users cannot log in yet | MVP |
+| Register (real account, not just DB row) | ✅ Built — both `SignUpWizard` (`handleWizardComplete`) and the invite-simulate flow (`handleCompleteRegistration`) call `supabase.auth.signUp()` before creating `users`/`profiles`/`identities` rows, and link `auth_user_id`. SignUpWizard collects a real password (Step 4, min 8 chars + confirm-match, re-added after the Antigravity component split dropped it); the invite flow generates a random throwaway password since no field exists to collect one for someone else. | MVP |
 | Session persistence | ✅ Built | MVP |
 | Email verification | ❌ Not started | Beta |
 | Biography | ✅ Built — `identities.biography` + `biography_items` timeline now actually persisted (fixed: `saveIdentity` previously only wrote the parent row) | MVP |
 | Signature (typed/drawn) | ✅ Built — `digital_signatures` sub-rows now persisted via `saveIdentity`; verified the `account_id`-based upsert handles both new and existing identities correctly | MVP |
+| Mobile QR signature sync (draw on phone, sync to desktop wizard) | ✅ Built — was Firestore-only in the Antigravity branch (`Step8Signature.tsx` + `MobileSignCanvas.tsx` imported `firebase/firestore` directly, a leftover that would not have compiled against this project's Supabase-only stack). Rewired to Supabase Realtime Broadcast channels (`signature_sync:{sessionId}`) — no new table needed, this is transient handshake data. | MVP (part of signup) |
 | ~~Avatar~~ | N/A — intentionally not part of Adjung. Identity is carried by Signature, not a photo. | — |
 
 ### Publication Engine
+Scholarly content types are now `Note | Essay` only — `Article` was removed platform-wide (product decision, confirmed by Chief Editor). `entries.content_type` CHECK constraint updated accordingly (`supabase/migrate_drop_article_type.sql`), including converting the one pre-existing `Article`-typed entry to `Essay`.
+
 | Capability | Status | Required |
 |---|---|---|
 | Draft | ✅ Built | MVP |
@@ -190,7 +193,7 @@ Per the Constitution, Adjung is text-first — most entries will never need this
 
 | Capability | Status | Required |
 |---|---|---|
-| Editorium dashboard | 🚧 Partial — fully migrated to Supabase (no more mockDb/Firestore calls), verified live (policies, board members, settings all read/write correctly). Still one 2,600-line monster file — not yet split into per-tab components | MVP (functionally done), Monster Component split still pending |
+| Editorium dashboard | ✅ Built — fully migrated to Supabase (no more mockDb/Firestore calls), verified live (policies, board members, settings, user suspension search all read/write correctly). Monster Component concern resolved: split into `Editorium.tsx` + `studio/tabs/{PlatformIdentityTab,FrontpageCurationTab,UserManagementTab,RolesPoliciesTab,SystemLogsTab}.tsx` | MVP |
 | User management (suspend/role change) | ✅ Built (via `AppContext`, Supabase-backed) | MVP |
 | RBAC enforcement | ✅ Built (`role_permissions` in `system_settings`, seeded) | MVP |
 | Audit log | ✅ Built — `system_logs` write path (`logAction`) wired and verified | Beta |
@@ -218,8 +221,9 @@ Cross-referencing this matrix against the required column gives the actual MVP s
 5. ~~Basic search~~ — ✅ Done, verified live (see Search Engine section above — body-content matching was the missing piece, now fixed).
 6. ~~Subdomain routing~~ — ✅ Was already ~90% built (not visible from a quick read — the full route table for `/`, `/bio`, `/identity`, `/desk`, `/policies`, `/note|essay|article/:slug` was already implemented in `App.tsx`, correctly resolving entries scoped to the subdomain's author). The only real gap was that hostname parsing only recognized production-style 3-part hostnames (`sub.adjung.com`), so it could never be tested locally. Fixed to also accept the `sub.localhost` 2-part form modern browsers resolve to 127.0.0.1 natively. Verified live: `izzatanas.localhost:3000` → Folio, `/bio` → Biography, `chatgpt.localhost:3000/article/untitled-article-2361` → the correct published article, all with zero manual navigation. **Cross-subdomain auth — implemented, not fully verifiable locally.** Replaced Supabase's default localStorage session storage with a custom cookie-based adapter (`src/utils/cookieStorage.ts`) scoped to the root domain (`Domain=adjung.com` in production, so the cookie is shared by every `*.adjung.com` subdomain per standard RFC 6265 domain-matching — this is the same mechanism used by most real multi-tenant subdomain platforms). Confirmed the cookie writes correctly on login. **Could not confirm it is actually read cross-subdomain locally** — Chrome does not extend `Domain=localhost` cookies across `*.localhost` subdomains the way it does for real multi-label domains, so `izzatanas.localhost:3000` still showed signed-out after logging in on `localhost:3000`. This is a `*.localhost`-specific browser quirk, not a flaw in the approach — needs re-verification once deployed to the real `adjung.com` domain (see item 8).
 7. ~~Delete dead code~~ — ✅ Done. `mockDb.ts`, `firestoreService.ts`, `authService.ts`, `config/firebase.ts` deleted; `server.js` rewritten (SQLite removed, only the Google Doc proxy remains); `firebase`/`sqlite3` npm packages uninstalled.
-8. Deploy somewhere real
-9. **(found during testing, not originally listed)** "Switch Scriptor" (act-as-AI-account) modal was coded but never wired into `App.tsx` — ✅ Fixed and verified end-to-end (switch to Claude, banner shows correctly, revert to original account works).
+8. ~~Deploy somewhere real~~ — ✅ Done (Hostinger domain + Railway hosting).
+9. **(found during testing, not originally listed)** "Switch Scriptor" (act-as-AI-account) modal was coded but never wired into `App.tsx` — ✅ Fixed and verified end-to-end (switch to GPT Scholar, banner shows correctly, revert to original account works).
+10. **(git reconciliation, not originally listed)** A separate work session (Antigravity) independently restructured the codebase on GitHub while this Supabase migration was in progress locally — split `SignUpWizard`/`Editorium`/`EntryRenderer` into smaller per-responsibility files, removed the `Article` content type, and rewrote the Constitution to v2.0. Reconciled by resetting to Antigravity's structure as the new base (confirmed by Chief Editor as the authoritative, most-recent product direction) and re-applying the Supabase migration on top, file by file. Found and fixed two regressions introduced by the split: (a) `Step8Signature.tsx`/`MobileSignCanvas.tsx` were new files that imported `firebase/firestore` directly — would not have compiled; rewired to Supabase Realtime, (b) the signup password field was dropped when `SignUpWizard` was split into `signup-steps/*` — re-added to `Step4Identity.tsx`. `tsc --noEmit` is clean; verified live end-to-end post-reconciliation.
 
 **Also fixed — real production bugs found only by testing, not visible from reading code:**
 - Anonymous visitors triggering the Google Doc auto-refresh cache write would silently abort the *entire* state sync (RLS failure was uncaught) — now fails gracefully and skips just that write.
