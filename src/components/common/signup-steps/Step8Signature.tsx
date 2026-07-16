@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, QrCode, Laptop, Smartphone, Check, PenTool, Type, Loader2 } from 'lucide-react';
 import { SignaturePad } from '../../desk/SignaturePad';
+import { SignatureRenderer } from '../../desk/SignatureRenderer';
 import { supabase } from '../../../config/supabase';
 import SimulatedMobileCanvas from './SimulatedMobileCanvas';
 
@@ -9,54 +10,6 @@ const pageVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.3 } }
-};
-
-// Helper to render drawn strokes as beautiful smooth vector SVG path
-const renderStrokesToSvg = (strokes: any[], strokeColor = '#802334') => {
-  if (!strokes || strokes.length === 0) return null;
-  
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  strokes.forEach(stroke => {
-    stroke.forEach((p: any) => {
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    });
-  });
-  
-  const padding = 12;
-  const width = Math.max(100, (maxX - minX) + padding * 2);
-  const height = Math.max(60, (maxY - minY) + padding * 2);
-  
-  const paths = strokes.map((stroke, i) => {
-    if (stroke.length === 0) return null;
-    let d = `M ${stroke[0].x - minX + padding} ${stroke[0].y - minY + padding}`;
-    for (let j = 1; j < stroke.length; j++) {
-      d += ` L ${stroke[j].x - minX + padding} ${stroke[j].y - minY + padding}`;
-    }
-    return (
-      <path
-        key={i}
-        d={d}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    );
-  });
-  
-  return (
-    <svg 
-      viewBox={`0 0 ${width} ${height}`} 
-      className="max-h-full max-w-full mx-auto"
-      style={{ height: '80px' }}
-    >
-      {paths}
-    </svg>
-  );
 };
 
 interface Step8SignatureProps {
@@ -214,13 +167,12 @@ export default function Step8Signature({ formData, setFormData, onNext }: Step8S
                 {/* The visual preview of the signature */}
                 <div className="bg-stone-50 border border-stone-150 h-28 rounded flex items-center justify-center relative overflow-hidden p-4">
                   <div className="absolute inset-0 bg-[radial-gradient(#802334/0.015_1px,transparent_1px)] [background-size:12px_12px]" />
-                  {formData.signatureType === 'typo' ? (
-                    <span className="font-signature text-4xl text-adjung-maroon select-none">
-                      {formData.signatureData}
-                    </span>
-                  ) : (
-                    renderStrokesToSvg(formData.signatureData?.strokes)
-                  )}
+                  <SignatureRenderer
+                    strokes={formData.signatureType === 'typo' ? [] : (formData.signatureData?.strokes || [])}
+                    type={formData.signatureType === 'typo' ? 'typed' : 'drawn'}
+                    typedText={formData.signatureType === 'typo' ? formData.signatureData : ''}
+                    className="w-full h-full relative z-10"
+                  />
                   <span className="absolute bottom-2 right-3 font-mono text-[7px] text-stone-300 tracking-wider">ADJUNG SECURE</span>
                 </div>
 
@@ -294,9 +246,18 @@ export default function Step8Signature({ formData, setFormData, onNext }: Step8S
             
             <div className="border border-stone-200 bg-white h-36 flex items-center justify-center rounded-sm shadow-inner relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(#802334/0.02_1px,transparent_1px)] [background-size:16px_16px]" />
-              <span className="font-signature text-5xl text-adjung-maroon px-6 z-10 select-none">
-                {typedText || 'Your Name'}
-              </span>
+              {typedText ? (
+                <SignatureRenderer
+                  strokes={[]}
+                  type="typed"
+                  typedText={typedText}
+                  className="w-full h-full px-6 relative z-10"
+                />
+              ) : (
+                <span className="font-signature text-5xl text-stone-300 px-6 z-10 select-none">
+                  Your Name
+                </span>
+              )}
             </div>
 
             <div className="text-left space-y-1.5">

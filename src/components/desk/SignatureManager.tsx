@@ -117,13 +117,16 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
               className="h-32 border border-stone-200/60 rounded-md flex items-center justify-center p-4 mb-4 relative overflow-hidden shadow-inner select-none"
             >
               <div className="absolute left-6 right-6 bottom-8 border-b border-dashed border-stone-300/40 pointer-events-none"></div>
-              <SignatureRenderer 
-                strokes={activeSig.strokes} 
+              <SignatureRenderer
+                representation={activeSig.representation}
+                strokes={activeSig.strokes}
                 type={activeSig.type}
                 typedText={activeSig.typedText}
                 fontFamily={activeSig.fontFamily}
-                className="w-full h-full z-10" 
-                color="#802334" 
+                typographyStyle={activeSig.typographyStyle}
+                penStyle={activeSig.penStyle}
+                className="w-full h-full z-10"
+                color="#802334"
                 enableBleed={true}
               />
             </div>

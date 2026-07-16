@@ -3681,9 +3681,15 @@ export function EntryRenderer({
               }
               return (
                 <div className="flex flex-col items-center">
-                  <div className="text-5xl text-Adjung-maroon mb-2"
-                       style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
-                    {authorSignature}
+                  <div className="w-64 h-24 mb-2">
+                    <SignatureRenderer
+                      strokes={[]}
+                      type="typed"
+                      typedText={authorSignature}
+                      fontFamily={authorSignatureFont}
+                      className="w-full h-full"
+                      color="#802334"
+                    />
                   </div>
                   <div className="font-serif italic font-semibold text-stone-900 tracking-wide mt-2 text-center">
                     <div>{authorName}</div>
@@ -3761,9 +3767,15 @@ export function EntryRenderer({
                 />
               </div>
             ) : authorSignature ? (
-              <span className="font-signature text-2xl" style={{ fontFamily: authorSignatureFont || 'var(--font-signature)' }}>
-                {authorSignature}
-              </span>
+              <div className="w-24 h-12 flex items-center justify-end">
+                <SignatureRenderer
+                  strokes={[]}
+                  type="typed"
+                  typedText={authorSignature}
+                  fontFamily={authorSignatureFont}
+                  color="#802334"
+                />
+              </div>
             ) : null}
           </footer>
         )}

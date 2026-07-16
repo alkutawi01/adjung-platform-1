@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature, PolicyDocument } from './types';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, PolicyDocument } from './types';
 import { AuthService, SessionService, RbacService, UserRepository } from './services/supabaseAuthService';
 import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/rendering/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/rendering/TimelineEntryCollapseRenderer';
 import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
+import { resolveSignatureStrokes, resolveSignatureText, resolveDigitalSignature, resolveSignatureFont } from './utils/signatureResolvers';
 import { SignatureLayout } from './components/desk/SignatureLayout';
 import { SignatureRenderer } from './components/desk/SignatureRenderer';
 import SignUpWizard from './components/common/SignUpWizard';
@@ -65,52 +66,6 @@ import { ElasticMarginRow } from './components/rendering/ElasticMarginRow';
 import { AnimatedSignature } from './components/desk/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
-
-function resolveSignatureStrokes(entry: Entry | null, authorId: string, identities: IdentityProfile[]): VectorStroke[][] | undefined {
-  const identity = identities.find(i => i.accountId === authorId);
-  if (!identity) return undefined;
-
-  if (entry?.signatureVersionId) {
-    const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
-    if (sig) return sig.strokes;
-  }
-
-  const defaultSig = identity.signatures.find(s => s.status === 'Default');
-  if (defaultSig && defaultSig.type === 'drawn') return defaultSig.strokes;
-  return undefined;
-}
-
-function resolveSignatureText(authorId: string, fallback: string, identities: IdentityProfile[]): string {
-  const identity = identities.find(i => i.accountId === authorId);
-  if (!identity || !identity.signatures) return fallback;
-  const defaultSig = identity.signatures.find(s => s.status === 'Default');
-  if (defaultSig) {
-    if (defaultSig.type === 'typed') return defaultSig.typedText;
-    if (defaultSig.type === 'drawn') return ''; // If drawn, we don't display text fallback
-  }
-  return fallback;
-}
-
-function resolveDigitalSignature(authorId: string, identities: IdentityProfile[], entry?: Entry | null): DigitalSignature | undefined {
-  const identity = identities.find(i => i.accountId === authorId);
-  if (!identity || !identity.signatures) return undefined;
-  if (entry?.signatureVersionId) {
-    const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
-    if (sig) return sig;
-  }
-  return identity.signatures.find(s => s.status === 'Default');
-}
-
-function resolveSignatureFont(authorId: string, identities: IdentityProfile[]): string | undefined {
-  const identity = identities.find(i => i.accountId === authorId);
-  if (!identity || !identity.signatures) return undefined;
-  const defaultSig = identity.signatures.find(s => s.status === 'Default');
-  if (defaultSig && defaultSig.type === 'typed' && defaultSig.fontFamily) {
-    const rawFamily = defaultSig.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-    return `"${rawFamily}", cursive`;
-  }
-  return undefined;
-}
 
 
 

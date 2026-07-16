@@ -27,6 +27,7 @@ import {
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocument, PolicySection } from '../../types';
 import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, parseResearchFindings } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
+import { resolveDigitalSignature } from '../../utils/signatureResolvers';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -109,6 +110,7 @@ export function Editorium() {
     currentUser,
     users,
     entries,
+    identities,
     policies,
     logs,
     systemSettings,
@@ -1017,11 +1019,23 @@ Source: MIT Technology Review, 2024
                 {selectedBoardMemberId && users.find(u => u.id === selectedBoardMemberId) ? (
                   (() => {
                     const editor = users.find(u => u.id === selectedBoardMemberId)!;
+                    const editorSig = resolveDigitalSignature(editor.id, identities);
                     return (
                       <div className="space-y-3 font-sans">
                         <h4 className="font-serif font-bold text-sm text-stone-850 flex items-center justify-between">
                           <span>{editor.penName}</span>
-                          <span className="font-signature text-xl text-adjung-maroon">{editor.signature}</span>
+                          <span className="w-20 h-8 inline-block">
+                            <SignatureRenderer
+                              representation={editorSig?.representation}
+                              strokes={editorSig?.strokes || []}
+                              type={editorSig?.type || 'typed'}
+                              typedText={editorSig?.typedText || editor.signature}
+                              fontFamily={editorSig?.fontFamily}
+                              typographyStyle={editorSig?.typographyStyle}
+                              penStyle={editorSig?.penStyle}
+                              color="#802334"
+                            />
+                          </span>
                         </h4>
                         <div className="space-y-1 text-stone-600 font-mono text-[10px]">
                           <div>Username: @{editor.username}</div>

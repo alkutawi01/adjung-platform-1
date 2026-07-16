@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Entry, WriterProfile, SystemSettings, DigitalSignature } from '../../types';
+import { User, Entry, WriterProfile, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
 import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
@@ -8,6 +8,7 @@ import { EntryRenderer } from '../rendering/EntryRenderer';
 import { FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
+import { resolveDigitalSignature } from '../../utils/signatureResolvers';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -27,16 +28,6 @@ interface FolioViewProps {
   setActiveTab: (tab: string) => void;
   setShowLoginModal: (show: boolean) => void;
   setLoginError: (error: string) => void;
-}
-
-function resolveDigitalSignature(authorId: string, identities: { accountId: string; signatures: DigitalSignature[] }[], entry?: Entry | null): DigitalSignature | undefined {
-  const identity = identities.find(i => i.accountId === authorId);
-  if (!identity || !identity.signatures) return undefined;
-  if (entry?.signatureVersionId) {
-    const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
-    if (sig) return sig;
-  }
-  return identity.signatures.find(s => s.status === 'Default');
 }
 
 export const FolioView: React.FC<FolioViewProps> = ({
@@ -255,19 +246,24 @@ export const FolioView: React.FC<FolioViewProps> = ({
           {/* Writer Signature replacement of traditional avatar (refined personal seal style) */}
           <div className="flex-shrink-0 text-center border-l border-stone-300 pl-8 py-1.5 select-none flex flex-col justify-center">
             <div className="h-16 w-64 flex items-center justify-center z-10 relative mix-blend-multiply">
-              {currentAuthor && (
-                <SignatureRenderer
-                  strokes={resolveDigitalSignature(currentAuthor.id, identities)?.strokes || []}
-                  type={resolveDigitalSignature(currentAuthor.id, identities)?.type || 'drawn'}
-                  typedText={resolveDigitalSignature(currentAuthor.id, identities)?.typedText || currentAuthor.signature}
-                  fontFamily={resolveDigitalSignature(currentAuthor.id, identities)?.fontFamily}
-                  typographyStyle={resolveDigitalSignature(currentAuthor.id, identities)?.typographyStyle}
-                  className="w-full h-full overflow-visible origin-center"
-                  color="rgba(128, 35, 52, 0.85)"
-                  strokeWidth={2.5}
-                  enableBleed={true}
-                />
-              )}
+              {currentAuthor && (() => {
+                const heroSig = resolveDigitalSignature(currentAuthor.id, identities);
+                return (
+                  <SignatureRenderer
+                    representation={heroSig?.representation}
+                    strokes={heroSig?.strokes || []}
+                    type={heroSig?.type || 'drawn'}
+                    typedText={heroSig?.typedText || currentAuthor.signature}
+                    fontFamily={heroSig?.fontFamily}
+                    typographyStyle={heroSig?.typographyStyle}
+                    penStyle={heroSig?.penStyle}
+                    className="w-full h-full overflow-visible origin-center"
+                    color="rgba(128, 35, 52, 0.85)"
+                    strokeWidth={2.5}
+                    enableBleed={true}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

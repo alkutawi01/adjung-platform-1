@@ -127,67 +127,22 @@ export function BiographyView({
               const strokes = sig?.strokes || [];
               const typedText = sig?.typedText || currentAuthor.signature || '';
 
-              if (type === 'typed' || strokes.length === 0) {
-                const cw = sig?.penStyle?.canvasWidth || 680;
-                const ch = sig?.penStyle?.canvasHeight || 200;
-                const yOff = sig?.typographyStyle?.yOffset ?? 30;
-                
-                // Calculate the actual font size to determine a safe bounding box height
-                const baseSize = !typedText ? 48 : (typedText.length > 25 ? 24 : (typedText.length > 18 ? 32 : (typedText.length > 12 ? 40 : 48)));
-                const scale = sig?.typographyStyle?.scale || 1;
-                const actualFontSize = baseSize * scale;
-                
-                // Dynamically adjust the viewBox height to perfectly wrap the text without chopping
-                const viewBoxHeight = Math.max(120, actualFontSize * 2.8);
-                const cropY = (ch / 2) + yOff - (viewBoxHeight / 2);
-
-                return (
-                  <div className="w-full h-full flex items-center justify-center z-10 relative">
-                    <svg 
-                      viewBox={`0 ${cropY} ${cw} ${viewBoxHeight}`}
-                      className="w-full h-full drop-shadow-sm origin-center"
-                    >
-                      <foreignObject width={cw} height={ch} y={0}>
-                        <div className="flex items-center justify-center w-full h-full">
-                          <span 
-                            style={{ 
-                              fontFamily: sig?.fontFamily || 'cursive', 
-                              fontSize: `${actualFontSize}px`, 
-                              color: "#802334", 
-                              letterSpacing: `${(sig?.typographyStyle?.letterSpacing || 0) * scale}px`, 
-                              fontWeight: sig?.typographyStyle?.fontWeight || 500, 
-                              transform: `translateY(${yOff}px) rotate(${sig?.typographyStyle?.slantAngle || 0}deg)`,
-                              transformOrigin: 'center center',
-                              whiteSpace: 'nowrap',
-                              lineHeight: 1
-                            }}
-                            className="text-center block"
-                          >
-                            {typedText || 'Sign Here'}
-                          </span>
-                        </div>
-                      </foreignObject>
-                    </svg>
-                  </div>
-                );
-              } else {
-                return (
-                  <SignatureRenderer 
-                    representation={sig?.representation}
-                    strokes={strokes}
-                    type="drawn"
-                    typedText=""
-                    fontFamily={sig?.fontFamily}
-                    typographyStyle={sig?.typographyStyle}
-                    penStyle={sig?.penStyle}
-                    renderBaselineLayout={false}
-                    className="w-full h-full overflow-visible"
-                    color="#802334"
-                    strokeWidth={2.5}
-                    enableBleed={true}
-                  />
-                );
-              }
+              return (
+                <SignatureRenderer
+                  representation={sig?.representation}
+                  strokes={strokes}
+                  type={type}
+                  typedText={typedText}
+                  fontFamily={sig?.fontFamily}
+                  typographyStyle={sig?.typographyStyle}
+                  penStyle={sig?.penStyle}
+                  renderBaselineLayout={false}
+                  className="w-full h-full overflow-visible"
+                  color="#802334"
+                  strokeWidth={2.5}
+                  enableBleed={true}
+                />
+              );
             })()}
           </div>
           

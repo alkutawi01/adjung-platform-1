@@ -4,6 +4,7 @@ import { Entry, User, EntryType } from '../../types';
 import { EntryRenderer } from '../rendering/EntryRenderer';
 import { parseInlineFormatting, stripMarkdown } from '../../utils';
 import { useAppContext } from '../../context/AppContext';
+import { resolveDigitalSignature } from '../../utils/signatureResolvers';
 
 interface WritingDeskProps {
   entry?: Entry | null;
@@ -208,13 +209,7 @@ export function WritingDesk({
                 createdAt: new Date().toISOString()
               };
             }
-            const identity = identities.find(i => i.accountId === currentUser.id);
-            if (!identity) return undefined;
-            if (activeEntry?.signatureVersionId) {
-              const sig = identity.signatures.find(s => s.id === activeEntry.signatureVersionId);
-              if (sig) return sig;
-            }
-            return identity.signatures.find(s => s.status === 'Default');
+            return resolveDigitalSignature(currentUser.id, identities, activeEntry);
           })()}
         />
       </div>
