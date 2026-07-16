@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, DigitalSignature, PolicyDocument } from '../types';
-import { db } from '../db/mockDb';
-import { AuthService, SessionService, RbacService } from '../services/authService';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, DigitalSignature, PolicyDocument, SystemLog } from '../types';
+import { AuthService, SessionService, RbacService } from '../services/supabaseAuthService';
 import { BRAND } from '../config/brand';
 import { generateUUID, shouldAutoFetch, resolveEntryCanonicalUrl } from '../utils';
-import { firestoreService } from '../utils/firestoreService';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { supabaseService as firestoreService } from '../utils/supabaseService';
+import { supabase } from '../config/supabase';
+
+const EMPTY_SYSTEM_SETTINGS: SystemSettings = {
+  academicAffiliation: '',
+  editorialPolicy: '',
+  accentColor: '',
+  allowSelfRegistration: true,
+};
 
 export type ActiveTabType = 
   | 'landing' 
@@ -44,6 +49,9 @@ interface AppContextType {
   users: User[];
   profiles: WriterProfile[];
   entries: Entry[];
+  identities: IdentityProfile[];
+  policies: PolicyDocument[];
+  logs: SystemLog[];
   systemSettings: SystemSettings;
   setSystemSettings: (settings: SystemSettings) => void;
   inTheNewsGoogleDocText: string;
@@ -83,7 +91,12 @@ interface AppContextType {
   toastVisible: boolean;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   setToastVisible: (visible: boolean) => void;
-  
+
+  // Confirm dialog (replaces window.confirm)
+  confirmState: { message: string; title?: string; confirmLabel?: string; danger?: boolean; onConfirm: () => void } | null;
+  requestConfirm: (message: string, onConfirm: () => void, options?: { title?: string; confirmLabel?: string; danger?: boolean }) => void;
+  closeConfirm: () => void;
+
   // DB operations
   refreshDbState: () => void;
   resetDatabase: () => void;
@@ -113,10 +126,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // DB States
-  const [users, setUsers] = useState<User[]>(db.getUsers());
-  const [profiles, setProfiles] = useState<WriterProfile[]>(db.getProfiles());
-  const [entries, setEntries] = useState<Entry[]>(db.getEntries());
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>(db.getSystemSettings());
+  const [users, setUsers] = useState<User[]>([]);
+  const [profiles, setProfiles] = useState<WriterProfile[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [identities, setIdentities] = useState<IdentityProfile[]>([]);
+  const [policies, setPolicies] = useState<PolicyDocument[]>([]);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(EMPTY_SYSTEM_SETTINGS);
   const [inTheNewsGoogleDocText, setInTheNewsGoogleDocText] = useState('');
   const [worldClockHolidaysGoogleDocText, setWorldClockHolidaysGoogleDocText] = useState('');
   const [researchFindingsGoogleDocText, setResearchFindingsGoogleDocText] = useState('');
@@ -140,6 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Toast notifications
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; title?: string; confirmLabel?: string; danger?: boolean; onConfirm: () => void } | null>(null);
 
   const fetchGoogleDocContent = async (url: string | undefined): Promise<{ text: string; status: 'success' | 'failed' | 'empty' }> => {
     if (!url) return { text: '', status: 'empty' };
@@ -160,37 +177,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshDbState = async () => {
     try {
       const data = await firestoreService.fetchDbState();
-      
-      if (data.users) db.setUsers(data.users);
-      if (data.profiles) db.setProfiles(data.profiles);
-      if (data.identities) db.setIdentities(data.identities);
-      if (data.logs) db.setLogs(data.logs);
-      if (data.systemSettings) {
-        db.setSystemSettings(data.systemSettings);
-        setSystemSettings(data.systemSettings);
-      }
+
       setUsers(data.users || []);
       setProfiles(data.profiles || []);
-      if (data.entries) {
-        const localEntries = db.getEntries();
-        const mergedEntries = [...data.entries];
-        
-        localEntries.forEach(localEntry => {
-          const remoteIdx = mergedEntries.findIndex(e => e.id === localEntry.id);
-          if (remoteIdx === -1) {
-            mergedEntries.push(localEntry);
-          } else {
-            const remoteEntry = mergedEntries[remoteIdx];
-            const localTime = new Date(localEntry.updatedDate || 0).getTime();
-            const remoteTime = new Date(remoteEntry.updatedDate || 0).getTime();
-            if (localTime > remoteTime) {
-              mergedEntries[remoteIdx] = localEntry;
-            }
-          }
-        });
-        
-        db.setEntries(mergedEntries);
-        setEntries(mergedEntries);
+      setIdentities(data.identities || []);
+      setEntries(data.entries || []);
+      setPolicies(data.policies || []);
+      setLogs(data.logs || []);
+      if (data.systemSettings) {
+        setSystemSettings(data.systemSettings);
       }
 
       if (data.systemSettings) {
@@ -248,9 +243,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setResearchFindingsGoogleDocStatus(findingsStatus);
 
         if (needsSave) {
-          await firestoreService.saveSystemSettings(updatedSettings);
-          setSystemSettings(updatedSettings);
-          db.setSystemSettings(updatedSettings);
+          // Caching the freshly-fetched Google Doc text requires Chief Editor
+          // privileges under RLS. Anonymous/non-privileged visitors simply
+          // skip the write — the next Chief Editor session will cache it.
+          try {
+            await firestoreService.saveSystemSettings(updatedSettings);
+            setSystemSettings(updatedSettings);
+          } catch (cacheErr) {
+            console.warn('Skipped Google Doc cache write (requires Chief Editor session):', cacheErr);
+          }
         }
       }
 
@@ -282,7 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     } catch (err) {
-      console.error('Failed to sync state from Firestore:', err);
+      console.error('Failed to sync state from Supabase:', err);
     }
   };
 
@@ -300,6 +301,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToastVisible(true);
   };
 
+  const requestConfirm = (
+    message: string,
+    onConfirm: () => void,
+    options?: { title?: string; confirmLabel?: string; danger?: boolean }
+  ) => {
+    setConfirmState({ message, onConfirm, ...options });
+  };
+
+  const closeConfirm = () => setConfirmState(null);
+
   useEffect(() => {
     if (toastVisible) {
       const timer = setTimeout(() => {
@@ -311,10 +322,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Reactive Firebase Auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const sbUser = session?.user;
+      if (sbUser) {
         const data = await firestoreService.fetchDbState();
-        const resolvedUser = data.users.find(u => u.email.toLowerCase() === fbUser.email?.toLowerCase());
+        const resolvedUser = data.users.find(u => u.email.toLowerCase() === sbUser.email?.toLowerCase());
         if (resolvedUser && !resolvedUser.suspended) {
           const actingUserId = localStorage.getItem('Adjung_acting_user_id');
           const actingUser = actingUserId ? data.users.find(u => u.id === actingUserId) : null;
@@ -359,7 +371,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [users]);
 
   // Startup Session Restore & Verification
@@ -439,8 +451,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // DB actions
   const saveEntry = (updatedEntry: Entry) => {
-    db.saveEntry(updatedEntry);
-    setEntries(db.getEntries());
+    setEntries(prev => {
+      const idx = prev.findIndex(e => e.id === updatedEntry.id);
+      if (idx === -1) return [...prev, updatedEntry];
+      const next = [...prev];
+      next[idx] = updatedEntry;
+      return next;
+    });
     if (editingEntry?.id === updatedEntry.id) {
       setEditingEntry(updatedEntry);
     }
@@ -453,14 +470,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshDbState();
       })
       .catch(err => {
-        console.error('Failed to save entry to Firestore:', err);
-        setEntries(db.getEntries());
+        console.error('Failed to save entry to Supabase:', err);
       });
   };
 
   const deleteEntry = (entryId: string) => {
-    db.deleteEntry(entryId);
-    setEntries(db.getEntries());
+    setEntries(prev => prev.filter(e => e.id !== entryId));
 
     firestoreService.deleteEntry(entryId)
       .then(() => {
@@ -469,8 +484,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedEntry(null);
       })
       .catch(err => {
-        console.error('Failed to delete entry from Firestore:', err);
-        setEntries(db.getEntries());
+        console.error('Failed to delete entry from Supabase:', err);
       });
   };
 
@@ -503,8 +517,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       canonicalUrl: resolveEntryCanonicalUrl(
         { id: newId, authorId: currentUser.id, contentType: type, slug: entrySlug, status: 'Draft', visibility: 'Private', createdDate: new Date().toISOString(), updatedDate: new Date().toISOString(), publishedDate: null, title: tempTitle, tags: [], content: defaultContent } as Entry,
         currentUser.username,
-        db.getEntries(),
-        db.getIdentityByAccountId(currentUser.id),
+        entries,
+        identities.find(i => i.accountId === currentUser.id) || null,
         currentUser.createdAt,
         currentUser.subdomainApprovedEarly
       ),
@@ -513,8 +527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       marginNotesData: type === 'Essay' ? { 'mn-1': 'A scholarly side comment on the essay.' } : undefined
     };
 
-    db.saveEntry(newEntry);
-    setEntries(db.getEntries());
+    setEntries(prev => [...prev, newEntry]);
     setEditingEntry(newEntry);
     setActiveTab('desk');
 
@@ -523,32 +536,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshDbState();
       })
       .catch(err => {
-        console.error('Failed to create entry in Firestore:', err);
-        setEntries(db.getEntries());
+        console.error('Failed to create entry in Supabase:', err);
       });
   };
 
+  // Danger Zone: destructive reset is disabled. Restoring seed data over a
+  // live production database is not something this action should ever do.
   const resetDatabase = () => {
-    if (window.confirm('WARNING: This will restore the database to the initial academic seed data, erasing all custom cloud modifications. Proceed?')) {
-      const seedData = {
-        users: db.getUsers(),
-        profiles: db.getProfiles(),
-        entries: db.getEntries(),
-        identities: db.getIdentities(),
-        systemSettings: db.getSystemSettings()
-      };
-      firestoreService.resetDatabase(seedData)
-        .then(() => {
-          AuthService.signOut();
-          refreshDbState();
-          setCurrentUser(null);
-          setSelectedAuthorId('');
-          setActiveTab('folio');
-          setEditingEntry(null);
-          setSelectedEntry(null);
-        })
-        .catch(err => console.error('Failed to reset database:', err));
-    }
+    showToast('Database reset is disabled in production.', 'error');
   };
 
   const toggleUserSuspension = (targetUserId: string) => {
@@ -715,6 +710,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       users,
       profiles,
       entries,
+      identities,
+      policies,
+      logs,
       systemSettings,
       setSystemSettings: updateSystemSettingsState,
       inTheNewsGoogleDocText,
@@ -750,7 +748,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toastVisible,
       showToast,
       setToastVisible,
-      
+
+      confirmState,
+      requestConfirm,
+      closeConfirm,
+
       refreshDbState,
       resetDatabase,
       saveEntry,

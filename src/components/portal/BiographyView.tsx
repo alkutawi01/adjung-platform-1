@@ -6,8 +6,7 @@ import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { Fingerprint, Edit3, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { IdentityStudio } from './IdentityStudio';
-import { db } from '../../db/mockDb';
-import { firestoreService } from '../../utils/firestoreService';
+import { supabaseService as firestoreService } from '../../utils/supabaseService';
 
 interface BiographyViewProps {
   authorProfile: IdentityProfile;
@@ -31,7 +30,7 @@ export function BiographyView({
   presentationSpec,
 }: BiographyViewProps) {
   const activeSpec = presentationSpec || getPresentationSpec('Essay');
-  const { refreshDbState } = useAppContext();
+  const { refreshDbState, requestConfirm } = useAppContext();
 
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editedBio, setEditedBio] = useState(authorProfile.biography || '');
@@ -49,7 +48,6 @@ export function BiographyView({
 
     await firestoreService.saveIdentity(updatedIdentity);
 
-    db.updateIdentity(updatedIdentity);
     setIsEditingBio(false);
     refreshDbState();
   };
@@ -303,9 +301,7 @@ export function BiographyView({
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm('Delete this milestone permanently?')) {
-                            handleRemoveBioItem(item.id);
-                          }
+                          requestConfirm('Delete this milestone permanently?', () => handleRemoveBioItem(item.id), { confirmLabel: 'Delete' });
                         }}
                         className="text-[9px] font-mono uppercase tracking-wider text-red-700 hover:text-red-900 transition-colors font-bold cursor-pointer"
                       >

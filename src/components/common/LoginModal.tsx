@@ -1,8 +1,7 @@
 import React from 'react';
 import { BRAND } from '../../config/brand';
 import { User } from '../../types';
-import { db } from '../../db/mockDb';
-import { AuthService } from '../../services/authService';
+import { AuthService } from '../../services/supabaseAuthService';
 import { useAppContext } from '../../context/AppContext';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -35,16 +34,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   setRememberMe,
   setShowSignUpWizard,
 }) => {
-  const { users, showToast, refreshDbState } = useAppContext();
+  const { users, showToast } = useAppContext();
 
   // Forgot password flow state
   const [showForgotPassword, setShowForgotPassword] = React.useState(false);
-  const [forgotStep, setForgotStep] = React.useState<'request' | 'verify'>('request');
+  const [forgotStep, setForgotStep] = React.useState<'request' | 'sent'>('request');
   const [forgotEmail, setForgotEmail] = React.useState('');
-  const [recoveryCodeInput, setRecoveryCodeInput] = React.useState('');
-  const [generatedRecoveryCode, setGeneratedRecoveryCode] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
   const [forgotError, setForgotError] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
 
@@ -53,10 +48,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setShowForgotPassword(false);
       setForgotStep('request');
       setForgotEmail('');
-      setRecoveryCodeInput('');
-      setGeneratedRecoveryCode('');
-      setNewPassword('');
-      setConfirmNewPassword('');
       setForgotError('');
       setShowPassword(false);
     }
@@ -73,56 +64,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     e.preventDefault();
     setForgotError('');
 
-    if (forgotStep === 'request') {
-      const trimmedEmail = forgotEmail.trim().toLowerCase();
-      const userExists = users.some(u => (u.email || '').toLowerCase() === trimmedEmail);
+    const trimmedEmail = forgotEmail.trim().toLowerCase();
+    const userExists = users.some(u => (u.email || '').toLowerCase() === trimmedEmail);
 
-      if (!userExists) {
-        setForgotError('No account with this email was found.');
-        return;
-      }
-
-      // Generate random 6-digit recovery code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedRecoveryCode(code);
-      setForgotStep('verify');
-      showToast(`Password recovery code sent to ${forgotEmail.trim()}: ${code}`, 'info');
+    if (!userExists) {
+      setForgotError('No account with this email was found.');
       return;
     }
 
-    if (forgotStep === 'verify') {
-      if (recoveryCodeInput !== generatedRecoveryCode) {
-        setForgotError('Invalid recovery code. Please check your notifications.');
-        return;
-      }
-
-      if (newPassword.length < 4) {
-        setForgotError('Password must be at least 4 characters.');
-        return;
-      }
-
-      if (newPassword !== confirmNewPassword) {
-        setForgotError('Passwords do not match.');
-        return;
-      }
-
-      try {
-        // Send reset to backend
-        await AuthService.resetPassword(forgotEmail.trim(), newPassword);
-
-        // Update local mock db
-        const u = users.find(usr => (usr.email || '').toLowerCase() === forgotEmail.trim().toLowerCase());
-        if (u) {
-          const updatedUser: User = { ...u, password: newPassword };
-          db.updateUser(updatedUser);
-        }
-
-        refreshDbState();
-        showToast('Password reset successfully. You can now log in.', 'success');
-        setShowForgotPassword(false);
-      } catch (err: any) {
-        setForgotError(err.message || 'Failed to reset password.');
-      }
+    try {
+      await AuthService.resetPassword(trimmedEmail);
+      setForgotStep('sent');
+      showToast(`Password reset link sent to ${forgotEmail.trim()}`, 'success');
+    } catch (err: any) {
+      setForgotError(err.message || 'Failed to send reset link.');
     }
   };
 
@@ -175,69 +130,30 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       type="submit"
                       className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
                     >
-                      Send Reset Code
+                      Send Reset Link
                     </button>
                   </div>
                 </>
               )}
 
-              {forgotStep === 'verify' && (
+              {forgotStep === 'sent' && (
                 <>
                   <div className="bg-stone-50 border border-stone-200 p-4 rounded space-y-2 mb-2">
                     <span className="block font-mono uppercase text-[9px] text-adjung-maroon tracking-wider font-semibold">
-                      Verification Code Sent
+                      Reset Link Sent
                     </span>
                     <p className="text-[10px] text-stone-600 leading-normal font-serif">
-                      A 6-digit password recovery code has been sent to <strong>{forgotEmail}</strong>.
+                      A password reset link has been sent to <strong>{forgotEmail}</strong>. Follow the link in your inbox to choose a new password.
                     </p>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={recoveryCodeInput}
-                      onChange={(e) => setRecoveryCodeInput(e.target.value.replace(/\D/g, ''))}
-                      className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-center tracking-[0.25em] text-base"
-                      placeholder="000000"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">New Password</label>
-                    <input
-                      type="password"
-                      placeholder="Min 4 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon bg-white text-stone-800"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Confirm New Password</label>
-                    <input
-                      type="password"
-                      placeholder="Repeat new password"
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon bg-white text-stone-800"
-                      required
-                    />
                   </div>
 
                   <div className="flex gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => setForgotStep('request')}
-                      className="w-1/3 border border-stone-200 hover:bg-stone-50 text-stone-600 py-2.5 rounded text-xs font-mono uppercase tracking-wider transition cursor-pointer"
+                      onClick={handleClose}
+                      className="w-full bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
                     >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
-                    >
-                      Reset Password
+                      Done
                     </button>
                   </div>
                 </>
@@ -347,10 +263,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   onClick={async () => {
                     setLoginError('');
                     try {
+                      // Redirects to Google; session resolves via onAuthStateChange after return.
                       await AuthService.signInWithGoogle();
-                      showToast('Successfully signed in with Google', 'success');
-                      await refreshDbState();
-                      onClose();
                     } catch (err: any) {
                       setLoginError(err.message || 'Google Sign-In failed.');
                     }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldAlert, Search, Mail, Lock, Send } from 'lucide-react';
 import { User } from '../../../types';
-import { db } from '../../../db/mockDb';
+import { supabaseService as firestoreService } from '../../../utils/supabaseService';
 
 interface UserManagementTabProps {
   currentUser: User;
@@ -44,7 +44,7 @@ export function UserManagementTab({
       emailBody
     });
 
-    db.addLog(`Generated scholarly invitation for '${inviteName.trim()}' (${inviteEmail.trim()}).`, currentUser.penName, currentUser.role);
+    firestoreService.logAction(`Generated scholarly invitation for '${inviteName.trim()}' (${inviteEmail.trim()}).`, currentUser).then(() => refreshDbState());
     setInviteName('');
     setInviteEmail('');
     setInviteMessage('');

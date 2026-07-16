@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
-import { firestore } from '../../config/firebase';
+import { supabase } from '../../config/supabase';
 import { VectorStroke } from '../../types';
 import { PenTool, RotateCcw, Send, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -217,23 +216,37 @@ export function MobileSignCanvas() {
       const canvasHeight = dimensions?.height || 220;
       const baselineY = canvasHeight - 48;
 
-      const docRef = doc(firestore, 'signature_sync', sessionId);
-      await setDoc(docRef, {
-        strokes,
-        type: 'drawn',
-        status: 'completed',
-        timestamp: new Date().toISOString(),
-        penStyle: {
-          nibAngle: 45,
-          inkFlowWeight: 4.5,
-          inkColor,
-          baselineY,
-          canvasHeight
-        }
+      const channel = supabase.channel(`signature_sync:${sessionId}`);
+      await new Promise<void>((resolve, reject) => {
+        channel.subscribe((subStatus) => {
+          if (subStatus === 'SUBSCRIBED') {
+            channel
+              .send({
+                type: 'broadcast',
+                event: 'completed',
+                payload: {
+                  strokes,
+                  type: 'drawn',
+                  timestamp: new Date().toISOString(),
+                  penStyle: {
+                    nibAngle: 45,
+                    inkFlowWeight: 4.5,
+                    inkColor,
+                    baselineY,
+                    canvasHeight
+                  }
+                }
+              })
+              .then(() => resolve())
+              .finally(() => supabase.removeChannel(channel));
+          } else if (subStatus === 'CHANNEL_ERROR' || subStatus === 'TIMED_OUT') {
+            reject(new Error('Failed to connect to sync channel.'));
+          }
+        });
       });
       setStatus('success');
     } catch (err: any) {
-      console.error('Error submitting signature to Firestore:', err);
+      console.error('Error submitting signature via Supabase Realtime:', err);
       setStatus('error');
       setErrorMessage(err.message || 'Failed to submit signature. Please try again.');
     }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, VectorStroke, DigitalSignature, PolicyDocument } from './types';
-import { db } from './db/mockDb';
-import { AuthService, SessionService, RbacService, UserRepository } from './services/authService';
+import { AuthService, SessionService, RbacService, UserRepository } from './services/supabaseAuthService';
 import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/rendering/EntryRenderer';
@@ -11,9 +10,8 @@ import { SignatureLayout } from './components/desk/SignatureLayout';
 import { SignatureRenderer } from './components/desk/SignatureRenderer';
 import SignUpWizard from './components/common/SignUpWizard';
 import { MobileSignCanvas } from './components/desk/MobileSignCanvas';
-import { updatePassword } from 'firebase/auth';
-import { auth } from './config/firebase';
-import { firestoreService } from './utils/firestoreService';
+import { supabase } from './config/supabase';
+import { supabaseService as firestoreService } from './utils/supabaseService';
 import {
   Compass,
   User as UserIcon,
@@ -53,6 +51,8 @@ import { Footer } from './components/common/Footer';
 import { Navbar } from './components/common/Navbar';
 import { LoginModal } from './components/common/LoginModal';
 import { AccountModal } from './components/common/AccountModal';
+import { SwitchScriptorModal } from './components/common/SwitchScriptorModal';
+import { ConfirmDialog } from './components/common/ConfirmDialog';
 
 import { WritingDesk } from './components/desk/WritingDesk';
 import { EditorialIndex } from './components/portal/EditorialIndex';
@@ -66,8 +66,8 @@ import { AnimatedSignature } from './components/desk/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
 
-function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorStroke[][] | undefined {
-  const identity = db.getIdentityByAccountId(authorId);
+function resolveSignatureStrokes(entry: Entry | null, authorId: string, identities: IdentityProfile[]): VectorStroke[][] | undefined {
+  const identity = identities.find(i => i.accountId === authorId);
   if (!identity) return undefined;
 
   if (entry?.signatureVersionId) {
@@ -80,8 +80,8 @@ function resolveSignatureStrokes(entry: Entry | null, authorId: string): VectorS
   return undefined;
 }
 
-function resolveSignatureText(authorId: string, fallback: string): string {
-  const identity = db.getIdentityByAccountId(authorId);
+function resolveSignatureText(authorId: string, fallback: string, identities: IdentityProfile[]): string {
+  const identity = identities.find(i => i.accountId === authorId);
   if (!identity || !identity.signatures) return fallback;
   const defaultSig = identity.signatures.find(s => s.status === 'Default');
   if (defaultSig) {
@@ -91,8 +91,8 @@ function resolveSignatureText(authorId: string, fallback: string): string {
   return fallback;
 }
 
-function resolveDigitalSignature(authorId: string, entry?: Entry | null): DigitalSignature | undefined {
-  const identity = db.getIdentityByAccountId(authorId);
+function resolveDigitalSignature(authorId: string, identities: IdentityProfile[], entry?: Entry | null): DigitalSignature | undefined {
+  const identity = identities.find(i => i.accountId === authorId);
   if (!identity || !identity.signatures) return undefined;
   if (entry?.signatureVersionId) {
     const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
@@ -101,8 +101,8 @@ function resolveDigitalSignature(authorId: string, entry?: Entry | null): Digita
   return identity.signatures.find(s => s.status === 'Default');
 }
 
-function resolveSignatureFont(authorId: string): string | undefined {
-  const identity = db.getIdentityByAccountId(authorId);
+function resolveSignatureFont(authorId: string, identities: IdentityProfile[]): string | undefined {
+  const identity = identities.find(i => i.accountId === authorId);
   if (!identity || !identity.signatures) return undefined;
   const defaultSig = identity.signatures.find(s => s.status === 'Default');
   if (defaultSig && defaultSig.type === 'typed' && defaultSig.fontFamily) {
@@ -267,6 +267,8 @@ export default function App() {
     users,
     profiles,
     entries,
+    identities,
+    policies,
     systemSettings,
     setSystemSettings,
     initializing,
@@ -291,6 +293,9 @@ export default function App() {
     toastVisible,
     showToast,
     setToastVisible,
+    confirmState,
+    requestConfirm,
+    closeConfirm,
     refreshDbState,
     resetDatabase,
     saveEntry,
@@ -353,6 +358,7 @@ export default function App() {
   // Sync Account Edit states when Account Modal is shown
 
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showSwitchScriptorModal, setShowSwitchScriptorModal] = useState(false);
   const [accountEmail, setAccountEmail] = useState('');
   const [accountUsername, setAccountUsername] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
@@ -419,27 +425,6 @@ export default function App() {
     bioText: string;
   } | null>(null);
 
-  // Editorium Sub-navigation and Search States
-  const [editoriumSearchQuery, setEditoriumSearchQuery] = useState('');
-  const [frontpageSearchQuery, setFrontpageSearchQuery] = useState('');
-  const [editoriumSelectedWriterId, setEditoriumSelectedWriterId] = useState<string | null>(null);
-
-  // Sync default selected writer in Editorium
-  useEffect(() => {
-    if (!editoriumSelectedWriterId && users.length > 0) {
-      const firstWriter = users.find(u => u.role === 'Writer') || users[0];
-      setEditoriumSelectedWriterId(firstWriter.id);
-    }
-  }, [users, editoriumSelectedWriterId]);
-
-  // Editorium - Writer Edit States
-  const [editWriterPenName, setEditWriterPenName] = useState('');
-  const [editWriterUsername, setEditWriterUsername] = useState('');
-  const [editWriterSignature, setEditWriterSignature] = useState('');
-  const [editWriterBioSummary, setEditWriterBioSummary] = useState('');
-  const [editWriterHeroTitle, setEditWriterHeroTitle] = useState('');
-  const [editWriterHeroSubtitle, setEditWriterHeroSubtitle] = useState('');
-  const [editWriterBioText, setEditWriterBioText] = useState('');
 
   // Editorial Top Navbar scroll behavior
   useEffect(() => {
@@ -704,62 +689,6 @@ export default function App() {
     setIsRouteSynced(true);
   }, [location.pathname, currentUser, entries, initializing, authorFromSubdomain]);
 
-  // Initialize selected writer edit fields when selection changes
-  useEffect(() => {
-    if (editoriumSelectedWriterId) {
-      const writer = users.find(u => u.id === editoriumSelectedWriterId);
-      if (writer) {
-        const p = profiles.find(prof => prof.authorId === writer.id) || db.getProfileByAuthorId(writer.id);
-        setEditWriterPenName(writer.penName || '');
-        setEditWriterUsername(writer.username || '');
-        setEditWriterSignature(writer.signature || '');
-        setEditWriterBioSummary(writer.bioSummary || '');
-        setEditWriterHeroTitle(p?.heroTitle || '');
-        setEditWriterHeroSubtitle(p?.heroSubtitle || '');
-        const ident = db.getIdentityByAccountId(writer.id);
-        setEditWriterBioText(ident?.biography || '');
-      }
-    }
-  }, [editoriumSelectedWriterId, users, profiles]);
-
-  // Save writer modifications from Editorium
-  const handleSaveWriterFromEditorium = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editoriumSelectedWriterId) return;
-
-    const writer = users.find(u => u.id === editoriumSelectedWriterId);
-    if (!writer) return;
-
-    const updatedUser: User = {
-      ...writer,
-      username: editWriterUsername,
-      penName: editWriterPenName,
-      signature: editWriterSignature,
-      bioSummary: editWriterBioSummary,
-    };
-    db.updateUser(updatedUser);
-
-    const profile = db.getProfileByAuthorId(writer.id);
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      heroTitle: editWriterHeroTitle,
-      heroSubtitle: editWriterHeroSubtitle,
-    };
-    db.updateProfile(updatedProfile);
-
-    const identity = db.getIdentityByAccountId(writer.id);
-    if (identity) {
-      db.updateIdentity({
-        ...identity,
-        biography: editWriterBioText,
-      });
-    }
-
-    refreshDbState();
-    showToast('Settings updated', 'success');
-  };
-
-
 
   // Dynamic navigation generation matching Access Policy
   const getNavigationItems = () => {
@@ -900,92 +829,20 @@ export default function App() {
     return items;
   };
 
-  // Toggle writer suspension state
-  const handleToggleUserSuspension = (targetUserId: string) => {
-    if (!currentUser || !hasPermission('manageRbac')) {
-      showToast('Permission Denied: Only users with RBAC management privileges can suspend accounts.', 'error');
-      return;
-    }
-
-    // Self-suspension check
-    if (currentUser.id === targetUserId) {
-      showToast('Self-Administration Safety: You cannot suspend your own account.', 'error');
-      return;
-    }
-
-    const targetUser = users.find(u => u.id === targetUserId);
-    if (!targetUser) return;
-
-    // Safety: Ensure there is at least one active Chief Editor remaining
-    if (targetUser.role === 'Chief Editor' && !targetUser.suspended) {
-      const activeChiefEditors = users.filter(u => u.role === 'Chief Editor' && !u.suspended);
-      if (activeChiefEditors.length <= 1) {
-        showToast('Self-Administration Safety: The platform must always maintain at least one active Chief Editor.', 'error');
-        return;
-      }
-    }
-
-    const updatedUser: User = {
-      ...targetUser,
-      suspended: !targetUser.suspended
-    };
-    db.updateUser(updatedUser);
-    db.addLog(`${updatedUser.suspended ? 'Suspended' : 'Reactivated'} account of ${targetUser.penName} (@${targetUser.username}).`, currentUser.penName, currentUser.role);
-    refreshDbState();
-
-    showToast(`${targetUser.penName}'s account has been ${updatedUser.suspended ? 'suspended' : 'reactivated'}.`, 'success');
-  };
-
-  // Change user role (Chief Editor only)
-  const handleChangeUserRole = (targetUserId: string, newRole: User['role']) => {
-    if (!currentUser || !hasPermission('manageRbac')) {
-      showToast('Permission Denied: Only users with RBAC management privileges can modify user roles.', 'error');
-      return;
-    }
-
-    // Self-demotion/role modification check
-    if (currentUser.id === targetUserId) {
-      showToast('Self-Administration Safety: You cannot demote yourself or modify your own role.', 'error');
-      return;
-    }
-
-    const targetUser = users.find(u => u.id === targetUserId);
-    if (!targetUser) return;
-
-    // Safety: Ensure there is at least one active Chief Editor remaining
-    if (targetUser.role === 'Chief Editor' && newRole !== 'Chief Editor') {
-      const activeChiefEditors = users.filter(u => u.role === 'Chief Editor' && !u.suspended);
-      if (activeChiefEditors.length <= 1) {
-        showToast('Self-Administration Safety: The platform must always maintain at least one active Chief Editor.', 'error');
-        return;
-      }
-    }
-
-    const updatedUser: User = {
-      ...targetUser,
-      role: newRole
-    };
-    db.updateUser(updatedUser);
-    db.addLog(`Modified role of ${targetUser.penName} (@${targetUser.username}) from '${targetUser.role}' to '${newRole}'.`, currentUser.penName, currentUser.role);
-    refreshDbState();
-
-    showToast(`${targetUser.penName}'s role changed to ${newRole}.`, 'success');
-  };
-
   // Initialize selected author biography state when tab or selection changes
   useEffect(() => {
     if (currentUser && activeTab === 'desk') {
-      const userProfile = db.getProfileByAuthorId(currentUser.id);
-      const identity = db.getIdentityByAccountId(currentUser.id);
+      const userProfile = profiles.find(p => p.authorId === currentUser.id);
+      const identity = identities.find(i => i.accountId === currentUser.id);
       setDeskUsername(currentUser.username);
       setDeskPenName(currentUser.penName);
       setDeskSignature(currentUser.signature);
       setDeskBioText(identity ? identity.biography : '');
-      setDeskHeroTitle(userProfile.heroTitle);
-      setDeskHeroSubtitle(userProfile.heroSubtitle);
+      setDeskHeroTitle(userProfile?.heroTitle || '');
+      setDeskHeroSubtitle(userProfile?.heroSubtitle || '');
       setDeskHeroSignatureText(currentUser.signature);
     }
-  }, [currentUser, activeTab]);
+  }, [currentUser, activeTab, profiles, identities]);
 
 
 
@@ -1037,96 +894,6 @@ export default function App() {
     setEditingEntry(null);
     setSelectedEntry(null);
     showToast('Signed out successfully.', 'info');
-  };
-
-  // Save Writing Desk Entry
-  const handleSaveEntry = (updatedEntry: Entry) => {
-    db.saveEntry(updatedEntry);
-    refreshDbState();
-    if (editingEntry?.id === updatedEntry.id) {
-      setEditingEntry(updatedEntry);
-    }
-  };
-
-  // Delete Writing Desk Entry
-  const handleDeleteEntry = (entryId: string) => {
-    db.deleteEntry(entryId);
-    refreshDbState();
-    setEditingEntry(null);
-    setSelectedEntry(null);
-  };
-
-  // Create new draft entry
-  const handleCreateNewEntry = (type: EntryType) => {
-    if (!currentUser) return;
-
-    const newId = generateUUID();
-    const tempTitle = type === 'Note' ? '' : `Untitled ${type}`;
-    const defaultContent = type === 'Essay'
-      ? 'This is the first paragraph of your scholarly essay.\n\nThis is the second paragraph of your essay. Margin notes are displayed adjacent to their respective paragraph.'
-      : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
-        : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
-          : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
-
-    const slugSuffix = Date.now().toString().slice(-4);
-    const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
-
-    const newEntry: Entry = {
-      id: newId,
-      authorId: currentUser.id,
-      contentType: type,
-      status: 'Draft',
-      visibility: 'Private',
-      createdDate: new Date().toISOString(),
-      updatedDate: new Date().toISOString(),
-      publishedDate: null,
-      title: tempTitle,
-      slug: entrySlug,
-      tags: ['Scholarship'],
-      canonicalUrl: `https://${currentUser.penName.toLowerCase().replace(/\s+/g, '')}.adjung.com/${type.toLowerCase()}/${type === 'Note' ? 'note-' + slugSuffix : 'untitled'}`,
-      content: defaultContent,
-      footnotes: type === 'Essay' ? ['Your first footnote description citation goes here.'] : undefined,
-      marginNotes: type === 'Essay' ? { 0: 'A scholarly margin note aligned with paragraph 1.' } : undefined
-    };
-
-    db.saveEntry(newEntry);
-    refreshDbState();
-    setEditingEntry(newEntry);
-  };
-
-  // Save Folio Settings (Public Writing Identity)
-  const handleSaveFolioSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser) return;
-
-    // 1. Update user's public identity metadata
-    const updatedUser: User = {
-      ...currentUser,
-      penName: deskPenName,
-      signature: deskSignature
-    };
-    db.updateUser(updatedUser);
-    setCurrentUser(updatedUser);
-
-    // 2. Update writer profile info
-    const profile = db.getProfileByAuthorId(currentUser.id);
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      heroTitle: deskHeroTitle,
-      heroSubtitle: deskHeroSubtitle,
-    };
-    db.updateProfile(updatedProfile);
-
-    const identity = db.getIdentityByAccountId(currentUser.id);
-    if (identity) {
-      db.updateIdentity({
-        ...identity,
-        biography: deskBioText
-      });
-    }
-
-    refreshDbState();
-    showToast('Writing profile updated successfully', 'success');
   };
 
   // Save Account Credentials Settings
@@ -1183,8 +950,8 @@ export default function App() {
     };
 
     const updateAuthPassword = async () => {
-      if (accountPassword && auth.currentUser) {
-        await updatePassword(auth.currentUser, accountPassword);
+      if (accountPassword) {
+        await supabase.auth.updateUser({ password: accountPassword });
       }
     };
 
@@ -1194,18 +961,11 @@ export default function App() {
     ])
       .then(() => {
         localStorage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
-        if (accountPassword) {
-          localStorage.setItem(`adjung_password_${currentUser.id}`, accountPassword);
-        }
-        db.updateUser(updatedUser);
         setCurrentUser(updatedUser);
-        firestoreService.saveLog({
-          id: `log-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          operator: currentUser.penName,
-          role: currentUser.role,
-          action: `Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`
-        }).then(() => refreshDbState());
+        firestoreService.logAction(
+          `Updated account credentials (username: @${cleanUsername}, email: ${cleanEmail || 'none'}).`,
+          currentUser
+        ).then(() => refreshDbState());
         setShowAccountModal(false);
         showToast('Account credentials updated successfully', 'success');
       })
@@ -1228,7 +988,7 @@ export default function App() {
       category: newBioCategory
     };
 
-    const identity = db.getIdentityByAccountId(currentUser.id);
+    const identity = identities.find(i => i.accountId === currentUser.id);
     if (identity) {
       const updatedIdentity: IdentityProfile = {
         ...identity,
@@ -1237,7 +997,6 @@ export default function App() {
 
       try {
         await firestoreService.saveIdentity(updatedIdentity);
-        db.updateIdentity(updatedIdentity);
         refreshDbState();
         showToast('Biography updated', 'success');
       } catch (err) {
@@ -1256,7 +1015,7 @@ export default function App() {
   // Remove Biography Timeline Item
   const handleRemoveBioItem = async (itemId: string) => {
     if (!currentUser) return;
-    const identity = db.getIdentityByAccountId(currentUser.id);
+    const identity = identities.find(i => i.accountId === currentUser.id);
     if (identity) {
       const updatedIdentity = {
         ...identity,
@@ -1265,7 +1024,6 @@ export default function App() {
 
       try {
         await firestoreService.saveIdentity(updatedIdentity);
-        db.updateIdentity(updatedIdentity);
         refreshDbState();
         showToast('Biography updated', 'success');
       } catch (err) {
@@ -1312,7 +1070,7 @@ Editorial Board of Adjung`;
   };
 
   // Handle completing registration from invitation
-  const handleCompleteRegistration = (e: React.FormEvent) => {
+  const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invitedRegistrationData) return;
 
@@ -1340,49 +1098,66 @@ Editorial Board of Adjung`;
     }
 
     const newUserId = `user-${formattedUsername.replace(/\./g, '-')}`;
-    const newUser: User = {
-      id: newUserId,
-      username: formattedUsername,
-      email: email,
-      role: 'Writer',
-      penName: penName.trim(),
-      signature: signature.trim(),
-      avatarColor: 'bg-stone-800 text-stone-100',
-      bioSummary: `Newly registered independent scholar on Adjung.`
-    };
 
-    // Create the User in the mockDb
-    db.createUser(newUser);
-
-    // Update associated empty profile
-    const profile = db.getProfileByAuthorId(newUserId);
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      heroTitle: heroTitle.trim() || `${penName.trim()}’s Folio`,
-      heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.'
-    };
-    db.updateProfile(updatedProfile);
-
-    const identity = db.getIdentityByAccountId(newUserId);
-    if (identity) {
-      db.updateIdentity({
-        ...identity,
-        biography: bioText.trim() || `Biography of ${penName.trim()}.`
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: crypto.randomUUID(),
       });
+      if (signUpError) throw signUpError;
+
+      const newUser: User = {
+        id: newUserId,
+        username: formattedUsername,
+        email: email,
+        role: 'Writer',
+        penName: penName.trim(),
+        signature: signature.trim(),
+        avatarColor: 'bg-stone-800 text-stone-100',
+        bioSummary: `Newly registered independent scholar on Adjung.`,
+        authUserId: signUpData.user?.id,
+      };
+
+      const updatedProfile: WriterProfile = {
+        authorId: newUserId,
+        heroTitle: heroTitle.trim() || `${penName.trim()}’s Folio`,
+        heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.'
+      };
+
+      const newIdentity: IdentityProfile = {
+        identityId: `id-${newUserId}`,
+        accountId: newUserId,
+        username: formattedUsername,
+        displayName: penName.trim(),
+        penName: penName.trim(),
+        biography: bioText.trim() || `Biography of ${penName.trim()}.`,
+        publicVisibility: 'Public',
+        lifeTimeline: [],
+        signatures: []
+      };
+
+      await Promise.all([
+        firestoreService.saveUser(newUser),
+        firestoreService.saveProfile(updatedProfile),
+        firestoreService.saveIdentity(newIdentity)
+      ]);
+
+      // Sync state
+      refreshDbState();
+      setCurrentUser(newUser);
+      setSelectedAuthorId(newUserId);
+      setActiveTab('desk');
+      setInvitedRegistrationData(null);
+
+      showToast(`Folio Initialized! Welcome to Adjung, ${penName.trim()}!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
     }
-
-    // Sync state
-    refreshDbState();
-    setCurrentUser(newUser);
-    setSelectedAuthorId(newUserId);
-    setActiveTab('desk');
-    setInvitedRegistrationData(null);
-
-    showToast(`Folio Initialized! Welcome to Adjung, ${penName.trim()}!`, 'success');
   };
 
-  const handleWizardComplete = (data: any) => {
-    const { username, displayName, penName, signatureData, email, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
+  const handleWizardComplete = async (data: any) => {
+    const { username, displayName, penName, signatureData, email, password, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
 
     const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
 
@@ -1401,67 +1176,68 @@ Editorial Board of Adjung`;
     }
 
     const newUserId = `user-${formattedUsername.replace(/\./g, '-')}`;
-    const newUser: User = {
-      id: newUserId,
-      username: formattedUsername,
-      email: email.trim(),
-      role: 'Writer',
-      penName: (penName || displayName).trim(),
-      signature: typeof signatureData === 'string' ? signatureData.trim() : (penName || displayName).trim(),
-      avatarColor: 'bg-stone-800 text-stone-100',
-      bioSummary: `Newly registered independent scholar on Adjung.`
-    };
 
-    // Create the User in the mockDb
-    db.createUser(newUser);
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+      });
+      if (signUpError) throw signUpError;
 
-    // Update associated empty profile
-    const profile = db.getProfileByAuthorId(newUserId);
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      heroTitle: `${(penName || displayName).trim()}'s Folio`,
-      heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
-    };
-    db.updateProfile(updatedProfile);
+      const newUser: User = {
+        id: newUserId,
+        username: formattedUsername,
+        email: email.trim(),
+        role: 'Writer',
+        penName: (penName || displayName).trim(),
+        signature: typeof signatureData === 'string' ? signatureData.trim() : (penName || displayName).trim(),
+        avatarColor: 'bg-stone-800 text-stone-100',
+        bioSummary: `Newly registered independent scholar on Adjung.`,
+        authUserId: signUpData.user?.id,
+      };
 
-    const identity = db.getIdentityByAccountId(newUserId);
-    if (identity) {
-      // bioContent removed
-      db.updateIdentity({
-        ...identity,
+      const updatedProfile: WriterProfile = {
+        authorId: newUserId,
+        heroTitle: `${(penName || displayName).trim()}'s Folio`,
+        heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
+      };
+
+      const newIdentity: IdentityProfile = {
+        identityId: `id-${newUserId}`,
+        accountId: newUserId,
+        username: formattedUsername,
         displayName: displayName.trim(),
         penName: (penName || displayName).trim(),
-        biography: biography ? biography.trim() : `Biography of ${(penName || displayName).trim()}.`
-      });
-    }
+        biography: biography ? biography.trim() : `Biography of ${(penName || displayName).trim()}.`,
+        publicVisibility: 'Public',
+        lifeTimeline: [],
+        signatures: []
+      };
 
-    // Sync state
-    refreshDbState();
-    setCurrentUser(newUser);
-    setSelectedAuthorId(newUserId);
-    setActiveTab('desk');
-    setShowSignUpWizard(false);
-    showToast(`Membership established! Welcome to Adjung, ${(penName || displayName).trim()}!`, 'success');
+      await Promise.all([
+        firestoreService.saveUser(newUser),
+        firestoreService.saveProfile(updatedProfile),
+        firestoreService.saveIdentity(newIdentity)
+      ]);
+
+      // Sync state
+      refreshDbState();
+      setCurrentUser(newUser);
+      setSelectedAuthorId(newUserId);
+      setActiveTab('desk');
+      setShowSignUpWizard(false);
+      showToast(`Membership established! Welcome to Adjung, ${(penName || displayName).trim()}!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
+    }
   };
 
   // Editorium: Reset Database
-  const handleResetDatabase = () => {
-    if (window.confirm('WARNING: This will restore the database to the initial academic seed data, erasing all custom local modifications. Proceed?')) {
-      db.resetToDefaults();
-      AuthService.signOut();
-      refreshDbState();
-      setCurrentUser(null);
-      setSelectedAuthorId('');
-      setActiveTab('folio');
-      setEditingEntry(null);
-      setSelectedEntry(null);
-    }
-  };
-
   // Active Author profile and records (no silent seeded fallbacks!)
   const currentAuthor = selectedAuthorId ? users.find(u => u.id === selectedAuthorId) : undefined;
-  const authorProfile = selectedAuthorId ? (profiles.find(p => p.authorId === selectedAuthorId) || db.getProfileByAuthorId(selectedAuthorId)) : undefined;
-  const authorIdentity = selectedAuthorId ? db.getIdentityByAccountId(selectedAuthorId) : undefined;
+  const authorProfile = selectedAuthorId ? profiles.find(p => p.authorId === selectedAuthorId) : undefined;
+  const authorIdentity = selectedAuthorId ? identities.find(i => i.accountId === selectedAuthorId) : undefined;
   const authorPublishedEntries = selectedAuthorId ? entries.filter(e => e.authorId === selectedAuthorId && e.status === 'Published' && e.visibility === 'Public') : [];
 
   // Filter timeline entries by selected category/tag
@@ -1567,6 +1343,7 @@ Editorial Board of Adjung`;
             setShowLoginModal={setShowLoginModal}
             setLoginError={setLoginError}
             handleLogout={handleLogout}
+            setShowSwitchScriptorModal={setShowSwitchScriptorModal}
           />
           {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
           {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
@@ -1635,16 +1412,16 @@ Editorial Board of Adjung`;
                     : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer')}
                   authorSignature={selectedEntry.publicationClass === 'Institutional'
                     ? ''
-                    : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer')}
+                    : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer', identities)}
                   authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
                     ? []
-                    : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '')}
+                    : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '', identities)}
                   authorSignatureFont={selectedEntry.publicationClass === 'Institutional'
                     ? ''
-                    : resolveSignatureFont(selectedEntry.authorId || '')}
+                    : resolveSignatureFont(selectedEntry.authorId || '', identities)}
                   authorDigitalSignature={selectedEntry.publicationClass === 'Institutional'
                     ? undefined
-                    : resolveDigitalSignature(selectedEntry.authorId || '', selectedEntry)}
+                    : resolveDigitalSignature(selectedEntry.authorId || '', identities, selectedEntry)}
                 />
               </div>
             )}
@@ -1806,7 +1583,7 @@ Editorial Board of Adjung`;
 
             {/* ACTIVE MODULE: POLICIES */}
             {activeTab === 'policies' && (
-              <PoliciesView policies={db.getPolicies()} />
+              <PoliciesView policies={policies} />
             )}
 
 
@@ -1873,6 +1650,26 @@ Editorial Board of Adjung`;
             setAccountConfirmPassword={setAccountConfirmPassword}
             accountError={accountError}
             handleSaveAccountSettings={handleSaveAccountSettings}
+          />
+
+          {/* ==================== 4C. SWITCH SCRIPTOR MODAL (Act as an AI Scriptor) ==================== */}
+          <SwitchScriptorModal
+            isOpen={showSwitchScriptorModal}
+            onClose={() => setShowSwitchScriptorModal(false)}
+          />
+
+          {/* ==================== 4D. CONFIRM DIALOG (replaces window.confirm) ==================== */}
+          <ConfirmDialog
+            isOpen={!!confirmState}
+            message={confirmState?.message || ''}
+            title={confirmState?.title}
+            confirmLabel={confirmState?.confirmLabel}
+            danger={confirmState?.danger}
+            onCancel={closeConfirm}
+            onConfirm={() => {
+              confirmState?.onConfirm();
+              closeConfirm();
+            }}
           />
 
           {/* ==================== 5. ADD TIMELINE ITEM MODAL (Shown only in Biography when Owner) ==================== */}

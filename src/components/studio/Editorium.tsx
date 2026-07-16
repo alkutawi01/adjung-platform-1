@@ -25,12 +25,11 @@ import {
   EyeOff
 } from 'lucide-react';
 import { User, SystemSettings, Entry, BiographyItem, RolePermissions, PolicyDocument, PolicySection } from '../../types';
-import { db } from '../../db/mockDb';
 import { getReadingTime, isArabicText, parseInlineFormatting, getWordCount, stripMarkdown, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, parseResearchFindings } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { ArchitectureStudio } from './ArchitectureStudio';
 import { ReferenceLibrary } from './ReferenceLibrary';
-import { firestoreService } from '../../utils/firestoreService';
+import { supabaseService as firestoreService } from '../../utils/supabaseService';
 import { PlatformIdentityTab } from './tabs/PlatformIdentityTab';
 import { FrontpageCurationTab } from './tabs/FrontpageCurationTab';
 import { UserManagementTab } from './tabs/UserManagementTab';
@@ -110,6 +109,8 @@ export function Editorium() {
     currentUser,
     users,
     entries,
+    policies,
+    logs,
     systemSettings,
     setSystemSettings,
     createNewEntry,
@@ -129,7 +130,8 @@ export function Editorium() {
     researchFindingsGoogleDocText,
     inTheNewsGoogleDocStatus,
     worldClockHolidaysGoogleDocStatus,
-    researchFindingsGoogleDocStatus
+    researchFindingsGoogleDocStatus,
+    requestConfirm
   } = useAppContext();
 
   const hasPermission = (permissionKey: keyof RolePermissions) => {
@@ -141,16 +143,15 @@ export function Editorium() {
   const [boardSearchQuery, setBoardSearchQuery] = useState('');
   const [appointEditorQuery, setAppointEditorQuery] = useState('');
 
-  const [selectedPolicyEditId, setSelectedPolicyEditId] = useState(db.getPolicies()[0]?.id || '');
-  const [policyEditSections, setPolicyEditSections] = useState<PolicySection[]>(db.getPolicies()[0]?.sections || []);
+  const [selectedPolicyEditId, setSelectedPolicyEditId] = useState(policies[0]?.id || '');
+  const [policyEditSections, setPolicyEditSections] = useState<PolicySection[]>(policies[0]?.sections || []);
 
   useEffect(() => {
-    const policies = db.getPolicies();
     const current = policies.find(p => p.id === selectedPolicyEditId);
     if (current) {
       setPolicyEditSections(JSON.parse(JSON.stringify(current.sections)));
     }
-  }, [selectedPolicyEditId, users]);
+  }, [selectedPolicyEditId, policies]);
 
   // Filtering board members and general users
   const boardMembers = React.useMemo(() => {
@@ -341,9 +342,8 @@ export function Editorium() {
       layoutDensity
     };
     setSystemSettings(updatedSettings);
-    db.updateSystemSettings(updatedSettings);
 
-    db.addLog(`Modified Frontpage Curation: Scholar='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser.penName, currentUser.role);
+    firestoreService.logAction(`Modified Frontpage Curation: Scholar='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser);
     showToast('Frontpage curation settings saved and synchronized.', 'success');
   };
 
@@ -356,8 +356,7 @@ export function Editorium() {
       inTheNewsLastFetched: ''
     };
     setSystemSettings(updatedSettings);
-    db.updateSystemSettings(updatedSettings);
-    db.addLog(`Updated In The News digest and Google Doc URL.`, currentUser.penName, currentUser.role);
+    firestoreService.logAction(`Updated In The News digest and Google Doc URL.`, currentUser);
     showToast('In The News digest saved and synchronized.', 'success');
   };
 
@@ -395,8 +394,7 @@ url: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festiv
       worldClockLastFetched: ''
     };
     setSystemSettings(updatedSettings);
-    db.updateSystemSettings(updatedSettings);
-    db.addLog(`Updated World Clock Calendars & Holidays digest and Google Doc URL.`, currentUser.penName, currentUser.role);
+    firestoreService.logAction(`Updated World Clock Calendars & Holidays digest and Google Doc URL.`, currentUser);
     showToast('World Clock Calendars & Holidays digest saved and synchronized.', 'success');
   };
 
@@ -444,8 +442,7 @@ Status: Working
       researchFindingsLastFetched: ''
     };
     setSystemSettings(updatedSettings);
-    db.updateSystemSettings(updatedSettings);
-    db.addLog(`Updated Research Findings digest and Google Doc URL.`, currentUser.penName, currentUser.role);
+    firestoreService.logAction(`Updated Research Findings digest and Google Doc URL.`, currentUser);
     showToast('Research Findings digest saved and synchronized.', 'success');
   };
 
@@ -1038,11 +1035,15 @@ Source: MIT Technology Review, 2024
                             <button
                               type="button"
                               onClick={() => {
-                                if (window.confirm(`Are you sure you want to revoke ${editor.penName}'s editorial status?`)) {
-                                  handleChangeUserRole(editor.id, 'Writer');
-                                  showToast(`Revoked ${editor.penName}'s editorial status. Demoted to Writer.`, 'info');
-                                  refreshDbState();
-                                }
+                                requestConfirm(
+                                  `Are you sure you want to revoke ${editor.penName}'s editorial status?`,
+                                  () => {
+                                    handleChangeUserRole(editor.id, 'Writer');
+                                    showToast(`Revoked ${editor.penName}'s editorial status. Demoted to Writer.`, 'info');
+                                    refreshDbState();
+                                  },
+                                  { confirmLabel: 'Revoke' }
+                                );
                               }}
                               className="bg-white hover:bg-red-50 border border-red-200 text-red-700 py-1.5 px-3 rounded text-[10px] font-mono uppercase tracking-wider transition text-center cursor-pointer mb-1"
                             >
@@ -1102,7 +1103,6 @@ Source: MIT Technology Review, 2024
                   onChange={(e) => {
                     const updated = { ...systemSettings, editorialPolicy: e.target.value };
                     setSystemSettings(updated);
-                    db.updateSystemSettings(updated);
                   }}
                   className={`w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon text-xs leading-relaxed min-h-[100px] ${
                     !hasPermission('manageSettings') ? 'bg-stone-50 text-stone-500 cursor-not-allowed' : 'bg-white text-stone-900'
@@ -1128,7 +1128,7 @@ Source: MIT Technology Review, 2024
                     onChange={(e) => setSelectedPolicyEditId(e.target.value)}
                     className="w-full border border-stone-200 p-1.5 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white"
                   >
-                    {db.getPolicies().map(p => (
+                    {policies.map(p => (
                       <option key={p.id} value={p.id}>{p.title}</option>
                     ))}
                   </select>
@@ -1168,16 +1168,19 @@ Source: MIT Technology Review, 2024
                 <button
                   type="button"
                   onClick={() => {
-                    const p = db.getPolicies().find(x => x.id === selectedPolicyEditId);
+                    const p = policies.find(x => x.id === selectedPolicyEditId);
                     if (p) {
                       const updatedPolicy = {
                         ...p,
                         sections: policyEditSections,
                         lastUpdated: new Date().toISOString()
                       };
-                      db.savePolicy(updatedPolicy);
-                      showToast(`Policy '${p.title}' successfully updated.`, 'success');
-                      refreshDbState();
+                      firestoreService.savePolicy(updatedPolicy)
+                        .then(() => {
+                          showToast(`Policy '${p.title}' successfully updated.`, 'success');
+                          refreshDbState();
+                        })
+                        .catch(() => showToast('Failed to save policy.', 'error'));
                     }
                   }}
                   className="w-full py-2 bg-[#802334] text-white font-mono uppercase tracking-wider text-[9px] hover:opacity-95 transition cursor-pointer"
@@ -1269,25 +1272,21 @@ Source: MIT Technology Review, 2024
                         <button
                           type="button"
                           onClick={() => {
-                            const confirmRestore = window.confirm("Are you sure you want to restore this article?");
-                            if (!confirmRestore) return;
-                            
-                            const updatedEntry = {
-                              ...entry,
-                              underReview: false
-                            };
-                            
-                            firestoreService.saveEntry(updatedEntry)
-                              .then(() => {
-                                firestoreService.saveLog({
-                                  id: `log-${Date.now()}`,
-                                  timestamp: new Date().toISOString(),
-                                  operator: currentUser.penName,
-                                  role: currentUser.role,
-                                  action: `Dismissed report and restored entry "${entry.title}" (ID: ${entry.id}).`
-                                }).then(() => refreshDbState());
-                                showToast('Report dismissed. Article returned to normal status.', 'success');
-                              });
+                            requestConfirm("Are you sure you want to restore this article?", () => {
+                              const updatedEntry = {
+                                ...entry,
+                                underReview: false
+                              };
+
+                              firestoreService.saveEntry(updatedEntry)
+                                .then(() => {
+                                  firestoreService.logAction(
+                                    `Dismissed report and restored entry "${entry.title}" (ID: ${entry.id}).`,
+                                    currentUser
+                                  ).then(() => refreshDbState());
+                                  showToast('Report dismissed. Article returned to normal status.', 'success');
+                                });
+                            }, { confirmLabel: 'Restore', danger: false });
                           }}
                           className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-mono uppercase rounded transition cursor-pointer border border-stone-200"
                         >
@@ -1296,26 +1295,22 @@ Source: MIT Technology Review, 2024
                         <button
                           type="button"
                           onClick={() => {
-                            const confirmUnlist = window.confirm("Are you sure you want to unlist this article from public display?");
-                            if (!confirmUnlist) return;
-                            
-                            const updatedEntry = {
-                              ...entry,
-                              visibility: 'Private' as const,
-                              underReview: false
-                            };
-                            
-                            firestoreService.saveEntry(updatedEntry)
-                              .then(() => {
-                                firestoreService.saveLog({
-                                  id: `log-${Date.now()}`,
-                                  timestamp: new Date().toISOString(),
-                                  operator: currentUser.penName,
-                                  role: currentUser.role,
-                                  action: `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`
-                                }).then(() => refreshDbState());
-                                showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
-                              });
+                            requestConfirm("Are you sure you want to unlist this article from public display?", () => {
+                              const updatedEntry = {
+                                ...entry,
+                                visibility: 'Private' as const,
+                                underReview: false
+                              };
+
+                              firestoreService.saveEntry(updatedEntry)
+                                .then(() => {
+                                  firestoreService.logAction(
+                                    `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`,
+                                    currentUser
+                                  ).then(() => refreshDbState());
+                                  showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
+                                });
+                            }, { confirmLabel: 'Unlist' });
                           }}
                           className="px-3 py-1.5 bg-adjung-maroon hover:bg-[#962e41] text-white text-xs font-mono uppercase rounded transition cursor-pointer"
                         >
@@ -1337,6 +1332,7 @@ Source: MIT Technology Review, 2024
       {editoriumActiveTab === 'system' && (
         <SystemLogsTab
           currentUser={currentUser}
+          logs={logs}
           showToast={showToast}
           refreshDbState={refreshDbState}
           hasPermission={hasPermission}
@@ -1399,10 +1395,14 @@ Source: MIT Technology Review, 2024
               type="button"
               disabled={!hasPermission('manageSettings')}
               onClick={() => {
-                if (window.confirm('WARNING: Are you absolutely sure you want to reset the entire database? This deletes all custom entries and profiles.')) {
-                  handleResetDatabase();
-                  showToast('Database reset to pre-seeded academic templates.', 'info');
-                }
+                requestConfirm(
+                  'WARNING: Are you absolutely sure you want to reset the entire database? This deletes all custom entries and profiles.',
+                  () => {
+                    handleResetDatabase();
+                    showToast('Database reset to pre-seeded academic templates.', 'info');
+                  },
+                  { title: 'Danger Zone', confirmLabel: 'Reset Everything' }
+                );
               }}
               className={`px-4 py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm ${
                 !hasPermission('manageSettings')

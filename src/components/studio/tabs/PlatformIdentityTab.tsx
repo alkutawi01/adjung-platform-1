@@ -1,7 +1,6 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import { SystemSettings } from '../../../types';
-import { db } from '../../../db/mockDb';
 
 interface PlatformIdentityTabProps {
   systemSettings: SystemSettings;
@@ -46,7 +45,6 @@ export function PlatformIdentityTab({
                 onChange={(e) => {
                   const updated = { ...systemSettings, academicAffiliation: e.target.value };
                   setSystemSettings(updated);
-                  db.updateSystemSettings(updated);
                 }}
                 className={`w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon text-xs ${
                   !hasPermission('manageSettings') ? 'bg-stone-50 text-stone-500 cursor-not-allowed' : 'bg-white text-stone-900'
@@ -129,7 +127,7 @@ export function PlatformIdentityTab({
         <div className="w-full bg-stone-50 border border-stone-200 p-4 rounded text-xs text-stone-600 leading-normal font-serif flex items-start gap-2.5 text-left select-none">
           <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
           <div>
-            <strong>Brand Status: Active & Operational.</strong> Changes to the academic affiliation or tag seals are immediately written to the local storage mock database and synchronized across all open browser context views.
+            <strong>Brand Status: Active & Operational.</strong> Changes to the academic affiliation or tag seals are written directly to the platform database and synchronized across all open browser context views.
           </div>
         </div>
       </div>

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, QrCode, Laptop, Smartphone, Check, PenTool, Type, Loader2 } from 'lucide-react';
 import { SignaturePad } from '../../desk/SignaturePad';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { firestore } from '../../../config/firebase';
+import { supabase } from '../../../config/supabase';
 import SimulatedMobileCanvas from './SimulatedMobileCanvas';
 
 const pageVariants = {
@@ -78,45 +77,42 @@ export default function Step8Signature({ formData, setFormData, onNext }: Step8S
 
   const hasRecordedSignature = !!formData.signatureData;
 
-  // Real-time Firestore sync listener
+  // Real-time Supabase Realtime (Broadcast) sync listener
   useEffect(() => {
     if (mode === 'qr') {
       const newSessionId = `sync-session-${Date.now()}`;
       setSessionId(newSessionId);
 
-      const docRef = doc(firestore, 'signature_sync', newSessionId);
-      const unsubscribe = onSnapshot(docRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (data && data.status === 'completed') {
-            setIsSyncing(true);
-            setSyncProgress(0);
-            
-            // Animate progress transition
-            const interval = setInterval(() => {
-              setSyncProgress((prev) => {
-                if (prev >= 100) {
-                  clearInterval(interval);
-                  setTimeout(() => {
-                    setIsSyncing(false);
-                    setFormData({
-                      ...formData,
-                      signatureType: 'draw',
-                      signatureData: { strokes: data.strokes, type: 'drawn' }
-                    });
-                    setMode('choose');
-                  }, 400);
-                  return 100;
-                }
-                return prev + 25;
-              });
-            }, 100);
-          }
-        }
-      });
+      const channel = supabase.channel(`signature_sync:${newSessionId}`);
+      channel
+        .on('broadcast', { event: 'completed' }, ({ payload }) => {
+          setIsSyncing(true);
+          setSyncProgress(0);
+
+          // Animate progress transition
+          const interval = setInterval(() => {
+            setSyncProgress((prev) => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  setIsSyncing(false);
+                  setFormData({
+                    ...formData,
+                    signatureType: 'draw',
+                    signatureData: { strokes: payload.strokes, type: 'drawn' }
+                  });
+                  setMode('choose');
+                }, 400);
+                return 100;
+              }
+              return prev + 25;
+            });
+          }, 100);
+        })
+        .subscribe();
 
       return () => {
-        unsubscribe();
+        supabase.removeChannel(channel);
       };
     }
   }, [mode]);

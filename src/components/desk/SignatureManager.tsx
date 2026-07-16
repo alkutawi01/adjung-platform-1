@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DigitalSignature, IdentityProfile } from '../../types';
-import { db } from '../../db/mockDb';
 import { SignaturePad } from './SignaturePad';
 import { SignatureRenderer } from './SignatureRenderer';
 import { Edit3, CheckCircle, Trash2 } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 
 interface SignatureManagerProps {
   identity: IdentityProfile;
@@ -11,6 +11,7 @@ interface SignatureManagerProps {
 }
 
 export function SignatureManager({ identity, onIdentityUpdate }: SignatureManagerProps) {
+  const { requestConfirm } = useAppContext();
   const [showPad, setShowPad] = useState(false);
 
   // Always find the primary default signature, or fallback to the first one
@@ -31,24 +32,22 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
     };
 
     // Replace the entire signatures array with just this single active signature (no archiving)
-    const updatedIdentity = { 
-      ...identity, 
-      signatures: [newSig] 
+    const updatedIdentity = {
+      ...identity,
+      signatures: [newSig]
     };
-    db.updateIdentity(updatedIdentity);
     onIdentityUpdate(updatedIdentity);
     setShowPad(false);
   };
 
   const handleRemoveSignature = () => {
-    if (window.confirm('Are you sure you want to remove your signature?')) {
-      const updatedIdentity = { 
-        ...identity, 
-        signatures: [] 
+    requestConfirm('Are you sure you want to remove your signature?', () => {
+      const updatedIdentity = {
+        ...identity,
+        signatures: []
       };
-      db.updateIdentity(updatedIdentity);
       onIdentityUpdate(updatedIdentity);
-    }
+    }, { confirmLabel: 'Remove' });
   };
 
   return (

@@ -45,6 +45,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
     penName: '',
     username: '',
     email: '',
+    password: '',
     biography: '',
     professionalTitle: '',
     institution: '',

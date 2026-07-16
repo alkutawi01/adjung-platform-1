@@ -1,6 +1,5 @@
 import React from 'react';
 import { User, Entry, WriterProfile, SystemSettings, DigitalSignature } from '../../types';
-import { db } from '../../db/mockDb';
 import { BRAND } from '../../config/brand';
 import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
@@ -8,7 +7,7 @@ import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollaps
 import { EntryRenderer } from '../rendering/EntryRenderer';
 import { FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { firestoreService } from '../../utils/firestoreService';
+import { supabaseService as firestoreService } from '../../utils/supabaseService';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -30,8 +29,8 @@ interface FolioViewProps {
   setLoginError: (error: string) => void;
 }
 
-function resolveDigitalSignature(authorId: string, entry?: Entry | null): DigitalSignature | undefined {
-  const identity = db.getIdentityByAccountId(authorId);
+function resolveDigitalSignature(authorId: string, identities: { accountId: string; signatures: DigitalSignature[] }[], entry?: Entry | null): DigitalSignature | undefined {
+  const identity = identities.find(i => i.accountId === authorId);
   if (!identity || !identity.signatures) return undefined;
   if (entry?.signatureVersionId) {
     const sig = identity.signatures.find(s => s.id === entry.signatureVersionId);
@@ -59,7 +58,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
   setShowLoginModal,
   setLoginError,
 }) => {
-  const { currentUser, refreshDbState } = useAppContext();
+  const { currentUser, identities, refreshDbState } = useAppContext();
   const [noteExceedsMap, setNoteExceedsMap] = React.useState<Record<string, boolean>>({});
   const [isEditingHeader, setIsEditingHeader] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState(authorProfile?.heroTitle || '');
@@ -134,8 +133,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
     };
     
     await firestoreService.saveProfile(updatedProfile);
-    
-    db.updateProfile(updatedProfile);
+
     setIsEditingHeader(false);
     refreshDbState();
   };
@@ -259,11 +257,11 @@ export const FolioView: React.FC<FolioViewProps> = ({
             <div className="h-16 w-64 flex items-center justify-center z-10 relative mix-blend-multiply">
               {currentAuthor && (
                 <SignatureRenderer
-                  strokes={resolveDigitalSignature(currentAuthor.id)?.strokes || []}
-                  type={resolveDigitalSignature(currentAuthor.id)?.type || 'drawn'}
-                  typedText={resolveDigitalSignature(currentAuthor.id)?.typedText || currentAuthor.signature}
-                  fontFamily={resolveDigitalSignature(currentAuthor.id)?.fontFamily}
-                  typographyStyle={resolveDigitalSignature(currentAuthor.id)?.typographyStyle}
+                  strokes={resolveDigitalSignature(currentAuthor.id, identities)?.strokes || []}
+                  type={resolveDigitalSignature(currentAuthor.id, identities)?.type || 'drawn'}
+                  typedText={resolveDigitalSignature(currentAuthor.id, identities)?.typedText || currentAuthor.signature}
+                  fontFamily={resolveDigitalSignature(currentAuthor.id, identities)?.fontFamily}
+                  typographyStyle={resolveDigitalSignature(currentAuthor.id, identities)?.typographyStyle}
                   className="w-full h-full overflow-visible origin-center"
                   color="rgba(128, 35, 52, 0.85)"
                   strokeWidth={2.5}

@@ -3,7 +3,6 @@ import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-re
 import { Entry, User, EntryType } from '../../types';
 import { EntryRenderer } from '../rendering/EntryRenderer';
 import { parseInlineFormatting, stripMarkdown } from '../../utils';
-import { db } from '../../db/mockDb';
 import { useAppContext } from '../../context/AppContext';
 
 interface WritingDeskProps {
@@ -31,12 +30,15 @@ export function WritingDesk({
     currentUser,
     setCurrentUser,
     entries,
+    profiles,
+    identities,
     editingEntry: contextEditingEntry,
     setEditingEntry: contextSetEditingEntry,
     refreshDbState,
     createNewEntry,
     saveEntry: contextSaveEntry,
     deleteEntry: contextDeleteEntry,
+    saveWriterFromEditorium,
     showToast
   } = useAppContext();
 
@@ -61,16 +63,16 @@ export function WritingDesk({
 
   useEffect(() => {
     if (currentUser) {
-      const userProfile = db.getProfileByAuthorId(currentUser.id);
-      const identity = db.getIdentityByAccountId(currentUser.id);
+      const userProfile = profiles.find(p => p.authorId === currentUser.id);
+      const identity = identities.find(i => i.accountId === currentUser.id);
       setDeskUsername(currentUser.username);
       setDeskPenName(currentUser.penName);
       setDeskSignature(currentUser.signature);
       setDeskBioText(identity ? identity.biography : '');
-      setDeskHeroTitle(userProfile.heroTitle);
-      setDeskHeroSubtitle(userProfile.heroSubtitle);
+      setDeskHeroTitle(userProfile?.heroTitle || '');
+      setDeskHeroSubtitle(userProfile?.heroSubtitle || '');
     }
-  }, [currentUser]);
+  }, [currentUser, profiles, identities]);
 
   useEffect(() => {
     if (activeEntry && mode !== 'laboratory') {
@@ -82,37 +84,17 @@ export function WritingDesk({
     e.preventDefault();
     if (!currentUser) return;
 
-    // 1. Update user's public identity metadata
-    const updatedUser: User = {
-      ...currentUser,
+    saveWriterFromEditorium({
+      id: currentUser.id,
       username: deskUsername,
       penName: deskPenName,
-      signature: deskSignature
-    };
-    db.updateUser(updatedUser);
-    setCurrentUser(updatedUser);
-
-    // 2. Update writer profile info
-    const profile = db.getProfileByAuthorId(currentUser.id);
-    const updatedProfile = {
-      ...profile,
+      signature: deskSignature,
+      bioSummary: currentUser.bioSummary || '',
       heroTitle: deskHeroTitle,
       heroSubtitle: deskHeroSubtitle,
-    };
-    db.updateProfile(updatedProfile);
-
-    const identity = db.getIdentityByAccountId(currentUser.id);
-    if (identity) {
-      db.updateIdentity({
-        ...identity,
-        penName: deskPenName,
-        username: deskUsername,
-        biography: deskBioText
-      });
-    }
-    
-    refreshDbState();
-    showToast('Writing profile updated successfully', 'success');
+      bioText: deskBioText,
+    });
+    setCurrentUser({ ...currentUser, username: deskUsername, penName: deskPenName, signature: deskSignature });
   };
 
   const handleSave = (updatedEntry: Entry) => {
@@ -226,7 +208,7 @@ export function WritingDesk({
                 createdAt: new Date().toISOString()
               };
             }
-            const identity = db.getIdentityByAccountId(currentUser.id);
+            const identity = identities.find(i => i.accountId === currentUser.id);
             if (!identity) return undefined;
             if (activeEntry?.signatureVersionId) {
               const sig = identity.signatures.find(s => s.id === activeEntry.signatureVersionId);

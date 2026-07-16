@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, IdentityProfile } from '../../types';
-import { db } from '../../db/mockDb';
 import { SignatureManager } from '../desk/SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe } from 'lucide-react';
 import { isSubdomainUnlocked } from '../../utils';
 
 import { useAppContext } from '../../context/AppContext';
-import { firestoreService } from '../../utils/firestoreService';
+import { supabaseService as firestoreService } from '../../utils/supabaseService';
 
 interface IdentityStudioProps {
   isModal?: boolean;
@@ -14,7 +13,7 @@ interface IdentityStudioProps {
 }
 
 export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps) {
-  const { currentUser, setActiveTab, refreshDbState: refreshGlobalState } = useAppContext();
+  const { currentUser, identities, entries, setActiveTab, refreshDbState: refreshGlobalState } = useAppContext();
   
   const handleClose = () => {
     if (onClose) {
@@ -37,8 +36,8 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    let ident = db.getIdentityByAccountId(currentUser.id);
-    
+    let ident = identities.find(i => i.accountId === currentUser.id) || null;
+
     // Robust fallback: if no identity is found, construct a default one so the studio never hangs
     if (!ident) {
       ident = {
@@ -61,12 +60,9 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
           createdAt: new Date().toISOString()
         }] : []
       };
-      // Force save to db
-      try {
-        db.updateIdentity(ident);
-      } catch (e) {
+      firestoreService.saveIdentity(ident).then(() => refreshGlobalState()).catch(e => {
         console.error("Could not save fallback identity", e);
-      }
+      });
     }
 
     setIdentity(ident);
@@ -75,7 +71,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     setPenName(ident.penName);
     setVisibility(ident.publicVisibility || 'Public');
     setAffiliation(ident.affiliation || '');
-  }, [currentUser]);
+  }, [currentUser, identities]);
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
 
@@ -104,7 +100,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
     };
 
-    // Make POST requests to Firestore
+    // Make POST requests to Supabase
     Promise.all([
       firestoreService.saveUser(updatedUser),
       firestoreService.saveIdentity(updatedIdentity)
@@ -113,16 +109,8 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
-      
-      // Update local mockDb
-      db.updateIdentity(updatedIdentity);
+
       setIdentity(updatedIdentity);
-      const usersList = db.getUsers();
-      const uIdx = usersList.findIndex(u => u.id === currentUser.id);
-      if (uIdx !== -1) {
-        usersList[uIdx] = updatedUser;
-        db.saveUsersToStorage();
-      }
 
       setTimeout(() => {
         setIsSaving(false);
@@ -154,7 +142,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
     };
 
-    // Make POST requests to Firestore
+    // Make POST requests to Supabase
     Promise.all([
       firestoreService.saveUser(updatedUser),
       firestoreService.saveIdentity(finalIdentity)
@@ -163,15 +151,6 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       const rememberMe = !!localStorage.getItem('Adjung_session_user_id');
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('Adjung_session_user_data', JSON.stringify(updatedUser));
-      
-      // Update local mockDb in case it is queried before refresh
-      db.updateIdentity(finalIdentity);
-      const usersList = db.getUsers();
-      const uIdx = usersList.findIndex(u => u.id === currentUser.id);
-      if (uIdx !== -1) {
-        usersList[uIdx] = updatedUser;
-        db.saveUsersToStorage();
-      }
 
       refreshGlobalState();
     }).catch(err => console.error('Failed to save signature updates to server:', err));
@@ -312,7 +291,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
               <span className="text-xs font-serif font-bold text-stone-900">
                 {username}.adjung.com
               </span>
-              {isSubdomainUnlocked(currentUser.id, db.getEntries(), identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
+              {isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-emerald-250">
                   Unlocked
                 </span>
@@ -323,7 +302,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
               )}
             </div>
             
-            {!isSubdomainUnlocked(currentUser.id, db.getEntries(), identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) && (
+            {!isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) && (
               <p className="text-[11px] text-stone-500 font-sans leading-relaxed">
                 Your custom subdomain is reserved. Complete the conditions below to unlock and publish using your custom address.
               </p>
@@ -336,7 +315,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
               
               <div className="space-y-2 text-left">
                 {(() => {
-                  const allEntries = db.getEntries();
+                  const allEntries = entries;
                   const hasNote = allEntries.some(e => e.authorId === currentUser.id && e.status === 'Published' && e.contentType === 'Note');
                   const hasEssay = allEntries.some(e => e.authorId === currentUser.id && e.status === 'Published' && e.contentType === 'Essay');
                   const hasBioText = identity && identity.biography && identity.biography.trim().length > 0 && 

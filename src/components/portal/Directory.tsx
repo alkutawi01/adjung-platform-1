@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Compass, BookOpen, FileText, Sparkles } from 'lucide-react';
 import { User, Entry } from '../../types';
-import { db } from '../../db/mockDb';
 import { isArabicText, isSubdomainUnlocked } from '../../utils';
+import { useAppContext } from '../../context/AppContext';
 
 interface DirectoryProps {
   users: User[];
@@ -11,6 +11,7 @@ interface DirectoryProps {
 }
 
 export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
+  const { identities } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [countryFilter, setCountryFilter] = useState<string>('All');
   const [languageFilter, setLanguageFilter] = useState<string>('All');
@@ -262,7 +263,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
             <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
                {sortedUsers.map((u) => {
                 const uMeta = getUserMetadata(u.id);
-                const identity = db.getIdentityByAccountId(u.id);
+                const identity = identities.find(i => i.accountId === u.id);
                 const unlocked = isSubdomainUnlocked(u.id, entries, identity, u.createdAt, u.subdomainApprovedEarly);
                 const domain = unlocked 
                   ? `${u.username}.adjung.com` 
@@ -292,7 +293,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                     {/* Full Name */}
                     <td className="p-3 font-sans text-stone-600">
                       {(() => {
-                        const identity = db.getIdentityByAccountId(u.id);
+                        const identity = identities.find(i => i.accountId === u.id);
                         return identity?.displayName || '-';
                       })()}
                     </td>

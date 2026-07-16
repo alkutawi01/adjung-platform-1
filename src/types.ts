@@ -60,6 +60,7 @@ export interface RolePermissions {
 
 export interface User {
   id: string; // UUID or simple identifier
+  authUserId?: string; // Supabase Auth user UID this account is linked to
   username: string;
   email: string;
   role: UserRole;

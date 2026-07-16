@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Lock, FileText, Search } from 'lucide-react';
-import { User } from '../../../types';
-import { db } from '../../../db/mockDb';
+import { User, SystemLog } from '../../../types';
 
 interface SystemLogsTabProps {
   currentUser: User;
+  logs: SystemLog[];
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   refreshDbState: () => void;
   hasPermission: (perm: string) => boolean;
@@ -12,6 +12,7 @@ interface SystemLogsTabProps {
 
 export function SystemLogsTab({
   currentUser,
+  logs,
   showToast,
   refreshDbState,
   hasPermission
@@ -79,7 +80,7 @@ export function SystemLogsTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-150 font-sans text-xs text-stone-700">
-              {db.getLogs()
+              {logs
                 .filter(log => {
                   const query = logsSearchQuery.trim().toLowerCase();
                   return !query || 
@@ -111,7 +112,7 @@ export function SystemLogsTab({
                     </td>
                   </tr>
                 ))}
-              {db.getLogs().length === 0 && (
+              {logs.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-8 text-center italic text-stone-400 font-serif">
                     No system audit records found.

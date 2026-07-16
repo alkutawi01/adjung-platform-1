@@ -4,13 +4,12 @@ import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, Vec
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount } from '../../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
-import { db } from '../../db/mockDb';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
-import { firestoreService } from '../../utils/firestoreService';
+import { supabaseService as firestoreService } from '../../utils/supabaseService';
 import { RichTextEditable } from './RichTextEditable';
 import { FloatingFormatToolbar } from './FloatingFormatToolbar';
 import { TableOfContents } from './TableOfContents';
@@ -46,7 +45,7 @@ export function EntryRenderer({
   preventScrollToTop,
   presentationSpec
 }: EntryRendererProps) {
-  const { currentUser, refreshDbState, setActiveTab, setSelectedEntry, setEditingEntry } = useAppContext();
+  const { currentUser, users, entries, identities, refreshDbState, setActiveTab, setSelectedEntry, setEditingEntry, requestConfirm } = useAppContext();
   const [title, setTitle] = useState(entry.title || '');
   const [contentType, setContentType] = useState<EntryType>(entry.contentType);
   const [status, setStatus] = useState<EntryStatus>(entry.status);
@@ -71,31 +70,33 @@ export function EntryRenderer({
       const typeSlug = entry.contentType === 'Notice' ? 'notice' : 'editorial';
       return `https://adjung.com/${typeSlug}/${entry.slug}`;
     } else {
-      const author = db.getUsers().find(u => u.id === entry.authorId);
+      const author = users.find(u => u.id === entry.authorId);
       const username = author ? author.username : 'scholar';
       return `https://${username}.adjung.com/${entry.contentType.toLowerCase()}/${entry.slug}`;
     }
   };
 
   const handleReportEntry = () => {
-    const confirmReport = window.confirm("Are you sure you want to report this writing for review by the Editorial Board?");
-    if (!confirmReport) return;
-    
+    requestConfirm(
+      "Are you sure you want to report this writing for review by the Editorial Board?",
+      () => submitReportEntry(),
+      { confirmLabel: 'Report', danger: false }
+    );
+  };
+
+  const submitReportEntry = () => {
     const updatedEntry: Entry = {
       ...entry,
       underReview: true
     };
-    
+
     firestoreService.saveEntry(updatedEntry)
       .then(() => {
         if (currentUser) {
-          firestoreService.saveLog({
-            id: `log-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            operator: currentUser.penName,
-            role: currentUser.role,
-            action: `Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`
-          }).then(() => refreshDbState());
+          firestoreService.logAction(
+            `Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`,
+            currentUser
+          ).then(() => refreshDbState());
         } else {
           refreshDbState();
         }
@@ -1432,14 +1433,6 @@ export function EntryRenderer({
     triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, val);
   };
 
-  const generateUUID = () => {
-    return 'rev-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  };
-
   const handleCreateManualRevision = () => {
     const newRev: Revision = {
       id: generateUUID(),
@@ -1463,11 +1456,14 @@ export function EntryRenderer({
   };
 
   const handleRestoreRevision = (rev: Revision) => {
-    const confirmRestore = window.confirm(
-      `Are you sure you want to restore revision from ${new Date(rev.timestamp).toLocaleString()}? Your current edits will be saved as a backup snapshot.`
+    requestConfirm(
+      `Are you sure you want to restore revision from ${new Date(rev.timestamp).toLocaleString()}? Your current edits will be saved as a backup snapshot.`,
+      () => performRestoreRevision(rev),
+      { confirmLabel: 'Restore', danger: false }
     );
-    if (!confirmRestore) return;
+  };
 
+  const performRestoreRevision = (rev: Revision) => {
     // 1. Create a backup snapshot of current state
     const backupRev: Revision = {
       id: generateUUID(),
@@ -3213,7 +3209,7 @@ export function EntryRenderer({
     const isArticle = contentType === 'Essay';
     const isNote = contentType === 'Note';
 
-    const allEntries = db.getEntriesByAuthor(entry.authorId || '');
+    const allEntries = entries.filter(e => e.authorId === entry.authorId);
     const sortedPublished = allEntries
       .filter(e => e.status === 'Published' && e.publishedDate)
       .sort((a, b) => new Date(a.publishedDate!).getTime() - new Date(b.publishedDate!).getTime());
@@ -3658,7 +3654,7 @@ export function EntryRenderer({
             <div className="w-24 h-[1px] bg-stone-400 absolute top-0 mt-[-1px] mb-8"></div>
             
             {(() => {
-              const authorIdentity = entry.authorId ? db.getIdentityByAccountId(entry.authorId) : undefined;
+              const authorIdentity = entry.authorId ? identities.find(i => i.accountId === entry.authorId) : undefined;
               const authorAffiliation = authorIdentity?.affiliation;
 
               if (authorDigitalSignature) {
@@ -4996,9 +4992,7 @@ export function EntryRenderer({
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this entry permanently?')) {
-                          onDelete(entry.id);
-                        }
+                        requestConfirm('Are you sure you want to delete this entry permanently?', () => onDelete(entry.id), { confirmLabel: 'Delete' });
                       }}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-red-700 hover:bg-red-50 border border-transparent hover:border-red-200 rounded transition cursor-pointer"
                     >
@@ -5397,9 +5391,7 @@ export function EntryRenderer({
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this canonical entry permanently?')) {
-                      onDelete(entry.id);
-                    }
+                    requestConfirm('Are you sure you want to delete this canonical entry permanently?', () => onDelete(entry.id), { confirmLabel: 'Delete' });
                   }}
                   className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-900/40 hover:border-red-700/60 rounded transition-all font-medium cursor-pointer"
                 >

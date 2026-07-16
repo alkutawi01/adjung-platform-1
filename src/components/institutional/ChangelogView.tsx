@@ -1,8 +1,8 @@
 import React from 'react';
-import { db } from '../../db/mockDb';
+import { INITIAL_RELEASE_LOGS } from '../../config/releaseLogs';
 
 export const ChangelogView: React.FC = () => {
-  const releaseLogs = db.getReleaseLogs();
+  const releaseLogs = INITIAL_RELEASE_LOGS;
 
   return (
     <div className="max-w-3xl mx-auto space-y-12 py-10">

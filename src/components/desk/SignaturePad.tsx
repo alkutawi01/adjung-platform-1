@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { DigitalSignature, VectorStroke } from '../../types';
 import { Settings, Trash2, Sliders, Sparkles, Paintbrush, FileText, Info, Type, PenTool } from 'lucide-react';
-import { db } from '../../db/mockDb';
 
 interface SignaturePadProps {
   onSave: (data: Partial<DigitalSignature>) => void;

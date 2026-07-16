@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock } from 'lucide-react';
 import { User, SystemSettings } from '../../../types';
-import { db } from '../../../db/mockDb';
+import { supabaseService as firestoreService } from '../../../utils/supabaseService';
 
 interface RolesPoliciesTabProps {
   currentUser: User;
@@ -92,8 +92,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'View Directory' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'View Directory' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -132,8 +131,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Curate Frontpage' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Curate Frontpage' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -172,8 +170,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Invite Writers' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Invite Writers' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -212,8 +209,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Moderate Reports' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Moderate Reports' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -253,8 +249,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Manage Settings' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Manage Settings' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -294,8 +289,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Manage RBAC' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Manage RBAC' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}
@@ -335,8 +329,7 @@ export function RolesPoliciesTab({
                             rolePermissions: updatedPermissions as any
                           };
                           setSystemSettings(updatedSettings);
-                          db.updateSystemSettings(updatedSettings);
-                          db.addLog(`Modified 'Manage Logs' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser.penName, currentUser.role);
+                          firestoreService.logAction(`Modified 'Manage Logs' permission for '${role}' role to ${e.target.checked ? 'ENABLED' : 'DISABLED'}.`, currentUser);
                           refreshDbState();
                           showToast(`Permission updated for ${role}`, 'success');
                         }}

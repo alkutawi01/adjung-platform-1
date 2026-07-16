@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 
 const pageVariants = {
@@ -15,8 +15,22 @@ interface Step4IdentityProps {
 }
 
 export default function Step4Identity({ formData, setFormData, onNext }: Step4IdentityProps) {
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if ((formData.password || '').length < 8) {
+      setPasswordError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (formData.password !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setPasswordError('');
     onNext();
   };
 
@@ -81,9 +95,39 @@ export default function Step4Identity({ formData, setFormData, onNext }: Step4Id
           />
         </div>
 
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Password</label>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={formData.password || ''}
+            onChange={e => { setFormData({...formData, password: e.target.value}); setPasswordError(''); }}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all placeholder:text-stone-300"
+            placeholder="At least 8 characters"
+          />
+        </div>
+
+        <div className="relative group">
+          <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1.5">Confirm Password</label>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all placeholder:text-stone-300"
+            placeholder="Re-enter your password"
+          />
+        </div>
+
+        {passwordError && (
+          <p className="text-xs text-red-600 font-sans text-center">{passwordError}</p>
+        )}
+
         <div className="pt-4 flex justify-center">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
           >
             Continue
