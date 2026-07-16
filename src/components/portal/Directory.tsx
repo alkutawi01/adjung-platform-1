@@ -245,6 +245,9 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
       </div>
 
       {/* Directory Table */}
+      <p className="md:hidden font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+        Swipe left to see more →
+      </p>
       <div className="bg-white border border-[#111111]/10 rounded overflow-hidden shadow-sm font-sans text-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">

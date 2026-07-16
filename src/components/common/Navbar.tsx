@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '../../config/brand';
 import { useAppContext } from '../../context/AppContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Menu, X } from 'lucide-react';
 
 interface NavbarProps {
   isHeaderHovered: boolean;
@@ -46,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   } = useAppContext();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Handle clicking outside the user menu to close it
@@ -82,7 +83,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     setActiveTab(tab);
     setSelectedEntry(null);
     setEditingEntry(null);
+    setShowMobileMenu(false);
   };
+
+  const hasMobileNavLinks = selectedAuthorId !== '' || (currentUser && (hasPermission('viewDirectory') || hasPermission('viewIndex')));
 
   return (
     <nav 
@@ -117,8 +121,20 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Middle: Dynamic Navigation Links depending on portal/author context */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 md:gap-3">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Mobile menu toggle — nav links collapse behind this below the md breakpoint */}
+          {hasMobileNavLinks && (
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(prev => !prev)}
+              className="md:hidden flex items-center justify-center w-8 h-8 text-white/80 hover:text-white transition cursor-pointer"
+              aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
+            >
+              {showMobileMenu ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
+            </button>
+          )}
+
+          <div className="hidden md:flex items-center gap-1.5 md:gap-3">
             {selectedAuthorId === '' ? (
               /* PLATFORM PORTAL NAVIGATION (DIRECTORY, INDEX) */
               <>
@@ -201,7 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          <div className="h-4 w-px bg-white/20" />
+          <div className="hidden md:block h-4 w-px bg-white/20" />
 
           {/* Right: Authentication or User menu */}
           {currentUser ? (
@@ -343,6 +359,70 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Mobile nav links panel — slides open below the bar, mirrors the desktop-only middle links */}
+      {hasMobileNavLinks && showMobileMenu && (
+        <div className="md:hidden max-w-6xl mx-auto pb-3 flex flex-col gap-1 animate-fade-in">
+          {selectedAuthorId === '' ? (
+            <>
+              {currentUser && hasPermission('viewDirectory') && (
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('directory')}
+                  className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                    activeTab === 'directory' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Directory
+                </button>
+              )}
+              {currentUser && hasPermission('viewIndex') && (
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('index')}
+                  className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                    activeTab === 'index' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Index
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => handleTabClick('folio')}
+                className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                  activeTab === 'folio' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Folio
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabClick('bio')}
+                className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                  activeTab === 'bio' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Biography
+              </button>
+              {currentUser?.id === selectedAuthorId && (
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('desk')}
+                  className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                    activeTab === 'desk' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Desk
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

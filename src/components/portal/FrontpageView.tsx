@@ -553,7 +553,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         <hr className="rule border-t border-stone-300 my-3" />
 
         {/* World Clock Strip */}
-        <div className="py-2.5 flex justify-center items-center overflow-x-auto gap-10 px-1 text-center" id="world-clock">
+        <div className="py-2.5 flex justify-start md:justify-center items-center overflow-x-auto snap-x snap-mandatory gap-10 px-4 md:px-1 text-center" id="world-clock">
           {[
             { city: 'New York', tz: 'America/New_York' },
             { city: 'London', tz: 'Europe/London' },
@@ -582,7 +582,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             }
 
             return (
-              <div key={c.city} className="flex-shrink-0 group relative">
+              <div key={c.city} className="flex-shrink-0 snap-center group relative">
                 <p className={`font-sans text-[9px] tracking-editorial uppercase mb-0.5 inline-block select-none transition-colors duration-200 ${cityColor} ${isHoliday ? 'cursor-help' : ''}`}>
                   {c.city}
                 </p>
