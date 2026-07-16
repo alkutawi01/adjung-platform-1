@@ -61,7 +61,7 @@ All of these are written. This layer is in good shape and is not the bottleneck.
 | Session persistence | ✅ Built | MVP |
 | Email verification | ❌ Not started | Beta |
 | Biography | ✅ Built — `identities.biography` + `biography_items` timeline now actually persisted (fixed: `saveIdentity` previously only wrote the parent row) | MVP |
-| Signature (typed/drawn) | ✅ Built — `digital_signatures` sub-rows now persisted via `saveIdentity`; verified the `account_id`-based upsert handles both new and existing identities correctly | MVP |
+| Signature (typed/drawn) | ✅ Built — `digital_signatures` sub-rows now persisted via `saveIdentity`; verified the `account_id`-based upsert handles both new and existing identities correctly. **Rendering consolidated to a single source of truth**: an audit found the signature (Adjung's only identity marker — no avatars) was rendered independently in ~5 places with diverging math (BiographyView's typed branch, the signup wizard's preview, two EntryRenderer plain-text fallbacks, Editorium's board-member panel). All now route through `SignatureRenderer.tsx` with its full prop set; deleted a dead, math-divergent `signatureCompiler.ts`; the four duplicated `resolveSignature*`/`resolveDigitalSignature` helpers extracted to `src/utils/signatureResolvers.ts`. Verified live: BiographyView and EntryRenderer now render identically (same ink-bleed styling). **Deferred, not yet done**: the three signature *capture* implementations (`SignaturePad.tsx`, `MobileSignCanvas.tsx`, `SimulatedMobileCanvas.tsx`) still use different pressure-physics formulas, so a signature drawn via desktop vs. mobile QR-sync carries different pressure data even though playback is now consistent — capture-side unification is a separate, higher-risk piece of work (touches already-saved signatures) not attempted in this pass | MVP |
 | Mobile QR signature sync (draw on phone, sync to desktop wizard) | ✅ Built — was Firestore-only in the Antigravity branch (`Step8Signature.tsx` + `MobileSignCanvas.tsx` imported `firebase/firestore` directly, a leftover that would not have compiled against this project's Supabase-only stack). Rewired to Supabase Realtime Broadcast channels (`signature_sync:{sessionId}`) — no new table needed, this is transient handshake data. | MVP (part of signup) |
 | ~~Avatar~~ | N/A — intentionally not part of Adjung. Identity is carried by Signature, not a photo. | — |
 
@@ -167,8 +167,8 @@ Per the Constitution, Adjung is text-first — most entries will never need this
 
 | Capability | Status | Required |
 |---|---|---|
-| Design language (serif/maroon scholarly theme) | ✅ Built (`index.css`, custom — not Material/iOS) | MVP |
-| Responsive layout | 🚧 Partial — desktop-first, mobile not systematically tested | MVP |
+| Design language (serif/maroon scholarly theme) | ✅ Built (`index.css`, custom — not Material/iOS). A bespoke design system blending iOS/Fluent/Material influences is a future idea from the Chief Editor, explicitly KIV — not started | MVP |
+| Responsive layout | 🚧 Partial — audited and fixed at iPhone viewport (375×812) for Frontpage, Folio, Entry reading view, Directory, Notices/Editor's Notes: Navbar now collapses nav links behind a hamburger menu below `md` instead of wrapping; world clock strip no longer clips both edges (was `overflow-x-auto` + `justify-center` with more content than fits — now left-aligned + scroll-snap on mobile); Directory's entries table already scrolled correctly in its own container, just needed a "swipe to see more" hint. Editorium (admin-only) and the signup wizard not yet audited for mobile. Also fixed an unrelated dev-only bug found while testing: `server.js` and Vite raced for port 3000 because the dev launcher's ambient `PORT` env var leaked into `server.js`'s fallback — pinned server.js to 5000 in `npm run dev` | MVP |
 | Navigation | ✅ Built | MVP |
 | Dialog/Modal | ✅ Built | MVP |
 | Toast | ✅ Built | MVP |
@@ -182,10 +182,10 @@ Per the Constitution, Adjung is text-first — most entries will never need this
 
 | Capability | Status | Required |
 |---|---|---|
-| Notices | 🚧 Partial (`NoticesView.tsx` exists, still on old mockDb path) | Beta |
-| Editor's Notes | 🚧 Partial (`EditorialNotesView.tsx` exists, still on old mockDb path) | Beta |
+| Notices | ✅ Built — `NoticesView.tsx` is Supabase-backed (the "still on old mockDb path" note was stale; `mockDb.ts` no longer exists in the codebase at all). Verified live at mobile viewport, empty state renders cleanly | Beta |
+| Editor's Notes | ✅ Built — same correction as Notices; verified live | Beta |
 | Publishing Policy display | ✅ Built (static content, migrated) | MVP |
-| Changelog | 🚧 Partial (`ChangelogView.tsx` exists, still on old mockDb path) | Beta |
+| Changelog | ✅ Built — same correction as Notices | Beta |
 
 ---
 
