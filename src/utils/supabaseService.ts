@@ -72,6 +72,9 @@ function rowToIdentity(row: any, bioItems: any[] = [], signatures: any[] = []): 
     biography: row.biography || '',
     publicVisibility: row.public_visibility || 'Public',
     affiliation: row.affiliation || '',
+    interests: row.interests || [],
+    preferredLanguages: row.preferred_languages || [],
+    preferredEdition: row.preferred_edition || '',
     lifeTimeline: bioItems.map(b => ({
       id: b.id,
       year: b.year,
@@ -319,6 +322,9 @@ export const supabaseService = {
       biography: identity.biography,
       public_visibility: identity.publicVisibility,
       affiliation: identity.affiliation,
+      interests: identity.interests || [],
+      preferred_languages: identity.preferredLanguages || [],
+      preferred_edition: identity.preferredEdition || null,
     };
     const { data, error } = await supabase
       .from('identities')

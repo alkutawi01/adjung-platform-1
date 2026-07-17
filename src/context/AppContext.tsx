@@ -29,7 +29,13 @@ export type ActiveTabType =
   | 'changelog' 
   | 'policies';
 
-export type EditoriumTabType = 
+export interface PendingOAuthProfile {
+  sbUserId: string;
+  email: string;
+  suggestedDisplayName: string;
+}
+
+export type EditoriumTabType =
   | 'platform' 
   | 'landing'
   | 'frontpage' 
@@ -64,6 +70,8 @@ interface AppContextType {
   
   // Navigation & Session
   currentUser: User | null;
+  pendingOAuthProfile: PendingOAuthProfile | null;
+  setPendingOAuthProfile: (profile: PendingOAuthProfile | null) => void;
   originalUser: User | null;
   selectedAuthorId: string;
   activeTab: ActiveTabType;
@@ -143,6 +151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // App Navigation & Session States
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [pendingOAuthProfile, setPendingOAuthProfile] = useState<PendingOAuthProfile | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ActiveTabType>('landing');
@@ -340,6 +349,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setOriginalUser(null);
           }
           SessionService.createSession(resolvedUser, true);
+          setPendingOAuthProfile(null);
+        } else if (!resolvedUser && sbUser.app_metadata?.provider === 'google') {
+          // First-time Google sign-in — no matching users row yet. Don't sign
+          // out of Supabase (the live session is needed to complete signup);
+          // just clear the local Adjung session cache and hand off to the
+          // signup wizard's oauth-completion flow (see App.tsx).
+          setCurrentUser(null);
+          setOriginalUser(null);
+          setSelectedAuthorId('');
+          localStorage.removeItem('Adjung_acting_user_id');
+          SessionService.destroySession();
+          setPendingOAuthProfile({
+            sbUserId: sbUser.id,
+            email: sbUser.email || '',
+            suggestedDisplayName: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || '',
+          });
         } else {
           setCurrentUser(null);
           setOriginalUser(null);
@@ -724,6 +749,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       initializing,
       
       currentUser,
+      pendingOAuthProfile,
+      setPendingOAuthProfile,
       originalUser,
       selectedAuthorId,
       activeTab,

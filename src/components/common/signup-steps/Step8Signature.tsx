@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, QrCode, Laptop, Smartphone, Check, PenTool, Type, Loader2 } from 'lucide-react';
 import { SignaturePad } from '../../desk/SignaturePad';
 import { SignatureRenderer } from '../../desk/SignatureRenderer';
 import { supabase } from '../../../config/supabase';
 import SimulatedMobileCanvas from './SimulatedMobileCanvas';
 
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.3 } }
-};
-
 interface Step8SignatureProps {
   formData: any;
   setFormData: (data: any) => void;
-  onNext: () => void;
-  key?: string;
 }
 
-export default function Step8Signature({ formData, setFormData, onNext }: Step8SignatureProps) {
+// Headless subsection consumed by Step6PublicProfile — no own heading/footer;
+// signature is optional, so there is no Continue gate here.
+export default function Step8Signature({ formData, setFormData }: Step8SignatureProps) {
   const [mode, setMode] = useState<'choose' | 'draw' | 'typo' | 'qr'>('choose');
   const [isDrawingPadOpen, setIsDrawingPadOpen] = useState(false);
   const [showSimulatedPhone, setShowSimulatedPhone] = useState(false);
@@ -118,19 +112,12 @@ export default function Step8Signature({ formData, setFormData, onNext }: Step8S
     : '';
 
   return (
-    <motion.section variants={pageVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center w-full py-1 h-full justify-between">
-      
-      {/* Title block */}
-      <div className="text-center w-full">
-        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Your Signature</h2>
-        <p className="text-stone-500 text-xs mb-6 max-w-sm mx-auto leading-relaxed font-sans select-none font-normal">
-          Your signature accompanies your published works as a mark of genuine human authorship.
-        </p>
-      </div>
+    <div className="w-full">
+      <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-1.5">Signature (optional)</label>
 
       {/* Main active interactive block */}
-      <div className="w-full flex-1 flex flex-col justify-center items-center px-2">
-        
+      <div className="w-full flex flex-col justify-center items-center">
+
         {/* Syncing Progress Overlay */}
         {isSyncing && (
           <div className="bg-white border border-stone-200/80 p-8 rounded-sm text-center shadow-lg w-full max-w-md flex flex-col items-center justify-center space-y-4">
@@ -391,31 +378,13 @@ export default function Step8Signature({ formData, setFormData, onNext }: Step8S
 
       {/* Full screen drawing modal via native SignaturePad component (resolves issue 1!) */}
       {isDrawingPadOpen && (
-        <SignaturePad 
-          onSave={handleSaveDrawn} 
-          onCancel={() => setIsDrawingPadOpen(false)} 
-          defaultName={formData.displayName || formData.username}
+        <SignaturePad
+          onSave={handleSaveDrawn}
+          onCancel={() => setIsDrawingPadOpen(false)}
+          defaultName={formData.displayName}
         />
       )}
 
-      {/* Footer Navigation controls */}
-      <div className="w-full border-t border-stone-150 pt-4 mt-2 flex justify-between items-center bg-[#FFFFFF] select-none">
-        <span className="text-[11px] text-stone-400 font-serif italic font-normal">
-          {hasRecordedSignature ? '✓ Signature logged successfully' : 'Please authenticate with a signature'}
-        </span>
-        <button 
-          disabled={!hasRecordedSignature}
-          onClick={onNext} 
-          className={`px-10 py-3 font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm font-bold ${
-            hasRecordedSignature 
-              ? 'bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] cursor-pointer shadow-sm' 
-              : 'bg-stone-100 border border-stone-200 text-stone-300 cursor-not-allowed'
-          }`}
-        >
-          Continue
-        </button>
-      </div>
-
-    </motion.section>
+    </div>
   );
 }

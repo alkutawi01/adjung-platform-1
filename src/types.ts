@@ -233,6 +233,9 @@ export interface IdentityProfile {
   signatures: DigitalSignature[];
   publicVisibility: 'Public' | 'Private';
   affiliation?: string;
+  interests?: string[];
+  preferredLanguages?: string[];
+  preferredEdition?: string;
 }
 
 export interface SystemSettings {

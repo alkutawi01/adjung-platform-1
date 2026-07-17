@@ -7,80 +7,76 @@ import Step2Philosophy from './signup-steps/Step2Philosophy';
 import Step3Charter from './signup-steps/Step3Charter';
 import Step4Identity from './signup-steps/Step4Identity';
 import Step5Verification from './signup-steps/Step5Verification';
-import Step6Biography from './signup-steps/Step6Biography';
-import Step6aAcademicProfile from './signup-steps/Step6aAcademicProfile';
-import Step7PersonalSite from './signup-steps/Step7PersonalSite';
-import Step8Signature from './signup-steps/Step8Signature';
+import Step6PublicProfile from './signup-steps/Step6PublicProfile';
+import Step7Interests from './signup-steps/Step7Interests';
 import Step9Complete from './signup-steps/Step9Complete';
 
-const TOTAL_STEPS = 10;
-const TITLES = [
-  '',
-  'Welcome',
-  'The Philosophy',
-  'Term of Use',
-  'Your Identity',
-  'Verification',
-  'About You',
-  'Academic Profile',
-  'Your Personal Site',
-  'Your Signature',
-  'Welcome to Adjung'
-];
+// Step ids are stable identifiers into STEP_TITLES/the render switch below —
+// the two flows below just choose which ids (and in what order) to visit.
+const STANDARD_FLOW = [1, 2, 3, 4, 5, 6, 7, 8];
+// Google already verifies the email and Welcome/Philosophy are skipped since
+// the user already chose to sign in — completion starts at the Charter step.
+const OAUTH_FLOW = [3, 4, 6, 7, 8];
+const COMPLETE_STEP_ID = 8;
+
+const STEP_TITLES: Record<number, string> = {
+  1: 'Welcome',
+  2: 'The Philosophy',
+  3: 'Terms of Use',
+  4: 'Your Account',
+  5: 'Verification',
+  6: 'Your Public Profile',
+  7: 'Your Interests',
+  8: 'Welcome to Adjung',
+};
 
 interface SignUpWizardProps {
   onClose: () => void;
   onComplete: (data: any) => void;
+  entryMode?: 'standard' | 'oauth-completion';
+  prefill?: { email?: string; displayName?: string };
 }
 
-export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+export default function SignUpWizard({ onClose, onComplete, entryMode = 'standard', prefill }: SignUpWizardProps) {
+  const flow = entryMode === 'oauth-completion' ? OAUTH_FLOW : STANDARD_FLOW;
+  const [flowIndex, setFlowIndex] = useState(0);
   const [overlayTitle, setOverlayTitle] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayCount, setOverlayCount] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const [formData, setFormData] = useState({
-    displayName: '',
+    displayName: prefill?.displayName || '',
     penName: '',
-    username: '',
-    email: '',
+    email: prefill?.email || '',
     password: '',
     biography: '',
-    professionalTitle: '',
-    institution: '',
-    areasOfInterest: '',
     domain: '',
     signatureType: 'draw',
-    signatureData: ''
+    signatureData: '',
+    interests: [] as string[],
+    preferredLanguages: [] as string[],
+    preferredEdition: '',
   });
 
-  const goNext = (step: number) => {
-    if (step < 1 || step > TOTAL_STEPS || isTransitioning) return;
+  const currentStepId = flow[flowIndex];
+
+  const goNext = () => {
+    const nextIndex = flowIndex + 1;
+    if (nextIndex >= flow.length || isTransitioning) return;
     setIsTransitioning(true);
-    
-    setOverlayTitle(TITLES[step]);
-    setOverlayCount(1);
+    setOverlayTitle(STEP_TITLES[flow[nextIndex]] || '');
     setShowOverlay(true);
-    
-    setTimeout(() => {
-      setOverlayCount(2);
-    }, 800);
-    
-    setTimeout(() => {
-      setOverlayCount(3);
-    }, 1400);
 
     setTimeout(() => {
-      setCurrentStep(step);
+      setFlowIndex(nextIndex);
       setShowOverlay(false);
       setIsTransitioning(false);
-    }, 2000);
+    }, 900);
   };
 
   const goBack = () => {
-    if (currentStep > 1 && !isTransitioning) {
-      setCurrentStep(currentStep - 1);
+    if (flowIndex > 0 && !isTransitioning) {
+      setFlowIndex(flowIndex - 1);
     }
   };
 
@@ -90,7 +86,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
 
   return (
     <div className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto select-none">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 15, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 15, scale: 0.98 }}
@@ -99,7 +95,7 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
       >
         <AnimatePresence>
           {showOverlay && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -108,9 +104,9 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
             >
               <div className="space-y-4 max-w-md">
                 <span className="block font-mono text-[9px] uppercase tracking-[0.35em] text-[#FDFBF7]/60 font-semibold">
-                  SECTION {currentStep + 1} OF 10
+                  GETTING STARTED
                 </span>
-                <motion.h2 
+                <motion.h2
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -119,23 +115,17 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
                 >
                   {overlayTitle}
                 </motion.h2>
-                <div className="h-px w-16 bg-white/20 mx-auto my-3" />
-                <div className="flex items-center justify-center gap-1.5 pt-1">
-                  <span className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${overlayCount >= 1 ? 'bg-[#FDFBF7] scale-125' : 'bg-[#FDFBF7]/30'}`} />
-                  <span className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${overlayCount >= 2 ? 'bg-[#FDFBF7] scale-125' : 'bg-[#FDFBF7]/30'}`} />
-                  <span className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${overlayCount >= 3 ? 'bg-[#FDFBF7] scale-125' : 'bg-[#FDFBF7]/30'}`} />
-                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {currentStep < 10 && !showOverlay && (
+        {currentStepId !== COMPLETE_STEP_ID && !showOverlay && (
           <button
             type="button"
             onClick={onClose}
             className="absolute top-5 right-5 text-stone-400 hover:text-adjung-maroon transition-all duration-300 z-40 p-1 cursor-pointer group"
-            aria-label="Cancel registration"
+            aria-label="Cancel account setup"
           >
             <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -143,10 +133,10 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
           </button>
         )}
 
-        {currentStep < 10 && (
+        {currentStepId !== COMPLETE_STEP_ID && (
           <div className="border-b border-stone-200/60 p-5 bg-[#FFFFFF] flex justify-between items-center select-none relative">
             <div className="flex items-center gap-3">
-              {currentStep > 1 && (
+              {flowIndex > 0 && (
                 <button
                   type="button"
                   onClick={goBack}
@@ -158,18 +148,18 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
               )}
               <div className="flex items-center gap-2">
                 <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-adjung-maroon font-bold">
-                  {String(currentStep).padStart(2, '0')} / 10
+                  Getting Started
                 </span>
                 <span className="text-stone-300 font-light font-sans text-xs">|</span>
                 <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-stone-500 font-medium">
-                  {TITLES[currentStep] || 'Registration'}
+                  Step {flowIndex + 1} of {flow.length}
                 </span>
               </div>
             </div>
             <div className="w-24 h-[1.5px] bg-stone-200/50 rounded-full overflow-hidden relative mr-8">
-              <div 
+              <div
                 className="h-full bg-adjung-maroon transition-all duration-500 ease-out"
-                style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
+                style={{ width: `${((flowIndex + 1) / flow.length) * 100}%` }}
               />
             </div>
           </div>
@@ -177,33 +167,16 @@ export default function SignUpWizard({ onClose, onComplete }: SignUpWizardProps)
 
         <main className="flex-1 w-full flex items-center justify-center p-6 md:p-10 overflow-y-auto relative">
           <AnimatePresence mode="wait">
-            {currentStep === 1 && <Step1Welcome key="s1" onNext={() => goNext(2)} />}
-            {currentStep === 2 && <Step2Philosophy key="s2" onNext={() => goNext(3)} />}
-            {currentStep === 3 && <Step3Charter key="s3" onNext={() => goNext(4)} />}
-            {currentStep === 4 && <Step4Identity key="s4" formData={formData} setFormData={setFormData} onNext={() => goNext(5)} />}
-            {currentStep === 5 && <Step5Verification key="s5v" formData={formData} onNext={() => goNext(6)} goBack={goBack} />}
-            {currentStep === 6 && <Step6Biography key="s6" formData={formData} setFormData={setFormData} onNext={() => goNext(7)} />}
-            {currentStep === 7 && <Step6aAcademicProfile key="s6a" formData={formData} setFormData={setFormData} onNext={() => goNext(8)} />}
-            {currentStep === 8 && <Step7PersonalSite key="s7" formData={formData} setFormData={setFormData} onNext={() => goNext(9)} />}
-            {currentStep === 9 && <Step8Signature key="s8" formData={formData} setFormData={setFormData} onNext={() => goNext(10)} />}
-            {currentStep === 10 && <Step9Complete key="s9" onComplete={handleComplete} />}
+            {currentStepId === 1 && <Step1Welcome key="s1" onNext={goNext} />}
+            {currentStepId === 2 && <Step2Philosophy key="s2" onNext={goNext} />}
+            {currentStepId === 3 && <Step3Charter key="s3" onNext={goNext} entryMode={entryMode} />}
+            {currentStepId === 4 && <Step4Identity key="s4" formData={formData} setFormData={setFormData} onNext={goNext} entryMode={entryMode} />}
+            {currentStepId === 5 && <Step5Verification key="s5" formData={formData} onNext={goNext} goBack={goBack} />}
+            {currentStepId === 6 && <Step6PublicProfile key="s6" formData={formData} setFormData={setFormData} onNext={goNext} />}
+            {currentStepId === 7 && <Step7Interests key="s7" formData={formData} setFormData={setFormData} onNext={goNext} />}
+            {currentStepId === COMPLETE_STEP_ID && <Step9Complete key="s8" onComplete={handleComplete} />}
           </AnimatePresence>
         </main>
-
-        {currentStep < 10 && (
-          <div className="border-t border-stone-200/40 py-3.5 bg-[#FFFFFF] flex justify-center items-center gap-2 select-none">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div 
-                key={i}
-                className={`transition-all duration-300 rounded-full ${
-                  currentStep === i + 1 
-                    ? 'w-4 h-1 bg-adjung-maroon' 
-                    : 'w-1 h-1 bg-stone-300'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </motion.div>
     </div>
   );

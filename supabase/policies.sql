@@ -30,6 +30,16 @@ create policy "Users can update their own row"
   on users for update
   using (auth_user_id = auth.uid());
 
+-- Self-registration (SignUpWizard) inserts its own row right after
+-- supabase.auth.signUp() — role is pinned to 'Writer' so a client can't
+-- insert itself as Editor/Chief Editor.
+create policy "Users can insert their own row during signup"
+  on users for insert
+  with check (
+    auth_user_id = auth.uid()
+    and role = 'Writer'
+  );
+
 create policy "Chief Editor can manage all users"
   on users for all
   using (current_app_user_role() = 'Chief Editor');

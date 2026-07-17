@@ -1370,6 +1370,16 @@ export function generateUUID(): string {
   });
 }
 
+/**
+ * Generates a short random fallback subdomain (e.g. "user-a1b2c3d4") for
+ * signups that skip choosing a personal site address — always lowercase
+ * hex, safe as a DNS label and as the `username` column.
+ */
+export function generateFallbackSubdomain(): string {
+  const suffix = generateUUID().replace(/-/g, '').slice(0, 8);
+  return `user-${suffix}`;
+}
+
 export class DocumentExporter {
   // HTML Export
   static exportToHtml(entry: { title: string; contentType: string; content: string; excerpt?: string }): string {

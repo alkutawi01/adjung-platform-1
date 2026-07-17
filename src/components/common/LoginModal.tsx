@@ -296,7 +296,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {/* Registration Prompt */}
               <div className="border-t border-stone-200/50 pt-4 mt-4 text-center select-none">
                 <p className="font-sans text-xs text-stone-500">
-                  Not registered as a Member yet?{" "}
+                  New to Adjung?{" "}
                   <button
                     type="button"
                     onClick={() => {
@@ -305,7 +305,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     }}
                     className="text-adjung-maroon hover:underline font-semibold cursor-pointer ml-1 font-sans text-xs transition duration-250"
                   >
-                    Register here
+                    Create an account
                   </button>
                 </p>
               </div>

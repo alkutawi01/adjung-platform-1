@@ -5,8 +5,10 @@ import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/rendering/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/rendering/TimelineEntryCollapseRenderer';
-import { isArabicText, generateUUID, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
+import { isArabicText, generateUUID, generateFallbackSubdomain, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
 import { resolveSignatureStrokes, resolveSignatureText, resolveDigitalSignature, resolveSignatureFont } from './utils/signatureResolvers';
+import { buildDigitalSignature } from './utils/signatureBuilder';
+import { RESERVED_PATHS } from './config/reservedPaths';
 import { SignatureLayout } from './components/desk/SignatureLayout';
 import { SignatureRenderer } from './components/desk/SignatureRenderer';
 import SignUpWizard from './components/common/SignUpWizard';
@@ -229,6 +231,8 @@ export default function App() {
     initializing,
     currentUser,
     setCurrentUser,
+    pendingOAuthProfile,
+    setPendingOAuthProfile,
     originalUser,
     revertToOriginalAccount,
     selectedAuthorId,
@@ -305,6 +309,15 @@ export default function App() {
   // Authentication Fields
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignUpWizard, setShowSignUpWizard] = useState(false);
+
+  // A brand-new Google sign-in has no matching users row yet — AppContext
+  // flags it via pendingOAuthProfile instead of silently discarding it.
+  useEffect(() => {
+    if (pendingOAuthProfile) {
+      setShowSignUpWizard(true);
+    }
+  }, [pendingOAuthProfile]);
+
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -1039,7 +1052,6 @@ Editorial Board of Adjung`;
     const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '.');
 
     // Check reserved usernames
-    const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
     if (RESERVED_PATHS.includes(formattedUsername)) {
       showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
       return;
@@ -1111,77 +1123,126 @@ Editorial Board of Adjung`;
     }
   };
 
-  const handleWizardComplete = async (data: any) => {
-    const { username, displayName, penName, signatureData, email, password, biography, professionalTitle, institution, country, areasOfInterest, domain } = data;
+  // Shared by handleWizardComplete (manual signup) and handleOAuthProfileComplete
+  // (Google signup) — the only difference between those two paths is how the
+  // Supabase auth session was created; everything after that is identical.
+  const persistNewIdentity = async (authUserId: string | undefined, fields: {
+    displayName: string;
+    penName: string;
+    email: string;
+    biography: string;
+    domain: string;
+    signatureType: 'draw' | 'typo' | undefined;
+    signatureData: unknown;
+    interests: string[];
+    preferredLanguages: string[];
+    preferredEdition: string;
+  }) => {
+    const { displayName, penName, email, biography, domain, signatureType, signatureData, interests, preferredLanguages, preferredEdition } = fields;
 
-    const formattedUsername = (domain || username).trim().toLowerCase().replace(/\s+/g, '.');
+    const rawDomain = (domain || '').trim();
+    const formattedUsername = (rawDomain || generateFallbackSubdomain()).toLowerCase().replace(/\s+/g, '.');
 
-    // Check reserved usernames
-    const RESERVED_PATHS = ['admin', 'api', 'search', 'settings', 'login', 'register', 'frontpage', 'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices', 'notice', 'editorial', 'changelog', 'policies', 'identity'];
     if (RESERVED_PATHS.includes(formattedUsername)) {
       showToast(`Self-Administration Safety: '${formattedUsername}' is a reserved system path.`, 'error');
-      return;
+      return null;
     }
 
-    // Check for duplicate username
     const exists = users.some(u => u.username.toLowerCase() === formattedUsername);
     if (exists) {
       showToast(`Self-Administration Safety: '${formattedUsername}' is already taken. Please select a unique username.`, 'error');
-      return;
+      return null;
     }
 
-    const newUserId = `user-${formattedUsername.replace(/\./g, '-')}`;
+    const newUserId = generateUUID();
+    const resolvedPenName = (penName || displayName).trim();
+    const digitalSignature = buildDigitalSignature(signatureType, signatureData);
+
+    const newUser: User = {
+      id: newUserId,
+      username: formattedUsername,
+      email: email.trim(),
+      role: 'Writer',
+      penName: resolvedPenName,
+      signature: typeof signatureData === 'string' ? signatureData.trim() : resolvedPenName,
+      avatarColor: 'bg-stone-800 text-stone-100',
+      bioSummary: `Newly registered independent scholar on Adjung.`,
+      authUserId,
+    };
+
+    const updatedProfile: WriterProfile = {
+      authorId: newUserId,
+      heroTitle: `${resolvedPenName}'s Folio`,
+      heroSubtitle: 'A collection of writings and scholarly notes.'
+    };
+
+    const newIdentity: IdentityProfile = {
+      identityId: `id-${newUserId}`,
+      accountId: newUserId,
+      username: formattedUsername,
+      displayName: displayName.trim(),
+      penName: resolvedPenName,
+      biography: biography ? biography.trim() : `Biography of ${resolvedPenName}.`,
+      publicVisibility: 'Public',
+      lifeTimeline: [],
+      signatures: digitalSignature ? [digitalSignature] : [],
+      interests: interests || [],
+      preferredLanguages: preferredLanguages || [],
+      preferredEdition: preferredEdition || '',
+    };
+
+    // saveUser first — identities' RLS policy resolves account_id through the
+    // users row, so saveProfile/saveIdentity must not race ahead of it.
+    await firestoreService.saveUser(newUser);
+    await Promise.all([
+      firestoreService.saveProfile(updatedProfile),
+      firestoreService.saveIdentity(newIdentity)
+    ]);
+
+    refreshDbState();
+    setCurrentUser(newUser);
+    setSelectedAuthorId(newUserId);
+    setActiveTab('frontpage');
+
+    return { newUser, resolvedPenName };
+  };
+
+  const handleWizardComplete = async (data: any) => {
+    const { displayName, penName, email, password, biography, domain, signatureType, signatureData, interests, preferredLanguages, preferredEdition } = data;
 
     try {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
-        password: password,
+        password,
       });
       if (signUpError) throw signUpError;
 
-      const newUser: User = {
-        id: newUserId,
-        username: formattedUsername,
-        email: email.trim(),
-        role: 'Writer',
-        penName: (penName || displayName).trim(),
-        signature: typeof signatureData === 'string' ? signatureData.trim() : (penName || displayName).trim(),
-        avatarColor: 'bg-stone-800 text-stone-100',
-        bioSummary: `Newly registered independent scholar on Adjung.`,
-        authUserId: signUpData.user?.id,
-      };
+      const result = await persistNewIdentity(signUpData.user?.id, {
+        displayName, penName, email, biography, domain, signatureType, signatureData, interests, preferredLanguages, preferredEdition
+      });
+      if (!result) return;
 
-      const updatedProfile: WriterProfile = {
-        authorId: newUserId,
-        heroTitle: `${(penName || displayName).trim()}'s Folio`,
-        heroSubtitle: professionalTitle || 'A collection of writings and scholarly notes.'
-      };
-
-      const newIdentity: IdentityProfile = {
-        identityId: `id-${newUserId}`,
-        accountId: newUserId,
-        username: formattedUsername,
-        displayName: displayName.trim(),
-        penName: (penName || displayName).trim(),
-        biography: biography ? biography.trim() : `Biography of ${(penName || displayName).trim()}.`,
-        publicVisibility: 'Public',
-        lifeTimeline: [],
-        signatures: []
-      };
-
-      await Promise.all([
-        firestoreService.saveUser(newUser),
-        firestoreService.saveProfile(updatedProfile),
-        firestoreService.saveIdentity(newIdentity)
-      ]);
-
-      // Sync state
-      refreshDbState();
-      setCurrentUser(newUser);
-      setSelectedAuthorId(newUserId);
-      setActiveTab('desk');
       setShowSignUpWizard(false);
-      showToast(`Membership established! Welcome to Adjung, ${(penName || displayName).trim()}!`, 'success');
+      showToast(`Membership established! Welcome to Adjung, ${result.resolvedPenName}!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
+    }
+  };
+
+  const handleOAuthProfileComplete = async (data: any) => {
+    if (!pendingOAuthProfile) return;
+    const { displayName, penName, biography, domain, signatureType, signatureData, interests, preferredLanguages, preferredEdition } = data;
+
+    try {
+      const result = await persistNewIdentity(pendingOAuthProfile.sbUserId, {
+        displayName, penName, email: pendingOAuthProfile.email, biography, domain, signatureType, signatureData, interests, preferredLanguages, preferredEdition
+      });
+      if (!result) return;
+
+      setPendingOAuthProfile(null);
+      setShowSignUpWizard(false);
+      showToast(`Membership established! Welcome to Adjung, ${result.resolvedPenName}!`, 'success');
     } catch (err: any) {
       console.error(err);
       showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
@@ -1781,7 +1842,23 @@ Editorial Board of Adjung`;
             </div>
           )}
 
-          {/* ==================== ACADEMIC REGISTRATION WIZARD ==================== */}      {showSignUpWizard && (<SignUpWizard onClose={() => setShowSignUpWizard(false)} onComplete={handleWizardComplete} />)}
+          {/* ==================== ACCOUNT SETUP WIZARD ==================== */}
+          {showSignUpWizard && (
+            <SignUpWizard
+              onClose={() => {
+                setShowSignUpWizard(false);
+                if (pendingOAuthProfile) {
+                  // Half-authenticated Supabase session — sign out fully or it
+                  // re-triggers this same wizard on the next auth state change.
+                  AuthService.signOut();
+                  setPendingOAuthProfile(null);
+                }
+              }}
+              onComplete={pendingOAuthProfile ? handleOAuthProfileComplete : handleWizardComplete}
+              entryMode={pendingOAuthProfile ? 'oauth-completion' : 'standard'}
+              prefill={pendingOAuthProfile ? { email: pendingOAuthProfile.email, displayName: pendingOAuthProfile.suggestedDisplayName } : undefined}
+            />
+          )}
           {/* ==================== 6. ACADEMIC FOOTER ==================== */}
           <Footer
             systemSettings={systemSettings}

@@ -9,10 +9,11 @@ const pageVariants = {
 
 interface Step3CharterProps {
   onNext: () => void;
+  entryMode?: 'standard' | 'oauth-completion';
   key?: string;
 }
 
-export default function Step3Charter({ onNext }: Step3CharterProps) {
+export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3CharterProps) {
   const [agreed, setAgreed] = useState(false);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,8 +45,11 @@ export default function Step3Charter({ onNext }: Step3CharterProps) {
       className="flex flex-col items-center w-full px-2 h-full justify-between"
     >
       <div className="text-center w-full">
-        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Term of Use</h2>
-        <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-4 select-none">≈ 5-7 minutes reading time</p>
+        {entryMode === 'oauth-completion' && (
+          <p className="font-serif italic text-stone-500 text-sm mb-2">Welcome back — one quick step before we set up your account.</p>
+        )}
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Terms of Use</h2>
+        <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-4 select-none">≈ 5 minutes</p>
       </div>
 
       <div 
@@ -179,7 +183,7 @@ export default function Step3Charter({ onNext }: Step3CharterProps) {
             className="w-4 h-4 accent-adjung-maroon mt-0.5 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
           />
           <span className="text-stone-600 text-[13px] font-sans select-none leading-relaxed">
-            I understand and accept the terms and responsibilities of Adjung membership.
+            I have read and agree to the Terms of Use.
             {!scrolledToBottom && (
               <span className="block text-[10px] text-stone-400 font-mono mt-1 uppercase tracking-wide">
                 Please scroll to the bottom of the Terms of Use to enable
@@ -188,7 +192,14 @@ export default function Step3Charter({ onNext }: Step3CharterProps) {
           </span>
         </label>
 
-        <button 
+        <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400 mb-6 select-none">
+          Also see our{' '}
+          <a href="/policies" target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline">
+            Community Guidelines
+          </a>
+        </p>
+
+        <button
           disabled={!agreed || !scrolledToBottom}
           onClick={onNext} 
           className={`px-10 py-3 border font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm font-bold ${

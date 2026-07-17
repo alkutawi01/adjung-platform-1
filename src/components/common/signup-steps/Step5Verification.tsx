@@ -52,18 +52,18 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
       className="flex flex-col items-center w-full py-1 h-full justify-between"
     >
       <div className="text-center w-full">
-        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-2 tracking-tight">Email Verification</h2>
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-2 tracking-tight">Verify your email</h2>
         <p className="text-stone-500 text-xs mb-6 max-w-sm mx-auto leading-relaxed font-sans select-none">
-          To protect platform security and verify your academic identity, we have dispatched a simulated 6-digit code to your email.
+          Enter the 6-digit code to confirm your email address.
         </p>
       </div>
 
       <form onSubmit={handleVerify} className="space-y-6 w-full max-w-md font-sans">
         <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-sm text-left relative overflow-hidden select-all text-amber-900">
           <div className="flex gap-2">
-            <span className="font-mono text-xs font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">SMTP SIMULATOR</span>
+            <span className="font-mono text-xs font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">DEMO MODE</span>
             <span className="font-sans text-[11px] leading-relaxed">
-              Dispatching simulated email to: <strong className="font-mono">{formData.email || 'scholar@adjung.com'}</strong>
+              Real email delivery isn't wired up yet — this code is shown here so you can continue testing. Intended recipient: <strong className="font-mono">{formData.email || 'scholar@adjung.com'}</strong>
             </span>
           </div>
           <div className="mt-2.5 pt-2.5 border-t border-amber-200/50 flex justify-between items-center text-[12px] font-serif">
