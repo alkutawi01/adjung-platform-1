@@ -11,6 +11,14 @@ const FOCUSABLE_SELECTOR =
 export function useModalA11y(isOpen: boolean, onClose: () => void) {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // onClose is re-created every render (it's an inline arrow function at every
+  // call site) — reading it through a ref, instead of putting it in the effect's
+  // dependency array, keeps the effect below from tearing down and rebuilding on
+  // every keystroke in a controlled form field, which was yanking focus out to
+  // whatever triggered the modal and back on every character typed.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -24,20 +32,25 @@ export function useModalA11y(isOpen: boolean, onClose: () => void) {
           )
         : [];
 
-    const firstFocusable = getFocusable()[0];
-    (firstFocusable || container)?.focus();
+    // Close buttons (marked data-modal-close) are deliberately skipped when
+    // picking the auto-focus target — they're often the first focusable element
+    // in DOM order (top-right, but rendered first), which would otherwise steal
+    // initial focus away from the form field a visitor actually wants to type into.
+    const focusable = getFocusable();
+    const initialTarget = focusable.find((el) => !el.hasAttribute('data-modal-close')) || focusable[0];
+    (initialTarget || container)?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === 'Tab') {
-        const focusable = getFocusable();
-        if (focusable.length === 0) return;
-        const firstEl = focusable[0];
-        const lastEl = focusable[focusable.length - 1];
+        const focusableNow = getFocusable();
+        if (focusableNow.length === 0) return;
+        const firstEl = focusableNow[0];
+        const lastEl = focusableNow[focusableNow.length - 1];
         if (e.shiftKey && document.activeElement === firstEl) {
           e.preventDefault();
           lastEl.focus();
@@ -53,7 +66,8 @@ export function useModalA11y(isOpen: boolean, onClose: () => void) {
       document.removeEventListener('keydown', handleKeyDown, true);
       previouslyFocused?.focus?.();
     };
-  }, [isOpen, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   return containerRef;
 }

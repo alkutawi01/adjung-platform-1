@@ -41,6 +41,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             type="button"
             onClick={onCancel}
             aria-label="Close"
+            data-modal-close
             className="absolute top-2.5 right-2.5 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />

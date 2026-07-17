@@ -103,6 +103,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="button"
                 onClick={handleClose}
                 aria-label="Close"
+                data-modal-close
                 className="absolute top-3 right-3 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -186,6 +187,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="button"
                 onClick={handleClose}
                 aria-label="Close"
+                data-modal-close
                 className="absolute top-3 right-3 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />

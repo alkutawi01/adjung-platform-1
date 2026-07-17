@@ -49,6 +49,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
+            data-modal-close
             className="text-stone-400 hover:text-adjung-maroon transition-colors p-1 rounded-full hover:bg-stone-50 cursor-pointer"
           >
             <X className="w-5 h-5" />
