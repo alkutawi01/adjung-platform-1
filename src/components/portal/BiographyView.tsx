@@ -149,9 +149,9 @@ export function BiographyView({
           
           <div className="border-t border-stone-300/80 pt-4 mt-[0.5em] space-y-2">
             <div>
-              <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Pen Name</span>
+              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Pen Name</span>
               <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                <span className="font-sans text-[1em] uppercase tracking-widest text-black font-semibold leading-none text-center w-full">
+                <span className="font-serif text-base font-semibold text-[#111111] leading-none text-center w-full">
                   {currentAuthor.penName}
                 </span>
                 {currentAuthor.isAi && (
@@ -163,20 +163,20 @@ export function BiographyView({
             </div>
             {authorProfile.displayName && authorProfile.displayName !== currentAuthor.penName && (
               <div>
-                <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Full Name</span>
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Full Name</span>
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.displayName}</span>
               </div>
             )}
             {authorProfile.affiliation && (
               <div>
-                <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40">Affiliation</span>
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Affiliation</span>
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.affiliation}</span>
               </div>
             )}
             <div className="pt-2 border-t border-stone-300/70">
-              <span className="block text-[9px] font-sans uppercase tracking-wider text-[#111111]/40 mb-0.5">Email / Contact</span>
-              <a 
-                href={`mailto:${currentAuthor.email}`} 
+              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold mb-0.5">Email / Contact</span>
+              <a
+                href={`mailto:${currentAuthor.email}`}
                 className="font-mono text-xs text-adjung-maroon hover:underline block"
               >
                 {currentAuthor.email}
