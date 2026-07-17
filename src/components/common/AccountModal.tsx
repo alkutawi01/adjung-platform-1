@@ -1,6 +1,7 @@
 import React from 'react';
 import { User } from '../../types';
 import { useAppContext } from '../../context/AppContext';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -48,8 +49,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen || !currentUser) return null;
-
   const handleClose = () => {
     setShowVerification(false);
     setVerificationCode('');
@@ -57,6 +56,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     setLocalError('');
     onClose();
   };
+
+  const containerRef = useModalA11y(isOpen, handleClose);
+
+  if (!isOpen || !currentUser) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,11 +87,18 @@ export const AccountModal: React.FC<AccountModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-stone-900/65 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#FDFDFD] border border-adjung-maroon/25 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border animate-fade-in text-left">
-        
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="account-modal-title"
+        tabIndex={-1}
+        className="bg-[#FDFDFD] border border-adjung-maroon/25 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border animate-fade-in text-left outline-none"
+      >
+
         {/* Modal header */}
         <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-          <h3 className="font-serif text-2xl text-adjung-maroon">Account Settings</h3>
+          <h3 id="account-modal-title" className="font-serif text-2xl text-adjung-maroon">Account Settings</h3>
           <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Platform Identity & Credentials</p>
         </div>
 

@@ -378,6 +378,32 @@ input::-ms-clear {
   display: none;
 }
 
+/* Design System v2.0 §08 — Focus Ring.
+   Uses box-shadow, not outline, so it doesn't fight the ~138 existing
+   `outline-none` utility call sites — this applies everywhere without
+   needing to touch each of those files individually. */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(128, 35, 52, 0.6);
+  border-radius: 2px;
+}
+
+/* Design System v2.0 §08 — Reduced Motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 
 
 

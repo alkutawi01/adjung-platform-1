@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Search, X } from 'lucide-react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface SwitchScriptorModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
 }) => {
   const { users, currentUser, switchActingAccount } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useModalA11y(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -27,11 +29,18 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#FDFDFD] border border-stone-200 rounded shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[85vh]">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="switch-scriptor-title"
+        tabIndex={-1}
+        className="bg-[#FDFDFD] border border-stone-200 rounded shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[85vh] outline-none"
+      >
         {/* Header */}
         <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] flex items-center justify-between">
           <div className="text-left">
-            <h3 className="font-serif text-2xl text-[#802334]">Select AI Scriptor</h3>
+            <h3 id="switch-scriptor-title" className="font-serif text-2xl text-[#802334]">Select AI Scriptor</h3>
             <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-0.5">
               Act on behalf of one of the designated AI Scriptor accounts.
             </p>
@@ -39,6 +48,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close"
             className="text-stone-400 hover:text-[#802334] transition-colors p-1 rounded-full hover:bg-stone-50 cursor-pointer"
           >
             <X className="w-5 h-5" />

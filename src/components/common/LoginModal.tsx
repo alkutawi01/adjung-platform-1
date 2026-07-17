@@ -4,6 +4,7 @@ import { User } from '../../types';
 import { AuthService } from '../../services/supabaseAuthService';
 import { useAppContext } from '../../context/AppContext';
 import { Eye, EyeOff } from 'lucide-react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -53,12 +54,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleClose = () => {
     setShowForgotPassword(false);
     onClose();
   };
+
+  const containerRef = useModalA11y(isOpen, handleClose);
+
+  if (!isOpen) return null;
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,13 +86,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border">
-        
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
+        tabIndex={-1}
+        className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border outline-none"
+      >
+
         {showForgotPassword ? (
           <>
             {/* Modal header for Forgot Password */}
             <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-2xl text-adjung-maroon">Reset Password</h3>
+              <h3 id="login-modal-title" className="font-serif text-2xl text-adjung-maroon">Reset Password</h3>
               <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Recover your platform access credentials</p>
             </div>
 
@@ -164,7 +174,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <>
             {/* Modal header */}
             <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
-              <h3 className="font-serif text-2xl text-adjung-maroon">Sign In</h3>
+              <h3 id="login-modal-title" className="font-serif text-2xl text-adjung-maroon">Sign In</h3>
               <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Sign in to your {BRAND.shortName} account.</p>
             </div>
 
@@ -203,6 +213,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -22,16 +23,24 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const containerRef = useModalA11y(isOpen, onCancel);
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-      <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-sm w-full overflow-hidden scholarly-border">
+      <div
+        ref={containerRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        tabIndex={-1}
+        className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-sm w-full overflow-hidden scholarly-border outline-none"
+      >
         <div className="p-6 text-center space-y-3">
           <div className={`mx-auto w-9 h-9 rounded-full flex items-center justify-center ${danger ? 'bg-red-50 text-red-600' : 'bg-stone-100 text-stone-600'}`}>
             <AlertTriangle className="w-4 h-4" />
           </div>
-          <h3 className="font-serif text-lg text-stone-900">{title}</h3>
+          <h3 id="confirm-dialog-title" className="font-serif text-lg text-stone-900">{title}</h3>
           <p className="font-sans text-xs text-stone-600 leading-relaxed">{message}</p>
         </div>
         <div className="flex border-t border-stone-200">

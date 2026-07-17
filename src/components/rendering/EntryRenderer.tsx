@@ -3409,7 +3409,13 @@ export function EntryRenderer({
         {renderTableOfContents()}
 
         {/* Content Area Grid */}
-        <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : ((contentType === 'Essay') ? 'max-w-5xl mx-auto' : 'max-w-3xl mx-auto')} relative`}>
+        {/* Design System v2.0 §02 — Reading Width decision: this div previously
+            added its own max-w-5xl (Essay) / max-w-3xl (other) on top of the
+            already-max-w-4xl ancestor at line 4041. The 5xl was a no-op (always
+            bounded by the ancestor) while the 3xl silently made non-Essay content
+            narrower than Essay — the inconsistency the design doc flagged. One
+            width, governed by the ancestor, for every content type. */}
+        <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : 'w-full'} relative`}>
           
           <div className={`${mode === 'edit' ? ((contentType === 'Essay') ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-xs leading-relaxed tracking-normal font-serif relative`}>
             
