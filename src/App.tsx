@@ -91,7 +91,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
         <h4
           key={pIdx}
           dir={isAr ? 'rtl' : 'ltr'}
-          className={`font-serif text-stone-850 font-medium my-2 ${isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
+          className={`font-serif text-stone-800 font-medium my-2 ${isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
             }`}
         >
           {textNode}
@@ -186,7 +186,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
   if (block.type === 'arabic-quote') {
     return (
       <blockquote key={pIdx} className="my-4 pr-4 border-r border-adjung-maroon/20 text-right bg-transparent">
-        <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
+        <p className="font-arabic text-sm md:text-base text-stone-800 leading-loose">
           {parseInlineFormatting(block.arabic)}
         </p>
         {block.translation && (
@@ -207,7 +207,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
       dir={isParaAr ? 'rtl' : 'ltr'}
       className={`${isParaAr
           ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base'
-          : 'font-serif text-left text-xs md:text-sm text-stone-650 leading-relaxed'
+          : 'font-serif text-left text-xs md:text-sm text-stone-600 leading-relaxed'
         }`}
     >
       {parseInlineFormatting(block.text)}

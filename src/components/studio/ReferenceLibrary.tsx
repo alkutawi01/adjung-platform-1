@@ -276,14 +276,14 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   </h2>
                 )}
                 {showHeroTitle && tempEntry.subtitle && (
-                  <p className="text-stone-405 text-sm font-serif italic">{tempEntry.subtitle}</p>
+                  <p className="text-stone-400 text-sm font-serif italic">{tempEntry.subtitle}</p>
                 )}
-                <div className={`text-stone-750 leading-relaxed font-serif ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
+                <div className={`text-stone-700 leading-relaxed font-serif ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
                   {parseInlineFormatting(tempEntry.excerpt || tempEntry.content)}
                 </div>
               </div>
               <div className="flex items-center gap-4 text-xs text-stone-500 font-sans border-t border-stone-200 pt-4 mt-6">
-                <span>By <strong className="text-stone-850">{authorName}</strong></span>
+                <span>By <strong className="text-stone-800">{authorName}</strong></span>
                 <span>•</span>
                 <span>{new Date(tempEntry.publishedDate).toLocaleDateString()}</span>
               </div>
@@ -306,10 +306,10 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     {tempEntry.title || 'Untitled Featured Archetype'}
                   </h3>
                 )}
-                <div className="font-serif text-stone-750 text-xs leading-relaxed line-clamp-3">
+                <div className="font-serif text-stone-700 text-xs leading-relaxed line-clamp-3">
                   {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...')}
                 </div>
-                <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-250/20">
+                <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-200/20">
                   By {authorName} • {new Date(tempEntry.publishedDate).toLocaleDateString()}
                 </div>
               </div>
@@ -349,7 +349,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       case 'folio':
         return (
           <div className="max-w-2xl mx-auto p-6 bg-stone-50 border border-stone-200/60 rounded">
-            <div className="relative border-l border-stone-250 pl-4 py-2 text-left">
+            <div className="relative border-l border-stone-200 pl-4 py-2 text-left">
               <span className="absolute left-0 w-2.5 h-2.5 rounded-full bg-[#802334] -ml-[5.5px] mt-1.5" />
               <div className="font-mono text-[9px] text-stone-400 uppercase tracking-widest mb-1.5">
                 {new Date(tempEntry.publishedDate).getFullYear()} • {tempEntry.contentType}
@@ -374,7 +374,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
             <h4 className="font-serif text-base font-semibold text-[#802334] hover:underline cursor-pointer">
               {tempEntry.title || 'Untitled Sandbox Entry'}
             </h4>
-            <p className="font-sans text-stone-605 text-xs line-clamp-2 leading-relaxed">
+            <p className="font-sans text-stone-600 text-xs line-clamp-2 leading-relaxed">
               ... {tempEntry.content.substring(0, 150)} ...
             </p>
             <div className="flex items-center justify-between text-[10px] text-stone-500 pt-2 border-t border-stone-100/50">
@@ -440,7 +440,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
           <button
             type="button"
             onClick={handleReset}
-            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200/80 border border-stone-250/70 text-stone-700 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
+            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200/80 border border-stone-200/70 text-stone-700 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
           >
             <Undo2 className="w-3.5 h-3.5" /> Reset Template
           </button>
@@ -459,7 +459,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Left card: Canonical Archetype Selector & Language toggle */}
           <div className="md:col-span-4 bg-white border border-stone-200 rounded p-4 shadow-sm space-y-3">
-            <h5 className="font-mono text-[10px] uppercase tracking-wider text-stone-405 font-bold border-b border-stone-100 pb-1.5 flex items-center gap-1 select-none">
+            <h5 className="font-mono text-[10px] uppercase tracking-wider text-stone-400 font-bold border-b border-stone-100 pb-1.5 flex items-center gap-1 select-none">
               <Award className="w-3.5 h-3.5" /> Canonical Library
             </h5>
             
@@ -475,8 +475,8 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                       : 'text-stone-700 hover:bg-stone-50 border-l-2 border-transparent'
                   }`}
                 >
-                  {t.contentType === 'Note' && <FileText className="w-4 h-4 text-stone-450" />}
-                  {t.contentType === 'Essay' && <BookOpen className="w-4 h-4 text-stone-450" />}
+                  {t.contentType === 'Note' && <FileText className="w-4 h-4 text-stone-400" />}
+                  {t.contentType === 'Essay' && <BookOpen className="w-4 h-4 text-stone-400" />}
                   {t.title.replace('Canonical ', '')}
                 </button>
               ))}
@@ -487,7 +487,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 type="button"
                 onClick={() => setLanguage('LTR')}
                 className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
-                  language === 'LTR' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-605 hover:text-stone-850'
+                  language === 'LTR' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
                 }`}
               >
                 English LTR
@@ -496,7 +496,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 type="button"
                 onClick={() => setLanguage('RTL')}
                 className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
-                  language === 'RTL' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-605 hover:text-stone-850'
+                  language === 'RTL' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
                 }`}
               >
                 العربية RTL
@@ -595,7 +595,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                       <select
                         value={authorSignatureFont}
                         onChange={(e) => setAuthorSignatureFont(e.target.value)}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-850 focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
                       >
                         <option value="Mrs Saint Delafield">Mrs Saint Delafield</option>
                         <option value="Alex Brush">Alex Brush</option>
@@ -718,7 +718,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm">
         <div className="border-b border-stone-100 pb-3 mb-6 flex items-center justify-between">
           <div>
-            <h4 className="font-serif text-lg font-semibold text-stone-905">Authoring Workspace</h4>
+            <h4 className="font-serif text-lg font-semibold text-stone-900">Authoring Workspace</h4>
             <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Instantiating production WritingDesk in sandbox isolation</p>
           </div>
           <span className="bg-[#802334]/5 text-[#802334] font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-[#802334]/25 rounded select-none font-bold">
@@ -756,7 +756,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 className={`px-3 py-1.5 rounded uppercase tracking-wider font-semibold border transition cursor-pointer ${
                   selectedContextId === ctx.id
                     ? 'bg-[#802334] text-white border-[#802334] shadow-sm'
-                    : 'bg-stone-50 text-stone-605 border-stone-200 hover:text-[#802334] hover:bg-stone-100/50'
+                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:text-[#802334] hover:bg-stone-100/50'
                 }`}
               >
                 {ctx.name}
@@ -799,7 +799,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       </div>
 
       {/* ================= SECTION 4: RENDERING DIAGNOSTICS ================= */}
-      <div className="bg-[#FAF8F5] border border-stone-250/75 rounded-lg p-5 shadow-sm text-left">
+      <div className="bg-[#FAF8F5] border border-stone-200/75 rounded-lg p-5 shadow-sm text-left">
         <h5 className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold border-b border-stone-200 pb-1.5 mb-3 flex items-center gap-1 select-none">
           <ShieldAlert className="w-3.5 h-3.5" /> Rendering Diagnostics
         </h5>
@@ -812,13 +812,13 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               {d.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />}
               {d.type === 'error' && <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />}
               <div>
-                <div className="font-semibold text-stone-850 flex items-center gap-1.5 select-none">
+                <div className="font-semibold text-stone-800 flex items-center gap-1.5 select-none">
                   {d.type.toUpperCase()}
                   <span className="text-[9px] font-mono text-stone-400 bg-stone-100 border border-stone-200/50 px-1 rounded">
                     {d.spec}
                   </span>
                 </div>
-                <div className="text-stone-605 text-[11px] mt-0.5">{d.msg}</div>
+                <div className="text-stone-600 text-[11px] mt-0.5">{d.msg}</div>
               </div>
             </div>
           ))}

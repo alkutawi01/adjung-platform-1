@@ -240,7 +240,7 @@ export function TimelineEntryCollapseRenderer({
           <h4 
             key={pIdx} 
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-850 font-medium my-2 ${
+            className={`font-serif text-stone-800 font-medium my-2 ${
               isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
             }`}
           >
@@ -342,7 +342,7 @@ export function TimelineEntryCollapseRenderer({
     if (block.type === 'arabic-quote') {
       return (
         <blockquote key={pIdx} className="my-4 pr-4 border-r border-Adjung-maroon/20 text-right bg-transparent">
-          <p className="font-arabic text-sm md:text-base text-stone-850 leading-loose">
+          <p className="font-arabic text-sm md:text-base text-stone-800 leading-loose">
             {parseInlineFormatting(block.arabic, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}
           </p>
           {block.translation && (
@@ -367,7 +367,7 @@ export function TimelineEntryCollapseRenderer({
             ? 'font-arabic text-right text-stone-900 leading-loose text-[18.5px]' 
             : item.contentType === 'Note'
               ? 'font-handwritten text-left text-[18.5px] text-black leading-relaxed'
-              : 'font-serif font-light text-left text-[14px] leading-relaxed text-stone-650'
+              : 'font-serif font-light text-left text-[14px] leading-relaxed text-stone-600'
         }`}
       >
         {parseInlineFormatting(block.text, item.citations || [], 'alphabetical', {}, fMap, undefined, undefined, mMap)}

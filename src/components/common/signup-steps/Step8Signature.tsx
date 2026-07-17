@@ -152,7 +152,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                 </div>
 
                 {/* The visual preview of the signature */}
-                <div className="bg-stone-50 border border-stone-150 h-28 rounded flex items-center justify-center relative overflow-hidden p-4">
+                <div className="bg-stone-50 border border-stone-200 h-28 rounded flex items-center justify-center relative overflow-hidden p-4">
                   <div className="absolute inset-0 bg-[radial-gradient(#802334/0.015_1px,transparent_1px)] [background-size:12px_12px]" />
                   <SignatureRenderer
                     strokes={formData.signatureType === 'typo' ? [] : (formData.signatureData?.strokes || [])}
@@ -296,10 +296,10 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(mobileSignUrl)}`}
                     alt="QR Code for mobile signature"
-                    className="w-32 h-32 mt-2 select-none border border-stone-150 p-1 bg-white rounded"
+                    className="w-32 h-32 mt-2 select-none border border-stone-200 p-1 bg-white rounded"
                   />
                 ) : (
-                  <div className="w-32 h-32 bg-stone-50 border border-stone-150 rounded flex items-center justify-center p-2 mt-2">
+                  <div className="w-32 h-32 bg-stone-50 border border-stone-200 rounded flex items-center justify-center p-2 mt-2">
                     <Loader2 className="w-6 h-6 text-stone-300 animate-spin" />
                   </div>
                 )}

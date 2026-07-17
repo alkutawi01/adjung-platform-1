@@ -79,7 +79,7 @@ export function UserManagementTab({
                       setFoundSuspendUser(null);
                     }
                   }}
-                  className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white text-stone-850"
+                  className="w-full border border-stone-200 p-2 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white text-stone-800"
                 />
                 <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3" />
               </div>
@@ -99,7 +99,7 @@ export function UserManagementTab({
                     setFoundSuspendUser(found);
                   }
                 }}
-                className="px-4 py-2 bg-stone-850 hover:bg-stone-900 text-white font-mono uppercase tracking-wider text-[10px] rounded transition cursor-pointer font-semibold"
+                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white font-mono uppercase tracking-wider text-[10px] rounded transition cursor-pointer font-semibold"
               >
                 Find
               </button>
@@ -108,7 +108,7 @@ export function UserManagementTab({
 
           {/* Display Found Scholar Details & Action */}
           {foundSuspendUser && (
-            <div className="p-4 border border-stone-150 rounded bg-[#FDFDFD] space-y-3">
+            <div className="p-4 border border-stone-200 rounded bg-[#FDFDFD] space-y-3">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <span className="font-serif font-bold text-[#111111] text-sm block">{foundSuspendUser.penName}</span>
@@ -205,7 +205,7 @@ export function UserManagementTab({
         </div>
 
         {!hasPermission('inviteWriters') ? (
-          <div className="p-4 bg-amber-50 border border-amber-150 text-amber-900 rounded text-xs leading-relaxed text-left flex gap-2">
+          <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded text-xs leading-relaxed text-left flex gap-2">
             <Lock className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold block mb-0.5">Invitation Privileges Locked</span>
@@ -221,7 +221,7 @@ export function UserManagementTab({
                 placeholder="e.g. Professor Al-Qurtubi"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
-                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white text-stone-850"
+                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white text-stone-800"
                 required
               />
             </div>
@@ -233,7 +233,7 @@ export function UserManagementTab({
                 placeholder="e.g. qurtubi@adjung.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white text-stone-850"
+                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white text-stone-800"
                 required
               />
             </div>
@@ -244,7 +244,7 @@ export function UserManagementTab({
                 placeholder="Provide context or a citation to include with the invitation card..."
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
-                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white min-h-[60px] text-stone-850"
+                className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white min-h-[60px] text-stone-800"
               />
             </div>
 

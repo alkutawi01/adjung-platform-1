@@ -352,6 +352,15 @@ export function EntryRenderer({
   };
 
   const insertNote = (type: 'footnote' | 'margin-note') => {
+    const sel = window.getSelection();
+    const range = contextRange || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
+    if (!range) {
+      // No anchor point to attach the badge to \u2014 bail out instead of
+      // silently recording a footnote/margin-note with no visible marker
+      // in the text (previously left orphaned, unreachable entries).
+      return;
+    }
+
     const id = `${type === 'footnote' ? 'fn' : 'mn'}-${generateUUID()}`;
     const span = document.createElement('span');
     span.className = type === 'footnote' ? 'footnote-badge' : 'margin-note-badge';
@@ -359,16 +368,12 @@ export function EntryRenderer({
     span.setAttribute('contenteditable', 'false');
     span.textContent = '\u200B'; // Zero-width space so it's not totally empty for the cursor, but relies on CSS for display
 
-    const sel = window.getSelection();
-    const range = contextRange || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
-    if (range) {
-      range.deleteContents();
-      range.insertNode(span);
-      range.collapse(false);
-      if (sel) {
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
+    range.deleteContents();
+    range.insertNode(span);
+    range.collapse(false);
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
 
     let updatedFootnotes = footnotes;
@@ -501,33 +506,40 @@ export function EntryRenderer({
     const editorEl = document.getElementById('editorial-canvas-editor');
     if (editorEl && editorEl.contains(e.target as Node)) {
       e.preventDefault();
-      
+
       let range: Range | null = null;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(e.clientX, e.clientY);
-      } else if ((document as any).caretPositionFromPoint) {
-        const position = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
-        if (position) {
-          range = document.createRange();
-          range.setStart(position.offsetNode, position.offset);
-          range.collapse(true);
+
+      // A real text selection (the word/phrase picked before right-clicking)
+      // must win over the raw click position — caretRangeFromPoint always
+      // returns a collapsed range, which previously discarded the selection
+      // outright and silently broke "select text, right-click, annotate"
+      // (most visibly for Interlinear Gloss, whose word field always fell
+      // back to a manual prompt since a collapsed range stringifies to '').
+      const liveSel = window.getSelection();
+      if (liveSel && liveSel.rangeCount > 0 && !liveSel.isCollapsed) {
+        const selRange = liveSel.getRangeAt(0);
+        if (editorEl.contains(selRange.commonAncestorContainer)) {
+          range = selRange.cloneRange();
         }
       }
-      
+
+      if (!range) {
+        if (document.caretRangeFromPoint) {
+          range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        } else if ((document as any).caretPositionFromPoint) {
+          const position = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+          if (position) {
+            range = document.createRange();
+            range.setStart(position.offsetNode, position.offset);
+            range.collapse(true);
+          }
+        }
+      }
+
       if (range && editorEl.contains(range.commonAncestorContainer)) {
         setContextRange(range);
       } else {
-        const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0) {
-          const fallbackRange = sel.getRangeAt(0).cloneRange();
-          if (editorEl.contains(fallbackRange.commonAncestorContainer)) {
-            setContextRange(fallbackRange);
-          } else {
-            setContextRange(null);
-          }
-        } else {
-          setContextRange(null);
-        }
+        setContextRange(null);
       }
 
       const parentRect = editorEl.getBoundingClientRect();
@@ -2069,7 +2081,7 @@ export function EntryRenderer({
             ({roman})
           </span>
           {text && (
-            <span className="absolute top-0 left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-650 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
+            <span className="absolute top-0 left-[calc(100%+24px)] xl:left-[calc(100%+32px)] w-[190px] xl:w-[240px] pl-2 flex flex-col justify-start text-left font-sans text-[11px] xl:text-xs text-stone-600 xl:text-stone-600 leading-relaxed pointer-events-auto select-text normal-case not-italic font-normal">
               <span className="block">
                 <span className="font-sans text-[10px] font-medium align-super text-Adjung-maroon mr-1.5 select-none">({roman})</span>
                 {parseInlineFormatting(text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
@@ -2103,7 +2115,7 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-850 font-normal mt-6 mb-3 relative overflow-visible ${
+            className={`font-serif text-stone-800 font-normal mt-6 mb-3 relative overflow-visible ${
               isAr ? 'text-right text-xl font-arabic leading-loose' : 'text-left text-lg md:text-xl'
             }`}
           >
@@ -2243,7 +2255,7 @@ export function EntryRenderer({
               {block.language}
             </span>
           )}
-          <pre className="p-4 bg-stone-50 border border-stone-200/80 rounded font-mono text-xs overflow-x-auto text-stone-850 leading-relaxed">
+          <pre className="p-4 bg-stone-50 border border-stone-200/80 rounded font-mono text-xs overflow-x-auto text-stone-800 leading-relaxed">
             <code>{block.code}</code>
           </pre>
         </div>
@@ -2261,7 +2273,7 @@ export function EntryRenderer({
             {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
           {block.translation && (
-            <div className="mt-2 text-stone-550 font-serif italic text-xs leading-relaxed">
+            <div className="mt-2 text-stone-500 font-serif italic text-xs leading-relaxed">
               {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
             </div>
           )}
@@ -2295,11 +2307,11 @@ export function EntryRenderer({
 
     if (block.type === 'callout') {
       const styles = {
-        note: 'bg-stone-50 border-stone-300 text-stone-855',
-        warning: 'bg-red-50/50 border-red-200 text-stone-850',
+        note: 'bg-stone-50 border-stone-300 text-stone-900',
+        warning: 'bg-red-50/50 border-red-200 text-stone-800',
         tip: 'bg-emerald-50/20 border-emerald-200 text-stone-800',
         important: 'bg-stone-100/60 border-stone-800 text-stone-900',
-        definition: 'bg-[#802334]/5 border-[#802334]/20 text-stone-855'
+        definition: 'bg-[#802334]/5 border-[#802334]/20 text-stone-900'
       };
       const titleStyles = {
         note: 'text-stone-700 font-bold font-mono',
@@ -2710,7 +2722,7 @@ export function EntryRenderer({
                   autoFocus
                   value={block.text || ''}
                   onChange={(e) => handleVisualBlockChange(idx, { ...block, text: e.target.value })}
-                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 italic text-sm text-stone-750 leading-relaxed text-left"
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 italic text-sm text-stone-700 leading-relaxed text-left"
                   rows={2}
                 />
               </div>
@@ -2721,7 +2733,7 @@ export function EntryRenderer({
                   value={block.translation || ''}
                   onChange={(e) => handleVisualBlockChange(idx, { ...block, translation: e.target.value })}
                   placeholder="Translation..."
-                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 text-stone-550 leading-relaxed text-xs text-left"
+                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 text-stone-500 leading-relaxed text-xs text-left"
                   rows={1}
                 />
               </div>
@@ -2814,7 +2826,7 @@ export function EntryRenderer({
                 value={block.title || ''}
                 onChange={(e) => handleVisualBlockChange(idx, { ...block, title: e.target.value })}
                 placeholder="Title..."
-                className="w-full bg-transparent border-b border-stone-200 focus:border-Adjung-maroon focus:outline-none p-1 text-sm font-bold font-mono uppercase tracking-wider text-stone-850"
+                className="w-full bg-transparent border-b border-stone-200 focus:border-Adjung-maroon focus:outline-none p-1 text-sm font-bold font-mono uppercase tracking-wider text-stone-800"
               />
             </div>
             <div>
@@ -2951,7 +2963,7 @@ export function EntryRenderer({
             }}
             placeholder={`Edit ${block.type} markup...`}
             rows={5}
-            className="w-full bg-white border border-stone-200 rounded p-2 font-mono text-xs text-stone-850 leading-relaxed focus:outline-none focus:border-Adjung-maroon resize-y"
+            className="w-full bg-white border border-stone-200 rounded p-2 font-mono text-xs text-stone-800 leading-relaxed focus:outline-none focus:border-Adjung-maroon resize-y"
           />
         </div>
       </div>
@@ -3038,7 +3050,7 @@ export function EntryRenderer({
               e.stopPropagation();
               handleDeleteBlock(idx);
             }}
-            className="p-1 hover:text-red-650 hover:bg-red-50 rounded transition text-stone-400"
+            className="p-1 hover:text-red-600 hover:bg-red-50 rounded transition text-stone-400"
             title="Delete block"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -3052,7 +3064,7 @@ export function EntryRenderer({
   const renderSourceContent = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative animate-fade-in">
-        <div className="mb-6 pb-4 border-b border-stone-150 flex items-center justify-between select-none">
+        <div className="mb-6 pb-4 border-b border-stone-200 flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#802334]" />
             <h3 className="font-mono text-xs uppercase tracking-wider text-stone-600 font-semibold">
@@ -3109,7 +3121,7 @@ export function EntryRenderer({
                               }}
                               placeholder="Side note description text..."
                               rows={2}
-                              className="w-full bg-white border border-stone-200 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-750"
+                              className="w-full bg-white border border-stone-200 focus:border-Adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700"
                             />
                           </div>
                         </div>
@@ -3451,17 +3463,17 @@ export function EntryRenderer({
                   left: `${toolbarCoords.x}px`, 
                   transform: 'translateX(-50%)' 
                 }}
-                className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-850 animate-fade-in"
+                className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-800 animate-fade-in"
               >
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-800 rounded font-bold transition">B</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-800 rounded italic transition">I</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-800 rounded underline transition">U</button>
-                <div className="h-4 w-px bg-stone-750 mx-1"></div>
+                <div className="h-4 w-px bg-stone-700 mx-1"></div>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H1</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">H2</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Quote</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Para</button>
-                <div className="h-4 w-px bg-stone-750 mx-1"></div>
+                <div className="h-4 w-px bg-stone-700 mx-1"></div>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertInterlinearVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Interlinear Note (Gloss)">Gloss</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertLinkVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Link">Link</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Auto Number)">FN</button>
@@ -3505,18 +3517,43 @@ export function EntryRenderer({
                     
                     const mnMatches = showMarginNotes ? [...para.matchAll(/\[\^(mn-[a-zA-Z0-9-]+)\]/g)] : [];
                     if (mnMatches.length > 0) {
-                      const firstMatchId = mnMatches[0][1];
-                      const noteText = marginNotesData[firstMatchId] || '';
-                      const romanNum = mOrderMap[firstMatchId] !== undefined ? toRoman(mOrderMap[firstMatchId]).toLowerCase() : '';
-                      
-                      const parsedNoteContent = parseInlineFormatting(noteText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap);
-                      
+                      // A paragraph can carry more than one margin-note marker — render
+                      // all of them, not just the first (previously silently dropped
+                      // every marker after the first one in the same paragraph).
+                      const noteEntries = mnMatches.map(m => {
+                        const matchId = m[1];
+                        const noteText = marginNotesData[matchId] || '';
+                        const romanNum = mOrderMap[matchId] !== undefined ? toRoman(mOrderMap[matchId]).toLowerCase() : '';
+                        return {
+                          id: matchId,
+                          romanNum,
+                          parsedNoteContent: parseInlineFormatting(noteText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)
+                        };
+                      });
+
                       return (
                         <ElasticMarginRow
                           key={index}
-                          noteLabel="Margin Note"
-                          noteContent={parsedNoteContent}
-                          noteIndexRoman={romanNum}
+                          noteLabel={noteEntries.length > 1 ? "Margin Notes" : "Margin Note"}
+                          noteIndexRoman={noteEntries.length === 1 ? noteEntries[0].romanNum : undefined}
+                          noteContent={
+                            noteEntries.length === 1 ? (
+                              noteEntries[0].parsedNoteContent
+                            ) : (
+                              <div className="space-y-2.5">
+                                {noteEntries.map(entry => (
+                                  <div key={entry.id}>
+                                    {entry.romanNum && (
+                                      <span className="font-sans text-[10px] font-semibold text-[#802334] mr-1">
+                                        ({entry.romanNum})
+                                      </span>
+                                    )}
+                                    {entry.parsedNoteContent}
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          }
                         >
                           {renderBlock(block, index, undefined, undefined)}
                         </ElasticMarginRow>
@@ -3565,7 +3602,7 @@ export function EntryRenderer({
                           key={id}
                           style={{ position: 'absolute', top: `${top}px`, left: 0 }}
                           onClick={() => setActiveMarginNoteId(id)}
-                          className="border-l-2 border-stone-250 hover:border-Adjung-maroon/50 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
+                          className="border-l-2 border-stone-200 hover:border-Adjung-maroon/50 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
                         >
                           <div className="flex items-center justify-between text-[8px] font-mono text-stone-400">
                             <span className="uppercase font-semibold text-stone-500">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
@@ -3593,7 +3630,7 @@ export function EntryRenderer({
                               e.stopPropagation();
                               deleteNote(id, 'margin-note');
                             }}
-                            className="hover:text-red-650 text-[10px]"
+                            className="hover:text-red-600 text-[10px]"
                           >
                             × delete
                           </button>
@@ -3803,7 +3840,7 @@ export function EntryRenderer({
         <button
           type="button"
           onClick={() => setShowInsertMenu(!showInsertMenu)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-stone-850 hover:bg-[#802334] text-stone-200 hover:text-white shadow-sm text-[10.5px] font-mono uppercase tracking-wider cursor-pointer transition-all"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-stone-800 hover:bg-[#802334] text-stone-200 hover:text-white shadow-sm text-[10.5px] font-mono uppercase tracking-wider cursor-pointer transition-all"
         >
           <Plus className={`w-3.5 h-3.5 transition-transform duration-200 ${showInsertMenu ? 'rotate-45 text-white' : ''}`} />
           Insert Object
@@ -3825,7 +3862,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Quote (LTR)</span>
-                <span className="text-[9px] text-stone-450 font-mono">Kiri ke Kanan (Latin, Tamil, dsb)</span>
+                <span className="text-[9px] text-stone-400 font-mono">Kiri ke Kanan (Latin, Tamil, dsb)</span>
               </button>
               <button
                 type="button"
@@ -3837,7 +3874,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Quote (RTL)</span>
-                <span className="text-[9px] text-stone-450 font-mono">Kanan ke Kiri (Arabic, Jawi, dsb)</span>
+                <span className="text-[9px] text-stone-400 font-mono">Kanan ke Kiri (Arabic, Jawi, dsb)</span>
               </button>
               <button
                 type="button"
@@ -3852,7 +3889,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Footnote</span>
-                <span className="text-[9px] text-stone-450 font-mono">Scholarly reference</span>
+                <span className="text-[9px] text-stone-400 font-mono">Scholarly reference</span>
               </button>
               <button
                 type="button"
@@ -3863,7 +3900,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Citation</span>
-                <span className="text-[9px] text-stone-450 font-mono">Bibliography registry</span>
+                <span className="text-[9px] text-stone-400 font-mono">Bibliography registry</span>
               </button>
               <button
                 type="button"
@@ -3874,7 +3911,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Table</span>
-                <span className="text-[9px] text-stone-450 font-mono">Tabular grid editor</span>
+                <span className="text-[9px] text-stone-400 font-mono">Tabular grid editor</span>
               </button>
               <button
                 type="button"
@@ -3885,7 +3922,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Figure</span>
-                <span className="text-[9px] text-stone-450 font-mono">Scholarly illustration</span>
+                <span className="text-[9px] text-stone-400 font-mono">Scholarly illustration</span>
               </button>
               <button
                 type="button"
@@ -3900,7 +3937,7 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Hyperlink</span>
-                <span className="text-[9px] text-stone-450 font-mono">External link anchor</span>
+                <span className="text-[9px] text-stone-400 font-mono">External link anchor</span>
               </button>
               <button
                 type="button"
@@ -3911,11 +3948,11 @@ export function EntryRenderer({
                 className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">Divider</span>
-                <span className="text-[9px] text-stone-450 font-mono">Horizontal separator</span>
+                <span className="text-[9px] text-stone-400 font-mono">Horizontal separator</span>
               </button>
             </div>
 
-            <div className="text-[8px] font-mono text-stone-550 uppercase tracking-wider border-t border-stone-850 pt-2 mt-3 mb-2 select-none">
+            <div className="text-[8px] font-mono text-stone-500 uppercase tracking-wider border-t border-stone-800 pt-2 mt-3 mb-2 select-none">
               Basic Typography Markers
             </div>
             <div className="flex flex-wrap gap-1">
@@ -4023,7 +4060,7 @@ export function EntryRenderer({
                 {saveStatus && (
                   <>
                     <span className="text-stone-300">|</span>
-                    <span className={`flex items-center gap-1 font-semibold ${saveStatus === 'saving' ? 'text-amber-600 animate-pulse' : saveStatus === 'error' ? 'text-red-600' : 'text-emerald-650'}`}>
+                    <span className={`flex items-center gap-1 font-semibold ${saveStatus === 'saving' ? 'text-amber-600 animate-pulse' : saveStatus === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
                       {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'error' ? 'Save Error' : 'Saved'}
                     </span>
                   </>
@@ -4101,7 +4138,7 @@ export function EntryRenderer({
             <div className="flex items-center gap-3 text-stone-600 mt-2 select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-[#802334]" />
               <div className="font-serif italic text-[13px] text-stone-500">
-                Author: <span className="font-sans font-semibold text-stone-850 not-italic">{authorName}</span>
+                Author: <span className="font-sans font-semibold text-stone-800 not-italic">{authorName}</span>
               </div>
             </div>
           </header>
@@ -4145,7 +4182,7 @@ export function EntryRenderer({
                   <div className="text-[10px] font-mono uppercase tracking-wider text-Adjung-maroon font-bold">Visual Table Editor</div>
                   <div className="flex flex-wrap items-center gap-3 text-[10px]">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-stone-550 uppercase">Cols:</span>
+                      <span className="font-mono text-stone-500 uppercase">Cols:</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -4172,7 +4209,7 @@ export function EntryRenderer({
                       </button>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-stone-550 uppercase">Rows:</span>
+                      <span className="font-mono text-stone-500 uppercase">Rows:</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -4200,7 +4237,7 @@ export function EntryRenderer({
                       <thead>
                         <tr className="bg-stone-50">
                           {tableHeaders.map((head, idx) => (
-                            <th key={`th-${idx}`} className="p-1 border border-stone-150">
+                            <th key={`th-${idx}`} className="p-1 border border-stone-200">
                               <div className="space-y-1">
                                 <input
                                   type="text"
@@ -4210,7 +4247,7 @@ export function EntryRenderer({
                                     nextHeaders[idx] = e.target.value;
                                     setTableHeaders(nextHeaders);
                                   }}
-                                  className="w-full p-1 border border-stone-100 bg-white font-bold focus:outline-none rounded text-stone-850 focus:border-Adjung-maroon"
+                                  className="w-full p-1 border border-stone-100 bg-white font-bold focus:outline-none rounded text-stone-800 focus:border-Adjung-maroon"
                                 />
                                 <select
                                   value={tableAlignments[idx]}
@@ -4296,7 +4333,7 @@ export function EntryRenderer({
                           triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, style);
                           showToast(`Bibliography sorting style changed to ${style}`, 'success');
                         }}
-                        className="p-1 text-[9.5px] border border-stone-200 bg-white font-mono rounded text-stone-850"
+                        className="p-1 text-[9.5px] border border-stone-200 bg-white font-mono rounded text-stone-800"
                       >
                         <option value="alphabetical">Alphabetical (Harvard)</option>
                         <option value="appearance">Appearance (Vancouver)</option>
@@ -4325,7 +4362,7 @@ export function EntryRenderer({
                     }}
                     className="space-y-3 bg-white p-3 border border-stone-200 rounded text-[10px]"
                   >
-                    <div className="text-[9.5px] font-mono text-stone-550 uppercase font-bold">Register New Bibliography Entry</div>
+                    <div className="text-[9.5px] font-mono text-stone-500 uppercase font-bold">Register New Bibliography Entry</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="block text-[9px] font-mono uppercase text-stone-400">Author</label>
@@ -4410,7 +4447,7 @@ export function EntryRenderer({
 
                   {/* Direction Switcher Toggle */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                    <label className="text-[9.5px] font-mono text-stone-500 uppercase tracking-wider">
                       Writing Direction &bull; Arah Tulisan
                     </label>
                     <div className="flex rounded bg-stone-100 p-0.5 border border-stone-200">
@@ -4442,7 +4479,7 @@ export function EntryRenderer({
                   {/* Original Quote Text */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <label className="text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                      <label className="text-[9.5px] font-mono text-stone-500 uppercase tracking-wider">
                         Original Quotation &bull; Petikan Asal
                       </label>
                       <span className="text-[8px] font-mono text-stone-400 uppercase tracking-wide">
@@ -4468,7 +4505,7 @@ export function EntryRenderer({
 
                   {/* Translation Text (Optional) */}
                   <div className="space-y-1">
-                    <label className="block text-[9.5px] font-mono text-stone-550 uppercase tracking-wider">
+                    <label className="block text-[9.5px] font-mono text-stone-500 uppercase tracking-wider">
                       Translation &bull; Terjemahan (Optional)
                     </label>
                     <textarea
@@ -4692,7 +4729,7 @@ export function EntryRenderer({
                                   }}
                                   placeholder="Type quote text here... (e.g., English, Chinese, Tamil, etc.)"
                                   rows={2}
-                                  className="w-full bg-transparent font-serif italic text-sm text-stone-750 leading-relaxed border-none focus:outline-none resize-y p-0 text-left"
+                                  className="w-full bg-transparent font-serif italic text-sm text-stone-700 leading-relaxed border-none focus:outline-none resize-y p-0 text-left"
                                 />
                               </div>
                               <div>
@@ -4707,7 +4744,7 @@ export function EntryRenderer({
                                   }}
                                   placeholder="English / Malay translation..."
                                   rows={1}
-                                  className="w-full bg-transparent font-serif text-stone-550 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs text-left"
+                                  className="w-full bg-transparent font-serif text-stone-500 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs text-left"
                                 />
                               </div>
                             </div>
@@ -4792,7 +4829,7 @@ export function EntryRenderer({
                             onChange={(e) => handleMarginNoteChange(index, e.target.value)}
                             placeholder="Add side margin note here..."
                             rows={5}
-                            className="w-full min-h-[100px] bg-transparent font-sans text-xs text-stone-650 leading-relaxed border-none focus:outline-none resize-y p-0"
+                            className="w-full min-h-[100px] bg-transparent font-sans text-xs text-stone-600 leading-relaxed border-none focus:outline-none resize-y p-0"
                           />
                         </div>
                       </div>
@@ -4808,7 +4845,7 @@ export function EntryRenderer({
                   <button
                     type="button"
                     onClick={handleAddParagraph}
-                    className="inline-flex items-center gap-1 px-4 py-1.5 border border-dashed border-stone-300 hover:border-Adjung-maroon text-stone-550 hover:text-Adjung-maroon font-mono text-[10px] uppercase tracking-wider rounded transition-all cursor-pointer bg-stone-50/20"
+                    className="inline-flex items-center gap-1 px-4 py-1.5 border border-dashed border-stone-300 hover:border-Adjung-maroon text-stone-500 hover:text-Adjung-maroon font-mono text-[10px] uppercase tracking-wider rounded transition-all cursor-pointer bg-stone-50/20"
                   >
                     <Plus className="w-3.5 h-3.5" /> Append Paragraph Block
                   </button>
@@ -4871,7 +4908,7 @@ export function EntryRenderer({
           {citations.length > 0 && (
             <div className="mt-16 pt-8 border-t border-stone-300/60 font-sans text-stone-700">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
-                <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
+                <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
                   References & Bibliography
                 </h3>
                 <span className="font-mono text-[9px] text-stone-400 uppercase">
@@ -5162,9 +5199,9 @@ export function EntryRenderer({
                         const words = getWordCount(rev.content);
                         const chars = getCharCount(rev.content);
                         return (
-                          <div key={rev.id} className="flex flex-wrap items-center justify-between p-2 bg-white border border-stone-205/60 rounded text-[10.5px] gap-2">
+                          <div key={rev.id} className="flex flex-wrap items-center justify-between p-2 bg-white border border-stone-200/60 rounded text-[10.5px] gap-2">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-stone-450 font-medium">
+                              <span className="font-mono text-stone-400 font-medium">
                                 #{revisions.length - index}
                               </span>
                               <span className="font-sans text-stone-600 font-medium">
@@ -5222,7 +5259,7 @@ export function EntryRenderer({
                   {hasValidated && (
                     <div className="p-3 bg-stone-50 border border-stone-200/60 rounded text-[11px] space-y-2">
                       {isValidationRunning && (
-                        <p className="text-stone-550 italic font-mono text-[10px] animate-pulse">Running checks on external image assets in the manuscript...</p>
+                        <p className="text-stone-500 italic font-mono text-[10px] animate-pulse">Running checks on external image assets in the manuscript...</p>
                       )}
 
                       {!isValidationRunning && validationSuccess && (
@@ -5333,7 +5370,7 @@ export function EntryRenderer({
                 }}
                 className={`px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded transition-all font-medium border border-transparent cursor-pointer ${
                   status === 'Draft'
-                    ? 'bg-stone-800 text-stone-450 border-stone-700/65 cursor-default opacity-85'
+                    ? 'bg-stone-800 text-stone-400 border-stone-700/65 cursor-default opacity-85'
                     : 'bg-stone-800 hover:bg-stone-700 text-stone-200'
                 }`}
               >
@@ -5391,7 +5428,7 @@ export function EntryRenderer({
                 }}
                 className={`px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded transition-all font-medium border border-transparent cursor-pointer ${
                   status === 'Archived'
-                    ? 'bg-stone-800 text-stone-450 border-stone-700/65 cursor-default opacity-85'
+                    ? 'bg-stone-800 text-stone-400 border-stone-700/65 cursor-default opacity-85'
                     : 'bg-stone-800 hover:bg-stone-700 text-stone-200'
                 }`}
               >

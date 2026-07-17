@@ -31,7 +31,7 @@ export function UserGuide() {
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'philosophy'
               ? 'border-[#802334] text-[#802334] font-bold'
-              : 'border-transparent text-stone-550 hover:text-stone-800'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
           <Compass className="w-3.5 h-3.5" /> Philosophy
@@ -42,7 +42,7 @@ export function UserGuide() {
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'notation'
               ? 'border-[#802334] text-[#802334] font-bold'
-              : 'border-transparent text-stone-550 hover:text-stone-800'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" /> 3-Layer Notation
@@ -53,7 +53,7 @@ export function UserGuide() {
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'shortcuts'
               ? 'border-[#802334] text-[#802334] font-bold'
-              : 'border-transparent text-stone-550 hover:text-stone-800'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
           <Key className="w-3.5 h-3.5" /> Keyboard Shortcuts
@@ -64,7 +64,7 @@ export function UserGuide() {
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'roadmap'
               ? 'border-[#802334] text-[#802334] font-bold'
-              : 'border-transparent text-stone-550 hover:text-stone-800'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
           <Award className="w-3.5 h-3.5" /> Pre-Launch Roadmap
@@ -107,7 +107,7 @@ export function UserGuide() {
 
         {/* TAB 2: 3-LAYER NOTATION */}
         {activeTab === 'notation' && (
-          <div className="space-y-6 text-stone-850">
+          <div className="space-y-6 text-stone-800">
             <div className="border-b border-stone-100 pb-2 mb-4">
               <h3 className="font-serif text-xl font-semibold text-stone-950">The 3-Layer Notation System</h3>
               <p className="font-sans text-[11px] text-stone-500 mt-1">Markdown formatting syntax for interlinear, margin, and bottom footnotes</p>
@@ -188,7 +188,7 @@ export function UserGuide() {
 
         {/* TAB 3: KEYBOARD SHORTCUTS */}
         {activeTab === 'shortcuts' && (
-          <div className="space-y-6 text-stone-850">
+          <div className="space-y-6 text-stone-800">
             <div className="border-b border-stone-100 pb-2 mb-4">
               <h3 className="font-serif text-xl font-semibold text-stone-950">Academic Transliteration Shortcuts</h3>
               <p className="font-sans text-[11px] text-stone-500 mt-1">Planned standard mapping for keyboard-friendly scholarly transliteration</p>
@@ -210,7 +210,7 @@ export function UserGuide() {
                     <th className="p-3">Character Name / Arabic Letter</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-150 text-stone-700 font-mono">
+                <tbody className="divide-y divide-stone-200 text-stone-700 font-mono">
                   <tr className="hover:bg-stone-50/30 transition">
                     <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ā</td>
                     <td className="p-3">Alt + A</td>
@@ -269,7 +269,7 @@ export function UserGuide() {
 
         {/* TAB 4: PRE-LAUNCH ROADMAP */}
         {activeTab === 'roadmap' && (
-          <div className="space-y-6 text-stone-850">
+          <div className="space-y-6 text-stone-800">
             <div className="border-b border-stone-100 pb-2 mb-4">
               <h3 className="font-serif text-xl font-semibold text-stone-950">Pre-Launch Roadmap</h3>
               <p className="font-sans text-[11px] text-stone-500 mt-1">Official developmental milestones leading to launching the platform</p>
@@ -279,7 +279,7 @@ export function UserGuide() {
               {/* Milestone 1 */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-250 text-emerald-800 flex items-center justify-center font-bold text-[10px] flex-shrink-0 select-none">
+                  <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold text-[10px] flex-shrink-0 select-none">
                     A
                   </span>
                   <div className="w-px h-full bg-stone-200 mt-1" />
@@ -289,7 +289,7 @@ export function UserGuide() {
                     Milestone A: Scholarly Archetypes & Digital Twin 
                     <span className="font-mono text-[8px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold uppercase">Completed</span>
                   </h4>
-                  <p className="text-stone-550 mt-1">
+                  <p className="text-stone-500 mt-1">
                     Design and verify specific presentation frameworks (Note, Essay, Article), visual SSoT dependency tracking inside Architecture Studio, and matrix validations.
                   </p>
                 </div>
@@ -308,7 +308,7 @@ export function UserGuide() {
                     Milestone B: Localization, Arabic RTL & Keyboards 
                     <span className="font-mono text-[8px] bg-[#802334]/10 text-[#802334] border border-[#802334]/20 px-1.5 py-0.5 rounded font-bold uppercase">Next Up</span>
                   </h4>
-                  <p className="text-stone-550 mt-1">
+                  <p className="text-stone-500 mt-1">
                     Establish stable RTL layout margins for full-length Arabic manuscripts and incorporate Alt-key transliteration bindings inside the editing canvas.
                   </p>
                 </div>
@@ -324,7 +324,7 @@ export function UserGuide() {
                 </div>
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900">Milestone C: Dialogic Commentary & Citing Responses</h4>
-                  <p className="text-stone-550 mt-1">
+                  <p className="text-stone-500 mt-1">
                     Enable authors to cross-quote specific blocks/paragraphs from other essays to compile relational cross-commentaries in their local folios.
                   </p>
                 </div>
@@ -340,7 +340,7 @@ export function UserGuide() {
                 </div>
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900">Milestone D: Platform Logs, Notifier & Share Cards</h4>
-                  <p className="text-stone-550 mt-1">
+                  <p className="text-stone-500 mt-1">
                     Launch platform notification broadcasts and add a graphical poster generator for mobile downloads and social card previews.
                   </p>
                 </div>
@@ -355,7 +355,7 @@ export function UserGuide() {
                 </div>
                 <div>
                   <h4 className="font-serif text-sm font-semibold text-stone-900">Milestone E: Audit, Hardening & Launch Invitation</h4>
-                  <p className="text-stone-550 mt-1">
+                  <p className="text-stone-500 mt-1">
                     Conduct security reviews of private keys signatures, implement backup structures, configure invite-only registrations, and deploy to staging for production launch.
                   </p>
                 </div>

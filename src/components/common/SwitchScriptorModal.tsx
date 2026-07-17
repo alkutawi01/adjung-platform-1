@@ -54,7 +54,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
               placeholder="Search AI Scriptor..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-850 placeholder-stone-400 text-xs font-serif focus:outline-none focus:border-[#802334]"
+              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-800 placeholder-stone-400 text-xs font-serif focus:outline-none focus:border-[#802334]"
             />
           </div>
         </div>
@@ -103,7 +103,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-stone-150 p-4 bg-stone-50/50 flex justify-end">
+        <div className="border-t border-stone-200 p-4 bg-stone-50/50 flex justify-end">
           <button
             type="button"
             onClick={onClose}

@@ -27,7 +27,7 @@ const ConceptNode = ({ data, selected }: any) => {
         : 'border-stone-200 hover:border-stone-400'
     }`}>
       <Handle type="target" position={Position.Top} className="w-2.5 h-2.5 bg-stone-300 border-white" />
-      <div className="font-mono text-[8px] uppercase tracking-wider text-stone-450 mb-1 font-semibold">
+      <div className="font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1 font-semibold">
         Platform Concept
       </div>
       <div className="font-serif text-base font-semibold text-stone-900 leading-tight">
@@ -351,7 +351,7 @@ export const ArchitectureStudio: React.FC = () => {
               <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1">Implementation Artifacts</span>
               <div className="flex flex-col gap-1 mt-1.5">
                 {(selectedNode.data.files as string[]).map((f) => (
-                  <span key={f} className="flex items-center gap-1.5 font-mono text-[9px] text-stone-500 bg-stone-50 p-1.5 rounded border border-stone-150/50">
+                  <span key={f} className="flex items-center gap-1.5 font-mono text-[9px] text-stone-500 bg-stone-50 p-1.5 rounded border border-stone-200/50">
                     <FileCode className="w-3.5 h-3.5 text-stone-400" />
                     {f.split('/').pop()}
                   </span>
@@ -368,7 +368,7 @@ export const ArchitectureStudio: React.FC = () => {
                     impactData.level === 'High' 
                       ? 'bg-red-50 text-red-800 border border-red-200' 
                       : impactData.level === 'Medium'
-                      ? 'bg-amber-55 text-amber-900 border border-amber-250'
+                      ? 'bg-amber-50 text-amber-900 border border-amber-200'
                       : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                   }`}>
                     {impactData.level} Impact

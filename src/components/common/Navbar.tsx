@@ -235,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="absolute right-0 mt-2 w-52 bg-[#FDFDFD] border border-stone-200 shadow-md rounded-sm py-2 z-50 animate-fade-in font-sans text-left">
                   <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/40 select-none">
                     <div className="flex items-center gap-1.5 leading-tight">
-                      <span className="font-serif text-[13px] font-semibold text-stone-955">
+                      <span className="font-serif text-[13px] font-semibold text-stone-950">
                         {currentUser.penName}
                       </span>
                       {currentUser.isAi && (

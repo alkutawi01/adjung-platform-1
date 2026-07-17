@@ -63,7 +63,7 @@ export function RolesPoliciesTab({
                 <th className="p-3.5 text-center">Chief Editor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-150">
+            <tbody className="divide-y divide-stone-200">
               {/* Row 1: View Directory */}
               <tr className="hover:bg-stone-50/40 transition">
                 <td className="p-3.5 pl-4 text-left">

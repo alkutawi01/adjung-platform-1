@@ -93,7 +93,7 @@ export function PlatformIdentityTab({
               <textarea
                 value={announcementBanner}
                 onChange={(e) => setAnnouncementBanner(e.target.value)}
-                className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs leading-relaxed focus:outline-none focus:border-adjung-maroon min-h-[70px] text-stone-850"
+                className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs leading-relaxed focus:outline-none focus:border-adjung-maroon min-h-[70px] text-stone-800"
                 placeholder="Enter welcome or alert text displayed on the Frontpage..."
               />
               <span className="text-stone-400 text-[9px] font-mono mt-1 block">Renders a high-density banner at the top of the Frontpage for general announcements.</span>

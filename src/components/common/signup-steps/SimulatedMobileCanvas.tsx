@@ -120,7 +120,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
       <div className="flex gap-2 pt-1">
         <button
           onClick={clear}
-          className="flex-1 py-2 bg-stone-800 hover:bg-stone-750 text-stone-300 font-mono text-[10px] uppercase rounded-sm transition-colors cursor-pointer"
+          className="flex-1 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-mono text-[10px] uppercase rounded-sm transition-colors cursor-pointer"
         >
           Clear
         </button>

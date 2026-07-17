@@ -45,7 +45,7 @@ export const ChangelogView: React.FC = () => {
                       })}
                     </time>
                   </div>
-                  <h3 className="font-serif text-xl font-medium text-stone-850">
+                  <h3 className="font-serif text-xl font-medium text-stone-800">
                     {log.version} Release
                   </h3>
                   <p className="font-serif italic text-stone-500 text-xs">

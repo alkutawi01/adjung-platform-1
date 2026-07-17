@@ -405,7 +405,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
             <button
               type="button"
               onClick={onCancel}
-              className="text-stone-400 hover:text-stone-200 transition-colors cursor-pointer p-1.5 hover:bg-stone-850/50 rounded border border-stone-800"
+              className="text-stone-400 hover:text-stone-200 transition-colors cursor-pointer p-1.5 hover:bg-stone-800/50 rounded border border-stone-800"
               title="Close modal"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,12 +420,12 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
       
       {/* Settings Panel */}
       {showSettings && (
-        <div className="w-full xl:w-72 flex flex-col gap-3 border-b xl:border-b-0 xl:border-r border-stone-850 pb-3 xl:pb-0 xl:pr-4 select-none overflow-y-auto max-h-[200px] xl:max-h-full scrollbar-none shrink-0">
-          <div className="flex items-center justify-between border-b border-stone-850/50 pb-1.5">
+        <div className="w-full xl:w-72 flex flex-col gap-3 border-b xl:border-b-0 xl:border-r border-stone-800 pb-3 xl:pb-0 xl:pr-4 select-none overflow-y-auto max-h-[200px] xl:max-h-full scrollbar-none shrink-0">
+          <div className="flex items-center justify-between border-b border-stone-800/50 pb-1.5">
             <h3 className="font-mono text-[9px] uppercase tracking-widest text-Adjung-maroon font-bold flex items-center gap-1">
               <Sliders className="w-3 h-3" /> Studio Controls
             </h3>
-            <span className="font-mono text-[7px] uppercase bg-stone-850 px-1 py-0.5 rounded text-stone-400">
+            <span className="font-mono text-[7px] uppercase bg-stone-800 px-1 py-0.5 rounded text-stone-400">
               {signatureMode === 'draw' ? 'Physics' : 'Typography'}
             </span>
           </div>
@@ -442,7 +442,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 45 && inkFlowWeight === 4.5
                         ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
-                        : 'border-stone-850 hover:bg-stone-850 text-stone-400'
+                        : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
                     Fountain
@@ -453,7 +453,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 60 && inkFlowWeight === 5.5
                         ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
-                        : 'border-stone-850 hover:bg-stone-850 text-stone-400'
+                        : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
                     Chisel
@@ -464,7 +464,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 45 && inkFlowWeight === 7.5
                         ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
-                        : 'border-stone-850 hover:bg-stone-850 text-stone-400'
+                        : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
                     Gel Pen
@@ -568,7 +568,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <select
                   value={selectedFont}
                   onChange={(e) => setSelectedFont(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-850 p-1 rounded text-stone-300 text-[10px] font-mono focus:outline-none focus:border-Adjung-maroon cursor-pointer"
+                  className="w-full bg-stone-950 border border-stone-800 p-1 rounded text-stone-300 text-[10px] font-mono focus:outline-none focus:border-Adjung-maroon cursor-pointer"
                 >
                   {allowedFonts.map((font) => (
                     <option key={font} value={`${font}, cursive`}>
@@ -669,7 +669,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
           )}
 
           {/* Paper Texture Selector */}
-          <div className="space-y-1 border-t border-stone-850/30 pt-2">
+          <div className="space-y-1 border-t border-stone-800/30 pt-2">
             <span className="block font-mono text-[7px] uppercase tracking-wider text-stone-500">Paper Texture</span>
             <div className="grid grid-cols-3 gap-1">
               {(['Smooth', 'Laid', 'Vintage'] as PaperTexture[]).map((tex) => (
@@ -680,7 +680,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                   className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                     paperTexture === tex 
                       ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
-                      : 'border-stone-850 hover:bg-stone-850 text-stone-400'
+                      : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                   }`}
                 >
                   {tex}
@@ -690,7 +690,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
           </div>
 
           {/* Mini Telemetry (At Bottom) */}
-          <div className="mt-auto border-t border-stone-850/40 pt-1.5 bg-stone-950/20 p-1.5 rounded border border-stone-850 flex flex-col gap-0.5 text-[7px] font-mono text-stone-500">
+          <div className="mt-auto border-t border-stone-800/40 pt-1.5 bg-stone-950/20 p-1.5 rounded border border-stone-800 flex flex-col gap-0.5 text-[7px] font-mono text-stone-500">
             <div className="flex justify-between items-center text-[7px] text-stone-400 uppercase tracking-wider font-bold mb-0.5">
               <span>Status</span>
               <span className="h-1 w-1 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
@@ -730,7 +730,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
         {/* Mode Toggle & Inline Typography Input */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6 w-full">
           {/* Mode Toggle */}
-          <div className="flex bg-stone-950/30 p-1 rounded border border-stone-850 w-fit shrink-0 sm:mt-0.5">
+          <div className="flex bg-stone-950/30 p-1 rounded border border-stone-800 w-fit shrink-0 sm:mt-0.5">
             <button 
               type="button"
               onClick={() => setSignatureMode('draw')}
@@ -766,9 +766,9 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     setTypedText(filtered);
                   }}
                   placeholder="Type your signature here..."
-                  className="w-full bg-stone-950/40 border border-stone-850 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-Adjung-maroon font-serif"
+                  className="w-full bg-stone-950/40 border border-stone-800 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-Adjung-maroon font-serif"
                 />
-                <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-2 py-1.5 rounded border border-stone-850">
+                <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-2 py-1.5 rounded border border-stone-800">
                   {typedText.length}/15
                 </span>
               </div>
@@ -780,12 +780,12 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
         </div>
 
         {/* Canvas Toolbar Header */}
-        <div className="flex justify-between items-center bg-stone-950/30 p-2 rounded border border-stone-850">
+        <div className="flex justify-between items-center bg-stone-950/30 p-2 rounded border border-stone-800">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-1 rounded transition ${showSettings ? 'text-Adjung-maroon bg-Adjung-maroon/10' : 'text-stone-400 hover:text-stone-250'}`}
+              className={`p-1 rounded transition ${showSettings ? 'text-Adjung-maroon bg-Adjung-maroon/10' : 'text-stone-400 hover:text-stone-200'}`}
               title="Toggle settings panel"
             >
               <Settings className="w-4 h-4" />
@@ -894,7 +894,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 border border-stone-800 text-stone-400 rounded text-xs font-mono uppercase tracking-wider hover:bg-stone-850 hover:text-stone-200 transition"
+              className="px-4 py-2 border border-stone-800 text-stone-400 rounded text-xs font-mono uppercase tracking-wider hover:bg-stone-800 hover:text-stone-200 transition"
             >
               Cancel
             </button>

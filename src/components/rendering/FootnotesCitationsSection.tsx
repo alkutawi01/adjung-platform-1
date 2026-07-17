@@ -233,7 +233,7 @@ export function FootnotesCitationsSection({
       {activeSpec.visibility.showCitations && citations.length > 0 && (
         <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 text-left">
-            <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-850">
+            <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
               References & Bibliography
             </h3>
             <span className="font-mono text-[9px] text-stone-400 uppercase select-none">

@@ -51,7 +51,7 @@ export function SystemLogsTab({
                 placeholder="Search logs..."
                 value={logsSearchQuery}
                 onChange={(e) => setLogsSearchQuery(e.target.value)}
-                className="border border-stone-200 p-1.5 pl-7 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white text-stone-850"
+                className="border border-stone-200 p-1.5 pl-7 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white text-stone-800"
               />
               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2 top-2.5" />
             </div>
@@ -79,7 +79,7 @@ export function SystemLogsTab({
                 <th className="p-3.5">Action Executed</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-150 font-sans text-xs text-stone-700">
+            <tbody className="divide-y divide-stone-200 font-sans text-xs text-stone-700">
               {logs
                 .filter(log => {
                   const query = logsSearchQuery.trim().toLowerCase();

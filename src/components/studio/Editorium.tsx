@@ -244,7 +244,7 @@ export function Editorium() {
   const renderGoogleDocConnectionStatus = (status: string, itemsCount: number) => {
     if (status === 'success') {
       return (
-        <div className="mt-1.5 p-2 bg-emerald-50 border border-emerald-150 rounded text-emerald-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
+        <div className="mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
           <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
           <span className="font-semibold uppercase tracking-wider">Connection Success</span>
           <span className="text-stone-400 font-sans">•</span>
@@ -253,7 +253,7 @@ export function Editorium() {
       );
     } else if (status === 'failed') {
       return (
-        <div className="mt-1.5 p-2 bg-rose-50 border border-rose-150 rounded text-rose-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
+        <div className="mt-1.5 p-2 bg-rose-50 border border-rose-200 rounded text-rose-800 flex items-center gap-1.5 text-[10px] font-mono select-none">
           <span className="w-1.5 h-1.5 bg-rose-600 rounded-full animate-pulse"></span>
           <span className="font-semibold uppercase tracking-wider text-[#A02B2D]">Connection Failed</span>
           <span className="text-stone-400 font-sans">•</span>
@@ -262,7 +262,7 @@ export function Editorium() {
       );
     }
     return (
-      <div className="mt-1.5 p-2 bg-stone-50 border border-stone-150 rounded text-stone-600 flex items-center gap-1.5 text-[10px] font-mono select-none">
+      <div className="mt-1.5 p-2 bg-stone-50 border border-stone-200 rounded text-stone-600 flex items-center gap-1.5 text-[10px] font-mono select-none">
         <span className="w-1.5 h-1.5 bg-stone-400 rounded-full"></span>
         <span className="font-semibold uppercase tracking-wider">No URL Provided</span>
       </div>
@@ -498,7 +498,7 @@ Source: MIT Technology Review, 2024
         className={`w-full text-left px-3 py-2 rounded font-mono text-[10px] uppercase tracking-wider transition flex items-center gap-2 cursor-pointer select-none ${
           isActive
             ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
-            : 'text-stone-650 hover:bg-stone-200/60 hover:text-stone-900'
+            : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-900'
         }`}
       >
         {icon}
@@ -642,7 +642,7 @@ Source: MIT Technology Review, 2024
                         type="text"
                         value={researchFindingsGoogleDocUrl}
                         onChange={(e) => setResearchFindingsGoogleDocUrl(e.target.value)}
-                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850 mb-3"
+                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800 mb-3"
                         placeholder="https://docs.google.com/document/d/.../edit"
                       />
                       {renderGoogleDocConnectionStatus(researchFindingsGoogleDocStatus, docItems.length)}
@@ -672,7 +672,7 @@ Source: MIT Technology Review, 2024
                       <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Parsed Preview & Status</span>
                       {findingsParseErrors.length > 0 ? (
                         <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 space-y-1.5 text-left">
-                          <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-650">● Parser Warnings / Errors</p>
+                          <p className="font-semibold uppercase tracking-wider text-[9px] font-mono text-red-600">● Parser Warnings / Errors</p>
                           <ul className="list-disc list-inside space-y-1 font-mono text-[10px] max-h-[120px] overflow-y-auto">
                             {findingsParseErrors.map((err, i) => (
                               <li key={i}>
@@ -698,7 +698,7 @@ Source: MIT Technology Review, 2024
                         <div className="space-y-3">
                           {findingsParsedItems.map((item, i) => (
                             <div key={i} className="text-xs border-b border-stone-200 pb-2.5 last:border-b-0 space-y-1.5 text-left">
-                              <p className="font-serif text-stone-850 leading-relaxed font-medium">"{item.finding}"</p>
+                              <p className="font-serif text-stone-800 leading-relaxed font-medium">"{item.finding}"</p>
                               <p className="font-mono text-[9px] text-stone-400 uppercase tracking-wider">— {item.source}</p>
                             </div>
                           ))}
@@ -756,7 +756,7 @@ Source: MIT Technology Review, 2024
                     <th className="p-3.5 text-right pr-4">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-150">
+                <tbody className="divide-y divide-stone-200">
                   {users
                     .filter(u => u.role !== 'Visitor')
                     .filter(u => {
@@ -765,7 +765,7 @@ Source: MIT Technology Review, 2024
                     })
                     .map(u => (
                       <tr key={u.id} className="hover:bg-stone-50/40 transition text-stone-700">
-                        <td className="p-3.5 pl-4 font-serif font-bold text-stone-850 text-sm">
+                        <td className="p-3.5 pl-4 font-serif font-bold text-stone-800 text-sm">
                           {u.penName}
                         </td>
                         <td className="p-3.5 font-mono text-[11px] text-stone-500">
@@ -863,25 +863,25 @@ Source: MIT Technology Review, 2024
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-left font-sans text-xs">
-                <div className="bg-stone-50 p-4 border border-stone-150 rounded space-y-1">
+                <div className="bg-stone-50 p-4 border border-stone-200 rounded space-y-1">
                   <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block">Total Publications</span>
                   <span className="font-serif text-2xl font-bold text-stone-900 block">{totalEntries}</span>
                   <span className="text-stone-500 text-[10px] block mt-1">All database records</span>
                 </div>
 
-                <div className="bg-stone-50 p-4 border border-stone-150 rounded space-y-1">
+                <div className="bg-stone-50 p-4 border border-stone-200 rounded space-y-1">
                   <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block">Published Feed Items</span>
                   <span className="font-serif text-2xl font-bold text-adjung-maroon block">{publishedEntries.length}</span>
                   <span className="text-stone-500 text-[10px] block mt-1">Live indexed publications</span>
                 </div>
 
-                <div className="bg-stone-50 p-4 border border-stone-150 rounded space-y-1">
+                <div className="bg-stone-50 p-4 border border-stone-200 rounded space-y-1">
                   <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block">Private Drafts</span>
                   <span className="font-serif text-2xl font-bold text-amber-700 block">{draftEntries.length}</span>
                   <span className="text-stone-500 text-[10px] block mt-1">In progress locally</span>
                 </div>
 
-                <div className="bg-stone-50 p-4 border border-stone-150 rounded space-y-1">
+                <div className="bg-stone-50 p-4 border border-stone-200 rounded space-y-1">
                   <span className="font-mono text-[8px] uppercase tracking-wider text-stone-400 block">Archived Publications</span>
                   <span className="font-serif text-2xl font-bold text-stone-500 block">{archivedEntries.length}</span>
                   <span className="text-stone-500 text-[10px] block mt-1">Stored safely on file</span>
@@ -1003,7 +1003,7 @@ Source: MIT Technology Review, 2024
                       className={`p-3 border rounded transition cursor-pointer flex items-center justify-between hover:bg-stone-50 hover:border-adjung-maroon ${
                         selectedBoardMemberId === u.id
                           ? 'bg-adjung-maroon/[0.03] border-adjung-maroon shadow-sm ring-1 ring-adjung-maroon/20'
-                          : 'bg-white border-stone-150'
+                          : 'bg-white border-stone-200'
                       }`}
                     >
                       <div className="space-y-0.5 text-left">
@@ -1015,14 +1015,14 @@ Source: MIT Technology Review, 2024
               </div>
 
               {/* Right panel: Editor Details */}
-              <div className="bg-stone-50 p-4 rounded border border-stone-150 space-y-4 text-left text-xs">
+              <div className="bg-stone-50 p-4 rounded border border-stone-200 space-y-4 text-left text-xs">
                 {selectedBoardMemberId && users.find(u => u.id === selectedBoardMemberId) ? (
                   (() => {
                     const editor = users.find(u => u.id === selectedBoardMemberId)!;
                     const editorSig = resolveDigitalSignature(editor.id, identities);
                     return (
                       <div className="space-y-3 font-sans">
-                        <h4 className="font-serif font-bold text-sm text-stone-850 flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-sm text-stone-800 flex items-center justify-between">
                           <span>{editor.penName}</span>
                           <span className="w-20 h-8 inline-block">
                             <SignatureRenderer
@@ -1398,7 +1398,7 @@ Source: MIT Technology Review, 2024
               This command deletes all local database entries, profiles, timeline milestones, and user settings, resetting the environment back to the clean pre-seeded academic template. This action cannot be undone.
             </p>
 
-            <div className="p-3.5 bg-white border border-red-150 rounded space-y-2 text-[11px] text-stone-600 leading-normal font-sans">
+            <div className="p-3.5 bg-white border border-red-200 rounded space-y-2 text-[11px] text-stone-600 leading-normal font-sans">
               <strong className="text-red-700 uppercase block font-mono text-[9px] tracking-wider">Warning of Destructive Operation:</strong>
               <div>• Clears all draft entries and publications.</div>
               <div>• Demotes or removes added custom users and guest authors.</div>

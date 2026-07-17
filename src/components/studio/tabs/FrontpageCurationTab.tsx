@@ -303,7 +303,7 @@ export function FrontpageCurationTab({
               value={announcementBanner}
               onChange={(e) => setAnnouncementBanner(e.target.value)}
               placeholder="Announcement text..."
-              className="w-full border border-stone-200 p-2.5 rounded bg-[#FAFAF9] text-stone-850 font-mono text-xs focus:outline-none focus:border-adjung-maroon"
+              className="w-full border border-stone-200 p-2.5 rounded bg-[#FAFAF9] text-stone-800 font-mono text-xs focus:outline-none focus:border-adjung-maroon"
             />
             <span className="text-stone-400 text-[9px] font-mono mt-1 block text-left">
               Displays at the absolute top of the public landing screen for temporary notices.
@@ -318,7 +318,7 @@ export function FrontpageCurationTab({
                 <select
                   value={featuredScholarId}
                   onChange={(e) => setFeaturedScholarId(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon text-stone-750"
+                  className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon text-stone-700"
                 >
                   <option value="">-- None Selected --</option>
                   {users.filter(u => u.role === 'Writer' || u.role === 'Editor' || u.role === 'Chief Editor').map(u => (
@@ -332,7 +332,7 @@ export function FrontpageCurationTab({
                 <select
                   value={layoutDensity}
                   onChange={(e) => setLayoutDensity(e.target.value as any)}
-                  className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon text-stone-750"
+                  className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon text-stone-700"
                 >
                   <option value="Standard">Standard (Scholarly Spacing)</option>
                   <option value="Compact">Compact (Tight Line Heights)</option>
@@ -435,7 +435,7 @@ export function FrontpageCurationTab({
                         type="text"
                         value={inTheNewsGoogleDocUrl}
                         onChange={(e) => setInTheNewsGoogleDocUrl(e.target.value)}
-                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800"
                         placeholder="https://docs.google.com/document/d/.../edit"
                       />
                     </div>
@@ -446,7 +446,7 @@ export function FrontpageCurationTab({
                         type="text"
                         value={googleDocSyncTimes}
                         onChange={(e) => setGoogleDocSyncTimes(e.target.value)}
-                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800"
                         placeholder="12:10, 00:10"
                       />
                     </div>
@@ -461,7 +461,7 @@ export function FrontpageCurationTab({
                       value={inTheNewsRawText}
                       onChange={(e) => setInTheNewsRawText(e.target.value)}
                       rows={8}
-                      className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                      className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800"
                       placeholder="desk: Astronomy&#10;title: Title of post&#10;brief: Brief text...&#10;source: Source Name&#10;url: Link url&#10;&#10;---&#10;&#10;..."
                     />
                   </div>
@@ -491,7 +491,7 @@ export function FrontpageCurationTab({
                               </span>
                             </div>
                             <p className="text-stone-600 line-clamp-2 leading-relaxed font-serif text-[11px]">{item.brief}</p>
-                            <div className="flex justify-between text-stone-450 font-mono text-[8.5px]">
+                            <div className="flex justify-between text-stone-400 font-mono text-[8.5px]">
                               <span>Source: {item.source}</span>
                               {item.url && <span className="underline truncate max-w-[150px]">Link: {item.url}</span>}
                             </div>
@@ -555,7 +555,7 @@ export function FrontpageCurationTab({
                         type="text"
                         value={worldClockHolidaysGoogleDocUrl}
                         onChange={(e) => setWorldClockHolidaysGoogleDocUrl(e.target.value)}
-                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                        className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800"
                         placeholder="https://docs.google.com/document/d/.../edit"
                       />
                     </div>
@@ -570,7 +570,7 @@ export function FrontpageCurationTab({
                       value={worldClockHolidaysRawText}
                       onChange={(e) => setWorldClockHolidaysRawText(e.target.value)}
                       rows={8}
-                      className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-850"
+                      className="w-full border border-stone-200 p-2.5 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon bg-[#FAFAF9] text-stone-800"
                       placeholder="city: London&#10;date: 2026-12-25&#10;name: Christmas Day&#10;status: closed&#10;&#10;---&#10;&#10;..."
                     />
                   </div>

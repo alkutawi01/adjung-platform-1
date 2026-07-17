@@ -239,7 +239,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         </span>
                         <div className="flex-grow text-left text-stone-500 text-xs">
                           {fn.label && (
-                            <strong className="text-stone-750 block font-sans text-[9px] uppercase tracking-wider mb-0.5">
+                            <strong className="text-stone-700 block font-sans text-[9px] uppercase tracking-wider mb-0.5">
                               {fn.label}
                             </strong>
                           )}

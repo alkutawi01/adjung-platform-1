@@ -292,11 +292,11 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                 {username}.adjung.com
               </span>
               {isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-emerald-250">
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-emerald-200">
                   Unlocked
                 </span>
               ) : (
-                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-amber-250">
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-amber-200">
                   Reserved
                 </span>
               )}
@@ -341,7 +341,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                       }`}>
                         {item.done ? '✓' : ''}
                       </span>
-                      <span className={item.done ? 'text-stone-400 line-through' : 'text-stone-705'}>
+                      <span className={item.done ? 'text-stone-400 line-through' : 'text-stone-700'}>
                         {item.label}
                       </span>
                     </div>

@@ -279,7 +279,7 @@ export function MobileSignCanvas() {
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col text-stone-200 font-sans select-none overflow-hidden">
       {/* Standalone Header */}
-      <header className="border-b border-stone-850 p-4 shrink-0 flex items-center justify-between bg-stone-900/50">
+      <header className="border-b border-stone-800 p-4 shrink-0 flex items-center justify-between bg-stone-900/50">
         <div className="flex items-center gap-2">
           <PenTool className="w-4 h-4 text-[#802334]" />
           <h1 className="font-serif text-sm tracking-wide text-stone-100">Adjung Scholar Signature</h1>
@@ -335,11 +335,11 @@ export function MobileSignCanvas() {
       </div>
 
       {/* Action Toolbar */}
-      <footer className="border-t border-stone-850 p-4 shrink-0 flex gap-4 bg-stone-900/50">
+      <footer className="border-t border-stone-800 p-4 shrink-0 flex gap-4 bg-stone-900/50">
         <button
           type="button"
           onClick={clearCanvas}
-          className="w-1/3 py-3 rounded-md bg-stone-800 hover:bg-stone-750 active:bg-stone-700 text-stone-300 font-mono text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 border border-stone-700/50 cursor-pointer"
+          className="w-1/3 py-3 rounded-md bg-stone-800 hover:bg-stone-700 active:bg-stone-700 text-stone-300 font-mono text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 border border-stone-700/50 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Clear
         </button>
@@ -349,7 +349,7 @@ export function MobileSignCanvas() {
           disabled={strokes.length === 0 || status === 'sending'}
           className={`w-2/3 py-3 rounded-md font-mono text-xs uppercase tracking-wider text-white transition flex items-center justify-center gap-1.5 shadow-md font-bold cursor-pointer ${
             strokes.length === 0 || status === 'sending'
-              ? 'bg-stone-850 text-stone-500 border border-stone-800 shadow-none cursor-not-allowed'
+              ? 'bg-stone-800 text-stone-500 border border-stone-800 shadow-none cursor-not-allowed'
               : 'bg-[#802334] hover:bg-[#962c3e] active:bg-[#6b1c2a]'
           }`}
         >

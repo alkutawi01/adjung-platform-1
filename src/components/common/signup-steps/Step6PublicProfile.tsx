@@ -50,7 +50,7 @@ export default function Step6PublicProfile({ formData, setFormData, onNext }: St
         </div>
       </div>
 
-      <div className="w-full border-t border-stone-150 pt-4 mt-4 flex justify-end items-center bg-[#FFFFFF] select-none">
+      <div className="w-full border-t border-stone-200 pt-4 mt-4 flex justify-end items-center bg-[#FFFFFF] select-none">
         <button
           onClick={onNext}
           className="px-10 py-3 font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm font-bold bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] cursor-pointer shadow-sm"
