@@ -116,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={handleBrandClick}
           className="flex items-center cursor-pointer group text-white hover:opacity-85 transition-opacity"
         >
-          <span className="font-serif text-[15px] font-semibold tracking-wider">
+          <span className="font-serif text-lg font-semibold tracking-wider">
             {BRAND.logoText}
           </span>
         </div>
