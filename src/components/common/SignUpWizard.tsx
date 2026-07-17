@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 
 import Step1Welcome from './signup-steps/Step1Welcome';
 import Step2Philosophy from './signup-steps/Step2Philosophy';
@@ -124,12 +124,10 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 text-stone-400 hover:text-adjung-maroon transition-all duration-300 z-40 p-1 cursor-pointer group"
+            className="absolute top-5 right-5 text-stone-400 hover:text-adjung-maroon transition-all duration-300 z-40 p-1.5 rounded-full hover:bg-stone-100 cursor-pointer group"
             aria-label="Cancel account setup"
           >
-            <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
           </button>
         )}
 

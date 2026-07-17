@@ -587,7 +587,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   {c.city}
                 </p>
                 {isHoliday && holidayName && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#1F1F1F] text-[#FDFDFD] text-[9px] font-sans py-1 px-2.5 rounded shadow-lg whitespace-nowrap z-50 animate-fade-in pointer-events-none tracking-normal">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-stone-900 text-stone-100 text-[9px] font-sans py-1 px-2.5 rounded shadow-md whitespace-nowrap z-50 pointer-events-none tracking-normal">
                     {holidayName}
                   </div>
                 )}

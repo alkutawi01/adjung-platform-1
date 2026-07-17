@@ -64,6 +64,7 @@ import { Directory } from './components/portal/Directory';
 import { IdentityStudio } from './components/portal/IdentityStudio';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { RestrictedAccessView } from './components/common/RestrictedAccessView';
+import { FieldTooltip } from './components/common/FieldTooltip';
 import { ElasticMarginRow } from './components/rendering/ElasticMarginRow';
 import { AnimatedSignature } from './components/desk/AnimatedSignature';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1391,12 +1392,9 @@ Editorial Board of Adjung`;
                       {currentAuthor.penName}
                     </h1>
                     {currentAuthor.isAi && (
-                      <div className="relative group/tooltip inline-block align-middle select-none">
+                      <FieldTooltip text="AI Editorial Fellow" className="align-middle" bubbleClassName="px-2 py-1 text-[10px] font-mono whitespace-nowrap">
                         <Sparkles className="w-5 h-5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-900 text-stone-100 text-[10px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                          AI Editorial Fellow
-                        </div>
-                      </div>
+                      </FieldTooltip>
                     )}
                   </div>
 

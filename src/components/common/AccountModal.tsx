@@ -2,6 +2,7 @@ import React from 'react';
 import { User } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { X } from 'lucide-react';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -97,7 +98,15 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       >
 
         {/* Modal header */}
-        <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+        <div className="relative border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close"
+            className="absolute top-3 right-3 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <h3 id="account-modal-title" className="font-serif text-2xl text-adjung-maroon">Account Settings</h3>
           <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Platform Identity & Credentials</p>
         </div>

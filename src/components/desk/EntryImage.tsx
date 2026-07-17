@@ -250,7 +250,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-mono text-[9.5px] uppercase tracking-wider rounded transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-adjung-maroon hover:bg-[#611522] text-white font-mono text-[9.5px] uppercase tracking-wider rounded transition cursor-pointer"
                 >
                   <Upload className="w-3.5 h-3.5" /> Replace Image
                 </button>

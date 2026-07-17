@@ -284,7 +284,7 @@ export function WritingDesk({
                     <div 
                       key={draft.id} 
                       onClick={() => contextSetEditingEntry(draft)}
-                      className="bg-white hover:bg-[#FDFDFD] border border-[#111111]/10 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
+                      className="bg-white hover:bg-[#FDFDFD] border border-stone-200 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
@@ -332,7 +332,7 @@ export function WritingDesk({
                     <div 
                       key={pub.id} 
                       onClick={() => contextSetEditingEntry(pub)}
-                      className="bg-white hover:bg-[#FDFDFD] border border-[#111111]/10 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
+                      className="bg-white hover:bg-[#FDFDFD] border border-stone-200 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">

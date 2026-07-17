@@ -487,7 +487,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 type="button"
                 onClick={() => setLanguage('LTR')}
                 className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
-                  language === 'LTR' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
+                  language === 'LTR' ? 'bg-adjung-maroon text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
                 }`}
               >
                 English LTR
@@ -496,7 +496,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 type="button"
                 onClick={() => setLanguage('RTL')}
                 className={`flex-1 py-1 rounded transition cursor-pointer font-semibold ${
-                  language === 'RTL' ? 'bg-stone-700 text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
+                  language === 'RTL' ? 'bg-adjung-maroon text-white shadow-sm' : 'text-stone-600 hover:text-stone-800'
                 }`}
               >
                 العربية RTL

@@ -6,6 +6,7 @@ import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { Fingerprint, Edit3, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { IdentityStudio } from './IdentityStudio';
+import { FieldTooltip } from '../common/FieldTooltip';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
 
 interface BiographyViewProps {
@@ -154,12 +155,9 @@ export function BiographyView({
                   {currentAuthor.penName}
                 </span>
                 {currentAuthor.isAi && (
-                  <div className="relative group/tooltip inline-block select-none">
+                  <FieldTooltip text="AI Editorial Fellow" bubbleClassName="px-2 py-0.5 text-[8px] font-mono whitespace-nowrap">
                     <Sparkles className="w-3.5 h-3.5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-normal">
-                      AI Editorial Fellow
-                    </div>
-                  </div>
+                  </FieldTooltip>
                 )}
               </div>
             </div>

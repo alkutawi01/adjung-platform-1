@@ -23,15 +23,18 @@ export function UserGuide() {
         </p>
       </div>
 
-      {/* Nav Tabs */}
-      <div className="flex border-b border-stone-200/80 mb-8 font-mono text-[10px] uppercase tracking-wider overflow-x-auto whitespace-nowrap">
+      {/* Nav Tabs — Filled Tab pattern (Design System v2.0 §16): this bar was
+          the app's only third tab mechanism (plain border-b-2 underline),
+          which didn't serve a different enough purpose to keep; migrated to
+          the same filled-pill treatment used by Editorium's sidebar. */}
+      <div className="flex gap-1.5 mb-8 font-mono text-[10px] uppercase tracking-wider overflow-x-auto whitespace-nowrap pb-1">
         <button
           type="button"
           onClick={() => setActiveTab('philosophy')}
-          className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'philosophy'
-              ? 'border-adjung-maroon text-adjung-maroon font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-800'
+              ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
+              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
           }`}
         >
           <Compass className="w-3.5 h-3.5" /> Philosophy
@@ -39,10 +42,10 @@ export function UserGuide() {
         <button
           type="button"
           onClick={() => setActiveTab('notation')}
-          className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'notation'
-              ? 'border-adjung-maroon text-adjung-maroon font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-800'
+              ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
+              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" /> 3-Layer Notation
@@ -50,10 +53,10 @@ export function UserGuide() {
         <button
           type="button"
           onClick={() => setActiveTab('shortcuts')}
-          className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'shortcuts'
-              ? 'border-adjung-maroon text-adjung-maroon font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-800'
+              ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
+              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
           }`}
         >
           <Key className="w-3.5 h-3.5" /> Keyboard Shortcuts
@@ -61,10 +64,10 @@ export function UserGuide() {
         <button
           type="button"
           onClick={() => setActiveTab('roadmap')}
-          className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'roadmap'
-              ? 'border-adjung-maroon text-adjung-maroon font-bold'
-              : 'border-transparent text-stone-500 hover:text-stone-800'
+              ? 'bg-adjung-maroon text-white font-semibold shadow-sm'
+              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
           }`}
         >
           <Award className="w-3.5 h-3.5" /> Pre-Launch Roadmap

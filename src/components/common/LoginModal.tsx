@@ -3,7 +3,7 @@ import { BRAND } from '../../config/brand';
 import { User } from '../../types';
 import { AuthService } from '../../services/supabaseAuthService';
 import { useAppContext } from '../../context/AppContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface LoginModalProps {
@@ -98,7 +98,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {showForgotPassword ? (
           <>
             {/* Modal header for Forgot Password */}
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+            <div className="relative border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close"
+                className="absolute top-3 right-3 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <h3 id="login-modal-title" className="font-serif text-2xl text-adjung-maroon">Reset Password</h3>
               <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Recover your platform access credentials</p>
             </div>
@@ -173,7 +181,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         ) : (
           <>
             {/* Modal header */}
-            <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+            <div className="relative border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close"
+                className="absolute top-3 right-3 p-1.5 rounded-full text-stone-400 hover:text-adjung-maroon hover:bg-stone-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
               <h3 id="login-modal-title" className="font-serif text-2xl text-adjung-maroon">Sign In</h3>
               <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Sign in to your {BRAND.shortName} account.</p>
             </div>

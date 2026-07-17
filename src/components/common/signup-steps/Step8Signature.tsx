@@ -148,7 +148,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                     </span>
                     <h4 className="font-serif text-sm font-semibold text-stone-900 mt-1.5">Aesthetic Seal Registered</h4>
                   </div>
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-emerald-600" />
                 </div>
 
                 {/* The visual preview of the signature */}

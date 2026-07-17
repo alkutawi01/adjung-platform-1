@@ -84,7 +84,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
       
       <div className="flex justify-between items-center border-b border-stone-800/80 pt-2 pb-2">
         <span className="font-mono text-[9px] uppercase tracking-wider text-adjung-maroon font-bold flex items-center gap-1">
-          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
           ADJUNG MOBILE SIGN
         </span>
         <button onClick={onCancel} className="text-stone-500 hover:text-stone-300 text-[10px] font-mono uppercase">Close</button>

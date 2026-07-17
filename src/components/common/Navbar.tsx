@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '../../config/brand';
 import { useAppContext } from '../../context/AppContext';
 import { Sparkles, Menu, X } from 'lucide-react';
+import { FieldTooltip } from './FieldTooltip';
 
 interface NavbarProps {
   isHeaderHovered: boolean;
@@ -239,12 +240,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {currentUser.penName}
                       </span>
                       {currentUser.isAi && (
-                        <div className="relative group/tooltip inline-block select-none">
+                        <FieldTooltip text="AI Editorial Fellow" bubbleClassName="px-2 py-0.5 text-[8px] font-mono whitespace-nowrap">
                           <Sparkles className="w-3.5 h-3.5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal">
-                            AI Editorial Fellow
-                          </div>
-                        </div>
+                        </FieldTooltip>
                       )}
                     </div>
                     {currentUser.role !== 'Writer' && (
