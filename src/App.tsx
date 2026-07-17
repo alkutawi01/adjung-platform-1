@@ -948,7 +948,7 @@ export default function App() {
       })
       .catch(err => {
         console.error(err);
-        setAccountError('Gagal mengemas kini kredensial di server.');
+        setAccountError('Failed to update credentials on the server.');
       });
   };
 
@@ -978,7 +978,7 @@ export default function App() {
         showToast('Biography updated', 'success');
       } catch (err) {
         console.error(err);
-        showToast('Gagal menyimpan milestone ke server.', 'error');
+        showToast('Failed to save milestone to the server.', 'error');
       }
     }
 
@@ -1005,7 +1005,7 @@ export default function App() {
         showToast('Biography updated', 'success');
       } catch (err) {
         console.error(err);
-        showToast('Gagal memadam milestone di server.', 'error');
+        showToast('Failed to delete milestone on the server.', 'error');
       }
     }
   };
@@ -1128,7 +1128,7 @@ Editorial Board of Adjung`;
       showToast(`Folio Initialized! Welcome to Adjung, ${penName.trim()}!`, 'success');
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
+      showToast(err.message || 'Failed to register new account on the server.', 'error');
     }
   };
 
@@ -1235,7 +1235,7 @@ Editorial Board of Adjung`;
       showToast(`Membership established! Welcome to Adjung, ${result.resolvedPenName}!`, 'success');
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
+      showToast(err.message || 'Failed to register new account on the server.', 'error');
     }
   };
 
@@ -1254,7 +1254,7 @@ Editorial Board of Adjung`;
       showToast(`Membership established! Welcome to Adjung, ${result.resolvedPenName}!`, 'success');
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Gagal mendaftarkan akaun baharu di server.', 'error');
+      showToast(err.message || 'Failed to register new account on the server.', 'error');
     }
   };
 

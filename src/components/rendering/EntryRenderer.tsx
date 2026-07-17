@@ -3388,7 +3388,7 @@ export function EntryRenderer({
                       type="button"
                       onClick={handleReportEntry}
                       className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-amber-600/20 hover:border-amber-600/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
-                      title="Laporkan penulisan ini kepada Editorial Board"
+                      title="Report this piece to the Editorial Board"
                     >
                       <AlertTriangle className="w-2.5 h-2.5" /> Report
                     </button>
@@ -3933,9 +3933,9 @@ export function EntryRenderer({
               <button
                 type="button"
                 onClick={() => {
-                  const url = window.prompt("Sila masukkan URL (contoh: https://google.com):", "https://");
+                  const url = window.prompt("Enter the URL (e.g. https://google.com):", "https://");
                   if (url === null) return;
-                  const text = window.prompt("Sila masukkan teks pautan (Anchor Text):", "Pautan Rujukan");
+                  const text = window.prompt("Enter the link text (Anchor Text):", "Reference Link");
                   if (text === null) return;
                   insertMarkdownText(`[${text}](${url})`);
                   setShowInsertMenu(false);
@@ -4512,12 +4512,12 @@ export function EntryRenderer({
                   {/* Translation Text (Optional) */}
                   <div className="space-y-1">
                     <label className="block text-[9.5px] font-mono text-stone-500 uppercase tracking-wider">
-                      Translation &bull; Terjemahan (Optional)
+                      Translation (Optional)
                     </label>
                     <textarea
                       id="universal-quote-input-translation"
                       rows={2}
-                      placeholder="Type English/Malay translation here... (mungkin petikan asal berhajat kepada terjemahan)"
+                      placeholder="Type a translation here, if the original quote needs one..."
                       className="w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-serif text-[#111111] bg-white leading-relaxed text-left"
                     />
                   </div>

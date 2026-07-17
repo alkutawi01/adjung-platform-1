@@ -1322,7 +1322,7 @@ Source: MIT Technology Review, 2024
                                     `Unlisted entry "${entry.title}" (ID: ${entry.id}) due to report violation.`,
                                     currentUser
                                   ).then(() => refreshDbState());
-                                  showToast('Artikel telah di-unlist (keterlihatan diubah kepada Private).', 'info');
+                                  showToast('Entry has been unlisted (visibility changed to Private).', 'info');
                                 });
                             }, { confirmLabel: 'Unlist' });
                           }}

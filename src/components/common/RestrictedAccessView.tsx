@@ -24,16 +24,16 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
               <Lock className="w-5 h-5" />
             </div>
           </div>
-          <h3 className="font-serif text-2xl text-adjung-maroon tracking-tight">Akses Terhad</h3>
+          <h3 className="font-serif text-2xl text-adjung-maroon tracking-tight">Restricted Access</h3>
           <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1.5 leading-normal">
-            Log masuk ke akaun {BRAND.shortName} anda.
+            Sign in to your {BRAND.shortName} account.
           </p>
         </div>
 
         {/* Content Body */}
         <div className="p-6 space-y-4 font-sans text-stone-600">
           <p className="font-serif text-[12.5px] leading-relaxed text-stone-600 select-text">
-            Halaman <strong>{pageName}</strong> hanya dikhaskan untuk ahli akademik Adjung yang sah. Sila log masuk ke profil anda atau daftar sebagai ahli untuk meneruskan bacaan.
+            The <strong>{pageName}</strong> page is reserved for registered Adjung members. Sign in to your account or register as a member to continue reading.
           </p>
 
           <div className="pt-2">
@@ -49,18 +49,18 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
           {/* Divider line matching LoginModal */}
           <div className="flex items-center my-2">
             <div className="flex-1 border-t border-stone-200/80"></div>
-            <span className="px-3 font-mono text-[8px] text-stone-400 uppercase tracking-widest">atau</span>
+            <span className="px-3 font-mono text-[8px] text-stone-400 uppercase tracking-widest">or</span>
             <div className="flex-1 border-t border-stone-200/80"></div>
           </div>
 
           <div className="text-center font-mono text-[9.5px] text-stone-500 leading-normal">
-            Belum berdaftar sebagai ahli?{' '}
+            Not registered as a member yet?{' '}
             <button
               type="button"
               onClick={onSignUpClick}
               className="text-adjung-maroon font-bold hover:underline cursor-pointer font-sans text-xs ml-0.5"
             >
-              Daftar di sini
+              Register here
             </button>
           </div>
         </div>

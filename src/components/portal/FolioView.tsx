@@ -64,8 +64,8 @@ export const FolioView: React.FC<FolioViewProps> = ({
     if (!currentUser) {
       setLoginError(
         actionType === 'expand'
-          ? 'Sila log masuk atau mendaftar untuk membaca kandungan nota penuh.'
-          : 'Sila log masuk atau mendaftar untuk membaca karya penuh.'
+          ? 'Sign in or register to read the full note.'
+          : 'Sign in or register to read the full work.'
       );
       setShowLoginModal(true);
       return;
