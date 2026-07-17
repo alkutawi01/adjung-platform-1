@@ -3,7 +3,7 @@ import { PresentationSpec } from './specs';
 export const noteSpec: PresentationSpec = {
   contentType: 'Note',
   typography: {
-    bodyFont: 'font-serif text-[#111111] leading-relaxed text-xs font-light',
+    bodyFont: 'font-serif text-[#111111] leading-relaxed text-[15px]',
     signatureFont: 'font-signature text-2xl',
     interlinearFont: 'font-signature text-adjung-maroon'
   },
