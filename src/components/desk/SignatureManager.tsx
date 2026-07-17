@@ -114,7 +114,7 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
                 backgroundImage: 'linear-gradient(rgba(139, 92, 26, 0.03) 1px, transparent 1px)',
                 backgroundSize: '100% 12px',
               }}
-              className="h-32 border border-stone-200/60 rounded-md flex items-center justify-center p-4 mb-4 relative overflow-hidden shadow-inner select-none"
+              className="h-32 border border-stone-200/60 rounded-md flex items-center justify-center p-4 mb-4 relative shadow-inner select-none"
             >
               <div className="absolute left-6 right-6 bottom-8 border-b border-dashed border-stone-300/40 pointer-events-none"></div>
               <SignatureRenderer

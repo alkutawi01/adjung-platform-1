@@ -152,7 +152,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                 </div>
 
                 {/* The visual preview of the signature */}
-                <div className="bg-stone-50 border border-stone-200 h-28 rounded flex items-center justify-center relative overflow-hidden p-4">
+                <div className="bg-stone-50 border border-stone-200 h-28 rounded flex items-center justify-center relative p-4">
                   <div className="absolute inset-0 bg-[radial-gradient(#802334/0.015_1px,transparent_1px)] [background-size:12px_12px]" />
                   <SignatureRenderer
                     strokes={formData.signatureType === 'typo' ? [] : (formData.signatureData?.strokes || [])}
