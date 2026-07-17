@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import { User, UserRole, RolePermissions, SystemSettings } from '../types';
+import { clearAllSupabaseCookies } from '../utils/cookieStorage';
 
 // ==========================================
 // 1. User Repository
@@ -148,8 +149,21 @@ export class AuthService {
     if (error) throw error;
   }
 
-  static signOut(): void {
-    supabase.auth.signOut().catch(err => console.error('Supabase signout failed:', err));
+  static async signOut(): Promise<void> {
+    // Awaited (not fire-and-forget): a caller that immediately does a
+    // hard-redirect (e.g. leaving a personal-site subdomain on logout) can
+    // otherwise interrupt this mid-flight, landing on the new page still
+    // carrying the old session.
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Supabase signout failed:', err);
+    }
+    // Verified live: supabase.auth.signOut() alone did not reliably clear
+    // the session cookie via cookieStorage's removeItem — the cookie
+    // survived a full sign-out, so clear it explicitly rather than trust
+    // that internal path.
+    clearAllSupabaseCookies();
     SessionService.destroySession();
     if (typeof window !== 'undefined') {
       localStorage.removeItem('Adjung_acting_user_id');

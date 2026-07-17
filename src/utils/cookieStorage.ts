@@ -4,18 +4,11 @@
 // subdomain is a distinct browser origin. A cookie scoped to the root
 // domain (.adjung.com) is shared by every subdomain automatically.
 
+import { getRootDomainFromHostname } from '../utils';
+
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
-function getRootDomain(hostname: string): string {
-  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
-    // *.localhost all resolve to 127.0.0.1 and share cookies scoped to
-    // "localhost" — this is what makes local subdomain testing possible.
-    return 'localhost';
-  }
-  const parts = hostname.split('.');
-  if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join('.');
-}
+const getRootDomain = getRootDomainFromHostname;
 
 function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -38,3 +31,18 @@ export const cookieStorage = {
   setItem: (key: string, value: string): void => writeCookie(key, value),
   removeItem: (key: string): void => deleteCookie(key),
 };
+
+/**
+ * Explicitly clears every sb-*-auth-token cookie. Supabase's own
+ * auth.signOut() is expected to call storage.removeItem() for its session
+ * key, but in practice this session's testing found the cookie survives
+ * signOut() regardless — so AuthService.signOut() calls this directly as
+ * a guaranteed clear, rather than trusting that internal path alone.
+ */
+export function clearAllSupabaseCookies(): void {
+  const names = document.cookie
+    .split('; ')
+    .map(pair => pair.split('=')[0])
+    .filter(name => name.startsWith('sb-') && name.endsWith('-auth-token'));
+  names.forEach(deleteCookie);
+}

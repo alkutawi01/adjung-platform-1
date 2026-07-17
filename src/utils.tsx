@@ -1380,6 +1380,52 @@ export function generateFallbackSubdomain(): string {
   return `user-${suffix}`;
 }
 
+/**
+ * Extracts the writer-username subdomain from the current hostname (e.g.
+ * "izzatanas" from "izzatanas.adjung.com" or "izzatanas.localhost"), or
+ * null when on the root/www/localhost domain. Shared by App.tsx (routing)
+ * and AppContext.tsx (the auth/permission guard) so both agree on when a
+ * personal-site subdomain is active — they previously computed this
+ * independently, and the guard's copy didn't exist at all, which let it
+ * redirect a logged-out subdomain visitor away from a writer's public
+ * Folio/Biography back to the generic landing screen.
+ */
+export function getSubdomainFromHostname(hostname: string): string | null {
+  // Local dev: "scholarsix.localhost" is 2 parts, not 3 — *.localhost all
+  // resolve to 127.0.0.1, which is what makes local subdomain testing
+  // possible at all (see cookieStorage.ts), but this case was previously
+  // unhandled, so a personal-site subdomain could never be tested locally.
+  if (hostname.endsWith('.localhost')) {
+    const sub = hostname.slice(0, -'.localhost'.length);
+    return sub && sub !== 'www' && sub !== 'adjung' ? sub : null;
+  }
+  const parts = hostname.split('.');
+  if (parts.length > 2) {
+    const sub = parts[0];
+    if (sub !== 'www' && sub !== 'adjung' && sub !== 'localhost') {
+      return sub;
+    }
+  }
+  return null;
+}
+
+/**
+ * The root domain a subdomain-scoped redirect/cookie should target — e.g.
+ * "adjung.com" for "chatgpt.adjung.com", or "localhost" for
+ * "scholarsix.localhost" (so local dev correctly bounces back to
+ * localhost, not the live production domain). Mirrors cookieStorage.ts's
+ * getRootDomain, which needs the identical rule for its cross-subdomain
+ * session cookie.
+ */
+export function getRootDomainFromHostname(hostname: string): string {
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    return 'localhost';
+  }
+  const parts = hostname.split('.');
+  if (parts.length <= 2) return hostname;
+  return parts.slice(-2).join('.');
+}
+
 export class DocumentExporter {
   // HTML Export
   static exportToHtml(entry: { title: string; contentType: string; content: string; excerpt?: string }): string {

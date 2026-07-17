@@ -5,7 +5,7 @@ import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/rendering/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/rendering/TimelineEntryCollapseRenderer';
-import { isArabicText, generateUUID, generateFallbackSubdomain, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
+import { isArabicText, generateUUID, generateFallbackSubdomain, getSubdomainFromHostname, getRootDomainFromHostname, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
 import { resolveSignatureStrokes, resolveSignatureText, resolveDigitalSignature, resolveSignatureFont } from './utils/signatureResolvers';
 import { buildDigitalSignature } from './utils/signatureBuilder';
 import { RESERVED_PATHS } from './config/reservedPaths';
@@ -272,17 +272,7 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const subdomain = (() => {
-    const hostname = window.location.hostname;
-    const parts = hostname.split('.');
-    if (parts.length > 2) {
-      const sub = parts[0];
-      if (sub !== 'www' && sub !== 'adjung' && sub !== 'localhost') {
-        return sub;
-      }
-    }
-    return null;
-  })();
+  const subdomain = getSubdomainFromHostname(window.location.hostname);
 
   const authorFromSubdomain = subdomain ? users.find(u => u.username === subdomain) : null;
 
@@ -854,8 +844,26 @@ export default function App() {
   };
 
   // Logout handler
-  const handleLogout = () => {
-    AuthService.signOut();
+  const handleLogout = async () => {
+    // Awaited: the session cookie is cleared inside signOut(), and the
+    // hard-redirect below would otherwise interrupt that mid-flight,
+    // landing on the new page still carrying the old session cookie.
+    await AuthService.signOut();
+
+    // A personal-site subdomain (username.adjung.com) only makes sense while
+    // actually viewing that writer's Folio/Biography/Desk — signing out ends
+    // that context entirely, so bounce back to the root domain rather than
+    // stranding the visitor on the subdomain showing the generic landing
+    // screen (setActiveTab('landing') alone can't do this: it changes the
+    // path, not window.location.hostname, so the subdomain-routing effect
+    // just forces activeTab back based on the still-subdomain URL).
+    if (subdomain) {
+      const rootDomain = getRootDomainFromHostname(window.location.hostname);
+      const port = window.location.port ? `:${window.location.port}` : '';
+      window.location.href = `${window.location.protocol}//${rootDomain}${port}`;
+      return;
+    }
+
     setCurrentUser(null);
     setSelectedAuthorId('');
     setActiveTab('landing');
