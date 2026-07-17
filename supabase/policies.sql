@@ -54,6 +54,18 @@ create policy "Authors manage own profile"
   on profiles for all
   using (author_id = current_app_user_id());
 
+-- Lets Editors/Chief Editor manage AI Scriptor personas (e.g. GPT Scholar)
+-- via "Switch Scriptor" -- that feature never re-authenticates, it just
+-- swaps currentUser client-side, so without this the write above would
+-- silently fail whenever an editor acts as an AI account. Scoped to
+-- is_ai = true only -- grants no new access to real writers' own data.
+create policy "Editors manage AI account profiles"
+  on profiles for all
+  using (
+    current_app_user_role() in ('Editor', 'Chief Editor')
+    and author_id in (select id from users where is_ai = true)
+  );
+
 -- ============================================================
 -- IDENTITIES
 -- ============================================================
@@ -64,6 +76,13 @@ create policy "Public identities are readable"
 create policy "Authors manage own identity"
   on identities for all
   using (account_id = current_app_user_id());
+
+create policy "Editors manage AI account identities"
+  on identities for all
+  using (
+    current_app_user_role() in ('Editor', 'Chief Editor')
+    and account_id in (select id from users where is_ai = true)
+  );
 
 -- ============================================================
 -- BIOGRAPHY ITEMS / DIGITAL SIGNATURES (follow parent identity)
@@ -83,6 +102,15 @@ create policy "Authors manage own biography items"
     identity_id in (select id from identities where account_id = current_app_user_id())
   );
 
+create policy "Editors manage AI account biography items"
+  on biography_items for all
+  using (
+    current_app_user_role() in ('Editor', 'Chief Editor')
+    and identity_id in (
+      select id from identities where account_id in (select id from users where is_ai = true)
+    )
+  );
+
 create policy "Signatures readable with identity"
   on digital_signatures for select
   using (
@@ -96,6 +124,15 @@ create policy "Authors manage own signatures"
   on digital_signatures for all
   using (
     identity_id in (select id from identities where account_id = current_app_user_id())
+  );
+
+create policy "Editors manage AI account signatures"
+  on digital_signatures for all
+  using (
+    current_app_user_role() in ('Editor', 'Chief Editor')
+    and identity_id in (
+      select id from identities where account_id in (select id from users where is_ai = true)
+    )
   );
 
 -- ============================================================
