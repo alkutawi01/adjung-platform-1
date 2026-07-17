@@ -70,6 +70,9 @@ export function BiographyView({
                   className="w-full border border-stone-200 p-3 rounded text-sm font-serif leading-relaxed text-[#111111]/90 focus:outline-none focus:border-adjung-maroon min-h-[200px] resize-y"
                   placeholder="Enter a description of yourself, your intellectual background, or interests..."
                 />
+                <p className="text-[10.5px] font-sans text-stone-400 leading-relaxed">
+                  Start a line with <code className="font-mono text-[10px] bg-stone-100 px-1 py-0.5 rounded">#</code> to make it a subheading (e.g. "# Identity Disclosure"). Use <code className="font-mono text-[10px] bg-stone-100 px-1 py-0.5 rounded">*text*</code> for emphasis and <code className="font-mono text-[10px] bg-stone-100 px-1 py-0.5 rounded">**text**</code> for bold.
+                </p>
                 <div className="flex gap-2 justify-end">
                   <button
                     type="button"
@@ -91,11 +94,25 @@ export function BiographyView({
               <div className="relative">
                 <div className="font-serif text-stone-900 leading-relaxed text-justify text-sm md:text-base font-normal space-y-4 pr-2">
                   {authorProfile.biography ? (
-                    authorProfile.biography.split(/\n+/).map((para, index) => (
-                      <p key={index}>
-                        {parseInlineFormatting(para.trim())}
-                      </p>
-                    ))
+                    authorProfile.biography.split(/\n+/).map((para, index) => {
+                      const trimmed = para.trim();
+                      // A line starting with "# " is a subheading, not prose --
+                      // titles may be bold and italic (Chief Editor's rule); names
+                      // and regular sentences render through parseInlineFormatting
+                      // as before, unaffected.
+                      if (trimmed.startsWith('# ')) {
+                        return (
+                          <h3 key={index} className="font-serif font-bold text-stone-900 text-base md:text-lg text-left pt-1">
+                            {parseInlineFormatting(trimmed.slice(2).trim())}
+                          </h3>
+                        );
+                      }
+                      return (
+                        <p key={index}>
+                          {parseInlineFormatting(trimmed)}
+                        </p>
+                      );
+                    })
                   ) : (
                     <p className="text-stone-400">
                       No biography written yet. Click edit to write one!
