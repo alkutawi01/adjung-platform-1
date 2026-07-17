@@ -23,7 +23,7 @@ const ConceptNode = ({ data, selected }: any) => {
   return (
     <div className={`px-5 py-3 shadow-lg rounded bg-white border transition-all min-w-[180px] text-center select-none ${
       selected 
-        ? 'border-[#802334] ring-2 ring-[#802334]/20 scale-105' 
+        ? 'border-adjung-maroon ring-2 ring-adjung-maroon/20 scale-105' 
         : 'border-stone-200 hover:border-stone-400'
     }`}>
       <Handle type="target" position={Position.Top} className="w-2.5 h-2.5 bg-stone-300 border-white" />
@@ -34,7 +34,7 @@ const ConceptNode = ({ data, selected }: any) => {
         {data.label}
       </div>
       <div className="font-mono text-[8px] text-stone-400 mt-1.5 italic select-all">{data.spec}</div>
-      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5 bg-[#802334] border-white" />
+      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5 bg-adjung-maroon border-white" />
     </div>
   );
 };
@@ -316,7 +316,7 @@ export const ArchitectureStudio: React.FC = () => {
           <div className="space-y-5 animate-fade-in">
             {/* Concept Header */}
             <div className="border-b border-stone-100 pb-3">
-              <span className="font-mono text-[8px] uppercase tracking-widest text-[#802334] font-bold">Concept details</span>
+              <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-bold">Concept details</span>
               <h3 className="font-serif text-xl font-bold text-stone-950 mt-1">{selectedNode.data.label}</h3>
               <p className="text-stone-500 mt-1 leading-relaxed">{selectedNode.data.desc}</p>
             </div>
@@ -333,7 +333,7 @@ export const ArchitectureStudio: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1">Specification</span>
-                <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#802334] hover:underline cursor-pointer">
+                <span className="flex items-center gap-1.5 font-mono text-[10px] text-adjung-maroon hover:underline cursor-pointer">
                   <BookOpen className="w-3 h-3" />
                   {selectedNode.data.spec}
                 </span>

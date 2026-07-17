@@ -38,7 +38,7 @@ export const HarvardStylePlugin: CitationStylePlugin = {
         {citation.url && (
           <span className="ml-1 text-[11px] text-stone-500 font-mono">
             Available at:{' '}
-            <a href={citation.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-Adjung-maroon">
+            <a href={citation.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-adjung-maroon">
               {citation.url}
             </a>
           </span>
@@ -58,13 +58,13 @@ export const VancouverStylePlugin: CitationStylePlugin = {
   formatBibliography: (citation, index) => {
     return (
       <span className="text-left block">
-        <span className="font-mono text-Adjung-maroon mr-2 font-bold select-none">[{index}]</span>
+        <span className="font-mono text-adjung-maroon mr-2 font-bold select-none">[{index}]</span>
         <strong className="font-sans font-semibold text-stone-900">{citation.author}</strong>.{' '}
         <span>{citation.title}.</span> <em>{citation.publisher}</em>; {citation.year}.
         {citation.url && (
           <span className="ml-1 text-[11px] text-stone-500 font-mono">
             Available from:{' '}
-            <a href={citation.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-Adjung-maroon">
+            <a href={citation.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-adjung-maroon">
               {citation.url}
             </a>
           </span>

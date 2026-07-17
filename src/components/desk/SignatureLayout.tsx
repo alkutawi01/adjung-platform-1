@@ -21,7 +21,7 @@ export function SignatureLayout({
   penName,
   date,
   className = "",
-  color = "#802334", // Adjung-maroon
+  color = "#802334", // adjung-maroon
   strokeWidth = 3.2,
   role,
   affiliation

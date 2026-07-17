@@ -19,7 +19,7 @@ interface ColorOption {
 }
 
 const INK_COLORS: Record<InkColor, ColorOption> = {
-  Maroon: { value: '#802334', name: 'Adjung Maroon', class: 'bg-[#802334]' },
+  Maroon: { value: '#802334', name: 'Adjung Maroon', class: 'bg-adjung-maroon' },
   Charcoal: { value: '#1c1917', name: 'Charcoal Black', class: 'bg-[#1c1917]' },
   Midnight: { value: '#1e1b4b', name: 'Royal Indigo', class: 'bg-[#1e1b4b]' },
   Spruce: { value: '#064e3b', name: 'Forest Spruce', class: 'bg-[#064e3b]' }
@@ -398,7 +398,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
         {/* Modal Header */}
         <div className="flex justify-between items-center border-b border-stone-800/80 pb-3 mb-4 w-full select-none shrink-0">
           <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-[#802334]" />
+            <Sliders className="w-4 h-4 text-adjung-maroon" />
             <h2 className="font-serif text-[16px] text-stone-100">Signature Studio</h2>
           </div>
           {onCancel && (
@@ -422,7 +422,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
       {showSettings && (
         <div className="w-full xl:w-72 flex flex-col gap-3 border-b xl:border-b-0 xl:border-r border-stone-800 pb-3 xl:pb-0 xl:pr-4 select-none overflow-y-auto max-h-[200px] xl:max-h-full scrollbar-none shrink-0">
           <div className="flex items-center justify-between border-b border-stone-800/50 pb-1.5">
-            <h3 className="font-mono text-[9px] uppercase tracking-widest text-Adjung-maroon font-bold flex items-center gap-1">
+            <h3 className="font-mono text-[9px] uppercase tracking-widest text-adjung-maroon font-bold flex items-center gap-1">
               <Sliders className="w-3 h-3" /> Studio Controls
             </h3>
             <span className="font-mono text-[7px] uppercase bg-stone-800 px-1 py-0.5 rounded text-stone-400">
@@ -441,7 +441,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     onClick={() => handlePresetSelect('fountain')}
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 45 && inkFlowWeight === 4.5
-                        ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
+                        ? 'border-adjung-maroon bg-adjung-maroon/10 text-white' 
                         : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
@@ -452,7 +452,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     onClick={() => handlePresetSelect('calligraphy')}
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 60 && inkFlowWeight === 5.5
-                        ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
+                        ? 'border-adjung-maroon bg-adjung-maroon/10 text-white' 
                         : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
@@ -463,7 +463,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     onClick={() => handlePresetSelect('gel')}
                     className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                       nibAngle === 45 && inkFlowWeight === 7.5
-                        ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
+                        ? 'border-adjung-maroon bg-adjung-maroon/10 text-white' 
                         : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                     }`}
                   >
@@ -478,7 +478,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Ink Flow</span>
-                    <span className="text-Adjung-maroon font-bold">{inkFlowWeight.toFixed(1)}x</span>
+                    <span className="text-adjung-maroon font-bold">{inkFlowWeight.toFixed(1)}x</span>
                   </div>
                   <input
                     type="range"
@@ -495,7 +495,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Smooth</span>
-                    <span className="text-Adjung-maroon font-bold">{Math.round((1 - smoothingFactor) * 100)}%</span>
+                    <span className="text-adjung-maroon font-bold">{Math.round((1 - smoothingFactor) * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -512,7 +512,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Nib Angle</span>
-                    <span className="text-Adjung-maroon font-bold">{nibAngle === 0 ? 'Round' : `${nibAngle}°`}</span>
+                    <span className="text-adjung-maroon font-bold">{nibAngle === 0 ? 'Round' : `${nibAngle}°`}</span>
                   </div>
                   <input
                     type="range"
@@ -529,7 +529,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Slant</span>
-                    <span className="text-Adjung-maroon font-bold">{slantAngle}°</span>
+                    <span className="text-adjung-maroon font-bold">{slantAngle}°</span>
                   </div>
                   <input
                     type="range"
@@ -546,7 +546,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-2">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Size Scale</span>
-                    <span className="text-Adjung-maroon font-bold">{Math.round(scale * 100)}%</span>
+                    <span className="text-adjung-maroon font-bold">{Math.round(scale * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -568,7 +568,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <select
                   value={selectedFont}
                   onChange={(e) => setSelectedFont(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 p-1 rounded text-stone-300 text-[10px] font-mono focus:outline-none focus:border-Adjung-maroon cursor-pointer"
+                  className="w-full bg-stone-950 border border-stone-800 p-1 rounded text-stone-300 text-[10px] font-mono focus:outline-none focus:border-adjung-maroon cursor-pointer"
                 >
                   {allowedFonts.map((font) => (
                     <option key={font} value={`${font}, cursive`}>
@@ -584,7 +584,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-2">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Weight</span>
-                    <span className="text-Adjung-maroon font-bold">{fontWeight}</span>
+                    <span className="text-adjung-maroon font-bold">{fontWeight}</span>
                   </div>
                   <input
                     type="range"
@@ -601,7 +601,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Tracking</span>
-                    <span className="text-Adjung-maroon font-bold">{letterSpacing}px</span>
+                    <span className="text-adjung-maroon font-bold">{letterSpacing}px</span>
                   </div>
                   <input
                     type="range"
@@ -618,7 +618,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-1">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Slant</span>
-                    <span className="text-Adjung-maroon font-bold">{slantAngle}°</span>
+                    <span className="text-adjung-maroon font-bold">{slantAngle}°</span>
                   </div>
                   <input
                     type="range"
@@ -635,7 +635,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-2">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Size Scale</span>
-                    <span className="text-Adjung-maroon font-bold">{Math.round(scale * 100)}%</span>
+                    <span className="text-adjung-maroon font-bold">{Math.round(scale * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -652,7 +652,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 <div className="space-y-0.5 col-span-2">
                   <div className="flex justify-between font-mono text-[7px] uppercase tracking-wider text-stone-400">
                     <span>Vertical Position</span>
-                    <span className="text-Adjung-maroon font-bold">{yOffset > 0 ? `+${yOffset}` : yOffset}px</span>
+                    <span className="text-adjung-maroon font-bold">{yOffset > 0 ? `+${yOffset}` : yOffset}px</span>
                   </div>
                   <input
                     type="range"
@@ -679,7 +679,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                   onClick={() => setPaperTexture(tex)}
                   className={`py-0.5 text-[8px] font-mono rounded uppercase tracking-wider border transition ${
                     paperTexture === tex 
-                      ? 'border-Adjung-maroon bg-Adjung-maroon/10 text-white' 
+                      ? 'border-adjung-maroon bg-adjung-maroon/10 text-white' 
                       : 'border-stone-800 hover:bg-stone-800 text-stone-400'
                   }`}
                 >
@@ -766,7 +766,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     setTypedText(filtered);
                   }}
                   placeholder="Type your signature here..."
-                  className="w-full bg-stone-950/40 border border-stone-800 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-Adjung-maroon font-serif"
+                  className="w-full bg-stone-950/40 border border-stone-800 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-adjung-maroon font-serif"
                 />
                 <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-2 py-1.5 rounded border border-stone-800">
                   {typedText.length}/15
@@ -785,7 +785,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-1 rounded transition ${showSettings ? 'text-Adjung-maroon bg-Adjung-maroon/10' : 'text-stone-400 hover:text-stone-200'}`}
+              className={`p-1 rounded transition ${showSettings ? 'text-adjung-maroon bg-adjung-maroon/10' : 'text-stone-400 hover:text-stone-200'}`}
               title="Toggle settings panel"
             >
               <Settings className="w-4 h-4" />
@@ -797,7 +797,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                 </>
               ) : (
                 <>
-                  <Type className="w-3.5 h-3.5 text-Adjung-maroon" /> Typography Studio
+                  <Type className="w-3.5 h-3.5 text-adjung-maroon" /> Typography Studio
                 </>
               )}
             </div>
@@ -902,7 +902,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
               type="button"
               onClick={handleSaveSignature}
               disabled={signatureMode === 'draw' ? strokes.length === 0 : typedText.length === 0}
-              className="px-4 py-2 bg-Adjung-maroon text-[#FDFDFD] rounded text-xs font-mono uppercase tracking-wider hover:bg-opacity-95 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              className="px-4 py-2 bg-adjung-maroon text-[#FDFDFD] rounded text-xs font-mono uppercase tracking-wider hover:bg-opacity-95 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               Save Signature
             </button>

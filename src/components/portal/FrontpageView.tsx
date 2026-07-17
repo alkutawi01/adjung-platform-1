@@ -106,7 +106,7 @@ export function HoverWords({ text, className }: { text: string; className?: stri
     <span className={className}>
       {words.map((w, idx) => {
         if (/\s+/.test(w)) return w;
-        const isMaroon = className?.includes('text-adjung-maroon') || className?.includes('text-[#7B2737]') || className?.includes('text-[#802334]');
+        const isMaroon = className?.includes('text-adjung-maroon') || className?.includes('text-[#7B2737]') || className?.includes('text-adjung-maroon');
         const hoverClass = isMaroon 
           ? 'hover:text-stone-900 transition-colors duration-150 cursor-default' 
           : 'hover:text-adjung-maroon transition-colors duration-150 cursor-default';
@@ -1036,7 +1036,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           onClick={() => setShowNewsOverlay(false)}
         >
           {/* Top Centered Logo */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 font-serif text-lg font-semibold tracking-wider text-[#802334] select-none">
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 font-serif text-lg font-semibold tracking-wider text-adjung-maroon select-none">
             {BRAND.logoText}
           </div>
 

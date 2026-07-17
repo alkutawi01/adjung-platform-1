@@ -15,7 +15,7 @@ export function UserGuide() {
     <div className="max-w-4xl mx-auto py-12 px-4 select-none animate-fade-in text-left">
       {/* Title & Introduction */}
       <div className="text-center mb-10">
-        <h1 className="font-serif text-4xl md:text-5xl font-light text-[#802334] tracking-tight mb-3">
+        <h1 className="font-serif text-4xl md:text-5xl font-light text-adjung-maroon tracking-tight mb-3">
           Adjung Scholarly Guide
         </h1>
         <p className="font-serif text-stone-500 italic max-w-xl mx-auto text-sm leading-relaxed">
@@ -30,7 +30,7 @@ export function UserGuide() {
           onClick={() => setActiveTab('philosophy')}
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'philosophy'
-              ? 'border-[#802334] text-[#802334] font-bold'
+              ? 'border-adjung-maroon text-adjung-maroon font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
@@ -41,7 +41,7 @@ export function UserGuide() {
           onClick={() => setActiveTab('notation')}
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'notation'
-              ? 'border-[#802334] text-[#802334] font-bold'
+              ? 'border-adjung-maroon text-adjung-maroon font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
@@ -52,7 +52,7 @@ export function UserGuide() {
           onClick={() => setActiveTab('shortcuts')}
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'shortcuts'
-              ? 'border-[#802334] text-[#802334] font-bold'
+              ? 'border-adjung-maroon text-adjung-maroon font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
@@ -63,7 +63,7 @@ export function UserGuide() {
           onClick={() => setActiveTab('roadmap')}
           className={`px-4 py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'roadmap'
-              ? 'border-[#802334] text-[#802334] font-bold'
+              ? 'border-adjung-maroon text-adjung-maroon font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
@@ -86,13 +86,13 @@ export function UserGuide() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6 font-sans text-xs">
               <div className="p-4 bg-stone-50 border border-stone-200 rounded">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-[#802334] font-bold block mb-1">No Popularity Chase</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-adjung-maroon font-bold block mb-1">No Popularity Chase</span>
                 <p className="text-stone-600 leading-relaxed">
                   There are no like buttons, view counts, or comment count metrics. Articles are evaluated purely on their substance, structural validity, and logical references.
                 </p>
               </div>
               <div className="p-4 bg-stone-50 border border-stone-200 rounded">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-[#802334] font-bold block mb-1">Textual Integrity</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-adjung-maroon font-bold block mb-1">Textual Integrity</span>
                 <p className="text-stone-600 leading-relaxed">
                   The primary text block remains uncluttered. Secondary dialogic notes live on the right margin, while formal citations and footnotes are anchored neatly at the base of the page.
                 </p>
@@ -117,10 +117,10 @@ export function UserGuide() {
               {/* Note 1: Interlinear */}
               <div className="border border-stone-200 rounded p-4 bg-stone-50/30">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold">1. Interlinear Glosses (Word Translation)</span>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-bold">1. Interlinear Glosses (Word Translation)</span>
                   <button 
                     onClick={() => copyToClipboard('[kalimat](gloss:sentence)', 'interlinear')}
-                    className="p-1 text-stone-400 hover:text-[#802334] transition flex items-center gap-1 select-none cursor-pointer"
+                    className="p-1 text-stone-400 hover:text-adjung-maroon transition flex items-center gap-1 select-none cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span className="font-mono text-[8px] uppercase tracking-widest">
@@ -135,17 +135,17 @@ export function UserGuide() {
                   [kalimat](gloss:sentence)
                 </div>
                 <div className="text-[10px] text-stone-500 italic font-serif">
-                  Renders as: <span className="inline-block border-b border-[#802334]/30 pb-0.5 relative group">kalimat<span className="absolute left-1/2 -translate-x-1/2 -top-3.5 text-[9px] font-mono text-[#802334] whitespace-nowrap bg-white px-0.5 leading-none">sentence</span></span>
+                  Renders as: <span className="inline-block border-b border-adjung-maroon/30 pb-0.5 relative group">kalimat<span className="absolute left-1/2 -translate-x-1/2 -top-3.5 text-[9px] font-mono text-adjung-maroon whitespace-nowrap bg-white px-0.5 leading-none">sentence</span></span>
                 </div>
               </div>
 
               {/* Note 2: Margin Note */}
               <div className="border border-stone-200 rounded p-4 bg-stone-50/30">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold">2. Margin Notes (Contextual Commentary)</span>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-bold">2. Margin Notes (Contextual Commentary)</span>
                   <button 
                     onClick={() => copyToClipboard('[^mn-1]', 'margin')}
-                    className="p-1 text-stone-400 hover:text-[#802334] transition flex items-center gap-1 select-none cursor-pointer"
+                    className="p-1 text-stone-400 hover:text-adjung-maroon transition flex items-center gap-1 select-none cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span className="font-mono text-[8px] uppercase tracking-widest">
@@ -164,10 +164,10 @@ export function UserGuide() {
               {/* Note 3: Footnote */}
               <div className="border border-stone-200 rounded p-4 bg-stone-50/30">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold">3. Bottom Footnotes (Citations)</span>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-bold">3. Bottom Footnotes (Citations)</span>
                   <button 
                     onClick={() => copyToClipboard('[^fn-1]', 'footnote')}
-                    className="p-1 text-stone-400 hover:text-[#802334] transition flex items-center gap-1 select-none cursor-pointer"
+                    className="p-1 text-stone-400 hover:text-adjung-maroon transition flex items-center gap-1 select-none cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span className="font-mono text-[8px] uppercase tracking-widest">
@@ -298,7 +298,7 @@ export function UserGuide() {
               {/* Milestone 2 */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <span className="w-5 h-5 rounded-full bg-[#802334] text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 select-none">
+                  <span className="w-5 h-5 rounded-full bg-adjung-maroon text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 select-none">
                     B
                   </span>
                   <div className="w-px h-full bg-stone-200 mt-1" />
@@ -306,7 +306,7 @@ export function UserGuide() {
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
                     Milestone B: Localization, Arabic RTL & Keyboards 
-                    <span className="font-mono text-[8px] bg-[#802334]/10 text-[#802334] border border-[#802334]/20 px-1.5 py-0.5 rounded font-bold uppercase">Next Up</span>
+                    <span className="font-mono text-[8px] bg-adjung-maroon/10 text-adjung-maroon border border-adjung-maroon/20 px-1.5 py-0.5 rounded font-bold uppercase">Next Up</span>
                   </h4>
                   <p className="text-stone-500 mt-1">
                     Establish stable RTL layout margins for full-length Arabic manuscripts and incorporate Alt-key transliteration bindings inside the editing canvas.

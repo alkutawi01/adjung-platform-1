@@ -22,7 +22,7 @@ export function SystemLogsTab({
   if (!hasPermission('manageLogs')) {
     return (
       <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
-        <Lock className="w-12 h-12 text-[#802334] mx-auto mb-2 animate-pulse" />
+        <Lock className="w-12 h-12 text-adjung-maroon mx-auto mb-2 animate-pulse" />
         <span className="font-serif italic text-stone-500 block text-lg font-semibold">Audit Logs Locked</span>
         <p className="text-stone-500 text-xs font-sans leading-relaxed">
           Your administrative account (Role: <strong className="text-adjung-maroon">{currentUser.role}</strong>) does not have the necessary <strong>Manage Logs</strong> privileges. Please contact the Chief Editor to adjust your permissions.

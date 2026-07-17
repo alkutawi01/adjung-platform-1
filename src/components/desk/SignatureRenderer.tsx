@@ -33,7 +33,7 @@ export function SignatureRenderer({
   typedText,
   fontFamily = 'Mrs Saint Delafield, Birthstone, Pinyon Script, cursive',
   className = "w-full h-full", 
-  color = "#802334", // Adjung-maroon
+  color = "#802334", // adjung-maroon
   strokeWidth = 3.2, // Enhanced default thickness
   enableBleed = true,
   renderBaselineLayout = false,

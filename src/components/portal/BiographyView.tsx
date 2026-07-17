@@ -66,7 +66,7 @@ export function BiographyView({
                 <textarea
                   value={editedBio}
                   onChange={(e) => setEditedBio(e.target.value)}
-                  className="w-full border border-stone-200 p-3 rounded text-sm font-serif leading-relaxed text-[#111111]/90 focus:outline-none focus:border-[#802334] min-h-[200px] resize-y"
+                  className="w-full border border-stone-200 p-3 rounded text-sm font-serif leading-relaxed text-[#111111]/90 focus:outline-none focus:border-adjung-maroon min-h-[200px] resize-y"
                   placeholder="Enter a description of yourself, your intellectual background, or interests..."
                 />
                 <div className="flex gap-2 justify-end">
@@ -80,7 +80,7 @@ export function BiographyView({
                   <button
                     type="button"
                     onClick={handleSaveBio}
-                    className="px-2.5 py-1 bg-[#802334] text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
                   >
                     Save Biography
                   </button>
@@ -104,7 +104,7 @@ export function BiographyView({
                 {currentUser?.id === selectedAuthorId && (
                   <button
                     onClick={() => setIsEditingBio(true)}
-                    className="absolute -top-6 right-0 opacity-0 group-hover/bio:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider cursor-pointer"
+                    className="absolute -top-6 right-0 opacity-0 group-hover/bio:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider cursor-pointer"
                     title="Edit Biography"
                   >
                     <Edit3 className="w-3.5 h-3.5" /> Edit Biography
@@ -155,7 +155,7 @@ export function BiographyView({
                 </span>
                 {currentAuthor.isAi && (
                   <div className="relative group/tooltip inline-block select-none">
-                    <Sparkles className="w-3.5 h-3.5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                    <Sparkles className="w-3.5 h-3.5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-normal">
                       AI Editorial Fellow
                     </div>
@@ -188,7 +188,7 @@ export function BiographyView({
               <div className="pt-3 border-t border-stone-300/70 mt-2">
                 <button
                   onClick={() => setShowIdentityModal(true)}
-                  className="w-full flex items-center justify-center gap-1.5 bg-[#802334] text-white hover:opacity-95 py-2 px-3 rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer font-semibold shadow-sm"
+                  className="w-full flex items-center justify-center gap-1.5 bg-adjung-maroon text-white hover:opacity-95 py-2 px-3 rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer font-semibold shadow-sm"
                 >
                   <Fingerprint className="w-3.5 h-3.5" />
                   Edit Identity
@@ -212,7 +212,7 @@ export function BiographyView({
                 setEditingBioItem(null);
                 setShowAddBioModal(true);
               }}
-              className="bg-[#802334] text-white px-3 py-1.5 uppercase tracking-wider text-[10px] font-sans font-medium hover:opacity-90 transition shadow-sm"
+              className="bg-adjung-maroon text-white px-3 py-1.5 uppercase tracking-wider text-[10px] font-sans font-medium hover:opacity-90 transition shadow-sm"
             >
               Add Milestone
             </button>
@@ -227,22 +227,22 @@ export function BiographyView({
               <div key={item.id} className="relative group">
                 
                 {/* Left float year for desktop layout */}
-                <span className="absolute -left-[145px] top-0.5 hidden md:block w-24 text-right font-serif font-bold text-lg text-[#802334]">
+                <span className="absolute -left-[145px] top-0.5 hidden md:block w-24 text-right font-serif font-bold text-lg text-adjung-maroon">
                   {item.year}
                 </span>
 
                 {/* Bullet on timeline */}
-                <span className="absolute -left-[31px] top-2 w-3 h-3 rounded-full bg-[#FDFDFD] border-2 border-[#802334]" />
+                <span className="absolute -left-[31px] top-2 w-3 h-3 rounded-full bg-[#FDFDFD] border-2 border-adjung-maroon" />
 
                 {/* Content block */}
                 <div className="space-y-2 max-w-2xl pb-6 text-left">
                   <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                    <span className="md:hidden font-serif font-bold text-base text-[#802334]">{item.year}</span>
+                    <span className="md:hidden font-serif font-bold text-base text-adjung-maroon">{item.year}</span>
                     <span className="md:hidden text-stone-300">|</span>
                     <h4 className="font-serif font-semibold text-stone-900 text-[17px] leading-tight">
                       {parseInlineFormatting(item.title)}
                     </h4>
-                    <span className="font-mono text-[8px] uppercase tracking-widest text-[#802334] font-semibold bg-[#802334]/5 px-1.5 py-0.5 rounded border border-[#802334]/15">
+                    <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-semibold bg-adjung-maroon/5 px-1.5 py-0.5 rounded border border-adjung-maroon/15">
                       {item.category}
                     </span>
                   </div>

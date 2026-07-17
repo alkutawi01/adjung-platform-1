@@ -5,7 +5,7 @@ export const noteSpec: PresentationSpec = {
   typography: {
     bodyFont: 'font-serif text-[#111111] leading-relaxed text-xs font-light',
     signatureFont: 'font-signature text-2xl',
-    interlinearFont: 'font-signature text-[#802334]'
+    interlinearFont: 'font-signature text-adjung-maroon'
   },
   spacing: {
     canvasMaxWidth: 'max-w-2xl',

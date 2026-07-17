@@ -11,7 +11,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
   return (
     <div className="max-w-5xl mx-auto py-10 text-left">
       <header className="border-b border-[#111111]/10 pb-6 mb-10">
-        <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">
+        <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-adjung-maroon mb-2">
           Platform Governance
         </span>
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
@@ -35,7 +35,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
               onClick={() => setSelectedPolicyId(p.id)}
               className={`w-full text-left px-3 py-2 rounded-sm text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
                 selectedPolicyId === p.id
-                  ? 'bg-[#802334]/8 text-[#802334] font-semibold border-l-2 border-[#802334]'
+                  ? 'bg-adjung-maroon/8 text-adjung-maroon font-semibold border-l-2 border-adjung-maroon'
                   : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
               }`}
             >

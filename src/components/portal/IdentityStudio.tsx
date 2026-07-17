@@ -162,7 +162,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
-            <Fingerprint className="w-6 h-6 text-[#802334]" />
+            <Fingerprint className="w-6 h-6 text-adjung-maroon" />
             Identity
           </h2>
           <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
@@ -185,7 +185,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
           
           <form onSubmit={handleSaveProfile} className="bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
             <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-stone-700 flex items-center gap-2 border-b pb-3">
-              <UserIcon className="w-4 h-4 text-Adjung-maroon" /> Public Identity
+              <UserIcon className="w-4 h-4 text-adjung-maroon" /> Public Identity
             </h3>
 
             <div className="space-y-4">
@@ -205,7 +205,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                   <select
                     value={visibility}
                     onChange={(e) => setVisibility(e.target.value as 'Public' | 'Private')}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon text-xs"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs"
                   >
                     <option value="Public">Public (Directory Visible)</option>
                     <option value="Private">Private (Unlisted)</option>
@@ -220,7 +220,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon font-sans text-sm"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-sans text-sm"
                   />
                 </div>
                 <div>
@@ -229,7 +229,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     type="text"
                     value={penName}
                     onChange={(e) => setPenName(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon font-serif font-semibold text-sm"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif font-semibold text-sm"
                     required
                   />
                 </div>
@@ -240,7 +240,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     value={affiliation}
                     onChange={(e) => setAffiliation(e.target.value)}
                     placeholder="e.g. Universiti Mu'tah, Jordan or Cairo, Egypt"
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-Adjung-maroon text-xs font-sans"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs font-sans"
                   />
                 </div>
               </div>

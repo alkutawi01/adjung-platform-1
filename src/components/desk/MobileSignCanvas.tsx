@@ -12,7 +12,7 @@ interface ColorOption {
 }
 
 const INK_COLORS: Record<InkColor, ColorOption> = {
-  Maroon: { value: '#802334', name: 'Adjung Maroon', class: 'bg-[#802334]' },
+  Maroon: { value: '#802334', name: 'Adjung Maroon', class: 'bg-adjung-maroon' },
   Charcoal: { value: '#1c1917', name: 'Charcoal Black', class: 'bg-[#1c1917]' },
   Midnight: { value: '#1e1b4b', name: 'Royal Indigo', class: 'bg-[#1e1b4b]' },
   Spruce: { value: '#064e3b', name: 'Forest Spruce', class: 'bg-[#064e3b]' }
@@ -255,7 +255,7 @@ export function MobileSignCanvas() {
   if (!sessionId) {
     return (
       <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center p-6 text-stone-200 text-center font-sans">
-        <AlertTriangle className="w-12 h-12 text-[#802334] mb-4" />
+        <AlertTriangle className="w-12 h-12 text-adjung-maroon mb-4" />
         <h2 className="text-xl font-serif mb-2 text-stone-100">Invalid Sync Session</h2>
         <p className="text-stone-400 text-xs max-w-xs leading-relaxed">
           No signature synchronization session was found. Please make sure you scanned the correct QR code on the desktop registration screen.
@@ -281,7 +281,7 @@ export function MobileSignCanvas() {
       {/* Standalone Header */}
       <header className="border-b border-stone-800 p-4 shrink-0 flex items-center justify-between bg-stone-900/50">
         <div className="flex items-center gap-2">
-          <PenTool className="w-4 h-4 text-[#802334]" />
+          <PenTool className="w-4 h-4 text-adjung-maroon" />
           <h1 className="font-serif text-sm tracking-wide text-stone-100">Adjung Scholar Signature</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export function MobileSignCanvas() {
           className={`w-2/3 py-3 rounded-md font-mono text-xs uppercase tracking-wider text-white transition flex items-center justify-center gap-1.5 shadow-md font-bold cursor-pointer ${
             strokes.length === 0 || status === 'sending'
               ? 'bg-stone-800 text-stone-500 border border-stone-800 shadow-none cursor-not-allowed'
-              : 'bg-[#802334] hover:bg-[#962c3e] active:bg-[#6b1c2a]'
+              : 'bg-adjung-maroon hover:bg-[#962c3e] active:bg-[#6b1c2a]'
           }`}
         >
           {status === 'sending' ? (

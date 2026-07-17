@@ -132,7 +132,7 @@ export function WritingDesk({
             <button
               type="button"
               onClick={handleClose}
-              className="inline-flex items-center gap-1 text-[#111111]/60 hover:text-[#802334] font-mono text-xs uppercase cursor-pointer"
+              className="inline-flex items-center gap-1 text-[#111111]/60 hover:text-adjung-maroon font-mono text-xs uppercase cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Close Composer
             </button>
@@ -156,8 +156,8 @@ export function WritingDesk({
                 }}
                 className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
                   viewMode === 'preview'
-                    ? 'bg-[#802334] text-white font-medium shadow-sm'
-                    : 'text-[#111111]/60 hover:text-[#802334]'
+                    ? 'bg-adjung-maroon text-white font-medium shadow-sm'
+                    : 'text-[#111111]/60 hover:text-adjung-maroon'
                 }`}
               >
                 ● Visual
@@ -176,8 +176,8 @@ export function WritingDesk({
                 }}
                 className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
                   viewMode === 'editor'
-                    ? 'bg-[#802334] text-white font-medium shadow-sm'
-                    : 'text-[#111111]/60 hover:text-[#802334]'
+                    ? 'bg-adjung-maroon text-white font-medium shadow-sm'
+                    : 'text-[#111111]/60 hover:text-adjung-maroon'
                 }`}
               >
                 ○ Source
@@ -227,7 +227,7 @@ export function WritingDesk({
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#111111]/10 pb-5">
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-[#111111] flex items-center gap-2">
-            <PenTool className="w-5 h-5 text-[#802334]" />
+            <PenTool className="w-5 h-5 text-adjung-maroon" />
             Desk
           </h2>
           <p className="font-sans text-[10px] uppercase tracking-widest text-[#111111]/40">
@@ -240,7 +240,7 @@ export function WritingDesk({
             <button
               type="button"
               onClick={() => createNewEntry('Essay')}
-              className="px-3 py-1.5 bg-[#802334] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
+              className="px-3 py-1.5 bg-adjung-maroon text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
             >
               + Essay
             </button>
@@ -288,15 +288,15 @@ export function WritingDesk({
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-[#802334] font-semibold">{draft.contentType}</span>
+                          <span className="text-adjung-maroon font-semibold">{draft.contentType}</span>
                           <span>•</span>
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-[#802334] transition-colors text-left">
+                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(draft.title)}
                         </h4>
                       </div>
-                      <FileEdit className="w-4 h-4 text-[#111111]/40 group-hover:text-[#802334] flex-shrink-0" />
+                      <FileEdit className="w-4 h-4 text-[#111111]/40 group-hover:text-adjung-maroon flex-shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -336,11 +336,11 @@ export function WritingDesk({
                     >
                       <div className="space-y-1 pr-4">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-[#802334] font-semibold">{pub.contentType}</span>
+                          <span className="text-adjung-maroon font-semibold">{pub.contentType}</span>
                           <span>•</span>
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-[#802334] transition-colors text-left">
+                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(pub.title)}
                         </h4>
                       </div>
@@ -350,7 +350,7 @@ export function WritingDesk({
                         ) : (
                           <Globe className="w-3.5 h-3.5 text-stone-400" title="Public" />
                         )}
-                        <FileEdit className="w-4 h-4 group-hover:text-[#802334]" />
+                        <FileEdit className="w-4 h-4 group-hover:text-adjung-maroon" />
                       </div>
                     </div>
                   ))}

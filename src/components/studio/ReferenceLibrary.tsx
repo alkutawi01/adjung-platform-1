@@ -263,11 +263,11 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
           const isNote = tempEntry.contentType === 'Note';
           return (
             <div className="bg-[#FDFBF7] p-8 md:p-12 rounded-md max-w-5xl mx-auto flex flex-col justify-between min-h-[300px] shadow-md relative overflow-hidden border border-stone-200 text-left animate-fade-in">
-              <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-[#802334] tracking-widest uppercase font-bold select-none">
+              <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-adjung-maroon tracking-widest uppercase font-bold select-none">
                 Hero Publication Feature
               </div>
               <div className="space-y-4 max-w-2xl">
-                <span className="bg-[#802334] text-white font-mono text-[8px] tracking-widest px-2.5 py-0.5 uppercase font-bold rounded">
+                <span className="bg-adjung-maroon text-white font-mono text-[8px] tracking-widest px-2.5 py-0.5 uppercase font-bold rounded">
                   {tempEntry.contentType}
                 </span>
                 {showHeroTitle && (
@@ -293,14 +293,14 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
         if (isFeatured) {
           return (
-            <div className="bg-[#FAF8F5] border-y-2 border-[#802334] p-8 rounded-sm max-w-3xl mx-auto shadow-md text-left flex flex-col md:flex-row gap-6 items-start">
+            <div className="bg-[#FAF8F5] border-y-2 border-adjung-maroon p-8 rounded-sm max-w-3xl mx-auto shadow-md text-left flex flex-col md:flex-row gap-6 items-start">
               {tempEntry.featuredImage && (
                 <div className="w-full md:w-1/3 flex-shrink-0">
                   <img src={tempEntry.featuredImage} className="w-full h-32 object-cover rounded-sm border border-stone-200/80" alt="" />
                 </div>
               )}
               <div className="flex-1 space-y-3">
-                <span className="font-mono text-[8px] uppercase tracking-widest text-[#802334] font-bold">Featured {tempEntry.contentType}</span>
+                <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-bold">Featured {tempEntry.contentType}</span>
                 {tempEntry.contentType !== 'Note' && (
                   <h3 className="font-serif text-xl font-bold text-stone-900 leading-tight">
                     {tempEntry.title || 'Untitled Featured Archetype'}
@@ -320,7 +320,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         // Default: Standard card representation
         return (
           <div className="max-w-md mx-auto p-5 rounded border bg-white border-stone-200/70 shadow-sm text-left">
-            <span className="block font-mono text-[9px] uppercase tracking-wider text-[#802334] mb-2">{tempEntry.contentType}</span>
+            <span className="block font-mono text-[9px] uppercase tracking-wider text-adjung-maroon mb-2">{tempEntry.contentType}</span>
             {activeSpec.visibility.showTitle && tempEntry.title && (
               <h4 
                 dir={isAr ? 'rtl' : 'ltr'}
@@ -350,7 +350,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         return (
           <div className="max-w-2xl mx-auto p-6 bg-stone-50 border border-stone-200/60 rounded">
             <div className="relative border-l border-stone-200 pl-4 py-2 text-left">
-              <span className="absolute left-0 w-2.5 h-2.5 rounded-full bg-[#802334] -ml-[5.5px] mt-1.5" />
+              <span className="absolute left-0 w-2.5 h-2.5 rounded-full bg-adjung-maroon -ml-[5.5px] mt-1.5" />
               <div className="font-mono text-[9px] text-stone-400 uppercase tracking-widest mb-1.5">
                 {new Date(tempEntry.publishedDate).getFullYear()} • {tempEntry.contentType}
               </div>
@@ -371,7 +371,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               <span>Match Score: 98%</span>
               <span>INDEXED</span>
             </div>
-            <h4 className="font-serif text-base font-semibold text-[#802334] hover:underline cursor-pointer">
+            <h4 className="font-serif text-base font-semibold text-adjung-maroon hover:underline cursor-pointer">
               {tempEntry.title || 'Untitled Sandbox Entry'}
             </h4>
             <p className="font-sans text-stone-600 text-xs line-clamp-2 leading-relaxed">
@@ -399,7 +399,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         return (
           <div className="max-w-4xl mx-auto p-4 bg-white border border-stone-200/60 rounded font-sans text-xs flex items-center justify-between gap-4 shadow-sm animate-fade-in">
             <div className="flex items-center gap-3">
-              <span className="bg-[#802334]/5 text-[#802334] font-mono text-[9px] font-bold px-2 py-0.5 border border-[#802334]/15 rounded uppercase">
+              <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[9px] font-bold px-2 py-0.5 border border-adjung-maroon/15 rounded uppercase">
                 {tempEntry.contentType}
               </span>
               <div 
@@ -428,7 +428,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-950 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-[#802334]" />
+            <Sparkles className="w-6 h-6 text-adjung-maroon" />
             Universal Rendering Laboratory
           </h2>
           <p className="font-sans text-[10px] uppercase tracking-widest text-stone-400">
@@ -447,7 +447,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
           <button
             type="button"
             onClick={handleClone}
-            className="px-3 py-1.5 bg-[#802334] hover:bg-[#6c1d2c] text-white font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
+            className="px-3 py-1.5 bg-adjung-maroon hover:bg-[#6c1d2c] text-white font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
           >
             <Copy className="w-3.5 h-3.5" /> Clone Sandbox
           </button>
@@ -471,7 +471,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   onClick={() => setSelectedTemplateId(t.id)}
                   className={`w-full text-left px-3 py-2 rounded font-serif text-sm transition flex items-center gap-2 select-none cursor-pointer ${
                     selectedTemplateId === t.id
-                      ? 'bg-[#802334]/10 text-[#802334] font-semibold border-l-2 border-[#802334]'
+                      ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border-l-2 border-adjung-maroon'
                       : 'text-stone-700 hover:bg-stone-50 border-l-2 border-transparent'
                   }`}
                 >
@@ -524,7 +524,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <select
                       value={tempEntry.contentType}
                       onChange={(e) => updateTempEntry({ contentType: e.target.value as any })}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
                       <option value="Note">Note</option>
                       <option value="Essay">Essay</option>
@@ -537,7 +537,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <select
                       value={tempEntry.status}
                       onChange={(e) => updateTempEntry({ status: e.target.value as any })}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
                       <option value="Published">Published</option>
                       <option value="Draft">Draft</option>
@@ -548,7 +548,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <select
                       value={tempEntry.visibility}
                       onChange={(e) => updateTempEntry({ visibility: e.target.value as any })}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
                       <option value="Public">Public</option>
                       <option value="Private">Private</option>
@@ -578,7 +578,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={authorName}
                         onChange={(e) => setAuthorName(e.target.value)}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                       />
                     </div>
                     <div>
@@ -587,7 +587,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={authorSignature}
                         onChange={(e) => setAuthorSignature(e.target.value)}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-[#802334] font-signature text-xl focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-adjung-maroon font-signature text-xl focus:outline-none focus:border-adjung-maroon"
                       />
                     </div>
                     <div>
@@ -595,7 +595,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                       <select
                         value={authorSignatureFont}
                         onChange={(e) => setAuthorSignatureFont(e.target.value)}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                       >
                         <option value="Mrs Saint Delafield">Mrs Saint Delafield</option>
                         <option value="Alex Brush">Alex Brush</option>
@@ -608,7 +608,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <textarea
                       value={authorBiography}
                       onChange={(e) => setAuthorBiography(e.target.value)}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] h-28 resize-none"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon h-28 resize-none"
                     />
                   </div>
                 </div>
@@ -635,7 +635,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.title}
                         onChange={(e) => updateTempEntry({ title: e.target.value })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] font-serif"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-serif"
                       />
                     </div>
                     <div>
@@ -644,7 +644,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.subtitle || ''}
                         onChange={(e) => updateTempEntry({ subtitle: e.target.value })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334] font-serif"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-serif"
                       />
                     </div>
                   </div>
@@ -655,7 +655,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.slug}
                         onChange={(e) => updateTempEntry({ slug: e.target.value })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 font-mono text-[11px] focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 font-mono text-[11px] focus:outline-none focus:border-adjung-maroon"
                       />
                     </div>
                     <div>
@@ -664,7 +664,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.tags.join(', ')}
                         onChange={(e) => updateTempEntry({ tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                       />
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <select
                       value={tempEntry.publicationClass || 'Personal'}
                       onChange={(e) => updateTempEntry({ publicationClass: e.target.value as any })}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
                       <option value="Personal">Personal (Scholar Folio)</option>
                       <option value="Institutional">Institutional (Editorial Board)</option>
@@ -701,7 +701,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     <select
                       value={tempEntry.underReview ? 'yes' : 'no'}
                       onChange={(e) => updateTempEntry({ underReview: e.target.value === 'yes' })}
-                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-[#802334]"
+                      className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
                       <option value="no">Active / Normal</option>
                       <option value="yes">Flagged / Under Review</option>
@@ -721,7 +721,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
             <h4 className="font-serif text-lg font-semibold text-stone-900">Authoring Workspace</h4>
             <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Instantiating production WritingDesk in sandbox isolation</p>
           </div>
-          <span className="bg-[#802334]/5 text-[#802334] font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-[#802334]/25 rounded select-none font-bold">
+          <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-adjung-maroon/25 rounded select-none font-bold">
             Interactive Editor
           </span>
         </div>
@@ -755,8 +755,8 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 onClick={() => setSelectedContextId(ctx.id)}
                 className={`px-3 py-1.5 rounded uppercase tracking-wider font-semibold border transition cursor-pointer ${
                   selectedContextId === ctx.id
-                    ? 'bg-[#802334] text-white border-[#802334] shadow-sm'
-                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:text-[#802334] hover:bg-stone-100/50'
+                    ? 'bg-adjung-maroon text-white border-adjung-maroon shadow-sm'
+                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:text-adjung-maroon hover:bg-stone-100/50'
                 }`}
               >
                 {ctx.name}
@@ -800,7 +800,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
       {/* ================= SECTION 4: RENDERING DIAGNOSTICS ================= */}
       <div className="bg-[#FAF8F5] border border-stone-200/75 rounded-lg p-5 shadow-sm text-left">
-        <h5 className="font-mono text-[10px] uppercase tracking-wider text-[#802334] font-bold border-b border-stone-200 pb-1.5 mb-3 flex items-center gap-1 select-none">
+        <h5 className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-bold border-b border-stone-200 pb-1.5 mb-3 flex items-center gap-1 select-none">
           <ShieldAlert className="w-3.5 h-3.5" /> Rendering Diagnostics
         </h5>
 

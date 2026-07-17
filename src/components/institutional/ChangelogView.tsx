@@ -7,7 +7,7 @@ export const ChangelogView: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-12 py-10">
       <header className="border-b border-[#111111]/10 pb-6 text-left">
-        <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] mb-2">
+        <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-adjung-maroon mb-2">
           Development Timeline
         </span>
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
@@ -30,7 +30,7 @@ export const ChangelogView: React.FC = () => {
             .map((log) => (
               <div key={log.id} className="relative group">
                 {/* Chronology Dot */}
-                <span className="absolute -left-[41px] top-1.5 w-4.5 h-4.5 bg-[#802334] border-4 border-[#FDFDFD] rounded-full group-hover:scale-110 transition-transform"></span>
+                <span className="absolute -left-[41px] top-1.5 w-4.5 h-4.5 bg-adjung-maroon border-4 border-[#FDFDFD] rounded-full group-hover:scale-110 transition-transform"></span>
 
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">

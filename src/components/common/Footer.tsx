@@ -26,7 +26,7 @@ export const Footer: React.FC<FooterProps> = ({
     <footer className="w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
       <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center items-start">
         <div className="space-y-4 flex flex-col items-center text-center">
-          <h1 className="font-serif text-2xl font-semibold tracking-wider text-[#802334]">{BRAND.logoText}</h1>
+          <h1 className="font-serif text-2xl font-semibold tracking-wider text-adjung-maroon">{BRAND.logoText}</h1>
           <p className="font-serif italic text-stone-600 text-sm max-w-sm mx-auto">{systemSettings.editorialPolicy}</p>
         </div>
         
@@ -37,7 +37,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('editorial')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 Editor's Notes
               </button>
@@ -46,7 +46,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('notices')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 Notices
               </button>
@@ -55,7 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('policies')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 Publishing Policies
               </button>
@@ -64,7 +64,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('changelog')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 Version History
               </button>
@@ -79,7 +79,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('policies')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 About Adjung
               </button>
@@ -88,7 +88,7 @@ export const Footer: React.FC<FooterProps> = ({
               <button 
                 type="button"
                 onClick={() => navigateTo('directory')} 
-                className="hover:text-[#802334] transition cursor-pointer"
+                className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 Editorial Board
               </button>

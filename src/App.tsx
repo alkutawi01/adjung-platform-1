@@ -1316,9 +1316,9 @@ Editorial Board of Adjung`;
           className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900"
         >
           {/* Top Thin Reading Progress Bar */}
-          <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-[#802334]/5 z-50 pointer-events-none">
+          <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-adjung-maroon/5 z-50 pointer-events-none">
             <div
-              className="h-full bg-[#802334] transition-all duration-75 ease-out"
+              className="h-full bg-adjung-maroon transition-all duration-75 ease-out"
               style={{ width: `${maxScroll > 0 ? Math.min(100, Math.max(0, (scrollY / maxScroll) * 100)) : 0}%` }}
             />
           </div>
@@ -1331,7 +1331,7 @@ Editorial Board of Adjung`;
                 }`}
             >
               <div className="bg-[#FDFDFD] border border-stone-200/80 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-serif text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
-                <span className="text-[#802334] font-semibold">✓</span>
+                <span className="text-adjung-maroon font-semibold">✓</span>
                 <span className="tracking-wide">{toast.message}</span>
               </div>
             </div>
@@ -1342,13 +1342,13 @@ Editorial Board of Adjung`;
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 <span className="font-sans font-medium">
-                  Acting Scriptor: <span className="font-semibold text-[#802334]">{currentUser?.penName}</span> (Original: {originalUser.penName})
+                  Acting Scriptor: <span className="font-semibold text-adjung-maroon">{currentUser?.penName}</span> (Original: {originalUser.penName})
                 </span>
               </div>
               <button
                 type="button"
                 onClick={revertToOriginalAccount}
-                className="text-[10px] font-mono uppercase font-bold tracking-wider hover:underline text-[#802334] cursor-pointer"
+                className="text-[10px] font-mono uppercase font-bold tracking-wider hover:underline text-adjung-maroon cursor-pointer"
               >
                 Revert to Original Account →
               </button>
@@ -1392,7 +1392,7 @@ Editorial Board of Adjung`;
                     </h1>
                     {currentAuthor.isAi && (
                       <div className="relative group/tooltip inline-block align-middle select-none">
-                        <Sparkles className="w-5 h-5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                        <Sparkles className="w-5 h-5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-stone-900 text-stone-100 text-[10px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
                           AI Editorial Fellow
                         </div>

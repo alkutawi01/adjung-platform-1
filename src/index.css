@@ -17,7 +17,6 @@
   --color-softgrey: #777777;
   --color-rulegrey: #E0DDD8;
   
-  --color-Adjung-maroon: #802334;
   --color-adjung-maroon: #802334;
   --color-Adjung-cream: #FDFDFD;
   --color-Adjung-dark: #111111;
@@ -104,7 +103,7 @@ html, body {
 
 .footnote-badge {
   counter-increment: footnote-badge;
-  color: var(--color-Adjung-maroon);
+  color: var(--color-adjung-maroon);
   font-weight: 600;
   font-family: var(--font-mono);
   font-size: 0.75em;
@@ -129,7 +128,7 @@ html, body {
 
 .margin-note-badge {
   counter-increment: margin-note-badge;
-  color: var(--color-Adjung-maroon);
+  color: var(--color-adjung-maroon);
   font-weight: 600;
   font-family: var(--font-mono);
   font-size: 0.75em;
@@ -301,7 +300,7 @@ input[type="range"].adjung-range::-webkit-slider-thumb {
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  background: #802334; /* Adjung-maroon */
+  background: #802334; /* adjung-maroon */
   border: 1px solid rgba(253, 253, 253, 0.2);
   transition: transform 0.1s ease, background-color 0.15s ease;
 }

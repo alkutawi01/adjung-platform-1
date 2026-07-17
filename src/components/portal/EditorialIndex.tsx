@@ -130,7 +130,7 @@ export function EditorialIndex({
     <div className="space-y-8 text-left">
       <div className="space-y-1 border-b border-[#111111]/10 pb-5">
         <h2 className="font-serif text-2xl font-light text-[#111111] flex items-center gap-2 text-left">
-          <ListOrdered className="w-6 h-6 text-[#802334]" />
+          <ListOrdered className="w-6 h-6 text-adjung-maroon" />
           Index
         </h2>
         <p className="font-sans text-[10px] uppercase tracking-widest text-[#111111]/40 text-left">
@@ -152,7 +152,7 @@ export function EditorialIndex({
                 setSearchQuery(e.target.value);
                 if (onSearchQueryChange) onSearchQueryChange(e.target.value);
               }}
-              className="w-full border border-stone-200 p-2.5 pl-8 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white transition-all hover:border-stone-300"
+              className="w-full border border-stone-200 p-2.5 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white transition-all hover:border-stone-300"
             />
             <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3.5" />
           </div>
@@ -163,7 +163,7 @@ export function EditorialIndex({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
+              className="border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
             >
               <option value="newest">Published Date (Newest)</option>
               <option value="oldest">Published Date (Oldest)</option>
@@ -185,8 +185,8 @@ export function EditorialIndex({
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-1 rounded text-[11px] transition-all duration-200 cursor-pointer border ${
                   typeFilter === type
-                    ? 'bg-[#802334] text-white border-[#802334] font-semibold shadow-sm'
-                    : 'bg-white text-stone-600 border-stone-200 hover:text-[#802334] hover:border-stone-300'
+                    ? 'bg-adjung-maroon text-white border-adjung-maroon font-semibold shadow-sm'
+                    : 'bg-white text-stone-600 border-stone-200 hover:text-adjung-maroon hover:border-stone-300'
                 }`}
               >
                 {type}
@@ -202,7 +202,7 @@ export function EditorialIndex({
               <select
                 value={languageFilter}
                 onChange={(e) => setLanguageFilter(e.target.value)}
-                className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
+                className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
               >
                 <option value="All">All Languages ({allLanguages.length})</option>
                 {allLanguages.map(lang => (
@@ -217,7 +217,7 @@ export function EditorialIndex({
               <select
                 value={selectedTag}
                 onChange={(e) => setSelectedTag(e.target.value)}
-                className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors max-w-[150px]"
+                className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors max-w-[150px]"
               >
                 <option value="All">All Tags</option>
                 {allTags.map(tag => (
@@ -234,7 +234,7 @@ export function EditorialIndex({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
+              <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
                 <th className="p-3 pl-4 text-left">Author / Publisher</th>
                 <th className="p-3 text-left">Title</th>
                 <th className="p-3 text-left">Type</th>
@@ -274,7 +274,7 @@ export function EditorialIndex({
                         parseInlineFormatting(item.title)
                       )}
                     </td>
-                    <td className="p-3 font-sans"><span className="text-[#802334] font-semibold">{item.contentType}</span></td>
+                    <td className="p-3 font-sans"><span className="text-adjung-maroon font-semibold">{item.contentType}</span></td>
                     <td className="p-3 font-mono text-[#111111]/50 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
                     <td className="p-3 font-mono text-[#111111]/40 text-[10px] pr-4">{item.slug}</td>
                   </tr>

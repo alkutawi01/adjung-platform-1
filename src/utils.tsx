@@ -358,7 +358,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
     if (token.type === 'LINK') {
       const elementKey = `${keyPrefix}-${keyIdx++}`;
       result.push(
-        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-Adjung-maroon hover:underline cursor-pointer">
+        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline cursor-pointer">
           {token.text}
         </a>
       );
@@ -434,7 +434,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
         );
       } else if (token.type === 'BACKTICK') {
         result.push(
-          <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-[#802334] px-1 py-0.5 rounded-sm border border-stone-200/50">
+          <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-adjung-maroon px-1 py-0.5 rounded-sm border border-stone-200/50">
             {innerParsed}
           </code>
         );
@@ -495,7 +495,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
         id={`fnref-${part.content}`}
         title={`Jump to footnote ${num}`}
         onClick={(e) => {
@@ -521,7 +521,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-Adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
         id={`fnref-legacy-${part.content}`}
         title={`Jump to footnote ${num}`}
         onClick={(e) => {
@@ -549,7 +549,7 @@ function renderPartNode(
       <span 
         key={part.key}
         id={`mn-marker-${part.content}`}
-        className="margin-note-ref text-[10px] font-medium align-super select-none text-Adjung-maroon font-sans px-0.5 cursor-default"
+        className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-sans px-0.5 cursor-default"
         title={`Margin Note ${roman}`}
       >
         ({roman})
@@ -570,7 +570,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="citation-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
+        className="citation-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 select-none cursor-pointer"
         title={`${citation.author} (${citation.year}) - ${citation.title}`}
         onClick={(e) => {
           e.preventDefault();
@@ -596,7 +596,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="cross-ref text-[11px] font-sans font-medium text-Adjung-maroon hover:underline px-0.5 cursor-pointer"
+        className="cross-ref text-[11px] font-sans font-medium text-adjung-maroon hover:underline px-0.5 cursor-pointer"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();

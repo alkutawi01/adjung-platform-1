@@ -155,7 +155,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
       {/* Title & Description */}
       <div className="space-y-1 border-b border-[#111111]/10 pb-5">
         <h2 className="font-serif text-2xl font-light text-[#111111] flex items-center gap-2 text-left">
-          <Compass className="w-6 h-6 text-[#802334]" />
+          <Compass className="w-6 h-6 text-adjung-maroon" />
           Directory
         </h2>
         <p className="font-sans text-[10px] uppercase tracking-widest text-[#111111]/40 text-left">
@@ -174,7 +174,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
               placeholder="Search members by pen name, biography..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border border-stone-200 p-2.5 pl-8 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white transition-all hover:border-stone-300"
+              className="w-full border border-stone-200 p-2.5 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white transition-all hover:border-stone-300"
             />
             <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3.5" />
           </div>
@@ -185,7 +185,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
+              className="border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
             >
               <option value="name-az">Pen Name (A-Z)</option>
               <option value="name-za">Pen Name (Z-A)</option>
@@ -203,7 +203,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
             <select
               value={countryFilter}
               onChange={(e) => setCountryFilter(e.target.value)}
-              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
+              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
             >
               <option value="All">All Countries ({allCountries.length})</option>
               {allCountries.map(country => (
@@ -218,7 +218,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
             <select
               value={languageFilter}
               onChange={(e) => setLanguageFilter(e.target.value)}
-              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
+              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
             >
               <option value="All">All Languages ({allLanguages.length})</option>
               {allLanguages.map(lang => (
@@ -233,7 +233,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-[#802334] font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors max-w-[150px]"
+              className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors max-w-[150px]"
             >
               <option value="All">All Tags</option>
               {allTags.map(tag => (
@@ -252,7 +252,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="bg-[#802334]/90 backdrop-blur-md border-b border-[#802334]/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
+              <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
                 <th className="p-3 pl-4 text-left">Scholar / Pen Name</th>
                 <th className="p-3 text-left">Full Name</th>
                 <th className="p-3 text-left">Country</th>
@@ -284,7 +284,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                         <span>{u.penName}</span>
                         {u.isAi && (
                           <div className="relative group/tooltip inline-block select-none">
-                            <Sparkles className="w-3.5 h-3.5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                            <Sparkles className="w-3.5 h-3.5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-normal">
                               AI Editorial Fellow
                             </div>
@@ -347,14 +347,14 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                         <button
                           type="button"
                           onClick={() => onSelectMember(u.id, 'folio')}
-                          className="flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-[#802334] hover:bg-[#802334]/5 text-stone-700 hover:text-[#802334] font-mono text-[9px] uppercase tracking-wider rounded transition cursor-pointer font-semibold"
+                          className="flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-adjung-maroon hover:bg-adjung-maroon/5 text-stone-700 hover:text-adjung-maroon font-mono text-[9px] uppercase tracking-wider rounded transition cursor-pointer font-semibold"
                         >
                           <BookOpen className="w-3 h-3" /> Folio
                         </button>
                         <button
                           type="button"
                           onClick={() => onSelectMember(u.id, 'bio')}
-                          className="flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-[#802334] hover:bg-[#802334]/5 text-stone-700 hover:text-[#802334] font-mono text-[9px] uppercase tracking-wider rounded transition cursor-pointer font-semibold"
+                          className="flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-adjung-maroon hover:bg-adjung-maroon/5 text-stone-700 hover:text-adjung-maroon font-mono text-[9px] uppercase tracking-wider rounded transition cursor-pointer font-semibold"
                         >
                           <FileText className="w-3 h-3" /> Bio
                         </button>

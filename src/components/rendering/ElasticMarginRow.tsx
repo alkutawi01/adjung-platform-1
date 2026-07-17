@@ -51,10 +51,10 @@ export function ElasticMarginRow({
           {/* Margin note column (empty if there is no note content for this paragraph) */}
           <div className={`col-span-4 select-text ${isRtl ? 'pr-6 text-right' : 'pl-6 text-left'}`}>
             {noteContent ? (
-              <div className={isRtl ? "border-r-2 border-[#802334]/25 py-0.5 pr-4" : "border-l-2 border-[#802334]/25 py-0.5 pl-4"}>
+              <div className={isRtl ? "border-r-2 border-adjung-maroon/25 py-0.5 pr-4" : "border-l-2 border-adjung-maroon/25 py-0.5 pl-4"}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {noteIndexRoman && (
-                    <span className="font-sans text-[10px] font-semibold text-[#802334]">
+                    <span className="font-sans text-[10px] font-semibold text-adjung-maroon">
                       ({noteIndexRoman})
                     </span>
                   )}
@@ -135,7 +135,7 @@ export function ElasticMarginRow({
                 e.stopPropagation();
                 toggleOpen();
               }}
-              className="p-1 rounded-full hover:bg-stone-100 text-[#802334]/70 hover:text-[#802334] transition-colors flex items-center justify-center"
+              className="p-1 rounded-full hover:bg-stone-100 text-adjung-maroon/70 hover:text-adjung-maroon transition-colors flex items-center justify-center"
               title="Drag or click to reveal margin note"
             >
               {isOpen ? (
@@ -156,10 +156,10 @@ export function ElasticMarginRow({
           }}
           className={`flex-shrink-0 flex flex-col justify-center select-text ${isRtl ? 'pr-6 pl-4 text-right' : 'pl-6 pr-4 text-left'}`}
         >
-          <div className={`py-1 space-y-1.5 ${isRtl ? 'border-r-2 border-[#802334]/25 pr-4' : 'border-l-2 border-[#802334]/25 pl-4'}`}>
+          <div className={`py-1 space-y-1.5 ${isRtl ? 'border-r-2 border-adjung-maroon/25 pr-4' : 'border-l-2 border-adjung-maroon/25 pl-4'}`}>
             <div className="flex items-center gap-1.5">
               {noteIndexRoman && (
-                <span className="font-sans text-[10px] font-semibold text-[#802334]">
+                <span className="font-sans text-[10px] font-semibold text-adjung-maroon">
                   ({noteIndexRoman})
                 </span>
               )}

@@ -63,7 +63,7 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
           <button
             type="button"
             onClick={() => setShowPad(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FDFDFD] border border-Adjung-maroon/20 hover:bg-Adjung-maroon/5 text-Adjung-maroon rounded text-xs font-mono tracking-wider uppercase transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FDFDFD] border border-adjung-maroon/20 hover:bg-adjung-maroon/5 text-adjung-maroon rounded text-xs font-mono tracking-wider uppercase transition"
           >
             <Edit3 className="w-3.5 h-3.5" /> Change Signature
           </button>
@@ -84,14 +84,14 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
           <p className="text-stone-500 font-serif italic mb-2">No active signature configured.</p>
           <button
             onClick={() => setShowPad(true)}
-            className="text-Adjung-maroon font-mono text-xs uppercase tracking-wider hover:underline"
+            className="text-adjung-maroon font-mono text-xs uppercase tracking-wider hover:underline"
           >
             Create your primary signature
           </button>
         </div>
       ) : (
         <div className="max-w-2xl mx-auto">
-          <div className="border border-Adjung-maroon/30 p-5 rounded-lg bg-white relative shadow-sm flex flex-col justify-between">
+          <div className="border border-adjung-maroon/30 p-5 rounded-lg bg-white relative shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h4 className="font-mono text-[10px] uppercase tracking-widest font-bold text-stone-500">

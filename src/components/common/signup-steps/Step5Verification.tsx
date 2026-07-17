@@ -68,7 +68,7 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
           </div>
           <div className="mt-2.5 pt-2.5 border-t border-amber-200/50 flex justify-between items-center text-[12px] font-serif">
             <span>Your 6-digit verification code:</span>
-            <strong className="font-mono text-sm tracking-widest text-[#802334] font-bold select-all bg-white px-2 py-0.5 border border-amber-200/50 rounded shadow-sm animate-pulse">
+            <strong className="font-mono text-sm tracking-widest text-adjung-maroon font-bold select-all bg-white px-2 py-0.5 border border-amber-200/50 rounded shadow-sm animate-pulse">
               {generatedCode}
             </strong>
           </div>

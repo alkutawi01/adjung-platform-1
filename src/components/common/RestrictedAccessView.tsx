@@ -20,11 +20,11 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
         {/* Header Block matching LoginModal */}
         <div className="border-b border-stone-200 p-5 bg-[#FDFDFD]">
           <div className="flex justify-center mb-2.5">
-            <div className="p-2 bg-[#802334]/5 border border-[#802334]/15 rounded-full text-[#802334]">
+            <div className="p-2 bg-adjung-maroon/5 border border-adjung-maroon/15 rounded-full text-adjung-maroon">
               <Lock className="w-5 h-5" />
             </div>
           </div>
-          <h3 className="font-serif text-2xl text-[#802334] tracking-tight">Akses Terhad</h3>
+          <h3 className="font-serif text-2xl text-adjung-maroon tracking-tight">Akses Terhad</h3>
           <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1.5 leading-normal">
             Log masuk ke akaun {BRAND.shortName} anda.
           </p>
@@ -40,7 +40,7 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
             <button
               type="button"
               onClick={onSignInClick}
-              className="w-full bg-[#802334] hover:bg-[#912b3e] text-[#FDFDFD] py-2.5 rounded-sm text-xs font-mono uppercase tracking-wider transition-colors shadow-sm font-semibold cursor-pointer"
+              className="w-full bg-adjung-maroon hover:bg-[#912b3e] text-[#FDFDFD] py-2.5 rounded-sm text-xs font-mono uppercase tracking-wider transition-colors shadow-sm font-semibold cursor-pointer"
             >
               Sign In
             </button>
@@ -58,7 +58,7 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
             <button
               type="button"
               onClick={onSignUpClick}
-              className="text-[#802334] font-bold hover:underline cursor-pointer font-sans text-xs ml-0.5"
+              className="text-adjung-maroon font-bold hover:underline cursor-pointer font-sans text-xs ml-0.5"
             >
               Daftar di sini
             </button>

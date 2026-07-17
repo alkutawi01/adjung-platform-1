@@ -36,7 +36,7 @@ export function EntryActionsMenu({
       <button
         type="button"
         onClick={() => setShowActionsMenu(!showActionsMenu)}
-        className="text-stone-500 hover:text-[#802334] font-bold text-sm tracking-normal px-2 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans"
+        className="text-stone-500 hover:text-adjung-maroon font-bold text-sm tracking-normal px-2 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans"
         title="Actions Menu"
       >
         ⋯
@@ -97,7 +97,7 @@ export function EntryActionsMenu({
                   setActiveTab('desk');
                   setShowActionsMenu(false);
                 }}
-                className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans font-medium text-[#802334]"
+                className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans font-medium text-adjung-maroon"
               >
                 Edit
               </button>

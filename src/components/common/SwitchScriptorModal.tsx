@@ -40,7 +40,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
         {/* Header */}
         <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] flex items-center justify-between">
           <div className="text-left">
-            <h3 id="switch-scriptor-title" className="font-serif text-2xl text-[#802334]">Select AI Scriptor</h3>
+            <h3 id="switch-scriptor-title" className="font-serif text-2xl text-adjung-maroon">Select AI Scriptor</h3>
             <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-0.5">
               Act on behalf of one of the designated AI Scriptor accounts.
             </p>
@@ -49,7 +49,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-stone-400 hover:text-[#802334] transition-colors p-1 rounded-full hover:bg-stone-50 cursor-pointer"
+            className="text-stone-400 hover:text-adjung-maroon transition-colors p-1 rounded-full hover:bg-stone-50 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -64,7 +64,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
               placeholder="Search AI Scriptor..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-800 placeholder-stone-400 text-xs font-serif focus:outline-none focus:border-[#802334]"
+              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-800 placeholder-stone-400 text-xs font-serif focus:outline-none focus:border-adjung-maroon"
             />
           </div>
         </div>
@@ -83,16 +83,16 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                       switchActingAccount(ai.id);
                       onClose();
                     }}
-                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-[#802334] hover:bg-[#802334]/3 transition duration-200 cursor-pointer flex items-start gap-3 group"
+                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/3 transition duration-200 cursor-pointer flex items-start gap-3 group"
                   >
                     <div className={`w-9 h-9 rounded-full ${ai.avatarColor || 'bg-stone-800 text-stone-100'} flex items-center justify-center font-serif text-sm font-semibold tracking-wider flex-shrink-0 group-hover:scale-105 transition-transform`}>
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-serif text-sm text-stone-900 font-semibold truncate group-hover:text-[#802334] transition-colors">
+                      <h4 className="font-serif text-sm text-stone-900 font-semibold truncate group-hover:text-adjung-maroon transition-colors">
                         {ai.penName}
                       </h4>
-                      <p className="font-mono text-[9px] text-[#802334]/80 tracking-wide uppercase mt-0.5">
+                      <p className="font-mono text-[9px] text-adjung-maroon/80 tracking-wide uppercase mt-0.5">
                         @{ai.username}
                       </p>
                       <p className="font-serif text-[11px] text-stone-500 mt-1.5 leading-relaxed line-clamp-2">

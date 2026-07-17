@@ -184,7 +184,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     onChange={(e) => setEditedTitle(e.target.value.slice(0, 200))}
                     onKeyDown={(e) => handleKeyDownShortcut(e, setEditedTitle)}
                     maxLength={200}
-                    className="w-full border border-stone-200 p-2 pr-16 rounded text-2xl md:text-[28px] font-serif text-[#111111] focus:outline-none focus:border-[#802334] leading-tight"
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-2xl md:text-[28px] font-serif text-[#111111] focus:outline-none focus:border-adjung-maroon leading-tight"
                     placeholder="Folio Hero Title"
                   />
                   <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
@@ -197,7 +197,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     onChange={(e) => setEditedSubtitle(e.target.value.slice(0, 300))}
                     onKeyDown={(e) => handleKeyDownShortcut(e, setEditedSubtitle)}
                     maxLength={300}
-                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[14px] md:text-[15px] font-serif text-stone-500 focus:outline-none focus:border-[#802334] min-h-[140px] leading-relaxed"
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[14px] md:text-[15px] font-serif text-stone-500 focus:outline-none focus:border-adjung-maroon min-h-[140px] leading-relaxed"
                     placeholder="Folio Hero Subtitle"
                   />
                   <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
@@ -215,7 +215,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                   <button
                     type="button"
                     onClick={handleSaveHeader}
-                    className="px-2.5 py-1 bg-[#802334] text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
                   >
                     Save
                   </button>
@@ -228,7 +228,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                   {currentUser?.id === currentAuthor.id && (
                     <button
                       onClick={() => setIsEditingHeader(true)}
-                      className="inline-block align-middle ml-2 opacity-0 group-hover/title:opacity-100 transition-opacity p-1 text-stone-400 hover:text-[#802334] cursor-pointer"
+                      className="inline-block align-middle ml-2 opacity-0 group-hover/title:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon cursor-pointer"
                       title="Edit Banner Title & Subtitle"
                     >
                       <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +353,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                 e.stopPropagation();
                                 handleRestrictedAction(() => setSelectedEntry(item));
                               }}
-                              className="w-8 h-8 rounded-full border border-stone-200 hover:border-[#802334] bg-white flex items-center justify-center text-stone-400 hover:text-white hover:bg-[#802334] transition-all duration-200 cursor-pointer shadow-sm"
+                              className="w-8 h-8 rounded-full border border-stone-200 hover:border-adjung-maroon bg-white flex items-center justify-center text-stone-400 hover:text-white hover:bg-adjung-maroon transition-all duration-200 cursor-pointer shadow-sm"
                               title="Read full essay"
                             >
                               <ArrowRight className="w-4 h-4" />

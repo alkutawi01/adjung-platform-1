@@ -912,14 +912,14 @@ Source: MIT Technology Review, 2024
                 <button
                   type="button"
                   onClick={() => createNewEntry('Notice')}
-                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334] rounded flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-adjung-maroon rounded flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> + New Notice
                 </button>
                 <button
                   type="button"
                   onClick={() => createNewEntry("Editor's Note")}
-                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-[#802334] rounded flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#4a1521] text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer border border-adjung-maroon rounded flex items-center gap-1.5"
                 >
                   <BookOpen className="w-3.5 h-3.5" /> + New Editor's Note
                 </button>
@@ -1197,7 +1197,7 @@ Source: MIT Technology Review, 2024
                         .catch(() => showToast('Failed to save policy.', 'error'));
                     }
                   }}
-                  className="w-full py-2 bg-[#802334] text-white font-mono uppercase tracking-wider text-[9px] hover:opacity-95 transition cursor-pointer"
+                  className="w-full py-2 bg-adjung-maroon text-white font-mono uppercase tracking-wider text-[9px] hover:opacity-95 transition cursor-pointer"
                 >
                   Save Policy Changes
                 </button>

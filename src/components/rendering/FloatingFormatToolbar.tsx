@@ -105,7 +105,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             placeholder="URL (https://...)"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
-            className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-Adjung-maroon w-36 font-sans"
+            className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-adjung-maroon w-36 font-sans"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 applyLink(linkUrl);
@@ -116,7 +116,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
           <button
             type="button"
             onClick={() => applyLink(linkUrl)}
-            className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
+            className="px-2 py-0.5 bg-adjung-maroon text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
           >
             Apply
           </button>
@@ -138,7 +138,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             placeholder="Gloss word/translation..."
             value={glossText}
             onChange={(e) => setGlossText(e.target.value)}
-            className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-Adjung-maroon w-36 font-sans"
+            className="bg-stone-900 border border-stone-800 px-2 py-0.5 rounded text-[10px] text-stone-200 focus:outline-none focus:border-adjung-maroon w-36 font-sans"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 applyInterlinear(glossText);
@@ -149,7 +149,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
           <button
             type="button"
             onClick={() => applyInterlinear(glossText)}
-            className="px-2 py-0.5 bg-[#802334] text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
+            className="px-2 py-0.5 bg-adjung-maroon text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
           >
             Apply
           </button>

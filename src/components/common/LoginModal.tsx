@@ -237,7 +237,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   id="rememberMe"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-[#802334] rounded border-stone-300 text-[#802334] focus:ring-adjung-maroon cursor-pointer mr-2"
+                  className="h-3.5 w-3.5 accent-adjung-maroon rounded border-stone-300 text-adjung-maroon focus:ring-adjung-maroon cursor-pointer mr-2"
                 />
                 <label htmlFor="rememberMe" className="font-mono text-[9px] uppercase tracking-wider text-stone-500 cursor-pointer font-semibold">
                   Remember me

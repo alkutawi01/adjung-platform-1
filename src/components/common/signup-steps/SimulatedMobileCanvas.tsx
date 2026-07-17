@@ -83,7 +83,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
       <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-b-xl" />
       
       <div className="flex justify-between items-center border-b border-stone-800/80 pt-2 pb-2">
-        <span className="font-mono text-[9px] uppercase tracking-wider text-[#802334] font-bold flex items-center gap-1">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-adjung-maroon font-bold flex items-center gap-1">
           <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
           ADJUNG MOBILE SIGN
         </span>
@@ -127,7 +127,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
         <button
           onClick={() => strokes.length > 0 && onSave(strokes)}
           disabled={strokes.length === 0}
-          className="flex-1 py-2 bg-[#802334] hover:bg-[#962c3e] disabled:opacity-40 disabled:cursor-not-allowed text-stone-100 font-mono text-[10px] uppercase rounded-sm transition-all cursor-pointer font-bold"
+          className="flex-1 py-2 bg-adjung-maroon hover:bg-[#962c3e] disabled:opacity-40 disabled:cursor-not-allowed text-stone-100 font-mono text-[10px] uppercase rounded-sm transition-all cursor-pointer font-bold"
         >
           Send to PC
         </button>

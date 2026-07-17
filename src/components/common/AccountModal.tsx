@@ -211,7 +211,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </button>
             <button
               type="submit"
-              className="w-2/3 bg-[#802334] hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
+              className="w-2/3 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] py-2.5 rounded text-xs font-mono uppercase tracking-wider transition shadow-sm font-semibold cursor-pointer"
             >
               {showVerification ? 'Confirm Email Change' : 'Save Credentials'}
             </button>

@@ -42,7 +42,7 @@ export function FolioTimeline({
           {authorProfile.heroTitle}
         </h1>
         <div className="flex items-center gap-4 text-xs font-sans text-[#111111]/60">
-          <span className="bg-[#802334] text-white px-2 py-0.5 uppercase tracking-wider text-[9px] font-sans font-semibold">Folio Discourse</span>
+          <span className="bg-adjung-maroon text-white px-2 py-0.5 uppercase tracking-wider text-[9px] font-sans font-semibold">Folio Discourse</span>
           <span>— {authorProfile.heroSubtitle}</span>
         </div>
       </header>
@@ -56,7 +56,7 @@ export function FolioTimeline({
             onClick={() => setSelectedTagFilter('All')}
             className={`px-3 py-1 transition-colors ${
               selectedTagFilter === 'All' 
-                ? 'text-[#802334] border-b border-[#802334]' 
+                ? 'text-adjung-maroon border-b border-adjung-maroon' 
                 : 'text-[#111111]/50 hover:text-[#111111]'
             }`}
           >
@@ -69,7 +69,7 @@ export function FolioTimeline({
               onClick={() => setSelectedTagFilter(tag)}
               className={`px-3 py-1 transition-colors ${
                 selectedTagFilter === tag 
-                  ? 'text-[#802334] border-b border-[#802334]' 
+                  ? 'text-adjung-maroon border-b border-adjung-maroon' 
                   : 'text-[#111111]/50 hover:text-[#111111]'
               }`}
             >
@@ -98,7 +98,7 @@ export function FolioTimeline({
               </div>
 
               <div className="md:hidden border-b border-[#111111]/10 pb-2 mb-4">
-                <span className="text-2xl font-bold text-[#802334] font-serif">{year}</span>
+                <span className="text-2xl font-bold text-adjung-maroon font-serif">{year}</span>
               </div>
 
               <div className="space-y-12 pl-0 md:pl-12 border-l-0 md:border-l border-[#111111]/5 md:ml-6">
@@ -119,13 +119,13 @@ export function FolioTimeline({
                         </div>
                         <div className="space-y-2 flex-grow">
                           <div className="flex items-center gap-2">
-                            <span className="bg-[#802334] text-white px-2 py-0.5 uppercase tracking-wider text-[8px] font-mono">
+                            <span className="bg-adjung-maroon text-white px-2 py-0.5 uppercase tracking-wider text-[8px] font-mono">
                               {item.contentType}
                             </span>
                           </div>
                           {item.contentType !== 'Note' && (
                             <h3 
-                              className={`text-xl md:text-2xl font-serif text-[#111111] group-hover:text-[#802334] transition-colors leading-snug tracking-tight font-medium text-left ${isAr ? 'font-arabic text-right' : ''}`}
+                              className={`text-xl md:text-2xl font-serif text-[#111111] group-hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium text-left ${isAr ? 'font-arabic text-right' : ''}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedEntry(item);

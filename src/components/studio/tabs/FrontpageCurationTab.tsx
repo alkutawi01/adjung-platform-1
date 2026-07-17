@@ -394,7 +394,7 @@ export function FrontpageCurationTab({
               <span>{publishedEntries.find(e => e.id === featuredEntryId)?.contentType || 'Essay'}</span>
               <span>•</span>
               <span>By {users.find(u => u.id === (publishedEntries.find(e => e.id === featuredEntryId)?.authorId || ''))?.penName || 'Scholar'}</span>
-              {enableArabicAccent && <span className="text-[#802334] font-semibold">AR-TAG</span>}
+              {enableArabicAccent && <span className="text-adjung-maroon font-semibold">AR-TAG</span>}
             </div>
           </div>
         </div>

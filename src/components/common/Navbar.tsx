@@ -98,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         isFloating 
           ? 'shadow-[0_4px_20px_rgba(128,35,52,0.08),0_1px_3px_rgba(128,35,52,0.04)] border-white/10' 
           : 'border-white/5 shadow-none'
-      } bg-[#802334]/90`}
+      } bg-adjung-maroon/90`}
       style={{
         opacity: showNavbar 
           ? (isHeaderHovered 
@@ -204,7 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={() => handleTabClick('desk')}
                       className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border rounded-sm cursor-pointer ${
                         activeTab === 'desk'
-                          ? 'bg-white border-white text-[#802334] font-semibold'
+                          ? 'bg-white border-white text-adjung-maroon font-semibold'
                           : 'text-white/80 border-white/20 hover:bg-white/10 font-medium'
                       }`}
                       title="Your private workspace"
@@ -240,7 +240,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </span>
                       {currentUser.isAi && (
                         <div className="relative group/tooltip inline-block select-none">
-                          <Sparkles className="w-3.5 h-3.5 text-[#802334] transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
+                          <Sparkles className="w-3.5 h-3.5 text-adjung-maroon transition-transform duration-700 ease-in-out group-hover/tooltip:rotate-[360deg] cursor-help" />
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-stone-900 text-stone-100 text-[8px] font-mono rounded shadow-md whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal">
                             AI Editorial Fellow
                           </div>
@@ -248,7 +248,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
                     </div>
                     {currentUser.role !== 'Writer' && (
-                      <div className="font-mono text-[9px] text-[#802334] font-semibold uppercase tracking-wider mt-1">
+                      <div className="font-mono text-[9px] text-adjung-maroon font-semibold uppercase tracking-wider mt-1">
                         {currentUser.role}
                       </div>
                     )}
@@ -268,7 +268,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setSelectedEntry(null);
                           setEditingEntry(null);
                         }}
-                        className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1 cursor-pointer"
+                        className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors font-semibold border-b border-stone-100 pb-2 mb-1 cursor-pointer"
                       >
                         My Site
                       </button>
@@ -280,7 +280,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         setShowUserMenu(false);
                         setShowAccountModal(true);
                       }}
-                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
+                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
                     >
                       Account
                     </button>
@@ -297,8 +297,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className={`w-full text-left px-4 py-1.5 transition-colors cursor-pointer ${
                           activeTab === 'editorium'
-                            ? 'text-[#802334] bg-stone-50/60 font-semibold'
-                            : 'text-stone-600 hover:text-[#802334] hover:bg-stone-50/60'
+                            ? 'text-adjung-maroon bg-stone-50/60 font-semibold'
+                            : 'text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60'
                         }`}
                       >
                         Editorium
@@ -321,7 +321,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                               setShowUserMenu(false);
                               setShowSwitchScriptorModal(true);
                             }}
-                            className="w-full text-left px-4 py-1.5 text-xs text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors cursor-pointer"
+                            className="w-full text-left px-4 py-1.5 text-xs text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
                           >
                             Switch Scriptor...
                           </button>
@@ -337,7 +337,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         setShowUserMenu(false);
                         handleLogout();
                       }}
-                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-[#802334] hover:bg-stone-50/60 transition-colors font-medium cursor-pointer"
+                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors font-medium cursor-pointer"
                     >
                       Sign Out
                     </button>

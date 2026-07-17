@@ -5,7 +5,7 @@ export const essaySpec: PresentationSpec = {
   typography: {
     bodyFont: 'font-serif text-[#111111] leading-relaxed text-justify text-xs font-light',
     signatureFont: 'font-signature text-5xl',
-    interlinearFont: 'font-signature text-[#802334]'
+    interlinearFont: 'font-signature text-adjung-maroon'
   },
   spacing: {
     canvasMaxWidth: 'max-w-3xl',

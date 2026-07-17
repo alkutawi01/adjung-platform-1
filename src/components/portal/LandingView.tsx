@@ -39,7 +39,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       const rest = htmlContent.substring(firstLetterPos + 1);
       return (
         <p key={idx} className="leading-relaxed">
-          <span className="float-left text-5xl md:text-6xl font-light text-[#802334] mr-2 mt-1 leading-none font-serif select-none">
+          <span className="float-left text-5xl md:text-6xl font-light text-adjung-maroon mr-2 mt-1 leading-none font-serif select-none">
             {firstLetter}
           </span>
           <span dangerouslySetInnerHTML={{ __html: wrapBadgesWithWords(rest, typography) }} />
@@ -63,13 +63,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
     <div className="w-full max-w-5xl mx-auto space-y-8 pt-24 pb-12 px-4 select-none animate-fade-in text-center">
       {/* Elegant Hero Introduction */}
       <div className="space-y-4 max-w-2xl mx-auto">
-        <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-[#802334] font-bold">
+        <span className="block font-mono text-[9px] uppercase tracking-[0.3em] text-adjung-maroon font-bold">
           A Better Place for Knowledge
         </span>
         <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-stone-900 leading-tight tracking-tight animate-fade-in">
           Libraries Ask for Silence for a Reason.
         </h2>
-        <div className="h-px w-16 bg-[#802334]/20 mx-auto my-4" />
+        <div className="h-px w-16 bg-adjung-maroon/20 mx-auto my-4" />
       </div>
 
       {/* Swapped CTA Buttons */}
@@ -80,7 +80,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             setActiveTab('frontpage');
             setSelectedEntry(null);
           }}
-          className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-[#802334] hover:bg-[#9c2c41] text-[#FDFDFD] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer shadow-md font-semibold text-center"
+          className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-adjung-maroon hover:bg-[#9c2c41] text-[#FDFDFD] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer shadow-md font-semibold text-center"
         >
           Enter Frontpage
         </button>
@@ -90,7 +90,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             setLoginError('');
             setShowLoginModal(true);
           }}
-          className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-white border border-stone-200 hover:border-[#802334] text-stone-700 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold text-center"
+          className="w-full sm:w-auto min-w-[180px] px-6 py-2.5 bg-white border border-stone-200 hover:border-adjung-maroon text-stone-700 hover:text-adjung-maroon font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold text-center"
         >
           Sign In
         </button>
@@ -119,12 +119,12 @@ export const LandingView: React.FC<LandingViewProps> = ({
         >
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="h-px w-12 bg-stone-200"></div>
-            <span className="font-mono text-[9px] uppercase tracking-widest text-[#802334] font-bold">
+            <span className="font-mono text-[9px] uppercase tracking-widest text-adjung-maroon font-bold">
               Featured Entry
             </span>
             <div className="h-px w-12 bg-stone-200"></div>
           </div>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-[#802334] transition-colors px-4">
+          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-adjung-maroon transition-colors px-4">
             {parseInlineFormatting(featuredEntry.title, undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </h2>
           <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
@@ -147,7 +147,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             {/* FASA 2: THE MANIFESTO */}
             <div className="space-y-6 font-serif">
               <div className="flex justify-between items-center select-none border-b border-stone-100 pb-2">
-                <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-[#802334] font-bold">
+                <span className="block font-mono text-[9px] uppercase tracking-[0.25em] text-adjung-maroon font-bold">
                   The Manifesto
                 </span>
               </div>
@@ -156,7 +156,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 {manifestoEntry.title}
               </h3>
 
-              <div className="h-px w-16 bg-[#802334]/20 my-4" />
+              <div className="h-px w-16 bg-adjung-maroon/20 my-4" />
 
               <div
                 className="space-y-4"
@@ -220,7 +220,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         className="group flex gap-3 hover:bg-stone-50/50 p-1.5 rounded transition scroll-mt-24 duration-700"
                       >
                         <span
-                          className="font-sans text-[10px] font-medium align-super text-[#802334] w-4 flex-shrink-0 select-none mr-1 cursor-pointer hover:underline hover:text-[#611522]"
+                          className="font-sans text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none mr-1 cursor-pointer hover:underline hover:text-[#611522]"
                           title="Go back to citation"
                           onClick={() => {
                             const refBadge = document.querySelector(
@@ -262,7 +262,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   setActiveTab('frontpage');
                   setSelectedEntry(null);
                 }}
-                className="px-6 py-2 border border-stone-200 hover:border-[#802334] text-stone-600 hover:text-[#802334] font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold"
+                className="px-6 py-2 border border-stone-200 hover:border-adjung-maroon text-stone-600 hover:text-adjung-maroon font-mono text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-semibold"
               >
                 Browse the Frontpage →
               </button>

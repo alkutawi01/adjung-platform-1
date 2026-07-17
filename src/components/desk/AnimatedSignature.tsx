@@ -11,7 +11,7 @@ export function AnimatedSignature() {
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-6xl md:text-7xl text-[#802334] h-14 flex items-center justify-center select-none font-normal"
+          className="text-6xl md:text-7xl text-adjung-maroon h-14 flex items-center justify-center select-none font-normal"
           style={{ fontFamily: '"Mrs Saint Delafield", "Birthstone", cursive' }}
         >
           Adjung

@@ -24,7 +24,7 @@ export function RolesPoliciesTab({
   if (!hasPermission('manageRbac')) {
     return (
       <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
-        <Lock className="w-12 h-12 text-[#802334] mx-auto mb-2 animate-pulse" />
+        <Lock className="w-12 h-12 text-adjung-maroon mx-auto mb-2 animate-pulse" />
         <span className="font-serif italic text-stone-500 block text-lg font-semibold">RBAC Management Locked</span>
         <p className="text-stone-500 text-xs font-sans leading-relaxed">
           Your administrative account (Role: <strong className="text-adjung-maroon">{currentUser.role}</strong>) does not have the necessary <strong>Manage RBAC</strong> privileges. Please contact the Chief Editor to adjust your role assignments.
@@ -39,7 +39,7 @@ export function RolesPoliciesTab({
         <div className="border-b border-stone-100 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-left space-y-1">
             <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
-              <Lock className="w-5 h-5 text-[#802334]" />
+              <Lock className="w-5 h-5 text-adjung-maroon" />
               Role-Based Access Control (RBAC) Matrix
             </h3>
             <p className="font-mono text-[10px] text-stone-400 uppercase tracking-wider">

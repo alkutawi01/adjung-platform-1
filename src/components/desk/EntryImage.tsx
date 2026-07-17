@@ -113,7 +113,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
         <form onSubmit={handleSaveEdit} className="space-y-4">
           <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 mb-2">
             <span className="font-mono text-[9px] uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5 text-Adjung-maroon" /> Edit Image Asset Properties
+              <ImageIcon className="w-3.5 h-3.5 text-adjung-maroon" /> Edit Image Asset Properties
             </span>
             <button
               type="button"
@@ -134,7 +134,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                   value={inputUrl}
                   onChange={(e) => setInputUrl(e.target.value)}
                   placeholder="https://example.com/image.jpg"
-                  className="w-full bg-white border border-stone-200 pl-8 pr-3 py-1.5 rounded text-xs font-mono focus:outline-none focus:border-Adjung-maroon text-stone-700"
+                  className="w-full bg-white border border-stone-200 pl-8 pr-3 py-1.5 rounded text-xs font-mono focus:outline-none focus:border-adjung-maroon text-stone-700"
                 />
               </div>
             </div>
@@ -166,7 +166,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                 value={inputAlt}
                 onChange={(e) => setInputAlt(e.target.value)}
                 placeholder="Figure caption or alt description..."
-                className="w-full bg-white border border-stone-200 px-3 py-1.5 rounded text-xs focus:outline-none focus:border-Adjung-maroon text-stone-700"
+                className="w-full bg-white border border-stone-200 px-3 py-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon text-stone-700"
               />
             </div>
           </div>
@@ -174,7 +174,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
           <div className="flex justify-end gap-2 pt-1.5">
             <button
               type="submit"
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-Adjung-maroon hover:opacity-90 text-[#FDFDFD] font-mono text-[10px] uppercase tracking-wider rounded transition cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-adjung-maroon hover:opacity-90 text-[#FDFDFD] font-mono text-[10px] uppercase tracking-wider rounded transition cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" /> Apply Changes
             </button>
@@ -201,7 +201,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="bg-white/95 hover:bg-white text-stone-700 p-1.5 rounded shadow-sm border border-stone-200/70 hover:text-Adjung-maroon transition cursor-pointer"
+                  className="bg-white/95 hover:bg-white text-stone-700 p-1.5 rounded shadow-sm border border-stone-200/70 hover:text-adjung-maroon transition cursor-pointer"
                   title="Edit properties"
                 >
                   <Edit className="w-3.5 h-3.5" />
@@ -282,7 +282,7 @@ export function EntryImageEditor({ url, alt, idx, onUpdate, onConvertToParagraph
           <button
             type="button"
             onClick={onConvertToParagraph}
-            className="text-[9.5px] font-mono uppercase text-stone-400 hover:text-Adjung-maroon transition underline cursor-pointer"
+            className="text-[9.5px] font-mono uppercase text-stone-400 hover:text-adjung-maroon transition underline cursor-pointer"
           >
             Edit as Raw Markdown
           </button>

@@ -97,7 +97,7 @@ export function FootnotesCitationsSection({
                  {occurrences.map(id => (
                    <div key={id} className="bg-white border border-stone-100 p-4 rounded-md shadow-sm relative text-left">
                      <div className="absolute top-4 left-4 select-none">
-                        <span className="font-sans text-[10px] font-medium align-super text-Adjung-maroon">
+                        <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon">
                           ({toRoman(mMap[id]).toLowerCase()})
                         </span>
                       </div>
@@ -114,7 +114,7 @@ export function FootnotesCitationsSection({
                              }}
                              placeholder="Add margin note here..."
                              rows={2}
-                             className="w-full bg-stone-50 border border-stone-200 focus:border-Adjung-maroon rounded p-2 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
+                             className="w-full bg-stone-50 border border-stone-200 focus:border-adjung-maroon rounded p-2 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
                            />
                            <div className="mt-2 text-right">
                              <button 
@@ -157,7 +157,7 @@ export function FootnotesCitationsSection({
               {orderedFootnotes.map((item) => {
                 return (
                   <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all text-left">
-                    <span className="font-mono text-xs text-Adjung-maroon font-semibold w-5 mt-1.5 select-none">
+                    <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
                       [{item.displayNum}]
                     </span>
                     <div className="flex-grow space-y-1">
@@ -173,7 +173,7 @@ export function FootnotesCitationsSection({
                           handleFootnoteChange(item.originalId, e.target.value);
                         }}
                         rows={2}
-                        className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-Adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
+                        className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
                         placeholder={`Enter footnote ${item.displayNum} text content...`}
                       />
                     </div>
@@ -201,7 +201,7 @@ export function FootnotesCitationsSection({
                     className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700"
                   >
                     <span 
-                      className="font-sans text-[10px] font-medium align-super text-Adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-Adjung-maroon/80 text-left"
+                      className="font-sans text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-adjung-maroon/80 text-left"
                       title="Go back to citation"
                       onClick={() => {
                         const refId = item.originalId.startsWith('fn-') ? `fnref-${item.originalId}` : `fnref-legacy-${item.originalId}`;
@@ -262,14 +262,14 @@ export function FootnotesCitationsSection({
                     id={`reference-${cit.id}`}
                     className="text-stone-700 text-left hover:bg-stone-50/50 p-1.5 rounded transition flex items-baseline gap-2"
                   >
-                    <span className="font-mono text-xs text-Adjung-maroon font-medium select-none">
+                    <span className="font-mono text-xs text-adjung-maroon font-medium select-none">
                       {referenceSortOrder === 'appearance' ? `[${displayIdx}]` : '•'}
                     </span>
                     <div className="flex-grow">
                       <strong className="font-sans font-semibold text-stone-900">{cit.author}</strong> ({cit.year}). 
                       <span> "{cit.title}."</span> <em>{cit.publisher}</em>.
                       {cit.url && (
-                        <a href={cit.url} target="_blank" rel="noopener noreferrer" className="text-Adjung-maroon hover:underline ml-1.5 font-mono text-[10px] break-all">
+                        <a href={cit.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline ml-1.5 font-mono text-[10px] break-all">
                           [Link]
                         </a>
                       )}
