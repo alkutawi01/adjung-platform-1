@@ -53,6 +53,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={applyBold}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-bold transition cursor-pointer font-sans"
             title="Bold"
+            aria-label="Bold"
           >
             B
           </button>
@@ -61,6 +62,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={applyItalic}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 italic transition cursor-pointer font-sans"
             title="Italic"
+            aria-label="Italic"
           >
             I
           </button>
@@ -69,6 +71,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={applyUnderline}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 underline transition cursor-pointer font-sans"
             title="Underline"
+            aria-label="Underline"
           >
             U
           </button>
@@ -78,6 +81,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={() => setShowLinkInput(true)}
             className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
             title="Insert Link"
+            aria-label="Insert link"
           >
             Link
           </button>
@@ -86,6 +90,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={() => setShowGlossInput(true)}
             className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
             title="Insert Interlinear Note (Gloss)"
+            aria-label="Insert interlinear note"
           >
             Gloss
           </button>
@@ -94,6 +99,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             onClick={applyFootnote}
             className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
             title="Insert Footnote (Auto Number)"
+            aria-label="Insert footnote"
           >
             FN
           </button>
@@ -126,6 +132,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
               setShowLinkInput(false);
               setLinkUrl('');
             }}
+            aria-label="Cancel"
             className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
           >
             ×
@@ -159,6 +166,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
               setShowGlossInput(false);
               setGlossText('');
             }}
+            aria-label="Cancel"
             className="text-stone-400 hover:text-stone-200 text-xs px-1 font-sans"
           >
             ×

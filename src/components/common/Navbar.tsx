@@ -128,10 +128,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setShowMobileMenu(prev => !prev)}
-              className="md:hidden flex items-center justify-center w-8 h-8 text-white/80 hover:text-white transition cursor-pointer"
+              className="md:hidden flex items-center justify-center w-10 h-10 text-white/80 hover:text-white transition cursor-pointer"
               aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
             >
-              {showMobileMenu ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
+              {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           )}
 

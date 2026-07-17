@@ -36,8 +36,11 @@ export function EntryActionsMenu({
       <button
         type="button"
         onClick={() => setShowActionsMenu(!showActionsMenu)}
-        className="text-stone-500 hover:text-adjung-maroon font-bold text-sm tracking-normal px-2 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans"
+        className="text-stone-500 hover:text-adjung-maroon font-bold text-sm tracking-normal px-2.5 py-2 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans"
         title="Actions Menu"
+        aria-label="Entry actions menu"
+        aria-haspopup="true"
+        aria-expanded={showActionsMenu}
       >
         ⋯
       </button>
