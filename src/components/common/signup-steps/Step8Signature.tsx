@@ -124,7 +124,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
             <Loader2 className="w-8 h-8 text-adjung-maroon animate-spin" />
             <div className="space-y-1">
               <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400 font-bold">SIGNATURE SYNCHRONIZATION</p>
-              <p className="font-serif italic text-sm text-stone-600 font-normal">Copying signature data from mobile device...</p>
+              <p className="font-serif text-sm text-stone-600 font-normal">Copying signature data from mobile device...</p>
             </div>
             <div className="w-48 bg-stone-100 h-1 rounded-full overflow-hidden relative">
               <div className="bg-adjung-maroon h-full transition-all duration-300" style={{ width: `${syncProgress}%` }} />
@@ -171,7 +171,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                       setFormData({ ...formData, signatureType: 'draw', signatureData: '' });
                       setMode('choose');
                     }}
-                    className="text-[10px] font-mono uppercase text-adjung-maroon hover:underline font-bold text-adjung-maroon/90 font-normal"
+                    className="text-[10px] font-mono uppercase text-adjung-maroon hover:underline font-bold"
                   >
                     Reset
                   </button>

@@ -91,7 +91,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
       </div>
 
       <div className="space-y-1">
-        <p className="text-[11px] text-stone-300 font-serif italic text-center font-normal">Please sign inside the following box:</p>
+        <p className="text-[11px] text-stone-300 font-serif text-center font-normal">Please sign inside the following box:</p>
       </div>
 
       <div className="bg-stone-950 border border-stone-800 rounded-lg h-44 relative overflow-hidden">
@@ -111,7 +111,7 @@ export default function SimulatedMobileCanvas({ onSave, onCancel }: SimulatedMob
         />
         {strokes.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-20 text-center px-4">
-            <span className="font-serif italic text-[12px] text-stone-300 font-normal">Use your finger or stylus</span>
+            <span className="font-serif text-[12px] text-stone-300 font-normal">Use your finger or stylus</span>
             <span className="text-[8px] font-mono uppercase tracking-widest text-stone-500 mt-1">Touch Screen Canvas</span>
           </div>
         )}

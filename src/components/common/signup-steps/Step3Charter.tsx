@@ -46,7 +46,7 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
     >
       <div className="text-center w-full">
         {entryMode === 'oauth-completion' && (
-          <p className="font-serif italic text-stone-500 text-sm mb-2">Welcome back — one quick step before we set up your account.</p>
+          <p className="font-serif text-stone-500 text-sm mb-2">Welcome back — one quick step before we set up your account.</p>
         )}
         <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Terms of Use</h2>
         <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-4 select-none">≈ 5 minutes</p>

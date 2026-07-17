@@ -139,7 +139,7 @@ export default function Step7Interests({ formData, setFormData, onNext }: Step7I
       </div>
 
       <div className="w-full border-t border-stone-200 pt-4 mt-4 flex justify-between items-center bg-[#FFFFFF] select-none">
-        <span className="text-[11px] text-stone-400 font-serif italic font-normal">
+        <span className="text-[11px] text-stone-400 font-serif font-normal">
           {canContinue ? '' : 'Choose at least one language to continue'}
         </span>
         <button
