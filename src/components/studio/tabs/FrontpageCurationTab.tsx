@@ -358,7 +358,7 @@ export function FrontpageCurationTab({
           <button
             type="button"
             onClick={handleSaveCuration}
-            className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm mt-4 cursor-pointer"
+            className="w-full bg-adjung-maroon text-white py-2.5 rounded text-xs font-mono uppercase tracking-wider hover:opacity-95 transition shadow-sm mt-4 cursor-pointer"
           >
             Apply Curation Settings
           </button>
@@ -383,7 +383,7 @@ export function FrontpageCurationTab({
           {/* Article Preview */}
           <div className="border-t pt-3 space-y-1">
             <span className="font-mono text-[7px] uppercase tracking-wider text-stone-400 font-semibold block">Featured Entry</span>
-            <h5 className="font-serif font-bold text-stone-800 text-xs line-clamp-1">
+            <h5 className="font-sans font-bold text-stone-800 text-xs line-clamp-1">
               {(() => {
                 const ent = publishedEntries.find(e => e.id === featuredEntryId);
                 if (!ent) return 'None Selected';
@@ -476,10 +476,10 @@ export function FrontpageCurationTab({
                 </div>
                 
                 <div className="lg:col-span-5 space-y-4">
-                  <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
+                  <div className="border border-stone-200 rounded p-4 bg-stone-50/60 space-y-3 max-h-[300px] overflow-y-auto text-left">
                     <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Parsed Items ({newsParsedItems.length})</span>
                     {newsParsedItems.length === 0 ? (
-                      <p className="font-serif italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                      <p className="font-sans italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
                     ) : (
                       <div className="space-y-3">
                         {newsParsedItems.map((item, i) => (
@@ -490,7 +490,7 @@ export function FrontpageCurationTab({
                                 {item.desk}
                               </span>
                             </div>
-                            <p className="text-stone-600 line-clamp-2 leading-relaxed font-serif text-[11px]">{item.brief}</p>
+                            <p className="text-stone-600 line-clamp-2 leading-relaxed font-sans text-[11px]">{item.brief}</p>
                             <div className="flex justify-between text-stone-400 font-mono text-[8.5px]">
                               <span>Source: {item.source}</span>
                               {item.url && <span className="underline truncate max-w-[150px]">Link: {item.url}</span>}
@@ -585,10 +585,10 @@ export function FrontpageCurationTab({
                 </div>
                 
                 <div className="lg:col-span-5 space-y-4">
-                  <div className="border border-stone-200 rounded p-4 bg-stone-50/50 space-y-3 max-h-[300px] overflow-y-auto text-left">
+                  <div className="border border-stone-200 rounded p-4 bg-stone-50/60 space-y-3 max-h-[300px] overflow-y-auto text-left">
                     <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({holidayParsedItems.length})</span>
                     {holidayParsedItems.length === 0 ? (
-                      <p className="font-serif italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                      <p className="font-sans italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
                     ) : (
                       <div className="space-y-3">
                         {holidayParsedItems.map((item, i) => (

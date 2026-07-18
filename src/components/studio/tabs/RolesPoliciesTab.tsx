@@ -38,7 +38,7 @@ export function RolesPoliciesTab({
       <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
         <div className="border-b border-stone-100 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-left space-y-1">
-            <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+            <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-2 select-none">
               <Lock className="w-5 h-5 text-adjung-maroon" />
               Role-Based Access Control (RBAC) Matrix
             </h3>

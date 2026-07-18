@@ -14,7 +14,7 @@ import {
   BackgroundVariant
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { AlertTriangle, BookOpen, FileCode, Link, Info, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, BookOpen, FileCode, Link, FileText, ShieldAlert } from 'lucide-react';
 
 // --- CUSTOM NODE COMPONENTS ---
 
@@ -30,7 +30,7 @@ const ConceptNode = ({ data, selected }: any) => {
       <div className="font-mono text-[8px] uppercase tracking-wider text-stone-400 mb-1 font-semibold">
         Platform Concept
       </div>
-      <div className="font-serif text-base font-semibold text-stone-900 leading-tight">
+      <div className="font-sans text-base font-semibold text-stone-900 leading-tight">
         {data.label}
       </div>
       <div className="font-mono text-[8px] text-stone-400 mt-1.5 italic select-all">{data.spec}</div>
@@ -286,7 +286,7 @@ export const ArchitectureStudio: React.FC = () => {
       <div className="flex-1 h-[70vh] relative min-w-0">
         <div className="absolute top-4 left-4 z-10 p-4 bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm rounded max-w-xs font-sans text-xs text-stone-600 space-y-1 select-none pointer-events-none">
           <h2 className="font-serif text-sm font-semibold text-stone-900 uppercase tracking-wide">Adjung Digital Twin</h2>
-          <p className="font-serif text-stone-500 italic">Conceptual Knowledge Graph</p>
+          <p className="font-sans text-stone-500 italic">Conceptual Knowledge Graph</p>
           <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">
             Click on any platform concept node to run an interactive **Impact Analysis** and view active development routes.
           </p>
@@ -324,7 +324,7 @@ export const ArchitectureStudio: React.FC = () => {
             {/* Purpose */}
             <div>
               <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1">Concept Purpose</span>
-              <p className="text-stone-700 leading-relaxed font-serif text-[13px] bg-stone-50 p-2.5 rounded border border-stone-200/40">
+              <p className="text-stone-700 leading-relaxed font-sans text-[13px] bg-stone-50 p-2.5 rounded border border-stone-200/40">
                 {selectedNode.data.purpose}
               </p>
             </div>
@@ -351,7 +351,7 @@ export const ArchitectureStudio: React.FC = () => {
               <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1">Implementation Artifacts</span>
               <div className="flex flex-col gap-1 mt-1.5">
                 {(selectedNode.data.files as string[]).map((f) => (
-                  <span key={f} className="flex items-center gap-1.5 font-mono text-[9px] text-stone-500 bg-stone-50 p-1.5 rounded border border-stone-200/50">
+                  <span key={f} className="flex items-center gap-1.5 font-mono text-[9px] text-stone-500 bg-stone-50 p-1.5 rounded border border-stone-200/60">
                     <FileCode className="w-3.5 h-3.5 text-stone-400" />
                     {f.split('/').pop()}
                   </span>
@@ -384,7 +384,7 @@ export const ArchitectureStudio: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 p-3 rounded bg-red-50/30 border border-red-100 font-serif text-[11px] text-red-900 leading-normal">
+                <div className="flex gap-2 p-3 rounded bg-red-50/30 border border-red-100 font-sans text-[11px] text-red-900 leading-normal">
                   <AlertTriangle className="w-4 h-4 text-red-700 flex-shrink-0 mt-0.5" />
                   <div>
                     {impactData.warning}
@@ -395,8 +395,8 @@ export const ArchitectureStudio: React.FC = () => {
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-stone-400 space-y-3">
-            <Info className="w-8 h-8 text-stone-300 font-light" />
-            <div className="font-serif italic text-sm">
+            <FileText className="w-8 h-8 text-stone-300 font-light" />
+            <div className="font-sans italic text-sm">
               No platform concept selected.
             </div>
             <p className="text-[10px] leading-relaxed max-w-[220px]">

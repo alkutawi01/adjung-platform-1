@@ -124,7 +124,7 @@ export function PlatformIdentityTab({
         </div>
 
         {/* Quick Summary Block */}
-        <div className="w-full bg-stone-50 border border-stone-200 p-4 rounded text-xs text-stone-600 leading-normal font-serif flex items-start gap-2.5 text-left select-none">
+        <div className="w-full bg-stone-50 border border-stone-200 p-4 rounded text-xs text-stone-600 leading-normal font-sans flex items-start gap-2.5 text-left select-none">
           <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
           <div>
             <strong>Brand Status: Active & Operational.</strong> Changes to the academic affiliation or tag seals are written directly to the platform database and synchronized across all open browser context views.

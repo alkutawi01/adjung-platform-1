@@ -8,7 +8,7 @@ import { isArabicText, parseInlineFormatting } from '../../utils';
 import { 
   BookOpen, FileText, Layers, CheckCircle, Monitor, Layout, 
   Calendar, Search, RefreshCw, Copy, ShieldAlert, Award, FileCode,
-  Undo2, UserCheck, AlertCircle, Sparkles, Check, ChevronDown, ChevronUp
+  Undo2, UserCheck, AlertCircle, FlaskConical, Check, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 interface ReferenceLibraryProps {
@@ -271,14 +271,14 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   {tempEntry.contentType}
                 </span>
                 {showHeroTitle && (
-                  <h2 className="text-3xl md:text-4xl font-serif font-light text-stone-900 leading-tight">
+                  <h2 className="text-3xl md:text-4xl font-sans font-light text-stone-900 leading-tight">
                     {tempEntry.title || 'Untitled Sandbox Entry'}
                   </h2>
                 )}
                 {showHeroTitle && tempEntry.subtitle && (
-                  <p className="text-stone-400 text-sm font-serif italic">{tempEntry.subtitle}</p>
+                  <p className="text-stone-400 text-sm font-sans italic">{tempEntry.subtitle}</p>
                 )}
-                <div className={`text-stone-700 leading-relaxed font-serif ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
+                <div className={`text-stone-700 leading-relaxed font-sans ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
                   {parseInlineFormatting(tempEntry.excerpt || tempEntry.content)}
                 </div>
               </div>
@@ -296,17 +296,17 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
             <div className="bg-[#FAF8F5] border-y-2 border-adjung-maroon p-8 rounded-sm max-w-3xl mx-auto shadow-md text-left flex flex-col md:flex-row gap-6 items-start">
               {tempEntry.featuredImage && (
                 <div className="w-full md:w-1/3 flex-shrink-0">
-                  <img src={tempEntry.featuredImage} className="w-full h-32 object-cover rounded-sm border border-stone-200/80" alt="" />
+                  <img src={tempEntry.featuredImage} className="w-full h-32 object-cover rounded-sm border border-stone-200/90" alt="" />
                 </div>
               )}
               <div className="flex-1 space-y-3">
                 <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-bold">Featured {tempEntry.contentType}</span>
                 {tempEntry.contentType !== 'Note' && (
-                  <h3 className="font-serif text-xl font-bold text-stone-900 leading-tight">
+                  <h3 className="font-sans text-xl font-bold text-stone-900 leading-tight">
                     {tempEntry.title || 'Untitled Featured Archetype'}
                   </h3>
                 )}
-                <div className="font-serif text-stone-700 text-xs leading-relaxed line-clamp-3">
+                <div className="font-sans text-stone-700 text-xs leading-relaxed line-clamp-3">
                   {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...')}
                 </div>
                 <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-200/20">
@@ -319,12 +319,12 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
         // Default: Standard card representation
         return (
-          <div className="max-w-md mx-auto p-5 rounded border bg-white border-stone-200/70 shadow-sm text-left">
+          <div className="max-w-md mx-auto p-5 rounded border bg-white border-stone-200/60 shadow-sm text-left">
             <span className="block font-mono text-[9px] uppercase tracking-wider text-adjung-maroon mb-2">{tempEntry.contentType}</span>
             {activeSpec.visibility.showTitle && tempEntry.title && (
               <h4 
                 dir={isAr ? 'rtl' : 'ltr'}
-                className="text-stone-900 leading-tight mb-2 font-serif text-base font-bold"
+                className="text-stone-900 leading-tight mb-2 font-sans text-base font-bold"
               >
                 {tempEntry.title}
               </h4>
@@ -333,8 +333,8 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               dir={isAr ? 'rtl' : 'ltr'}
               className={`text-stone-700 leading-relaxed mb-4 line-clamp-3 ${
                 tempEntry.contentType === 'Note'
-                  ? (isAr ? 'font-arabic text-base md:text-lg leading-loose text-right' : 'font-serif text-sm md:text-base')
-                  : (isAr ? 'font-arabic text-xs leading-loose' : 'font-serif text-xs')
+                  ? (isAr ? 'font-arabic text-base md:text-lg leading-loose text-right' : 'font-sans text-sm md:text-base')
+                  : (isAr ? 'font-arabic text-xs leading-loose' : 'font-sans text-xs')
               }`}
             >
               {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 150) + '...')}
@@ -371,13 +371,13 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               <span>Match Score: 98%</span>
               <span>INDEXED</span>
             </div>
-            <h4 className="font-serif text-base font-semibold text-adjung-maroon hover:underline cursor-pointer">
+            <h4 className="font-sans text-base font-semibold text-adjung-maroon hover:underline cursor-pointer">
               {tempEntry.title || 'Untitled Sandbox Entry'}
             </h4>
             <p className="font-sans text-stone-600 text-xs line-clamp-2 leading-relaxed">
               ... {tempEntry.content.substring(0, 150)} ...
             </p>
-            <div className="flex items-center justify-between text-[10px] text-stone-500 pt-2 border-t border-stone-100/50">
+            <div className="flex items-center justify-between text-[10px] text-stone-500 pt-2 border-t border-stone-100/60">
               <span>By {authorName}</span>
               <div className="flex gap-1.5">
                 {tempEntry.tags.map(t => (
@@ -399,14 +399,14 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         return (
           <div className="max-w-4xl mx-auto p-4 bg-white border border-stone-200/60 rounded font-sans text-xs flex items-center justify-between gap-4 shadow-sm animate-fade-in">
             <div className="flex items-center gap-3">
-              <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[9px] font-bold px-2 py-0.5 border border-adjung-maroon/15 rounded uppercase">
+              <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[9px] font-bold px-2 py-0.5 border border-adjung-maroon/20 rounded uppercase">
                 {tempEntry.contentType}
               </span>
               <div 
                 dir={isArabicText(archiveRowText) ? 'rtl' : 'ltr'}
                 className={`text-left ${isArabicText(archiveRowText) ? 'text-right' : ''}`}
               >
-                <div className="font-serif font-bold text-stone-900 text-sm">
+                <div className="font-sans font-bold text-stone-900 text-sm">
                   {archiveRowText || '(Untitled Note)'}
                 </div>
                 {tempEntry.contentType !== 'Note' && (
@@ -425,10 +425,10 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
   return (
     <div className="space-y-8 animate-fade-in text-left">
       {/* Universal Laboratory Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/90 pb-5">
         <div className="space-y-1">
           <h2 className="font-serif text-2xl font-light text-stone-950 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-adjung-maroon" />
+            <FlaskConical className="w-6 h-6 text-adjung-maroon" />
             Universal Rendering Laboratory
           </h2>
           <p className="font-sans text-[10px] uppercase tracking-widest text-stone-400">
@@ -440,7 +440,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
           <button
             type="button"
             onClick={handleReset}
-            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200/80 border border-stone-200/70 text-stone-700 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
+            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200/90 border border-stone-200/60 text-stone-700 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 transition rounded cursor-pointer font-semibold shadow-sm"
           >
             <Undo2 className="w-3.5 h-3.5" /> Reset Template
           </button>
@@ -469,7 +469,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   key={t.id}
                   type="button"
                   onClick={() => setSelectedTemplateId(t.id)}
-                  className={`w-full text-left px-3 py-2 rounded font-serif text-sm transition flex items-center gap-2 select-none cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 rounded font-sans text-sm transition flex items-center gap-2 select-none cursor-pointer ${
                     selectedTemplateId === t.id
                       ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border-l-2 border-adjung-maroon'
                       : 'text-stone-700 hover:bg-stone-50 border-l-2 border-transparent'
@@ -482,7 +482,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               ))}
             </div>
 
-            <div className="flex border border-stone-200/80 rounded bg-stone-50/50 p-0.5 font-mono text-[8px] uppercase tracking-wider select-none mt-2">
+            <div className="flex border border-stone-200/90 rounded bg-stone-50/60 p-0.5 font-mono text-[8px] uppercase tracking-wider select-none mt-2">
               <button
                 type="button"
                 onClick={() => setLanguage('LTR')}
@@ -635,7 +635,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.title}
                         onChange={(e) => updateTempEntry({ title: e.target.value })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-serif"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-sans"
                       />
                     </div>
                     <div>
@@ -644,7 +644,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                         type="text"
                         value={tempEntry.subtitle || ''}
                         onChange={(e) => updateTempEntry({ subtitle: e.target.value })}
-                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-serif"
+                        className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon font-sans"
                       />
                     </div>
                   </div>
@@ -721,7 +721,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
             <h4 className="font-serif text-lg font-semibold text-stone-900">Authoring Workspace</h4>
             <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Instantiating production WritingDesk in sandbox isolation</p>
           </div>
-          <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-adjung-maroon/25 rounded select-none font-bold">
+          <span className="bg-adjung-maroon/5 text-adjung-maroon font-mono text-[8px] uppercase tracking-widest px-2.5 py-1 border border-adjung-maroon/30 rounded select-none font-bold">
             Interactive Editor
           </span>
         </div>
@@ -756,7 +756,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                 className={`px-3 py-1.5 rounded uppercase tracking-wider font-semibold border transition cursor-pointer ${
                   selectedContextId === ctx.id
                     ? 'bg-adjung-maroon text-white border-adjung-maroon shadow-sm'
-                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:text-adjung-maroon hover:bg-stone-100/50'
+                    : 'bg-stone-50 text-stone-600 border-stone-200 hover:text-adjung-maroon hover:bg-stone-100/60'
                 }`}
               >
                 {ctx.name}
@@ -780,7 +780,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                     className={`px-2.5 py-1 rounded text-xs transition cursor-pointer ${
                       selectedVariantId === v.id
                         ? 'bg-stone-700 text-white font-semibold'
-                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                     }`}
                   >
                     {v.name}
@@ -799,7 +799,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       </div>
 
       {/* ================= SECTION 4: RENDERING DIAGNOSTICS ================= */}
-      <div className="bg-[#FAF8F5] border border-stone-200/75 rounded-lg p-5 shadow-sm text-left">
+      <div className="bg-[#FAF8F5] border border-stone-200/90 rounded-lg p-5 shadow-sm text-left">
         <h5 className="font-mono text-[10px] uppercase tracking-wider text-adjung-maroon font-bold border-b border-stone-200 pb-1.5 mb-3 flex items-center gap-1 select-none">
           <ShieldAlert className="w-3.5 h-3.5" /> Rendering Diagnostics
         </h5>
@@ -814,7 +814,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               <div>
                 <div className="font-semibold text-stone-800 flex items-center gap-1.5 select-none">
                   {d.type.toUpperCase()}
-                  <span className="text-[9px] font-mono text-stone-400 bg-stone-100 border border-stone-200/50 px-1 rounded">
+                  <span className="text-[9px] font-mono text-stone-400 bg-stone-100 border border-stone-200/60 px-1 rounded">
                     {d.spec}
                   </span>
                 </div>

@@ -36,7 +36,7 @@ export function SystemLogsTab({
       <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
         <div className="border-b border-stone-100 pb-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-left space-y-1">
-            <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
+            <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-2 select-none">
               <FileText className="w-5 h-5 text-adjung-maroon" />
               System Audit Logs
             </h3>
@@ -101,20 +101,20 @@ export function SystemLogsTab({
                         log.role === 'Chief Editor'
                           ? 'bg-adjung-maroon text-[#FDFDFD] font-semibold'
                           : log.role === 'Editor'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-200/50'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-200/60'
                           : 'bg-stone-100 text-stone-600'
                       }`}>
                         {log.role}
                       </span>
                     </td>
-                    <td className="p-3.5 font-serif text-sm text-stone-800 text-left">
+                    <td className="p-3.5 font-sans text-sm text-stone-800 text-left">
                       {log.action}
                     </td>
                   </tr>
                 ))}
               {logs.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center italic text-stone-400 font-serif">
+                  <td colSpan={4} className="p-8 text-center italic text-stone-400 font-sans">
                     No system audit records found.
                   </td>
                 </tr>

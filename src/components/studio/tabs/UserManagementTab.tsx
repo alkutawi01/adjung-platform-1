@@ -111,7 +111,7 @@ export function UserManagementTab({
             <div className="p-4 border border-stone-200 rounded bg-[#FDFDFD] space-y-3">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <span className="font-serif font-bold text-[#111111] text-sm block">{foundSuspendUser.penName}</span>
+                  <span className="font-sans font-bold text-[#111111] text-sm block">{foundSuspendUser.penName}</span>
                   <span className="font-mono text-[9px] text-stone-400 block">@{foundSuspendUser.username} • {foundSuspendUser.email || 'No email'}</span>
                   <span className={`inline-block text-[8px] font-mono uppercase px-1 rounded ${
                     foundSuspendUser.role === 'Chief Editor' 
@@ -169,7 +169,7 @@ export function UserManagementTab({
               users.filter(u => u.suspended).map(u => (
                 <div key={u.id} className="p-3 border border-red-100 bg-red-50/20 rounded flex items-center justify-between gap-4 text-xs">
                   <div>
-                    <span className="font-serif font-bold text-stone-800 block">{u.penName}</span>
+                    <span className="font-sans font-bold text-stone-800 block">{u.penName}</span>
                     <span className="font-mono text-[9px] text-stone-400">@{u.username} • {u.role}</span>
                   </div>
                   <button
@@ -189,7 +189,7 @@ export function UserManagementTab({
                 </div>
               ))
             ) : (
-              <p className="italic text-stone-400 py-6 text-center font-serif">No scholars are currently suspended.</p>
+              <p className="italic text-stone-400 py-6 text-center font-sans">No scholars are currently suspended.</p>
             )}
           </div>
         </div>
@@ -250,7 +250,7 @@ export function UserManagementTab({
 
             <button
               type="submit"
-              className="w-full bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition shadow-sm mt-2 cursor-pointer flex items-center justify-center gap-1.5 font-semibold"
+              className="w-full bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-95 transition shadow-sm mt-2 cursor-pointer flex items-center justify-center gap-1.5 font-semibold"
             >
               <Send className="w-3.5 h-3.5" /> Generate Invitation
             </button>
