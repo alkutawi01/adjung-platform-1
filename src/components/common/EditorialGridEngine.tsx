@@ -38,8 +38,8 @@ export function EditorialGridEngine({
             {layer.divider && layer.divider !== 'none' && (
               <div className={`w-full ${
                 layer.divider === 'horizontal-rule' 
-                  ? 'border-b border-stone-200/80' 
-                  : 'border-b border-dashed border-stone-200/80'
+                  ? 'border-b border-stone-200/90' 
+                  : 'border-b border-dashed border-stone-200/90'
               } mt-4`} />
             )}
           </div>

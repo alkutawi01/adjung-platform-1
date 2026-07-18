@@ -27,7 +27,7 @@
 html, body {
   background-color: #FDFDFD;
   color: #111111;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -170,7 +170,7 @@ blockquote {
   color: #1c1917;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
-  font-family: var(--font-serif);
+  font-family: inherit;
 }
 
 #editorial-canvas-editor h2 {
@@ -179,7 +179,7 @@ blockquote {
   color: #292524;
   margin-top: 1.25rem;
   margin-bottom: 0.6rem;
-  font-family: var(--font-serif);
+  font-family: inherit;
 }
 
 /* Landing page manifesto custom styling for margin note badges */

@@ -69,6 +69,8 @@ export function FootnotesCitationsSection({
   featuredImage,
   revisions
 }: FootnotesCitationsSectionProps) {
+  const isVoiceEntry = contentType === 'Note' || contentType === 'Essay';
+  const proseFont = isVoiceEntry ? 'font-serif' : 'font-sans';
 
   return (
     <>
@@ -87,7 +89,7 @@ export function FootnotesCitationsSection({
              const fMap = footnotesReadingOrder.map;
              if (occurrences.length === 0) {
                return (
-                 <div className="text-stone-400 font-serif italic text-sm py-4 text-left">
+                 <div className="text-stone-400 font-sans italic text-sm py-4 text-left">
                    No margin notes registered yet. Right-click inside text editor to insert margin notes.
                  </div>
                );
@@ -114,7 +116,7 @@ export function FootnotesCitationsSection({
                              }}
                              placeholder="Add margin note here..."
                              rows={2}
-                             className="w-full bg-stone-50 border border-stone-200 focus:border-adjung-maroon rounded p-2 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed"
+                             className={`w-full bg-stone-50 border border-stone-200 focus:border-adjung-maroon rounded p-2 focus:outline-none text-xs ${proseFont} text-stone-700 leading-relaxed`}
                            />
                            <div className="mt-2 text-right">
                              <button 
@@ -127,7 +129,7 @@ export function FootnotesCitationsSection({
                            </div>
                          </div>
                        ) : (
-                         <div className="font-serif text-sm leading-relaxed text-stone-600">
+                         <div className={`${proseFont} text-sm leading-relaxed text-stone-600`}>
                            {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mMap)}
                          </div>
                        )}
@@ -156,7 +158,7 @@ export function FootnotesCitationsSection({
             <div className="space-y-4">
               {orderedFootnotes.map((item) => {
                 return (
-                  <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all text-left">
+                  <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/60 p-3 border border-stone-200/60 rounded-md hover:bg-white transition-all text-left">
                     <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
                       [{item.displayNum}]
                     </span>
@@ -173,7 +175,7 @@ export function FootnotesCitationsSection({
                           handleFootnoteChange(item.originalId, e.target.value);
                         }}
                         rows={2}
-                        className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
+                        className={`w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y ${proseFont} text-stone-700 leading-relaxed`}
                         placeholder={`Enter footnote ${item.displayNum} text content...`}
                       />
                     </div>
@@ -190,7 +192,7 @@ export function FootnotesCitationsSection({
               })}
             </div>
           ) : (
-            <ol className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0 text-left">
+            <ol className={`space-y-3 ${proseFont} text-[12.5px] leading-relaxed list-none pl-0 text-left`}>
               {orderedFootnotes.map((item, idx) => {
                 const fMap = footnotesReadingOrder.map;
                 const citeMap = citationsMap;
@@ -201,7 +203,7 @@ export function FootnotesCitationsSection({
                     className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700"
                   >
                     <span 
-                      className="font-sans text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-adjung-maroon/80 text-left"
+                      className="font-mono text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-adjung-maroon/90 text-left"
                       title="Go back to citation"
                       onClick={() => {
                         const refId = item.originalId.startsWith('fn-') ? `fnref-${item.originalId}` : `fnref-legacy-${item.originalId}`;
@@ -241,7 +243,7 @@ export function FootnotesCitationsSection({
             </span>
           </div>
 
-          <ul className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0 text-left">
+          <ul className={`space-y-3 ${proseFont} text-[12.5px] leading-relaxed list-none pl-0 text-left`}>
             {(() => {
               const citeMap = citationsMap;
               const sorted = [...citations].sort((a, b) => {
@@ -260,7 +262,7 @@ export function FootnotesCitationsSection({
                   <li 
                     key={cit.id} 
                     id={`reference-${cit.id}`}
-                    className="text-stone-700 text-left hover:bg-stone-50/50 p-1.5 rounded transition flex items-baseline gap-2"
+                    className="text-stone-700 text-left hover:bg-stone-50/60 p-1.5 rounded transition flex items-baseline gap-2"
                   >
                     <span className="font-mono text-xs text-adjung-maroon font-medium select-none">
                       {referenceSortOrder === 'appearance' ? `[${displayIdx}]` : '•'}

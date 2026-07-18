@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke, Footnote, DigitalSignature } from '../../types';
+import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke, Footnote, DigitalSignature, LayoutSettings } from '../../types';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID } from '../../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -15,6 +15,29 @@ import { FloatingFormatToolbar } from './FloatingFormatToolbar';
 import { TableOfContents } from './TableOfContents';
 import { FootnotesCitationsSection } from './FootnotesCitationsSection';
 import { EntryActionsMenu } from './EntryActionsMenu';
+import { LayoutInspector } from './LayoutInspector';
+
+// Module-level constant, not an inline object literal in JSX — a fresh object
+// literal there would get a new reference every EntryRenderer render (this
+// component re-renders often), and LayoutInspector's sync-on-prop-change
+// useEffect would then reset any in-progress edit right after it was made.
+const DEFAULT_ESSAY_LAYOUT_SETTINGS: LayoutSettings = {
+  contentType: 'Essay',
+  alignment: 'justify',
+  columnWidth: 519,
+  marginNoteWidth: 260,
+  padding: 32,
+  spacingBefore: 12,
+  spacingAfter: 12,
+  lineHeight: 1.65,
+};
+
+// Module-scope cache of the last-fetched layout_settings row per content
+// type, so a fresh EntryRenderer mount (e.g. navigating into an entry from
+// a Folio card) can render with the correct saved layout on its very first
+// paint instead of flashing the unstyled essaySpec fallback while the DB
+// fetch is in flight. Cleared only on a full page reload.
+const layoutSettingsCache: Partial<Record<EntryType, LayoutSettings | null>> = {};
 
 interface EntryRendererProps {
   entry: Entry;
@@ -45,9 +68,11 @@ export function EntryRenderer({
   preventScrollToTop,
   presentationSpec
 }: EntryRendererProps) {
-  const { currentUser, users, entries, identities, refreshDbState, setActiveTab, setSelectedEntry, setEditingEntry, requestConfirm } = useAppContext();
+  const { currentUser, originalUser, users, entries, identities, refreshDbState, setActiveTab, setSelectedEntry, setEditingEntry, requestConfirm } = useAppContext();
   const [title, setTitle] = useState(entry.title || '');
   const [contentType, setContentType] = useState<EntryType>(entry.contentType);
+  const isVoiceEntry = contentType === 'Note' || contentType === 'Essay';
+  const proseFont = isVoiceEntry ? 'font-serif' : 'font-sans';
   const [status, setStatus] = useState<EntryStatus>(entry.status);
   const [visibility, setVisibility] = useState<EntryVisibility>(entry.visibility);
   const [tags, setTags] = useState<string[]>(entry.tags);
@@ -61,6 +86,64 @@ export function EntryRenderer({
   const [revisions, setRevisions] = useState<Revision[]>(entry.revisions || []);
   const [showXmlView, setShowXmlView] = useState(false);
   const activeSpec = presentationSpec || getPresentationSpec(contentType);
+  // Tracks Tailwind's md: breakpoint (768px) specifically, for the Layout
+  // Inspector's dynamic padding — separate from the unrelated `isMobile`
+  // state declared further below (that one's threshold is 1280px, for the
+  // drag/swipe UI).
+  const [isDesktopWidth, setIsDesktopWidth] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDesktopWidth(window.innerWidth >= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  // layoutOverride starts null on every mount and is only filled in after an
+  // async DB round-trip — with nothing cached, that means every fresh
+  // navigation into an entry (e.g. clicking the arrow on a Folio card) paints
+  // once with the unstyled essaySpec fallback, then jumps to the saved
+  // layout a beat later. Caching the last-fetched value per content type at
+  // module scope (survives unmount/remount, cleared only on a full page
+  // reload) lets every navigation after the first one in a session start
+  // from the right value with no visible jump.
+  const [layoutOverride, setLayoutOverride] = useState<LayoutSettings | null>(
+    () => (contentType in layoutSettingsCache ? layoutSettingsCache[contentType]! : null)
+  );
+  useEffect(() => {
+    let cancelled = false;
+    firestoreService.fetchLayoutSettings(contentType).then((settings) => {
+      layoutSettingsCache[contentType] = settings;
+      if (!cancelled) setLayoutOverride(settings);
+    });
+    return () => { cancelled = true; };
+  }, [contentType]);
+  const effectiveTrueUser = originalUser || currentUser;
+  const isTrueChiefEditor = effectiveTrueUser?.role === 'Chief Editor';
+  const [layoutEditMode, setLayoutEditMode] = useState(false);
+  // previewSettings holds LIVE, UNSAVED edits from the Layout Inspector — set
+  // on every +/- click or keystroke while the panel is open, cleared (back to
+  // null) when the panel closes without Apply. Only layoutOverride is ever
+  // written to the database (via saveLayoutSettings) or seen by anyone else;
+  // previewSettings exists purely so the page updates instantly for the
+  // person currently editing, without a save round-trip on every click.
+  const [previewSettings, setPreviewSettings] = useState<LayoutSettings | null>(null);
+  const effectiveLayoutSettings = previewSettings || layoutOverride;
+  const readingLayout = effectiveLayoutSettings
+    ? computeReadingLayout(contentType, effectiveLayoutSettings.columnWidth, effectiveLayoutSettings.marginNoteWidth, effectiveLayoutSettings.padding)
+    : null;
+  // A Layout Inspector override must be applied via inline `style`, never a
+  // built Tailwind class string — see the comment on ReadingLayout in
+  // utils.tsx for why runtime-computed pixel values can't use `max-w-[Npx]`.
+  // No override: fall back to the spec's own (static, JIT-visible) classes.
+  const cardStyleOverride: React.CSSProperties | undefined = readingLayout
+    ? {
+        maxWidth: readingLayout.cardWidthPx,
+        paddingLeft: isDesktopWidth ? readingLayout.paddingDesktopPx : readingLayout.paddingMobilePx,
+        paddingRight: isDesktopWidth ? readingLayout.paddingDesktopPx : readingLayout.paddingMobilePx,
+      }
+    : undefined;
+  const paragraphStyleOverride = effectiveLayoutSettings
+    ? { textAlign: effectiveLayoutSettings.alignment as 'left' | 'justify', lineHeight: effectiveLayoutSettings.lineHeight }
+    : undefined;
   const [citations, setCitations] = useState<Citation[]>(entry.citations || []);
   const [referenceSortOrder, setReferenceSortOrder] = useState<'alphabetical' | 'appearance'>(entry.referenceSortOrder || 'alphabetical');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
@@ -75,6 +158,13 @@ export function EntryRenderer({
       return `https://${username}.adjung.com/${entry.contentType.toLowerCase()}/${entry.slug}`;
     }
   };
+
+  // Shown in the metadata bar next to the actions menu so two writers with
+  // the same pen name (e.g. two "Claude"s) stay disambiguated — the domain
+  // is the one thing guaranteed unique per writer.
+  const authorDomain = entry.publicationClass === 'Institutional'
+    ? null
+    : `${(users.find(u => u.id === entry.authorId)?.username) || 'scholar'}.adjung.com`;
 
   const handleReportEntry = () => {
     requestConfirm(
@@ -140,6 +230,8 @@ export function EntryRenderer({
   const [showInterlinearLocal, setShowInterlinearLocal] = useState(true);
   const [showGlossInput, setShowGlossInput] = useState(false);
   const [glossText, setGlossText] = useState('');
+  const [glossTargetRange, setGlossTargetRange] = useState<Range | null>(null);
+  const [glossTargetText, setGlossTargetText] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
@@ -368,12 +460,18 @@ export function EntryRenderer({
     span.setAttribute('contenteditable', 'false');
     span.textContent = '\u200B'; // Zero-width space so it's not totally empty for the cursor, but relies on CSS for display
 
-    range.deleteContents();
-    range.insertNode(span);
-    range.collapse(false);
+    // Collapse to the END of the selection before inserting the badge, so the
+    // marker is placed right after the anchored word/phrase instead of
+    // replacing it \u2014 deleteContents() here previously destroyed whatever
+    // text the author had just selected.
+    const insertionRange = range.cloneRange();
+    insertionRange.collapse(false);
+    insertionRange.insertNode(span);
+    insertionRange.setStartAfter(span);
+    insertionRange.collapse(true);
     if (sel) {
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(insertionRange);
     }
 
     let updatedFootnotes = footnotes;
@@ -406,28 +504,49 @@ export function EntryRenderer({
     const sel = window.getSelection();
     const range = contextRange || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
     const selectedText = range ? range.toString().trim() : '';
-    
-    const glossVal = window.prompt("Enter gloss/translation text:");
-    if (!glossVal) return;
-    
-    const wordText = selectedText || window.prompt("Enter word to be glossed:") || 'word';
-    if (!wordText) return;
-    
+
+    if (!range || !isInterlinearSpanValid(selectedText)) {
+      showToast(`Interlinear gloss can only be attached to ${INTERLINEAR_MAX_WORDS} words or fewer (max ${INTERLINEAR_MAX_CHARS} characters). Select a shorter span, or use a margin note / footnote instead.`, 'error');
+      setContextRange(null);
+      return;
+    }
+
+    setGlossTargetRange(range.cloneRange());
+    setGlossTargetText(selectedText);
+    setGlossText('');
+    setShowGlossInput(true);
+  };
+
+  const applyInterlinearVisual = (glossValue: string) => {
+    const range = glossTargetRange;
+    const wordText = glossTargetText;
+    if (!range || !wordText) return;
+
+    if (!isInterlinearGlossValid(wordText, glossValue)) {
+      showToast(`Gloss text is too long — keep it to roughly ${Math.floor(wordText.length * INTERLINEAR_GLOSS_MAX_RATIO)} characters or fewer (1.5x the length of "${wordText}").`, 'error');
+      return;
+    }
+
     const span = document.createElement('span');
     span.className = 'interlinear-word';
-    span.innerHTML = `<span class="interlinear-gloss">${glossVal.trim().toLowerCase()}</span><bdi>${wordText}</bdi>`;
-    
-    if (range) {
-      range.deleteContents();
-      range.insertNode(span);
-      range.collapse(false);
-      if (sel) {
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-      triggerEditorChange();
+    span.innerHTML = `<span class="interlinear-gloss">${glossValue.trim().toLowerCase()}</span><bdi>${wordText}</bdi>`;
+
+    range.deleteContents();
+    range.insertNode(span);
+    range.collapse(false);
+    const sel = window.getSelection();
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
+    triggerEditorChange();
+
+    setShowGlossInput(false);
+    setGlossText('');
+    setGlossTargetRange(null);
+    setGlossTargetText('');
     setContextRange(null);
+    setContextCoords(null);
   };
 
   const insertLinkVisual = () => {
@@ -936,10 +1055,19 @@ export function EntryRenderer({
     if (!selectionState || !gloss) return;
     const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
     if (!textarea) return;
-    
+
     const val = textarea.value;
     const { start, end, text } = selectionState;
-    
+
+    if (!isInterlinearSpanValid(text)) {
+      showToast(`Interlinear gloss can only be attached to ${INTERLINEAR_MAX_WORDS} words or fewer (max ${INTERLINEAR_MAX_CHARS} characters). Select a shorter span, or use a margin note / footnote instead.`, 'error');
+      return;
+    }
+    if (!isInterlinearGlossValid(text, gloss)) {
+      showToast(`Gloss text is too long — keep it to roughly ${Math.floor(text.length * INTERLINEAR_GLOSS_MAX_RATIO)} characters or fewer (1.5x the length of "${text}").`, 'error');
+      return;
+    }
+
     const cleanGloss = gloss.trim().toLowerCase();
     const wrapped = `[${text}](gloss:${cleanGloss})`;
     const newValue = val.substring(0, start) + wrapped + val.substring(end);
@@ -960,20 +1088,25 @@ export function EntryRenderer({
     if (!selectionState) return;
     const textarea = document.getElementById(selectionState.textareaId) as HTMLTextAreaElement;
     if (!textarea) return;
-    
+
     const val = textarea.value;
     const { start, end, text } = selectionState;
-    
-    const footnoteText = text ? `Rujukan untuk "${text}": ` : "Rujukan nota kaki baharu.";
-    const updatedFootnotes = [...footnotes, footnoteText];
-    setFootnotes(updatedFootnotes);
 
-    const footnoteNum = updatedFootnotes.length;
-    const marker = `[^${footnoteNum}]`;
+    // footnotesData (the {id, content} structure the reader-facing page
+    // actually renders) is the source of truth here — the legacy
+    // `footnotes: string[]` array is unrelated and must not be used, or the
+    // citation text silently never reaches anyone reading the entry.
+    const id = `fn-${generateUUID()}`;
+    const footnoteText = text ? `Rujukan untuk "${text}": ` : "Rujukan nota kaki baharu.";
+    const updatedFootnotesData = [...footnotesData, { id, content: footnoteText }];
+    setFootnotesData(updatedFootnotesData);
+
+    const marker = `[^${id}]`;
     const wrapped = `${text}${marker}`;
     const newValue = val.substring(0, start) + wrapped + val.substring(end);
 
-    handleValueChange(selectionState.textareaId, newValue, updatedFootnotes);
+    setContent(newValue);
+    triggerSave(newValue, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, updatedFootnotesData);
 
     setSelectionState(null);
 
@@ -1331,6 +1464,7 @@ export function EntryRenderer({
           excerpt: stateRef.current.excerpt,
           featuredImage: stateRef.current.featuredImage,
           footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+          footnotesData: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotesData : undefined,
           marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
           marginNotesData: stateRef.current.marginNotesData,
           status: updatedStatus,
@@ -1354,6 +1488,7 @@ export function EntryRenderer({
         slug: stateRef.current.slug,
         content: stateRef.current.content,
         footnotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotes : undefined,
+        footnotesData: (stateRef.current.contentType === 'Essay') ? stateRef.current.footnotesData : undefined,
         marginNotes: (stateRef.current.contentType === 'Essay') ? stateRef.current.marginNotes : undefined,
         marginNotesData: stateRef.current.marginNotesData,
         excerpt: stateRef.current.excerpt,
@@ -1373,23 +1508,31 @@ export function EntryRenderer({
     }
   };
 
+  // Every default below reads stateRef.current rather than the plain state
+  // variable — a call site that only passes the first 3 positional args
+  // (there are ~50 of them) would otherwise silently capture whatever this
+  // closure's state was at render time, which is how footnotesData /
+  // marginNotesData kept reverting to stale/empty values even when the
+  // fields further up the same call chain (e.g. applyFootnote) had just
+  // computed a fresh one. stateRef is kept current by the effect above, so
+  // this makes every default fresh without touching every call site.
   const triggerSave = (
     updatedContent: string,
     updatedFootnotes: string[],
     updatedMarginNotes: { [key: number]: string },
-    updatedType = contentType,
-    updatedStatus = status,
-    updatedVisibility = visibility,
-    updatedTags = tags,
-    updatedSlug = slug,
-    updatedTitle = title,
-    updatedExcerpt = excerpt,
-    updatedFeaturedImage = featuredImage,
-    updatedRevisions = revisions,
-    updatedCitations = citations,
-    updatedReferenceSortOrder = referenceSortOrder,
-    updatedMarginNotesData = marginNotesData,
-    updatedFootnotesData = footnotesData
+    updatedType = stateRef.current.contentType,
+    updatedStatus = stateRef.current.status,
+    updatedVisibility = stateRef.current.visibility,
+    updatedTags = stateRef.current.tags,
+    updatedSlug = stateRef.current.slug,
+    updatedTitle = stateRef.current.title,
+    updatedExcerpt = stateRef.current.excerpt,
+    updatedFeaturedImage = stateRef.current.featuredImage,
+    updatedRevisions = stateRef.current.revisions,
+    updatedCitations = stateRef.current.citations,
+    updatedReferenceSortOrder = stateRef.current.referenceSortOrder,
+    updatedMarginNotesData = stateRef.current.marginNotesData,
+    updatedFootnotesData = stateRef.current.footnotesData
   ) => {
     triggerAutosave(
       updatedContent,
@@ -2101,7 +2244,7 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-900 font-light mt-8 mb-4 border-b border-stone-200/50 pb-2 relative overflow-visible ${
+            className={`${proseFont} text-stone-900 font-light mt-8 mb-4 border-b border-stone-200/60 pb-2 relative overflow-visible ${
               isAr ? 'text-right text-2xl font-arabic leading-loose' : 'text-left text-xl md:text-2xl tracking-tight'
             }`}
           >
@@ -2115,7 +2258,7 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-800 font-normal mt-6 mb-3 relative overflow-visible ${
+            className={`${proseFont} text-stone-800 font-normal mt-6 mb-3 relative overflow-visible ${
               isAr ? 'text-right text-xl font-arabic leading-loose' : 'text-left text-lg md:text-xl'
             }`}
           >
@@ -2129,7 +2272,7 @@ export function EntryRenderer({
             key={idx} 
             id={`heading-${idx}`}
             dir={isAr ? 'rtl' : 'ltr'} 
-            className={`font-serif text-stone-700 font-medium mt-4 mb-2 relative overflow-visible ${
+            className={`${proseFont} text-stone-700 font-medium mt-4 mb-2 relative overflow-visible ${
               isAr ? 'text-right text-base font-arabic leading-loose' : 'text-left text-base'
             }`}
           >
@@ -2158,7 +2301,7 @@ export function EntryRenderer({
                 disabled
                 className="mt-1 h-3.5 w-3.5 rounded border-stone-300 text-adjung-maroon focus:ring-adjung-maroon accent-adjung-maroon cursor-default"
               />
-              <span className={`${item.checked ? 'line-through text-stone-400' : 'text-stone-700'} ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-serif text-[15px] md:text-base leading-relaxed'}`}>
+              <span className={`${item.checked ? 'line-through text-stone-400' : 'text-stone-700'} ${isAr ? 'font-arabic text-[17px] leading-loose' : `${proseFont} text-[15px] md:text-base leading-relaxed`}`}>
                 {textNode}
               </span>
             </li>
@@ -2167,7 +2310,7 @@ export function EntryRenderer({
         return (
           <li 
             key={itemIdx} 
-            className={`my-1 ${isAr ? 'font-arabic text-right text-[17px] leading-loose' : 'font-serif text-left text-[15px] md:text-base leading-relaxed'} text-stone-700`}
+            className={`my-1 ${isAr ? 'font-arabic text-right text-[17px] leading-loose' : `${proseFont} text-left text-[15px] md:text-base leading-relaxed`} text-stone-700`}
           >
             {textNode}
           </li>
@@ -2193,9 +2336,9 @@ export function EntryRenderer({
     if (block.type === 'table') {
       return (
         <div key={idx} className="my-6 overflow-x-auto border border-stone-200/60 rounded">
-          <table className="w-full text-left font-serif text-sm border-collapse bg-white">
+          <table className="w-full text-left font-sans text-sm border-collapse bg-white">
             <thead>
-              <tr className="bg-stone-50/50 border-b border-stone-200">
+              <tr className="bg-stone-50/60 border-b border-stone-200">
                 {block.headers.map((h, hIdx) => {
                   const align = block.alignments?.[hIdx] || 'left';
                   const alignClass = align === 'center' ? 'text-center' : (align === 'right' ? 'text-right' : 'text-left');
@@ -2255,7 +2398,7 @@ export function EntryRenderer({
               {block.language}
             </span>
           )}
-          <pre className="p-4 bg-stone-50 border border-stone-200/80 rounded font-mono text-xs overflow-x-auto text-stone-800 leading-relaxed">
+          <pre className="p-4 bg-stone-50 border border-stone-200/90 rounded font-mono text-xs overflow-x-auto text-stone-800 leading-relaxed">
             <code>{block.code}</code>
           </pre>
         </div>
@@ -2268,12 +2411,12 @@ export function EntryRenderer({
           key={idx} 
           className="my-8 pl-6 border-l-2 border-adjung-maroon/20 text-left bg-transparent relative overflow-visible mx-auto max-w-[90%]"
         >
-          <p className="font-serif italic text-[14.5px] md:text-[15.5px] text-stone-600 leading-relaxed my-1 relative overflow-visible">
+          <p className={`${proseFont} italic text-[14.5px] md:text-[15.5px] text-stone-600 leading-relaxed my-1 relative overflow-visible`}>
             {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap)}
             {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
           {block.translation && (
-            <div className="mt-2 text-stone-500 font-serif italic text-xs leading-relaxed">
+            <div className={`mt-2 text-stone-500 ${proseFont} italic text-xs leading-relaxed`}>
               {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
             </div>
           )}
@@ -2296,7 +2439,7 @@ export function EntryRenderer({
 
           {block.translation && (
             <div dir="ltr" className="mt-4 pt-4 border-t border-stone-200/40 text-left">
-              <p className="font-serif italic text-[13.5px] md:text-[14.5px] text-stone-500 leading-relaxed">
+              <p className={`${proseFont} italic text-[13.5px] md:text-[14.5px] text-stone-500 leading-relaxed`}>
                 {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
               </p>
             </div>
@@ -2308,7 +2451,7 @@ export function EntryRenderer({
     if (block.type === 'callout') {
       const styles = {
         note: 'bg-stone-50 border-stone-300 text-stone-900',
-        warning: 'bg-red-50/50 border-red-200 text-stone-800',
+        warning: 'bg-red-50/60 border-red-200 text-stone-800',
         tip: 'bg-emerald-50/20 border-emerald-200 text-stone-800',
         important: 'bg-stone-100/60 border-stone-800 text-stone-900',
         definition: 'bg-adjung-maroon/5 border-adjung-maroon/20 text-stone-900'
@@ -2339,7 +2482,7 @@ export function EntryRenderer({
               {block.title ? `${label}: ${block.title}` : label}
             </span>
           </div>
-          <p className="font-serif text-sm md:text-[15px] leading-relaxed my-0 whitespace-pre-wrap relative overflow-visible">
+          <p className={`${proseFont} text-sm md:text-[15px] leading-relaxed my-0 whitespace-pre-wrap relative overflow-visible`}>
             {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
             {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
@@ -2358,9 +2501,10 @@ export function EntryRenderer({
         return (
           <p
             key={idx}
-            className={`flow-root leading-relaxed text-left whitespace-pre-wrap relative overflow-visible ${activeSpec.typography.bodyFont}`}
+            className={`flow-root leading-relaxed whitespace-pre-wrap relative overflow-visible ${activeSpec.typography.bodyFont}`}
+            style={contentType === 'Essay' ? paragraphStyleOverride : undefined}
           >
-            <span className="float-left text-4xl md:text-5xl font-normal text-adjung-maroon mr-1 mt-0.5 leading-none font-serif select-none">
+            <span className={`float-left text-4xl md:text-5xl font-normal text-adjung-maroon mr-1 mt-0.5 leading-none ${proseFont} select-none`}>
               {firstLetter}
             </span>
             {parseInlineFormatting(restText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
@@ -2375,11 +2519,11 @@ export function EntryRenderer({
         key={idx}
         dir={isAr ? 'rtl' : 'ltr'}
         className={`leading-relaxed whitespace-pre-wrap relative overflow-visible ${
-          isAr 
-            ? 'font-arabic text-right text-lg leading-loose' 
-            : `${activeSpec.typography.bodyFont} text-left`
+          isAr
+            ? 'font-arabic text-right text-lg leading-loose'
+            : activeSpec.typography.bodyFont
         }`}
-        style={undefined}
+        style={(!isAr && contentType === 'Essay') ? paragraphStyleOverride : undefined}
       >
         {parseInlineFormatting(block.text, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
         {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
@@ -2594,8 +2738,8 @@ export function EntryRenderer({
         : '';
 
       return (
-        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left">
-          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+        <div key={idx} className="bg-stone-50/60 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left">
+          <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 select-none">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
                 {block.type === 'heading' ? `Heading H${block.level}` : block.type.replace('-', ' ')} Block
@@ -2667,15 +2811,15 @@ export function EntryRenderer({
               }}
               placeholder={block.type === 'heading' ? "Enter Heading text..." : "Begin writing your manuscript here..."}
               className={`w-full bg-transparent border-none focus:outline-none outline-none resize-none p-0 overflow-hidden ${
-                block.type === 'heading' 
-                  ? `font-serif text-stone-900 ${hClass}` 
-                  : 'font-serif text-[15px] md:text-base text-stone-900 leading-relaxed'
+                block.type === 'heading'
+                  ? `${proseFont} text-stone-900 ${hClass}`
+                  : `${proseFont} text-[15px] md:text-base text-stone-900 leading-relaxed`
               } ${isAr ? 'text-right font-arabic leading-loose text-lg font-medium' : 'text-left'}`}
             />
           </div>
           
           {(contentType === 'Essay') && (
-            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+            <div className="border-t border-stone-200/60 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
               </label>
@@ -2699,8 +2843,8 @@ export function EntryRenderer({
 
     if (block.type === 'latin-quote' || block.type === 'arabic-quote') {
       return (
-        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
-          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+        <div key={idx} className="bg-stone-50/60 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 select-none">
             <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
               Quote ({block.type === 'latin-quote' ? 'Latin' : 'Arabic'}) Block
             </span>
@@ -2714,7 +2858,7 @@ export function EntryRenderer({
           </div>
 
           {block.type === 'latin-quote' ? (
-            <div className="space-y-2 font-serif">
+            <div className={`space-y-2 ${proseFont}`}>
               <div>
                 <label className="block text-[8.5px] font-mono text-stone-400 uppercase tracking-wider mb-0.5">Original Quote</label>
                 <textarea
@@ -2759,7 +2903,7 @@ export function EntryRenderer({
                   value={block.translation || ''}
                   onChange={(e) => handleVisualBlockChange(idx, { ...block, translation: e.target.value })}
                   placeholder="Translation..."
-                  className="w-full bg-transparent border-none focus:outline-none resize-none p-0 font-serif italic text-xs text-stone-500 leading-relaxed text-left"
+                  className={`w-full bg-transparent border-none focus:outline-none resize-none p-0 ${proseFont} italic text-xs text-stone-500 leading-relaxed text-left`}
                   rows={1}
                 />
               </div>
@@ -2767,7 +2911,7 @@ export function EntryRenderer({
           )}
           
           {(contentType === 'Essay') && (
-            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+            <div className="border-t border-stone-200/60 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
               </label>
@@ -2791,8 +2935,8 @@ export function EntryRenderer({
 
     if (block.type === 'callout') {
       return (
-        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
-          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+        <div key={idx} className="bg-stone-50/60 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 select-none">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
                 Callout Block
@@ -2837,13 +2981,13 @@ export function EntryRenderer({
                 onChange={(e) => handleVisualBlockChange(idx, { ...block, text: e.target.value })}
                 placeholder="Callout content..."
                 rows={3}
-                className="w-full bg-transparent border-none focus:outline-none resize-none font-serif text-sm md:text-[15px] leading-relaxed text-stone-800"
+                className={`w-full bg-transparent border-none focus:outline-none resize-none ${proseFont} text-sm md:text-[15px] leading-relaxed text-stone-800`}
               />
             </div>
           </div>
           
           {(contentType === 'Essay') && (
-            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+            <div className="border-t border-stone-200/60 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
               </label>
@@ -2867,8 +3011,8 @@ export function EntryRenderer({
 
     if (block.type === 'image') {
       return (
-        <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
-          <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+        <div key={idx} className="bg-stone-50/60 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+          <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 select-none">
             <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
               Figure Image Block
             </span>
@@ -2911,7 +3055,7 @@ export function EntryRenderer({
           </div>
           
           {(contentType === 'Essay') && (
-            <div className="border-t border-stone-200/50 pt-2.5 mt-2.5 text-left">
+            <div className="border-t border-stone-200/60 pt-2.5 mt-2.5 text-left">
               <label className="block text-[8.5px] font-mono uppercase tracking-widest text-stone-400 mb-1">
                 Horizontal Margin Note (Aligned with Block)
               </label>
@@ -2935,8 +3079,8 @@ export function EntryRenderer({
 
     const rawMarkup = serializeBlocks([block]);
     return (
-      <div key={idx} className="bg-stone-50/50 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
-        <div className="flex items-center justify-between border-b border-stone-200/50 pb-2 select-none">
+      <div key={idx} className="bg-stone-50/60 p-4 border border-dashed border-adjung-maroon/30 rounded-lg space-y-3 relative animate-fade-in text-left font-sans">
+        <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 select-none">
           <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
             {block.type.toUpperCase()} Block
           </span>
@@ -2988,7 +3132,7 @@ export function EntryRenderer({
       <div 
         key={idx}
         onClick={() => setEditingBlockIndex(idx)}
-        className="group relative cursor-pointer hover:bg-stone-50/70 p-3 -m-3 rounded-md transition-all duration-200 text-left"
+        className="group relative cursor-pointer hover:bg-stone-50/60 p-3 -m-3 rounded-md transition-all duration-200 text-left"
         title="Click to edit block"
       >
         <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none hidden md:block">
@@ -3063,7 +3207,7 @@ export function EntryRenderer({
   // Source Mode Canvas
   const renderSourceContent = () => {
     return (
-      <div className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative animate-fade-in">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/60 rounded-md py-8 md:py-12 shadow-sm text-left relative animate-fade-in">
         <div className="mb-6 pb-4 border-b border-stone-200 flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-adjung-maroon" />
@@ -3088,7 +3232,7 @@ export function EntryRenderer({
               triggerSave(val, footnotes, marginNotes);
             }}
             placeholder="Write your raw Markdown or structured XML markup here..."
-            className="w-full min-h-[180px] bg-stone-50/40 hover:bg-stone-50/70 focus:bg-white border border-stone-200/85 focus:border-adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
+            className="w-full min-h-[180px] bg-stone-50/40 hover:bg-stone-50/60 focus:bg-white border border-stone-200/90 focus:border-adjung-maroon p-6 rounded-md font-mono text-xs md:text-sm leading-relaxed text-stone-900 focus:outline-none resize-y transition-all"
           />
 
           {(contentType === 'Essay') && (
@@ -3105,7 +3249,7 @@ export function EntryRenderer({
                   <div className="space-y-4">
                     {occurrences.map((id) => {
                       return (
-                        <div key={id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
+                        <div key={id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/60 p-3 rounded border border-stone-200/40 animate-fade-in">
                           <div className="md:col-span-4 font-mono text-[10px] text-stone-500 select-none">
                             <span className="font-bold text-adjung-maroon">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
                             <p className="font-mono text-stone-400 mt-1 select-all">[^ {id}]</p>
@@ -3121,7 +3265,7 @@ export function EntryRenderer({
                               }}
                               placeholder="Side note description text..."
                               rows={2}
-                              className="w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700"
+                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} text-stone-700`}
                             />
                           </div>
                         </div>
@@ -3135,55 +3279,52 @@ export function EntryRenderer({
 
           {(contentType === 'Essay') && (
             <div className="mt-10 pt-6 border-t border-stone-200/60 text-left font-sans text-xs">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold">
-                  Footnotes Registry (Source Mode)
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = [...footnotes, 'New footnote content.'];
-                    setFootnotes(updated);
-                    triggerSave(content, updated, marginNotes);
-                  }}
-                  className="px-2.5 py-1 border border-stone-200 hover:border-adjung-maroon text-stone-600 hover:text-adjung-maroon rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer"
-                >
-                  + Add Footnote
-                </button>
-              </div>
-              
-              {footnotes.length === 0 ? null : (
-                <div className="space-y-3">
-                  {footnotes.map((fn, index) => (
-                    <div key={index} className="flex gap-3 items-start bg-stone-50/50 p-3 rounded border border-stone-200/40 animate-fade-in">
-                      <span className="font-mono text-[10px] font-bold text-adjung-maroon mt-1">[^{index + 1}]</span>
-                      <div className="flex-1">
-                        <textarea
-                          value={fn}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = [...footnotes];
-                            updated[index] = val;
-                            setFootnotes(updated);
-                            triggerSave(content, updated, marginNotes);
-                          }}
-                          placeholder="Footnote reference text..."
-                          rows={1}
-                          className="w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFootnote(index)}
-                        className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded text-stone-400 transition"
-                        title="Remove footnote"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <h4 className="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-4">
+                Footnotes Registry (Source Mode)
+              </h4>
+              {(() => {
+                const { occurrences } = getFootnotesReadingOrderMap();
+                if (occurrences.length === 0) {
+                  return <p className="text-xs text-stone-400 italic select-none">No footnotes registered yet. Insert [^fn-1], [^fn-2], etc. inside the source text.</p>;
+                }
+                return (
+                  <div className="space-y-3">
+                    {occurrences.map((id, index) => {
+                      const fnItem = footnotesData.find(f => f.id === id);
+                      return (
+                        <div key={id} className="flex gap-3 items-start bg-stone-50/60 p-3 rounded border border-stone-200/40 animate-fade-in">
+                          <span className="font-mono text-[10px] font-bold text-adjung-maroon mt-1">[^{index + 1}]</span>
+                          <div className="flex-1">
+                            <textarea
+                              value={fnItem?.content || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const exists = footnotesData.some(f => f.id === id);
+                                const updatedFootnotesData = exists
+                                  ? footnotesData.map(f => f.id === id ? { ...f, content: val } : f)
+                                  : [...footnotesData, { id, content: val }];
+                                setFootnotesData(updatedFootnotesData);
+                                triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, updatedFootnotesData);
+                              }}
+                              placeholder="Footnote reference text..."
+                              rows={1}
+                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont}`}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFootnote(id)}
+                            className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded text-stone-400 transition"
+                            title="Remove footnote"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -3209,6 +3350,8 @@ export function EntryRenderer({
         applyLink={applyLink}
         applyInterlinear={applyInterlinear}
         applyFootnote={applyFootnote}
+        canGloss={isInterlinearSpanValid(selectionState?.text || '')}
+        glossMaxChars={Math.floor((selectionState?.text || '').trim().length * INTERLINEAR_GLOSS_MAX_RATIO)}
       />
     );
   };
@@ -3256,7 +3399,9 @@ export function EntryRenderer({
     const readingTimeStr = `${parseInt(getReadingTime(getFullContentString())) || 1} MIN READ`;
 
     const isArContent = isArabicText(entry.content);
-    const containerClass = `${activeSpec.spacing.canvasMaxWidth} mx-auto ${activeSpec.spacing.canvasPadding} bg-white border border-stone-200/50 rounded-md shadow-sm relative overflow-visible ${
+    const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm relative overflow-visible ${
+      layoutEditMode ? 'outline outline-2 outline-dashed outline-sky-400 outline-offset-8' : ''
+    } ${
       isArContent ? 'text-right' : 'text-left'
     } ${
       contentType === 'Note' ? 'bg-[#FAF8F5] text-[#3D2E2B]' : 'text-[#111111]'
@@ -3271,7 +3416,11 @@ export function EntryRenderer({
         dragElastic={isMobile && isArticle ? 0.15 : 0}
         dragSnapToOrigin={true}
         className={containerClass}
+        style={cardStyleOverride}
       >
+        {layoutEditMode && (
+          <span className="absolute -top-6 left-0 font-mono text-[9px] uppercase tracking-wider text-sky-500 bg-white px-1.5 py-0.5 rounded select-none">Card</span>
+        )}
         {entry.underReview && (
           <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded text-amber-900 text-xs font-sans flex items-center gap-3 select-none animate-pulse">
             <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
@@ -3285,7 +3434,7 @@ export function EntryRenderer({
         {activeSpec.visibility.showTitle ? (
           <header className={activeSpec.spacing.headerBottomMargin}>
             {/* Metadata Bar */}
-            <div className="flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-300 pb-3 select-none">
+            <div className="flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-adjung-maroon pb-3 select-none">
               <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
                 <span>{serialNum}</span>
                 <span className="text-stone-300 font-bold">·</span>
@@ -3295,20 +3444,27 @@ export function EntryRenderer({
                 <span className="text-stone-300 font-bold">·</span>
                 <span>{readingTimeStr}</span>
               </div>
-              
-              <EntryActionsMenu
-                showActionsMenu={showActionsMenu}
-                setShowActionsMenu={setShowActionsMenu}
-                entry={entry}
-                getCanonicalUrl={getCanonicalUrl}
-                showToast={showToast}
-                authorName={authorName}
-                title={title}
-                currentUser={currentUser}
-                setEditingEntry={setEditingEntry}
-                setSelectedEntry={setSelectedEntry}
-                setActiveTab={setActiveTab}
-              />
+
+              <div className="flex items-center gap-2">
+                {authorDomain && (
+                  <span className="normal-case text-stone-400 hover:text-adjung-maroon hover:underline cursor-pointer transition-colors">
+                    {authorDomain}
+                  </span>
+                )}
+                <EntryActionsMenu
+                  showActionsMenu={showActionsMenu}
+                  setShowActionsMenu={setShowActionsMenu}
+                  entry={entry}
+                  getCanonicalUrl={getCanonicalUrl}
+                  showToast={showToast}
+                  authorName={authorName}
+                  title={title}
+                  currentUser={currentUser}
+                  setEditingEntry={setEditingEntry}
+                  setSelectedEntry={setSelectedEntry}
+                  setActiveTab={setActiveTab}
+                />
+              </div>
             </div>
 
             {/* Featured Image */}
@@ -3317,7 +3473,7 @@ export function EntryRenderer({
                 <img 
                   src={featuredImage} 
                   alt={title || 'Featured Image'} 
-                  className="max-w-full h-auto mx-auto border border-stone-200/50 p-2 bg-white shadow-sm rounded-sm max-h-[300px] object-cover"
+                  className="max-w-full h-auto mx-auto border border-stone-200/60 p-2 bg-white shadow-sm rounded-sm max-h-[300px] object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               </div>
@@ -3344,7 +3500,7 @@ export function EntryRenderer({
                     }
                   }}
                   placeholder="Enter Title..."
-                  className="text-xl md:text-2xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none py-1 text-center px-16"
+                  className={`text-xl md:text-2xl ${proseFont} text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/90 focus:border-adjung-maroon focus:outline-none py-1 text-center px-16`}
                 />
                 <span className="absolute right-0 bottom-2 text-[9px] font-mono text-stone-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-150 select-none">
                   {title.length}/100
@@ -3352,16 +3508,21 @@ export function EntryRenderer({
               </div>
             ) : (
               title && (
-                <h1 className="text-xl md:text-2xl font-serif text-[#111111] font-medium tracking-tight leading-tight mb-3 text-center">
-                  {parseInlineFormatting(title)}
-                </h1>
+                <div className="relative mx-auto" style={effectiveLayoutSettings ? { maxWidth: effectiveLayoutSettings.columnWidth } : undefined}>
+                  {layoutEditMode && (
+                    <span className="absolute -top-5 left-0 font-mono text-[8px] uppercase tracking-wider text-purple-500 bg-white px-1 select-none">Title</span>
+                  )}
+                  <h1 className={`text-xl md:text-2xl ${proseFont} text-[#111111] font-medium tracking-tight leading-tight mb-3 text-center ${layoutEditMode ? 'outline outline-2 outline-dashed outline-purple-400 outline-offset-4' : ''}`}>
+                    {parseInlineFormatting(title)}
+                  </h1>
+                </div>
               )
             )}
 
             {/* Author / Signature Stamp Block */}
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-stone-600">
               <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">by</span>
-              <span className="font-serif font-medium text-stone-800 text-[9px] tracking-tight border-b border-stone-200 pb-0.5">{authorName}</span>
+              <span className={`${proseFont} font-medium text-stone-800 text-[9px] tracking-tight border-b border-stone-200 pb-0.5`}>{authorName}</span>
             </div>
           </header>
         ) : (
@@ -3401,7 +3562,7 @@ export function EntryRenderer({
 
         {/* Excerpt Abstract Block */}
         {activeSpec.visibility.showAbstract && excerpt && (
-          <div className="mb-8 border-l-2 border-adjung-maroon/20 pl-4 py-1 text-stone-500 font-serif italic text-sm md:text-[15px] leading-relaxed text-left animate-fade-in">
+          <div className={`mb-8 border-l-2 border-adjung-maroon/20 pl-4 py-1 text-stone-500 ${proseFont} italic text-sm md:text-[15px] leading-relaxed text-left animate-fade-in`}>
             {excerpt}
           </div>
         )}
@@ -3417,15 +3578,15 @@ export function EntryRenderer({
             width, governed by the ancestor, for every content type. */}
         <div id="article-container-grid" className={`${mode === 'edit' ? 'grid grid-cols-1 lg:grid-cols-12 gap-8' : 'w-full'} relative`}>
           
-          <div className={`${mode === 'edit' ? ((contentType === 'Essay') ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-xs leading-relaxed tracking-normal font-serif relative`}>
+          <div className={`${mode === 'edit' ? ((contentType === 'Essay') ? 'lg:col-span-8' : 'lg:col-span-12') : 'w-full'} space-y-6 text-[#111111] text-xs leading-relaxed tracking-normal ${proseFont} relative`}>
             
             {/* Custom context menu trigger in edit mode */}
-            {mode === 'edit' && contextCoords && (
-              <div 
+            {mode === 'edit' && contextCoords && !showGlossInput && (
+              <div
                 style={{ position: 'absolute', top: `${contextCoords.y}px`, left: `${contextCoords.x}px` }}
                 className="bg-white border border-stone-200 shadow-xl rounded py-1 w-44 z-50 text-left font-sans text-xs"
               >
-                <button 
+                <button
                   onMouseDown={(e) => {
                     e.preventDefault();
                     insertNote('footnote');
@@ -3436,7 +3597,7 @@ export function EntryRenderer({
                   Insert Footnote
                 </button>
                 {(contentType === 'Essay') && (
-                  <button 
+                  <button
                     onMouseDown={(e) => {
                       e.preventDefault();
                       insertNote('margin-note');
@@ -3447,27 +3608,82 @@ export function EntryRenderer({
                     Insert Margin Note
                   </button>
                 )}
-                <button 
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    insertInterlinearVisual();
-                    setContextCoords(null);
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon font-medium cursor-pointer transition-colors"
-                >
-                  Insert Interlinear Gloss
-                </button>
+                {(() => {
+                  const rangeText = contextRange ? contextRange.toString() : '';
+                  const canGloss = isInterlinearSpanValid(rangeText);
+                  return (
+                    <button
+                      disabled={!canGloss}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        if (!canGloss) return;
+                        insertInterlinearVisual();
+                      }}
+                      title={canGloss ? undefined : `Interlinear gloss only works on ${INTERLINEAR_MAX_WORDS} words or fewer (max ${INTERLINEAR_MAX_CHARS} characters)`}
+                      className={`w-full text-left px-3 py-1.5 font-medium transition-colors ${canGloss ? 'hover:bg-stone-50 text-stone-700 hover:text-adjung-maroon cursor-pointer' : 'text-stone-300 cursor-not-allowed'}`}
+                    >
+                      Insert Interlinear Gloss
+                    </button>
+                  );
+                })()}
               </div>
             )}
 
+            {/* Shared inline gloss input — replaces both entry points' old window.prompt() calls */}
+            {mode === 'edit' && showGlossInput && (contextCoords || toolbarCoords) && (() => {
+              const coords = (contextCoords || toolbarCoords)!;
+              const maxGlossChars = Math.floor(glossTargetText.length * INTERLINEAR_GLOSS_MAX_RATIO);
+              const overLimit = glossText.trim().length > maxGlossChars;
+              return (
+                <div
+                  style={{ position: 'absolute', top: `${coords.y}px`, left: `${coords.x}px` }}
+                  className="bg-stone-900 text-white rounded-lg shadow-lg p-2 z-50 text-[11px] font-sans animate-fade-in border border-stone-800 w-56"
+                >
+                  <div className="text-[9px] uppercase tracking-wider text-stone-400 mb-1">Gloss for "{glossTargetText}"</div>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={glossText}
+                    onChange={(e) => setGlossText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyInterlinearVisual(glossText);
+                      if (e.key === 'Escape') { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); }
+                    }}
+                    placeholder="translation / definition..."
+                    className="w-full bg-stone-800 border border-stone-700 focus:border-adjung-maroon px-2 py-1 rounded text-[11px] text-stone-100 focus:outline-none"
+                  />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className={`text-[9px] font-mono ${overLimit ? 'text-red-400' : 'text-stone-500'}`}>{glossText.trim().length}/{maxGlossChars}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); }}
+                        className="text-stone-400 hover:text-stone-200 text-xs px-1"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyInterlinearVisual(glossText)}
+                        disabled={!glossText.trim() || overLimit}
+                        className="px-2 py-0.5 bg-adjung-maroon text-white text-[10px] rounded uppercase tracking-wider font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Custom floating formatting toolbar */}
-            {mode === 'edit' && toolbarCoords && (
-              <div 
-                style={{ 
-                  position: 'absolute', 
-                  top: `${toolbarCoords.y}px`, 
-                  left: `${toolbarCoords.x}px`, 
-                  transform: 'translateX(-50%)' 
+            {mode === 'edit' && toolbarCoords && !showGlossInput && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `${toolbarCoords.y}px`,
+                  left: `${toolbarCoords.x}px`,
+                  transform: 'translateX(-50%)'
                 }}
                 className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-800 animate-fade-in"
               >
@@ -3480,7 +3696,22 @@ export function EntryRenderer({
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Quote</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-800 rounded transition">Para</button>
                 <div className="h-4 w-px bg-stone-700 mx-1"></div>
-                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertInterlinearVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Interlinear Note (Gloss)">Gloss</button>
+                {(() => {
+                  const rangeText = selectionRange ? selectionRange.toString() : '';
+                  const canGloss = isInterlinearSpanValid(rangeText);
+                  return (
+                    <button
+                      type="button"
+                      disabled={!canGloss}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => canGloss && insertInterlinearVisual()}
+                      title={canGloss ? "Insert Interlinear Note (Gloss)" : `Interlinear gloss only works on ${INTERLINEAR_MAX_WORDS} words or fewer (max ${INTERLINEAR_MAX_CHARS} characters)`}
+                      className={`px-2 py-1 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition ${canGloss ? 'hover:bg-stone-800 cursor-pointer' : 'text-stone-600 cursor-not-allowed'}`}
+                    >
+                      Gloss
+                    </button>
+                  );
+                })()}
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertLinkVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Link">Link</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Auto Number)">FN</button>
                 {(contentType === 'Essay') && (
@@ -3490,7 +3721,7 @@ export function EntryRenderer({
             )}
 
             {mode === 'edit' ? (
-              <div className="relative border-b border-dashed border-stone-200/55 pb-6">
+              <div className="relative border-b border-dashed border-stone-200/60 pb-6">
                 <RichTextEditable
                   tagName="div"
                   id="editorial-canvas-editor"
@@ -3506,7 +3737,7 @@ export function EntryRenderer({
                   }}
                   placeholder="Begin writing your manuscript here... Right-click to insert Footnotes and Margin Notes."
                   onContextMenu={handleContextMenu}
-                  className="w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-none font-serif text-xs leading-relaxed text-[#111111] outline-none"
+                  className={`w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-none ${proseFont} text-xs leading-relaxed text-[#111111] outline-none`}
                 />
               </div>
             ) : (
@@ -3540,6 +3771,13 @@ export function EntryRenderer({
                       return (
                         <ElasticMarginRow
                           key={index}
+                          proseFont={proseFont}
+                          spacingBefore={effectiveLayoutSettings?.spacingBefore}
+                          spacingAfter={effectiveLayoutSettings?.spacingAfter}
+                          columnWidthPx={effectiveLayoutSettings?.columnWidth}
+                          marginWidthPx={readingLayout?.marginNoteWidthPx ?? undefined}
+                          editMode={layoutEditMode}
+                          showEditLabels={index === 0}
                           noteLabel={noteEntries.length > 1 ? "Margin Notes" : "Margin Note"}
                           noteIndexRoman={noteEntries.length === 1 ? noteEntries[0].romanNum : undefined}
                           noteContent={
@@ -3550,7 +3788,7 @@ export function EntryRenderer({
                                 {noteEntries.map(entry => (
                                   <div key={entry.id}>
                                     {entry.romanNum && (
-                                      <span className="font-sans text-[10px] font-semibold text-adjung-maroon mr-1">
+                                      <span className="font-mono text-[10px] font-semibold text-adjung-maroon mr-1">
                                         ({entry.romanNum})
                                       </span>
                                     )}
@@ -3570,12 +3808,19 @@ export function EntryRenderer({
                       return (
                         <ElasticMarginRow
                           key={index}
+                          proseFont={proseFont}
+                          spacingBefore={effectiveLayoutSettings?.spacingBefore}
+                          spacingAfter={effectiveLayoutSettings?.spacingAfter}
+                          columnWidthPx={effectiveLayoutSettings?.columnWidth}
+                          marginWidthPx={readingLayout?.marginNoteWidthPx ?? undefined}
+                          editMode={layoutEditMode}
+                          showEditLabels={index === 0}
                         >
                           {renderBlock(block, index, undefined, undefined)}
                         </ElasticMarginRow>
                       );
                     }
-                    
+
                     return (
                       <div key={index} className="py-2 text-[#111111] leading-relaxed select-text">
                         {renderBlock(block, index, undefined, undefined)}
@@ -3608,13 +3853,13 @@ export function EntryRenderer({
                           key={id}
                           style={{ position: 'absolute', top: `${top}px`, left: 0 }}
                           onClick={() => setActiveMarginNoteId(id)}
-                          className="border-l-2 border-stone-200 hover:border-adjung-maroon/50 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
+                          className="border-l-2 border-stone-200 hover:border-adjung-maroon/60 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
                         >
                           <div className="flex items-center justify-between text-[8px] font-mono text-stone-400">
                             <span className="uppercase font-semibold text-stone-500">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
-                            <span className="text-[7.5px] uppercase tracking-wider text-adjung-maroon font-medium font-mono animate-pulse opacity-75">● click to edit</span>
+                            <span className="text-[7.5px] uppercase tracking-wider text-adjung-maroon font-medium font-mono animate-pulse opacity-95">● click to edit</span>
                           </div>
-                          <p className="text-xs font-serif text-stone-500 truncate pr-2 mt-0.5 italic">
+                          <p className={`text-xs ${proseFont} text-stone-500 truncate pr-2 mt-0.5 italic`}>
                             {marginNotesData[id] || 'Empty side note...'}
                           </p>
                         </div>
@@ -3653,7 +3898,7 @@ export function EntryRenderer({
                           placeholder="Add side margin note here..."
                           rows={3}
                           autoFocus
-                          className="w-full bg-white border border-adjung-maroon/20 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs font-serif text-stone-700 leading-relaxed shadow-sm"
+                          className={`w-full bg-white border border-adjung-maroon/20 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} text-stone-700 leading-relaxed shadow-sm`}
                         />
                       </div>
                     );
@@ -3666,7 +3911,7 @@ export function EntryRenderer({
                         id={`mn-note-card-${id}`}
                         key={id}
                         style={{ position: 'absolute', top: `${top}px`, left: 0 }}
-                        className="border-l border-stone-300 pl-4 py-0.5 text-left text-stone-600 font-serif text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in"
+                        className={`border-l border-stone-300 pl-4 py-0.5 text-left text-stone-600 ${proseFont} text-xs leading-relaxed w-full transition-all duration-300 animate-fade-in`}
                       >
                         <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon mr-1.5 select-none">({toRoman(mMap[id]).toLowerCase()})</span>
                         {parseInlineFormatting(marginNotesData[id] || '(Empty Note)', citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mMap)}
@@ -3686,7 +3931,7 @@ export function EntryRenderer({
         {status === 'Published' && entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 border-t border-stone-300 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
              <span className="w-2 h-2 bg-adjung-maroon rotate-45 mb-4"></span>
-             <div className="font-serif text-stone-900 tracking-wide text-lg">Adjung Editorial Board</div>
+             <div className={`${proseFont} text-stone-900 tracking-wide text-lg`}>Adjung Editorial Board</div>
              <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mt-2">
                 Published {formatDate(entry.publishedDate || new Date().toISOString())}
              </div>
@@ -3734,7 +3979,7 @@ export function EntryRenderer({
                       color="#802334"
                     />
                   </div>
-                  <div className="font-serif italic font-semibold text-stone-900 tracking-wide mt-2 text-center">
+                  <div className={`${proseFont} italic font-semibold text-stone-900 tracking-wide mt-2 text-center`}>
                     <div>{authorName}</div>
                     {authorAffiliation && (
                       <div className="font-sans font-normal not-italic text-[10px] text-stone-400 mt-0.5 select-all">
@@ -3865,7 +4110,7 @@ export function EntryRenderer({
                   setQuoteInsertDir('ltr');
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Quote (LTR)</span>
                 <span className="text-[9px] text-stone-400 font-mono">Kiri ke Kanan (Latin, Tamil, dsb)</span>
@@ -3877,7 +4122,7 @@ export function EntryRenderer({
                   setQuoteInsertDir('rtl');
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Quote (RTL)</span>
                 <span className="text-[9px] text-stone-400 font-mono">Kanan ke Kiri (Arabic, Jawi, dsb)</span>
@@ -3892,7 +4137,7 @@ export function EntryRenderer({
                   triggerSave(content, updated, marginNotes);
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Footnote</span>
                 <span className="text-[9px] text-stone-400 font-mono">Scholarly reference</span>
@@ -3903,7 +4148,7 @@ export function EntryRenderer({
                   setActiveCitationInsert(true);
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Citation</span>
                 <span className="text-[9px] text-stone-400 font-mono">Bibliography registry</span>
@@ -3914,7 +4159,7 @@ export function EntryRenderer({
                   setActiveTableInsert(true);
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Table</span>
                 <span className="text-[9px] text-stone-400 font-mono">Tabular grid editor</span>
@@ -3925,7 +4170,7 @@ export function EntryRenderer({
                   insertMarkdownText('![Figure caption](', ')');
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Figure</span>
                 <span className="text-[9px] text-stone-400 font-mono">Scholarly illustration</span>
@@ -3940,7 +4185,7 @@ export function EntryRenderer({
                   insertMarkdownText(`[${text}](${url})`);
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">+ Hyperlink</span>
                 <span className="text-[9px] text-stone-400 font-mono">External link anchor</span>
@@ -3951,7 +4196,7 @@ export function EntryRenderer({
                   insertMarkdownText('\n---\n');
                   setShowInsertMenu(false);
                 }}
-                className="p-2 bg-stone-900/50 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
+                className="p-2 bg-stone-900/60 hover:bg-stone-900 border border-stone-800 rounded text-left flex flex-col gap-0.5 text-xs text-stone-200 transition cursor-pointer"
               >
                 <span className="font-medium font-sans text-stone-100">Divider</span>
                 <span className="text-[9px] text-stone-400 font-mono">Horizontal separator</span>
@@ -3968,7 +4213,7 @@ export function EntryRenderer({
                   insertLinePrefix('# ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 H1
               </button>
@@ -3978,7 +4223,7 @@ export function EntryRenderer({
                   insertLinePrefix('## ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 H2
               </button>
@@ -3988,7 +4233,7 @@ export function EntryRenderer({
                   insertLinePrefix('### ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 H3
               </button>
@@ -3998,7 +4243,7 @@ export function EntryRenderer({
                   insertLinePrefix('- ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 Bullet
               </button>
@@ -4008,7 +4253,7 @@ export function EntryRenderer({
                   insertLinePrefix('1. ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 Numbered
               </button>
@@ -4018,7 +4263,7 @@ export function EntryRenderer({
                   insertLinePrefix('- [ ] ');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 Checklist
               </button>
@@ -4028,7 +4273,7 @@ export function EntryRenderer({
                   insertMarkdownText('`', '`');
                   setShowInsertMenu(false);
                 }}
-                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/85 transition cursor-pointer"
+                className="px-2 py-1 bg-stone-900/40 hover:bg-stone-900 rounded font-mono text-[9px] text-stone-300 border border-stone-800/90 transition cursor-pointer"
               >
                 Code
               </button>
@@ -4044,10 +4289,10 @@ export function EntryRenderer({
         {renderFloatingToolbar()}
 
         <motion.article
-          className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/50 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible select-text"
+          className="max-w-4xl mx-auto px-4 md:px-8 bg-white border border-stone-200/60 rounded-md py-8 md:py-12 shadow-sm text-left relative overflow-visible select-text"
         >
           {/* Header Block */}
-          <header className="mb-10 border-b border-stone-200/70 pb-6 relative">
+          <header className="mb-10 border-b border-stone-200/60 pb-6 relative">
             
             {/* Metadata Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-stone-100 pb-3">
@@ -4094,7 +4339,7 @@ export function EntryRenderer({
 
             {/* Featured Image URL Input Field */}
             {contentType !== 'Note' && (
-              <div className="mb-6 space-y-1 bg-stone-50/50 p-3 border border-stone-200/40 rounded transition">
+              <div className="mb-6 space-y-1 bg-stone-50/60 p-3 border border-stone-200/40 rounded transition">
                 <label className="block text-[9px] font-mono uppercase tracking-widest text-stone-400">Featured Image URL</label>
                 <input
                   type="text"
@@ -4130,7 +4375,7 @@ export function EntryRenderer({
                     triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
                   }}
                   placeholder="Enter Title..."
-                  className="text-2xl md:text-3.5xl font-serif text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/80 focus:border-adjung-maroon focus:outline-none py-1 pr-16"
+                  className={`text-2xl md:text-3.5xl ${proseFont} text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/90 focus:border-adjung-maroon focus:outline-none py-1 pr-16`}
                 />
                 <span className="absolute right-0 bottom-2 text-[9px] font-mono text-stone-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-150 select-none">
                   {title.length}/100
@@ -4143,7 +4388,7 @@ export function EntryRenderer({
             {/* Author Stamp Row */}
             <div className="flex items-center gap-3 text-stone-600 mt-2 select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-adjung-maroon" />
-              <div className="font-serif italic text-[13px] text-stone-500">
+              <div className={`${proseFont} italic text-[13px] text-stone-500`}>
                 Author: <span className="font-sans font-semibold text-stone-800 not-italic">{authorName}</span>
               </div>
             </div>
@@ -4160,14 +4405,14 @@ export function EntryRenderer({
                 }}
                 placeholder="Type a concise scholarly abstract or summary of this work..."
                 rows={2}
-                className="w-full bg-transparent border-l-2 border-adjung-maroon/20 pl-4 py-1 text-stone-500 font-serif italic text-sm md:text-[15px] leading-relaxed focus:outline-none resize-none"
+                className={`w-full bg-transparent border-l-2 border-adjung-maroon/20 pl-4 py-1 text-stone-500 ${proseFont} italic text-sm md:text-[15px] leading-relaxed focus:outline-none resize-none`}
               />
             </div>
           )}
 
           {/* Active Builder Overlay Block */}
           {(activeTableInsert || activeCitationInsert || activeQuoteInsert) && (
-            <div className="mb-8 p-4 border border-dashed border-adjung-maroon/30 rounded bg-stone-50/50 relative animate-fade-in text-left">
+            <div className="mb-8 p-4 border border-dashed border-adjung-maroon/30 rounded bg-stone-50/60 relative animate-fade-in text-left">
               <div className="absolute top-2 right-2 z-10">
                 <button
                   type="button"
@@ -4239,7 +4484,7 @@ export function EntryRenderer({
                   </div>
 
                   <div className="overflow-x-auto border border-stone-200 rounded">
-                    <table className="w-full text-left font-serif text-xs border-collapse">
+                    <table className={`w-full text-left ${proseFont} text-xs border-collapse`}>
                       <thead>
                         <tr className="bg-stone-50">
                           {tableHeaders.map((head, idx) => (
@@ -4417,7 +4662,7 @@ export function EntryRenderer({
                               insertMarkdownText(`[cite:${cit.id}]`);
                               showToast('Citation marker inserted', 'success');
                             }}
-                            className="font-serif text-stone-700 font-medium hover:text-adjung-maroon cursor-pointer text-left flex-grow pr-4"
+                            className={`${proseFont} text-stone-700 font-medium hover:text-adjung-maroon cursor-pointer text-left flex-grow pr-4`}
                           >
                             {cit.author} ({cit.year}) - "{cit.title}"
                           </button>
@@ -4437,7 +4682,7 @@ export function EntryRenderer({
 
               {/* Universal Quotation Builder */}
               {activeQuoteInsert !== null && (
-                <div className="space-y-4 p-4 border border-stone-200 bg-stone-50/50 rounded shadow-md animate-fade-in text-left">
+                <div className="space-y-4 p-4 border border-stone-200 bg-stone-50/60 rounded shadow-md animate-fade-in text-left">
                   <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-2">
                     <div className="text-[10px] font-mono uppercase tracking-wider text-adjung-maroon font-bold">
                       Universal Quotation Builder &bull; Pembuat Petikan Universal
@@ -4504,7 +4749,7 @@ export function EntryRenderer({
                       className={`w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon text-[#111111] bg-white leading-relaxed ${
                         quoteInsertDir === 'rtl'
                           ? 'font-arabic text-right text-base leading-loose'
-                          : 'font-serif text-left'
+                          : `${proseFont} text-left`
                       }`}
                     />
                   </div>
@@ -4518,11 +4763,11 @@ export function EntryRenderer({
                       id="universal-quote-input-translation"
                       rows={2}
                       placeholder="Type a translation here, if the original quote needs one..."
-                      className="w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon font-serif text-[#111111] bg-white leading-relaxed text-left"
+                      className={`w-full p-2.5 text-xs border border-stone-200 rounded focus:outline-none focus:border-adjung-maroon ${proseFont} text-[#111111] bg-white leading-relaxed text-left`}
                     />
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-1 border-t border-stone-200/50 mt-2">
+                  <div className="flex justify-end gap-2 pt-1 border-t border-stone-200/60 mt-2">
                     <button
                       type="button"
                       onClick={() => setActiveQuoteInsert(null)}
@@ -4563,7 +4808,7 @@ export function EntryRenderer({
           )}
 
           {/* Core Writing Body */}
-          <div className="text-[#111111] font-serif leading-relaxed tracking-normal text-[15px] md:text-base relative min-h-[350px]">
+          <div className={`text-[#111111] ${proseFont} leading-relaxed tracking-normal text-[15px] md:text-base relative min-h-[350px]`}>
             
             {/* Note - Large unified editing viewport */}
             {contentType === 'Note' && (
@@ -4578,7 +4823,7 @@ export function EntryRenderer({
                     triggerSave(val, footnotes, marginNotes);
                   }}
                   placeholder="Begin writing your manuscript here... Standard markdown markers are fully compiled in-canvas."
-                  className="w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-y font-serif text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111]"
+                  className={`w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-y ${proseFont} text-[15.5px] md:text-[16.5px] leading-relaxed text-[#111111]`}
                 />
 
                 {/* Lightweight insert popover trigger at the bottom of the textarea */}
@@ -4605,7 +4850,7 @@ export function EntryRenderer({
                   return (
                     <div 
                       key={index} 
-                      className="group relative border border-dashed border-stone-200/55 hover:border-adjung-maroon/30 p-4 rounded bg-stone-50/20 hover:bg-white focus-within:bg-white transition-all space-y-3"
+                      className="group relative border border-dashed border-stone-200/60 hover:border-adjung-maroon/30 p-4 rounded bg-stone-50/20 hover:bg-white focus-within:bg-white transition-all space-y-3"
                     >
                       {/* Floating Block controls header */}
                       <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 flex flex-wrap items-center justify-between border-b border-stone-100 pb-2 gap-2 transition-all duration-200">
@@ -4713,7 +4958,7 @@ export function EntryRenderer({
                               onChange={(e) => handleContentChange(index, e.target.value)}
                               placeholder={`Paragraph ${index + 1} manuscript... Supports Arabic text & inline footnotes.`}
                               rows={3}
-                              className={`w-full bg-transparent font-serif text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0 ${
+                              className={`w-full bg-transparent ${proseFont} text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0 ${
                                 isAr ? 'text-right font-arabic leading-loose text-lg font-medium' : 'text-left'
                               }`}
                             />
@@ -4735,7 +4980,7 @@ export function EntryRenderer({
                                   }}
                                   placeholder="Type quote text here... (e.g., English, Chinese, Tamil, etc.)"
                                   rows={2}
-                                  className="w-full bg-transparent font-serif italic text-sm text-stone-700 leading-relaxed border-none focus:outline-none resize-y p-0 text-left"
+                                  className={`w-full bg-transparent ${proseFont} italic text-sm text-stone-700 leading-relaxed border-none focus:outline-none resize-y p-0 text-left`}
                                 />
                               </div>
                               <div>
@@ -4750,7 +4995,7 @@ export function EntryRenderer({
                                   }}
                                   placeholder="English / Malay translation..."
                                   rows={1}
-                                  className="w-full bg-transparent font-serif text-stone-500 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs text-left"
+                                  className={`w-full bg-transparent ${proseFont} text-stone-500 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs text-left`}
                                 />
                               </div>
                             </div>
@@ -4788,7 +5033,7 @@ export function EntryRenderer({
                                   }}
                                   placeholder="English / Malay translation..."
                                   rows={1}
-                                  className="w-full bg-transparent font-serif text-stone-600 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs"
+                                  className={`w-full bg-transparent ${proseFont} text-stone-600 leading-relaxed border-none focus:outline-none resize-y p-0 text-xs`}
                                 />
                               </div>
                             </div>
@@ -4818,14 +5063,14 @@ export function EntryRenderer({
                                 onChange={(e) => handleContentChange(index, e.target.value)}
                                 placeholder="Type block content here..."
                                 rows={3}
-                                className="w-full bg-transparent font-serif text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0"
+                                className={`w-full bg-transparent ${proseFont} text-[15px] md:text-base text-stone-900 leading-relaxed border-none focus:outline-none resize-y p-0`}
                               />
                             </div>
                           )}
                         </div>
 
                         {/* Margin Commentary Commentary Area */}
-                        <div className="xl:col-span-4 pl-2 border-t xl:border-t-0 xl:border-l border-stone-200/50 pt-2 xl:pt-0 space-y-1">
+                        <div className="xl:col-span-4 pl-2 border-t xl:border-t-0 xl:border-l border-stone-200/60 pt-2 xl:pt-0 space-y-1">
                           <div className="flex items-center justify-between text-[9px] font-mono text-stone-400 select-none">
                             <span className="uppercase">Margin Note Commentary</span>
                             <span>{getWordCount(marginNotes[index] || '')}/50 words</span>
@@ -4874,7 +5119,7 @@ export function EntryRenderer({
               <div className="space-y-4">
                 {getOrderedFootnotesToRender().map((item) => {
                   return (
-                    <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/50 p-3 border border-stone-200/50 rounded-md hover:bg-white transition-all">
+                    <div key={item.originalId} className="flex gap-3 items-start bg-stone-50/60 p-3 border border-stone-200/60 rounded-md hover:bg-white transition-all">
                       <span className="font-mono text-xs text-adjung-maroon font-semibold w-5 mt-1.5 select-none">
                         [{item.displayNum}]
                       </span>
@@ -4891,7 +5136,7 @@ export function EntryRenderer({
                             handleFootnoteChange(item.originalId, e.target.value);
                           }}
                           rows={2}
-                          className="w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y font-serif text-stone-700 leading-relaxed"
+                          className={`w-full bg-white border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon resize-y ${proseFont} text-stone-700 leading-relaxed`}
                           placeholder={`Enter footnote ${item.displayNum} text content...`}
                         />
                       </div>
@@ -4922,7 +5167,7 @@ export function EntryRenderer({
                 </span>
               </div>
 
-              <ul className="space-y-3 font-serif text-[12.5px] leading-relaxed list-none pl-0">
+              <ul className={`space-y-3 ${proseFont} text-[12.5px] leading-relaxed list-none pl-0`}>
                 {(() => {
                   const sorted = [...citations].sort((a, b) => {
                     if (referenceSortOrder === 'alphabetical') {
@@ -4939,7 +5184,7 @@ export function EntryRenderer({
                     return (
                       <li 
                         key={cit.id} 
-                        className="text-stone-700 text-left hover:bg-stone-50/50 p-1.5 rounded transition flex items-baseline gap-2"
+                        className="text-stone-700 text-left hover:bg-stone-50/60 p-1.5 rounded transition flex items-baseline gap-2"
                       >
                         <span className="font-mono text-xs text-adjung-maroon font-medium select-none">
                           {referenceSortOrder === 'appearance' ? `[${displayIdx}]` : '•'}
@@ -5014,6 +5259,26 @@ export function EntryRenderer({
 
   return (
     <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`} onKeyDown={handleGlobalKeyDown}>
+      {isTrueChiefEditor && mode === 'view' && contentType === 'Essay' && (
+        <LayoutInspector
+          contentType={contentType}
+          currentSettings={layoutOverride}
+          defaultSettings={DEFAULT_ESSAY_LAYOUT_SETTINGS}
+          onToggle={setLayoutEditMode}
+          onPreview={setPreviewSettings}
+          onApply={async (settings) => {
+            try {
+              await firestoreService.saveLayoutSettings(settings);
+              setLayoutOverride(settings);
+              showToast('Layout applied', 'success');
+            } catch (err: any) {
+              console.error('[layout_settings] save failed:', err);
+              const detail = err?.message || err?.error_description || JSON.stringify(err);
+              showToast(`Could not save layout: ${detail}`, 'error');
+            }
+          }}
+        />
+      )}
       {!isEditingWorkspace ? (
         // Standard high-contrast reading layout
         renderPublishedContent()
@@ -5030,7 +5295,7 @@ export function EntryRenderer({
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center gap-2 px-4 py-2 mx-auto text-xs font-mono uppercase tracking-wider text-stone-600 hover:text-adjung-maroon bg-stone-100 hover:bg-stone-200/70 rounded transition cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 mx-auto text-xs font-mono uppercase tracking-wider text-stone-600 hover:text-adjung-maroon bg-stone-100 hover:bg-stone-200/60 rounded transition cursor-pointer"
             >
               <Settings className="w-4 h-4" />
               {showSettings ? 'Hide Settings' : 'Publishing Settings'}
@@ -5068,7 +5333,7 @@ export function EntryRenderer({
                         setContentType(type);
                         triggerSave(content, footnotes, marginNotes, type);
                       }}
-                      className="w-full border border-stone-200 bg-white p-1.5 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm"
+                      className="w-full border border-stone-200 bg-white p-1.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-sm"
                     >
                       <option value="Note">Note (concise reflection)</option>
                       <option value="Essay">Essay (supports margin notes & footnotes)</option>
@@ -5174,7 +5439,7 @@ export function EntryRenderer({
                           triggerSave(content, footnotes, marginNotes, contentType, status, visibility, updated);
                         }
                       }}
-                      className="bg-adjung-maroon text-[#FDFDFD] px-3 py-1 rounded text-xs hover:opacity-90 font-mono tracking-wider cursor-pointer"
+                      className="bg-adjung-maroon text-[#FDFDFD] px-3 py-1 rounded text-xs hover:opacity-95 font-mono tracking-wider cursor-pointer"
                     >
                       Add
                     </button>
@@ -5347,11 +5612,11 @@ export function EntryRenderer({
             <div className="flex items-center gap-3">
               <div className="flex flex-col text-left">
                 <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Editing Entry</span>
-                <span className="font-serif text-sm font-medium text-stone-200">
+                <span className="font-sans text-sm font-medium text-stone-200">
                   {contentType === 'Note' ? 'Philosophical Fragment (Note)' : (title || 'Untitled Entry')}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 bg-stone-800/85 px-2 py-1 rounded border border-stone-700/60">
+              <div className="flex items-center gap-1.5 bg-stone-800/90 px-2 py-1 rounded border border-stone-700/60">
                 <span className={`w-1.5 h-1.5 rounded-full ${status === 'Published' ? 'bg-emerald-400' : status === 'Archived' ? 'bg-stone-500' : 'bg-amber-400 animate-pulse'}`} />
                 <span className="font-mono text-[9px] uppercase tracking-wider text-stone-300">
                   {status} ({visibility.toLowerCase()})
@@ -5376,7 +5641,7 @@ export function EntryRenderer({
                 }}
                 className={`px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded transition-all font-medium border border-transparent cursor-pointer ${
                   status === 'Draft'
-                    ? 'bg-stone-800 text-stone-400 border-stone-700/65 cursor-default opacity-85'
+                    ? 'bg-stone-800 text-stone-400 border-stone-700/60 cursor-default opacity-95'
                     : 'bg-stone-800 hover:bg-stone-700 text-stone-200'
                 }`}
               >
@@ -5434,7 +5699,7 @@ export function EntryRenderer({
                 }}
                 className={`px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded transition-all font-medium border border-transparent cursor-pointer ${
                   status === 'Archived'
-                    ? 'bg-stone-800 text-stone-400 border-stone-700/65 cursor-default opacity-85'
+                    ? 'bg-stone-800 text-stone-400 border-stone-700/60 cursor-default opacity-95'
                     : 'bg-stone-800 hover:bg-stone-700 text-stone-200'
                 }`}
               >
@@ -5467,10 +5732,10 @@ export function EntryRenderer({
             toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
-          <div className={`border shadow-md px-4 py-3 rounded-sm flex items-start gap-2.5 font-serif text-[13px] hover:opacity-95 transition-all text-left ${
+          <div className={`border shadow-md px-4 py-3 rounded-sm flex items-start gap-2.5 font-sans text-[13px] hover:opacity-95 transition-all text-left ${
             toast.type === 'error' 
               ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/40' 
-              : 'bg-[#FDFDFD] border-stone-200/80 text-stone-700 shadow-sm'
+              : 'bg-[#FDFDFD] border-stone-200/90 text-stone-700 shadow-sm'
           }`}>
             <span className={`font-semibold text-base leading-none ${toast.type === 'error' ? 'text-red-600' : 'text-adjung-maroon'}`}>
               {toast.type === 'error' ? '⚠' : '✓'}

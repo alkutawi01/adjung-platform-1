@@ -8,9 +8,9 @@ export const essaySpec: PresentationSpec = {
     interlinearFont: 'font-signature text-adjung-maroon'
   },
   spacing: {
-    canvasMaxWidth: 'max-w-3xl',
+    canvasMaxWidth: 'max-w-[860px]',
     canvasPadding: 'py-10 px-4 md:px-8',
-    headerBottomMargin: 'mb-8 border-b border-stone-300 pb-6',
+    headerBottomMargin: 'mb-8 border-b border-adjung-maroon pb-6',
     paragraphSpacing: 'mb-6',
     signatureMarginTop: 'mt-16 pt-12 border-t border-stone-200'
   },

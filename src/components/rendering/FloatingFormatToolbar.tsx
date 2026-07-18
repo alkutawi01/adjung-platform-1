@@ -20,6 +20,8 @@ interface FloatingFormatToolbarProps {
   applyLink: (url: string) => void;
   applyInterlinear: (text: string) => void;
   applyFootnote: () => void;
+  canGloss?: boolean;
+  glossMaxChars?: number;
 }
 
 export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
@@ -38,13 +40,15 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
   applyLink,
   applyInterlinear,
   applyFootnote,
+  canGloss = true,
+  glossMaxChars = 0,
 }) => {
   if (!selectionState || !selectionState.show) return null;
 
   return (
     <div 
       style={{ left: `${selectionState.x}px`, top: `${selectionState.y}px` }}
-      className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/45 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
+      className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/40 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
     >
       {!showLinkInput && !showGlossInput ? (
         <>
@@ -87,9 +91,10 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setShowGlossInput(true)}
-            className="px-2 h-7 flex items-center justify-center rounded-full hover:bg-stone-800 text-stone-100 font-sans text-[10px] uppercase tracking-wider font-semibold transition cursor-pointer"
-            title="Insert Interlinear Note (Gloss)"
+            disabled={!canGloss}
+            onClick={() => canGloss && setShowGlossInput(true)}
+            className={`px-2 h-7 flex items-center justify-center rounded-full text-[10px] uppercase tracking-wider font-semibold transition font-sans ${canGloss ? 'hover:bg-stone-800 text-stone-100 cursor-pointer' : 'text-stone-600 cursor-not-allowed'}`}
+            title={canGloss ? "Insert Interlinear Note (Gloss)" : "Interlinear gloss only works on 3 words or fewer (max 20 characters)"}
             aria-label="Insert interlinear note"
           >
             Gloss
@@ -153,10 +158,14 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
             }}
             autoFocus
           />
+          <span className={`text-[9px] font-mono ${glossText.trim().length > glossMaxChars ? 'text-red-400' : 'text-stone-500'}`}>
+            {glossText.trim().length}/{glossMaxChars}
+          </span>
           <button
             type="button"
+            disabled={!glossText.trim() || glossText.trim().length > glossMaxChars}
             onClick={() => applyInterlinear(glossText)}
-            className="px-2 py-0.5 bg-adjung-maroon text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer"
+            className="px-2 py-0.5 bg-adjung-maroon text-white text-[10px] rounded uppercase font-sans tracking-wider font-semibold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Apply
           </button>

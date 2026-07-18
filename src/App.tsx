@@ -20,7 +20,6 @@ import {
   User as UserIcon,
   ChevronLeft,
   FileText,
-  FileEdit,
   Lock,
   Globe,
   Settings,
@@ -81,7 +80,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
         <h3
           key={pIdx}
           dir={isAr ? 'rtl' : 'ltr'}
-          className={`font-serif text-stone-900 font-semibold my-2.5 ${isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
+          className={`font-sans text-stone-900 font-semibold my-2.5 ${isAr ? 'text-right text-[15px] font-arabic leading-loose' : 'text-left text-[14px] tracking-tight'
             }`}
         >
           {textNode}
@@ -92,7 +91,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
         <h4
           key={pIdx}
           dir={isAr ? 'rtl' : 'ltr'}
-          className={`font-serif text-stone-800 font-medium my-2 ${isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
+          className={`font-sans text-stone-800 font-medium my-2 ${isAr ? 'text-right text-[13px] font-arabic leading-loose' : 'text-left text-[12px]'
             }`}
         >
           {textNode}
@@ -113,14 +112,14 @@ function renderFrontpageBlock(block: any, pIdx: number) {
             className={`flex items-center gap-1.5 ${isAr ? 'justify-start flex-row-reverse text-right' : 'text-left'}`}
           >
             <input type="checkbox" checked={listItem.checked} disabled className="h-3 w-3 rounded text-adjung-maroon cursor-default" />
-            <span className={`text-[12px] ${listItem.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-serif'}`}>
+            <span className={`text-[12px] ${listItem.checked ? 'line-through text-stone-400' : 'text-stone-600'} ${isAr ? 'font-arabic' : 'font-sans'}`}>
               {textNode}
             </span>
           </li>
         );
       }
       return (
-        <li key={itemIdx} className={`text-[12px] text-stone-600 ${isAr ? 'font-arabic text-right' : 'font-serif text-left'}`}>
+        <li key={itemIdx} className={`text-[12px] text-stone-600 ${isAr ? 'font-arabic text-right' : 'font-sans text-left'}`}>
           {textNode}
         </li>
       );
@@ -139,7 +138,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
 
   if (block.type === 'table') {
     return (
-      <div key={pIdx} className="my-3 overflow-x-auto border border-stone-200/50 rounded p-1 bg-stone-50/20 text-left">
+      <div key={pIdx} className="my-3 overflow-x-auto border border-stone-200/60 rounded p-1 bg-stone-50/20 text-left">
         <span className="font-mono text-[9px] text-stone-400 uppercase">Table: {block.headers.join(' | ')}</span>
       </div>
     );
@@ -148,7 +147,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
   if (block.type === 'image') {
     return (
       <figure key={pIdx} className="my-3 text-center bg-transparent">
-        <span className="inline-block text-[11px] text-stone-400 italic border border-stone-200/55 p-1 rounded font-serif bg-stone-50/10">
+        <span className="inline-block text-[11px] text-stone-400 italic border border-stone-200/60 p-1 rounded font-sans bg-stone-50/10">
           📷 [Image: {block.alt || 'Untitled'}]
         </span>
       </figure>
@@ -170,12 +169,12 @@ function renderFrontpageBlock(block: any, pIdx: number) {
   if (block.type === 'latin-quote') {
     return (
       <blockquote key={pIdx} className="my-4 pl-4 border-l border-adjung-maroon/20 text-left bg-transparent">
-        <p className="font-serif italic text-stone-600 text-xs md:text-sm">
+        <p className="font-sans italic text-stone-600 text-xs md:text-sm">
           {parseInlineFormatting(block.text)}
         </p>
         {block.translation && (
           <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
-            <p className="font-serif italic text-xs text-stone-500">
+            <p className="font-sans italic text-xs text-stone-500">
               {parseInlineFormatting(block.translation)}
             </p>
           </div>
@@ -192,7 +191,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
         </p>
         {block.translation && (
           <div dir="ltr" className="mt-2 pt-2 border-t border-stone-200/40 text-left">
-            <p className="font-serif italic text-xs text-stone-500">
+            <p className="font-sans italic text-xs text-stone-500">
               {parseInlineFormatting(block.translation)}
             </p>
           </div>
@@ -208,7 +207,7 @@ function renderFrontpageBlock(block: any, pIdx: number) {
       dir={isParaAr ? 'rtl' : 'ltr'}
       className={`${isParaAr
           ? 'font-arabic text-right text-stone-900 leading-loose text-sm md:text-base'
-          : 'font-serif text-left text-xs md:text-sm text-stone-600 leading-relaxed'
+          : 'font-sans text-left text-xs md:text-sm text-stone-600 leading-relaxed'
         }`}
     >
       {parseInlineFormatting(block.text)}
@@ -263,7 +262,6 @@ export default function App() {
     createNewEntry,
     toggleUserSuspension,
     changeUserRole,
-    saveWriterFromEditorium,
     hasPermission,
     inTheNewsGoogleDocText,
     worldClockHolidaysGoogleDocText,
@@ -290,6 +288,13 @@ export default function App() {
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
   const [isRouteSynced, setIsRouteSynced] = useState(false);
+  // Set while the URL->state effect below is applying a route (e.g. after
+  // Revert to Original Account leaves selectedAuthorId pointed at someone
+  // else's folio while the URL still reads /folio/<self>). Without this,
+  // that effect's setSelectedAuthorId(...) triggers the state->URL effect,
+  // which pushes the URL back to match the *old* selectedAuthorId, which
+  // re-triggers this effect again — an infinite navigate() ping-pong.
+  const isSyncingFromUrlRef = useRef(false);
   const [indexSearchQuery, setIndexSearchQuery] = useState('');
 
   // Synchronize browser title with central brand identity on mount
@@ -414,6 +419,13 @@ export default function App() {
   // Synchronize state-to-URL (pushState adapter)
   useEffect(() => {
     if (initializing || !isRouteSynced) return;
+    if (isSyncingFromUrlRef.current) {
+      // This state change came from the URL->state effect below reacting to
+      // a route change, not from an in-app action — don't push it back to
+      // the URL, or the two effects fight forever.
+      isSyncingFromUrlRef.current = false;
+      return;
+    }
 
     // Handle subdomain override logic
     if (authorFromSubdomain) {
@@ -472,6 +484,11 @@ export default function App() {
     const path = location.pathname;
     const parts = path.split('/').filter(Boolean);
     console.log('[ROUTER] path:', path, 'parts:', parts, 'currentUser:', currentUser?.id, 'authorFromSubdomain:', authorFromSubdomain?.id);
+
+    // Every state update below is derived FROM this URL — tell the
+    // state->URL effect to skip its next run instead of re-deriving a URL
+    // from that state and fighting this one.
+    isSyncingFromUrlRef.current = true;
 
     // If subdomain is active, we enforce selectedAuthorId
     if (authorFromSubdomain) {
@@ -1304,7 +1321,7 @@ Editorial Board of Adjung`;
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35, ease: 'easeInOut' }}
-          className="fixed inset-0 z-50 bg-[#FDFDFD]"
+          className="fixed inset-0 z-[100] bg-[#FDFDFD]"
         >
           <LoadingScreen />
         </motion.div>
@@ -1319,7 +1336,7 @@ Editorial Board of Adjung`;
           {/* Top Thin Reading Progress Bar */}
           <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-adjung-maroon/5 z-50 pointer-events-none">
             <div
-              className="h-full bg-adjung-maroon transition-all duration-75 ease-out"
+              className="h-full bg-adjung-maroon transition-all duration-150 ease-out"
               style={{ width: `${maxScroll > 0 ? Math.min(100, Math.max(0, (scrollY / maxScroll) * 100)) : 0}%` }}
             />
           </div>
@@ -1331,7 +1348,7 @@ Editorial Board of Adjung`;
               className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
                 }`}
             >
-              <div className="bg-[#FDFDFD] border border-stone-200/80 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-serif text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
+              <div className="bg-[#FDFDFD] border border-stone-200/90 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-sans text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
                 <span className="text-adjung-maroon font-semibold">✓</span>
                 <span className="tracking-wide">{toast.message}</span>
               </div>
@@ -1339,7 +1356,7 @@ Editorial Board of Adjung`;
           )}
           {/* ==================== 1. IMPERSONATION BANNER ==================== */}
           {originalUser && (
-            <div className="w-full h-9 bg-amber-50 border-b border-amber-200/60 text-amber-900 px-4 md:px-8 flex items-center justify-between text-xs select-none sticky top-0 z-50 shrink-0">
+            <div className="w-full h-9 bg-amber-50 border-b border-amber-200/60 text-amber-900 px-4 md:px-8 flex items-center justify-between text-xs select-none sticky top-0 z-40 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 <span className="font-sans font-medium">
@@ -1483,7 +1500,7 @@ Editorial Board of Adjung`;
                       Scholarly Biographies
                     </h2>
                     <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
-                    <p className="font-serif italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
+                    <p className="font-sans italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
                       Explore life journeys, publications, academic appointments, and achievements of our resident scholars.
                     </p>
                   </div>
@@ -1513,6 +1530,7 @@ Editorial Board of Adjung`;
                     setEditingBioItem={setEditingBioItem}
                     setShowAddBioModal={setShowAddBioModal}
                     handleRemoveBioItem={handleRemoveBioItem}
+                    setActiveTab={setActiveTab}
                   />
                 )
               )
@@ -1739,7 +1757,7 @@ Editorial Board of Adjung`;
                       placeholder="e.g. Master’s Defense on Calligraphic Grids"
                       value={newBioTitle}
                       onChange={(e) => setNewBioTitle(e.target.value)}
-                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif text-sm"
+                      className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-sans text-sm"
                       required
                     />
                   </div>
@@ -1765,7 +1783,7 @@ Editorial Board of Adjung`;
                     </button>
                     <button
                       type="submit"
-                      className="w-2/3 bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-90 transition font-semibold"
+                      className="w-2/3 bg-adjung-maroon text-[#FDFDFD] py-2 rounded text-xs font-mono uppercase tracking-wider hover:opacity-95 transition font-semibold"
                     >
                       Record Milestone
                     </button>
@@ -1800,7 +1818,7 @@ Editorial Board of Adjung`;
                   </div>
 
                   {/* Styled vintage email envelope card */}
-                  <div className="border border-amber-200/50 bg-[#FBF9F4] p-6 rounded shadow-sm relative overflow-hidden text-stone-800 select-all font-serif">
+                  <div className="border border-amber-200/60 bg-[#FBF9F4] p-6 rounded shadow-sm relative overflow-hidden text-stone-800 select-all font-sans">
                     <div className="absolute top-0 right-0 w-24 h-24 border-r-2 border-t-2 border-amber-900/10 rotate-12 translate-x-12 -translate-y-12 select-none pointer-events-none" />
                     <div className="space-y-4 whitespace-pre-line text-justify leading-relaxed pr-2 text-stone-700">
                       {generatedInvitation.emailBody}

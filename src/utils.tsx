@@ -434,7 +434,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
         );
       } else if (token.type === 'BACKTICK') {
         result.push(
-          <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-adjung-maroon px-1 py-0.5 rounded-sm border border-stone-200/50">
+          <code key={elementKey} className="font-mono text-[13px] bg-stone-100 text-adjung-maroon px-1 py-0.5 rounded-sm border border-stone-200/60">
             {innerParsed}
           </code>
         );
@@ -495,7 +495,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-mono px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
         id={`fnref-${part.content}`}
         title={`Jump to footnote ${num}`}
         onClick={(e) => {
@@ -521,7 +521,7 @@ function renderPartNode(
     return (
       <span
         key={part.key}
-        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-sans px-0.5 cursor-pointer scroll-mt-24 transition-all duration-350"
+        className="footnote-ref text-[10px] font-medium align-super select-none hover:text-adjung-maroon font-mono px-0.5 cursor-pointer scroll-mt-24 transition-all duration-300"
         id={`fnref-legacy-${part.content}`}
         title={`Jump to footnote ${num}`}
         onClick={(e) => {
@@ -549,7 +549,7 @@ function renderPartNode(
       <span 
         key={part.key}
         id={`mn-marker-${part.content}`}
-        className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-sans px-0.5 cursor-default"
+        className="margin-note-ref text-[10px] font-medium align-super select-none text-adjung-maroon font-mono px-0.5 cursor-default"
         title={`Margin Note ${roman}`}
       >
         ({roman})
@@ -1355,6 +1355,101 @@ export function serializeBlocks(blocks: ContentBlock[]): string {
   }).join('\n\n');
 }
 
+// Block types the Visual-mode contentEditable canvas cannot round-trip.
+// markdownToHtml has no rendering for them, and htmlToMarkdown strips any
+// HTML tag it doesn't recognize — so opening one of these blocks in Visual
+// mode and making any edit silently destroys the table/image/list/code
+// fence/XML quote-callout/divider the moment the canvas re-serializes.
+// Used to keep an entry pinned to Source mode until Visual mode actually
+// supports the block type it contains.
+const VISUAL_MODE_UNSUPPORTED_BLOCK_TYPES: ContentBlock['type'][] = [
+  'list', 'table', 'image', 'divider', 'code-block', 'latin-quote', 'arabic-quote', 'callout',
+];
+
+export function getVisualModeUnsupportedBlockTypes(content: string): ContentBlock['type'][] {
+  const blocks = parseContentToBlocks(content);
+  const found = new Set<ContentBlock['type']>();
+  blocks.forEach(b => {
+    if (VISUAL_MODE_UNSUPPORTED_BLOCK_TYPES.includes(b.type)) found.add(b.type);
+  });
+  return Array.from(found);
+}
+
+// Content types whose read-mode paragraphs are wrapped in ElasticMarginRow's
+// grid row (reading column + a reserved margin-note column) — currently
+// Essay only (EntryRenderer.tsx: `showMarginNotes = contentType === 'Essay'`).
+// A content type in this set needs card/column/margin-note reconciled
+// together, not solved as simple (card - column) / 2 — see below.
+const ELASTIC_MARGIN_ROW_CONTENT_TYPES: readonly string[] = ['Essay'];
+const ELASTIC_MARGIN_ROW_GAP_PX = 32; // gap between the two columns
+const MIN_PADDING_PX = 16;
+const MIN_USABLE_MARGIN_NOTE_PX = 120; // below this, margin note text stops being legible
+
+export interface ReadingLayout {
+  // Raw pixel numbers, not Tailwind class strings — a genuinely dynamic
+  // (user-adjustable, saved-in-the-database) value has no matching class in
+  // Tailwind's build-time-generated CSS, since the JIT scanner only sees
+  // literal strings in source files, never runtime template interpolation.
+  // `max-w-[${cardWidth}px]` looks correct in the DOM but silently renders
+  // nothing for any cardWidth Tailwind never saw at build time. Consumers
+  // must apply these via inline `style`, not by building a class string.
+  cardWidthPx: number;          // the card's width — a RESULT of padding + column + margin note, not a dial of its own
+  paddingMobilePx: number;      // fixed small padding below the md breakpoint
+  paddingDesktopPx: number;     // the real, adjustable padding — applies at >=768px
+  marginNoteWidthPx: number | null; // null when this content type has no margin-note column at all
+  warning: string | null;
+}
+
+/**
+ * Padding — the gap between the card's border and the reading column — is
+ * the actual dial (matching Word's "Indentation" field: an editor sets the
+ * gap directly, the page just is whatever size holds it). Column Width and
+ * Margin Note Width are dials too. Card Width is never set directly — it's
+ * always however big padding + column + margin note + the gap between them
+ * add up to. Resizing any of the three inputs moves the card; resizing the
+ * card was never a real option, since "how big is the page" isn't a
+ * meaningful question independent of what has to fit inside it.
+ */
+export function computeReadingLayout(contentType: string, columnWidth: number, marginNoteWidth: number, padding: number): ReadingLayout {
+  const hasMarginNoteColumn = ELASTIC_MARGIN_ROW_CONTENT_TYPES.includes(contentType);
+  const rowWidth = hasMarginNoteColumn
+    ? columnWidth + marginNoteWidth + ELASTIC_MARGIN_ROW_GAP_PX
+    : columnWidth;
+  const paddingPerSide = Math.max(MIN_PADDING_PX, Math.round(padding));
+  const cardWidth = rowWidth + paddingPerSide * 2;
+
+  let warning: string | null = null;
+  if (hasMarginNoteColumn && marginNoteWidth < MIN_USABLE_MARGIN_NOTE_PX) {
+    warning = `Margin note column is only ${Math.round(marginNoteWidth)}px — below ${MIN_USABLE_MARGIN_NOTE_PX}px it stops being legible.`;
+  }
+  if (padding < MIN_PADDING_PX) {
+    warning = `Padding can't go below ${MIN_PADDING_PX}px — the column would touch the card border.`;
+  }
+
+  return {
+    cardWidthPx: Math.round(cardWidth),
+    paddingMobilePx: 16,
+    paddingDesktopPx: paddingPerSide,
+    marginNoteWidthPx: hasMarginNoteColumn ? Math.round(marginNoteWidth) : null,
+    warning,
+  };
+}
+
+/**
+ * Truncates a title to at most maxLen characters, always breaking on a full
+ * word (never mid-word) before appending "...". Used by the Folio preview
+ * card's Full Horizontal slot to keep the title to one line.
+ */
+export function truncateTitle(title: string, maxLen: number = 55): string {
+  if (title.length <= maxLen) return title;
+  let cut = title.slice(0, maxLen);
+  if (title.charAt(maxLen) !== ' ') {
+    const lastSpace = cut.lastIndexOf(' ');
+    if (lastSpace > 0) cut = cut.slice(0, lastSpace);
+  }
+  return cut.replace(/[\s,;:.\-–—]+$/, '') + '...';
+}
+
 /**
  * Generates a clean random UUID for local database records.
  */
@@ -1793,6 +1888,30 @@ export function buildCrossReferencesMap(blocks: EditorBlock[]): Record<string, s
 
   return map;
 }
+
+// An interlinear gloss sits directly above a single word or very short
+// phrase — it has to stay terse or it visually overwhelms what it's
+// annotating. Longer spans/explanations belong in a margin note or
+// footnote instead. Centralized here (rather than inline in a component)
+// so the constraint can't silently disappear from one insertion path
+// while surviving in another, which is exactly how it was lost previously.
+export const INTERLINEAR_MAX_WORDS = 3;
+export const INTERLINEAR_MAX_CHARS = 20;
+export const INTERLINEAR_GLOSS_MAX_RATIO = 1.5;
+
+export const isInterlinearSpanValid = (text: string): boolean => {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  return wordCount <= INTERLINEAR_MAX_WORDS && trimmed.length <= INTERLINEAR_MAX_CHARS;
+};
+
+export const isInterlinearGlossValid = (referenceText: string, glossValue: string): boolean => {
+  const ref = referenceText.trim();
+  const gloss = glossValue.trim();
+  if (!ref || !gloss) return false;
+  return gloss.length <= ref.length * INTERLINEAR_GLOSS_MAX_RATIO;
+};
 
 export function getWordCount(text: string): number {
   if (!text) return 0;

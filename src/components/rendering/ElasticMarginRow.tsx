@@ -9,6 +9,13 @@ interface ElasticMarginRowProps {
   noteContent?: React.ReactNode;
   noteIndexRoman?: string;
   isRtl?: boolean;
+  proseFont?: string;
+  spacingBefore?: number; // px — overrides the default py-3 top spacing when provided
+  spacingAfter?: number;  // px — overrides the default py-3 bottom spacing when provided
+  columnWidthPx?: number; // px — explicit reading-column width (desktop). Falls back to the 8/12 grid ratio when omitted.
+  marginWidthPx?: number; // px — explicit margin-note-column width (desktop). Falls back to the 8/12 grid ratio when omitted.
+  editMode?: boolean;     // Layout Inspector is open — show Photoshop-style dashed outlines
+  showEditLabels?: boolean; // show the "COLUMN" / "MARGIN NOTE" tag once (first paragraph only)
 }
 
 export function ElasticMarginRow({
@@ -16,8 +23,18 @@ export function ElasticMarginRow({
   noteLabel,
   noteContent,
   noteIndexRoman,
-  isRtl = false
+  isRtl = false,
+  proseFont = 'font-sans',
+  spacingBefore,
+  spacingAfter,
+  columnWidthPx,
+  marginWidthPx,
+  editMode = false,
+  showEditLabels = false
 }: ElasticMarginRowProps) {
+  const spacingStyle = (spacingBefore !== undefined || spacingAfter !== undefined)
+    ? { paddingTop: spacingBefore ?? 12, paddingBottom: spacingAfter ?? 12 }
+    : undefined;
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   const x = useMotionValue(0);
@@ -37,24 +54,34 @@ export function ElasticMarginRow({
 
   // Desktop layout (always visible split-screen, perfectly aligned paragraphs)
   if (!isMobile) {
+    const gridStyle = (columnWidthPx !== undefined && marginWidthPx !== undefined)
+      ? { gridTemplateColumns: `${columnWidthPx}px ${marginWidthPx}px`, columnGap: 32 }
+      : undefined;
     return (
-      <div className="w-full py-3 border-b border-stone-100/40 last:border-0">
-        <div 
-          dir={isRtl ? 'rtl' : 'ltr'} 
-          className="grid grid-cols-12 gap-8 items-start"
+      <div className={`w-full border-b border-stone-100/40 last:border-0 ${spacingStyle ? '' : 'py-3'}`} style={spacingStyle}>
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className={gridStyle ? 'grid items-start' : 'grid grid-cols-12 gap-8 items-start'}
+          style={gridStyle}
         >
           {/* Main content column */}
-          <div className="col-span-8 text-[#111111] leading-relaxed select-text">
+          <div className={`relative text-[#111111] leading-relaxed select-text ${gridStyle ? '' : 'col-span-8'} ${editMode ? 'outline outline-2 outline-dashed outline-blue-400 outline-offset-4' : ''}`}>
+            {editMode && showEditLabels && (
+              <span className="absolute -top-5 left-0 font-mono text-[8px] uppercase tracking-wider text-blue-500 bg-white px-1 select-none">Column</span>
+            )}
             {children}
           </div>
 
-          {/* Margin note column (empty if there is no note content for this paragraph) */}
-          <div className={`col-span-4 select-text ${isRtl ? 'pr-6 text-right' : 'pl-6 text-left'}`}>
+          {/* Margin note column — always rendered + outlined in edit mode, even when empty, so the reserved space is visible */}
+          <div className={`relative select-text ${gridStyle ? '' : 'col-span-4'} ${isRtl ? 'pr-6 text-right' : 'pl-6 text-left'} ${editMode ? 'outline outline-2 outline-dashed outline-amber-400 outline-offset-4 min-h-[2em]' : ''}`}>
+            {editMode && showEditLabels && (
+              <span className="absolute -top-5 left-0 font-mono text-[8px] uppercase tracking-wider text-amber-500 bg-white px-1 select-none">Margin Note</span>
+            )}
             {noteContent ? (
-              <div className={isRtl ? "border-r-2 border-adjung-maroon/25 py-0.5 pr-4" : "border-l-2 border-adjung-maroon/25 py-0.5 pl-4"}>
+              <div className={isRtl ? "border-r-2 border-adjung-maroon/30 py-0.5 pr-4" : "border-l-2 border-adjung-maroon/30 py-0.5 pl-4"}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {noteIndexRoman && (
-                    <span className="font-sans text-[10px] font-semibold text-adjung-maroon">
+                    <span className="font-mono text-[10px] font-semibold text-adjung-maroon">
                       ({noteIndexRoman})
                     </span>
                   )}
@@ -64,7 +91,7 @@ export function ElasticMarginRow({
                     </span>
                   )}
                 </div>
-                <div className="text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed font-serif">
+                <div className={`text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed ${proseFont}`}>
                   {noteContent}
                 </div>
               </div>
@@ -135,7 +162,7 @@ export function ElasticMarginRow({
                 e.stopPropagation();
                 toggleOpen();
               }}
-              className="p-1 rounded-full hover:bg-stone-100 text-adjung-maroon/70 hover:text-adjung-maroon transition-colors flex items-center justify-center"
+              className="p-1 rounded-full hover:bg-stone-100 text-adjung-maroon/60 hover:text-adjung-maroon transition-colors flex items-center justify-center"
               title="Drag or click to reveal margin note"
             >
               {isOpen ? (
@@ -156,10 +183,10 @@ export function ElasticMarginRow({
           }}
           className={`flex-shrink-0 flex flex-col justify-center select-text ${isRtl ? 'pr-6 pl-4 text-right' : 'pl-6 pr-4 text-left'}`}
         >
-          <div className={`py-1 space-y-1.5 ${isRtl ? 'border-r-2 border-adjung-maroon/25 pr-4' : 'border-l-2 border-adjung-maroon/25 pl-4'}`}>
+          <div className={`py-1 space-y-1.5 ${isRtl ? 'border-r-2 border-adjung-maroon/30 pr-4' : 'border-l-2 border-adjung-maroon/30 pl-4'}`}>
             <div className="flex items-center gap-1.5">
               {noteIndexRoman && (
-                <span className="font-sans text-[10px] font-semibold text-adjung-maroon">
+                <span className="font-mono text-[10px] font-semibold text-adjung-maroon">
                   ({noteIndexRoman})
                 </span>
               )}
@@ -169,7 +196,7 @@ export function ElasticMarginRow({
                 </span>
               )}
             </div>
-            <div className="text-stone-500 italic text-[13px] leading-relaxed font-serif">
+            <div className={`text-stone-500 italic text-[13px] leading-relaxed ${proseFont}`}>
               {noteContent}
             </div>
           </div>

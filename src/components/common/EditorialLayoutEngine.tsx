@@ -45,7 +45,7 @@ export function EditorialLayoutEngine({
             <div className="flex-1 flex justify-end items-center">{payload.header.right}</div>
           </div>
           {payload.header.divider && (
-            <div className="w-full border-b border-stone-200/80 mt-4" />
+            <div className="w-full border-b border-stone-200/90 mt-4" />
           )}
           <div className={payload.header.gapClass} />
         </div>
@@ -63,7 +63,7 @@ export function EditorialLayoutEngine({
         <div className="shrink-0 w-full mt-auto">
           <div className={payload.footer.gapClass} />
           {payload.footer.divider && (
-            <div className="w-full border-t border-stone-200/80 mb-4" />
+            <div className="w-full border-t border-stone-200/90 mb-4" />
           )}
           <div className="w-full flex items-end justify-between select-none">
             <div className="flex-1 text-left">{payload.footer.left}</div>
