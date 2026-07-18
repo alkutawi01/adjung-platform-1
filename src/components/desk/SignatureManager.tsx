@@ -81,7 +81,7 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
 
       {!showPad && (!activeSig ? (
         <div className="text-center py-12 border border-dashed border-stone-300 rounded bg-stone-50">
-          <p className="text-stone-500 font-serif italic mb-2">No active signature configured.</p>
+          <p className="text-stone-500 font-sans italic mb-2">No active signature configured.</p>
           <button
             onClick={() => setShowPad(true)}
             className="text-adjung-maroon font-mono text-xs uppercase tracking-wider hover:underline"

@@ -69,7 +69,7 @@ export function SignatureLayout({
         className="flex flex-col items-center"
         style={{ marginTop: `-${96 - (96 * (baselineY / canvasHeight)) - 8}px` }}
       >
-        <div className="font-serif font-semibold text-stone-900 tracking-wide text-sm">
+        <div className="font-sans font-semibold text-stone-900 tracking-wide text-sm">
           {penName}
         </div>
         {affiliation && (
@@ -78,7 +78,7 @@ export function SignatureLayout({
           </div>
         )}
         {role && (
-          <div className="font-mono text-[8px] uppercase tracking-widest text-stone-400/80 mt-0.5">
+          <div className="font-mono text-[8px] uppercase tracking-widest text-stone-400/90 mt-0.5">
             {role}
           </div>
         )}

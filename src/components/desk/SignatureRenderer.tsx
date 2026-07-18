@@ -67,20 +67,23 @@ export function SignatureRenderer({
     const activeText = typedText || '';
     if (!activeText) {
       return (
-        <div className={`flex items-center justify-center text-stone-300 italic font-serif select-none ${className}`}>
+        <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
           No signature
         </div>
       );
     }
     
     const textScale = typographyStyle?.scale !== undefined ? typographyStyle.scale : 1;
-    const hasBaseline = penStyle?.baselineY !== undefined && penStyle?.canvasHeight !== undefined;
-    
-    // Dynamically calculate viewBox width based on text length and scale to prevent overflow
+
+    // Always center the text in a fixed-proportion viewBox — ignoring penStyle's
+    // capture-time baselineY/canvasHeight here, since those record where the text
+    // happened to sit on the original signing canvas, not where it should sit in
+    // an arbitrary downstream container. Using them caused the same signature to
+    // render off-center at inconsistent sizes across pages.
     const calculatedWidth = Math.max(activeText.length * 28 * textScale + 40, 400);
-    const canvasHeight = hasBaseline ? penStyle.canvasHeight! : 200;
+    const canvasHeight = 200;
     const viewBox = `0 0 ${calculatedWidth} ${canvasHeight}`;
-    const yPos = hasBaseline ? penStyle.baselineY! : canvasHeight / 2;
+    const yPos = canvasHeight / 2;
 
     return (
       <svg 
@@ -135,7 +138,7 @@ export function SignatureRenderer({
 
   if (!hasStrokes) {
     return (
-      <div className={`flex items-center justify-center text-stone-300 italic font-serif select-none ${className}`}>
+      <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
         No signature
       </div>
     );
@@ -157,7 +160,7 @@ export function SignatureRenderer({
 
   if (!hasValidPoints) {
     return (
-      <div className={`flex items-center justify-center text-stone-300 italic font-serif select-none ${className}`}>
+      <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
         Empty signature
       </div>
     );
@@ -167,24 +170,17 @@ export function SignatureRenderer({
   const padding = 12;
   const width = Math.max(maxX - minX + padding * 2, 100);
 
-  // Check if baseline information is available
-  const hasBaseline = penStyle?.baselineY !== undefined && penStyle?.canvasHeight !== undefined;
-
-  let height = 0;
-  let viewBox = '';
-  let mapX = (x: number) => x - minX + padding;
-  let mapY = (y: number) => y - minY + padding;
-
-  if (hasBaseline) {
-    const totalH = penStyle!.canvasHeight || 200;
-    const startX = minX - padding;
-    viewBox = `${startX} 0 ${width} ${totalH}`;
-    mapX = (x: number) => x; // Raw X mapping
-    mapY = (y: number) => y; // Raw Y mapping relative to baselineY height
-  } else {
-    height = Math.max(maxY - minY + padding * 2, 50);
-    viewBox = `0 0 ${width} ${height}`;
-  }
+  // Always crop the viewBox tightly to the actual ink bounding box, regardless of
+  // penStyle's capture-time baselineY/canvasHeight. Using the full capture canvas
+  // height left uneven empty space above or below the strokes depending on where
+  // on the original canvas the signature happened to be drawn — since
+  // preserveAspectRatio centers the *viewBox*, not the ink, that empty space is
+  // what made the same signature look off-center and inconsistently sized
+  // between Folio's hero corner and the Biography identity card.
+  const height = Math.max(maxY - minY + padding * 2, 50);
+  const viewBox = `0 0 ${width} ${height}`;
+  const mapX = (x: number) => x - minX + padding;
+  const mapY = (y: number) => y - minY + padding;
 
   return (
     <svg 

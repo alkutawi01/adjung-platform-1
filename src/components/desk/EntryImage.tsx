@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, RefreshCw, Edit, Upload, Link, Check, Loader2, Image as ImageIcon } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Edit3, Upload, Link, Check, Loader2, Image as ImageIcon } from 'lucide-react';
 
 interface EntryImageProps {
   key?: React.Key | null;
@@ -82,7 +82,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
     if (status === 'loading') {
       // Gentle, silent loading spacer without broken image icons
       return (
-        <div className="my-8 w-full max-w-lg mx-auto aspect-video bg-stone-50/55 rounded flex items-center justify-center border border-stone-200/20 select-none">
+        <div className="my-8 w-full max-w-lg mx-auto aspect-video bg-stone-50/60 rounded flex items-center justify-center border border-stone-200/20 select-none">
           <Loader2 className="w-5 h-5 text-stone-300 animate-spin" />
         </div>
       );
@@ -97,9 +97,9 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
           src={url} 
           alt={alt} 
           referrerPolicy="no-referrer"
-          className="max-w-full h-auto mx-auto border border-stone-200/50 p-1.5 bg-white shadow-sm rounded-sm"
+          className="max-w-full h-auto mx-auto border border-stone-200/60 p-1.5 bg-white shadow-sm rounded-sm"
         />
-        <figcaption className="text-xs text-stone-400 mt-2.5 italic font-serif">
+        <figcaption className="text-xs text-stone-400 mt-2.5 italic font-sans">
           {figNum !== undefined ? `Figure ${figNum}: ` : ''}{alt || 'Untitled'}
         </figcaption>
       </figure>
@@ -174,7 +174,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
           <div className="flex justify-end gap-2 pt-1.5">
             <button
               type="submit"
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-adjung-maroon hover:opacity-90 text-[#FDFDFD] font-mono text-[10px] uppercase tracking-wider rounded transition cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] font-mono text-[10px] uppercase tracking-wider rounded transition cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" /> Apply Changes
             </button>
@@ -195,20 +195,20 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                 src={url} 
                 alt={alt} 
                 referrerPolicy="no-referrer"
-                className="max-w-full max-h-80 h-auto mx-auto border border-stone-200/50 p-1.5 bg-white shadow-sm rounded-sm"
+                className="max-w-full max-h-80 h-auto mx-auto border border-stone-200/60 p-1.5 bg-white shadow-sm rounded-sm"
               />
               <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover/img:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="bg-white/95 hover:bg-white text-stone-700 p-1.5 rounded shadow-sm border border-stone-200/70 hover:text-adjung-maroon transition cursor-pointer"
+                  className="bg-white/90 hover:bg-white text-stone-700 p-1.5 rounded shadow-sm border border-stone-200/60 hover:text-adjung-maroon transition cursor-pointer"
                   title="Edit properties"
                 >
-                  <Edit className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3.5 h-3.5" />
                 </button>
               </div>
               {figNum !== undefined && (
-                <figcaption className="text-xs text-stone-400 mt-2 italic font-serif">
+                <figcaption className="text-xs text-stone-400 mt-2 italic font-sans">
                   Figure {figNum}: {alt || 'Untitled'}
                 </figcaption>
               )}
@@ -216,7 +216,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
           )}
 
           {status === 'failed' && (
-            <div className="p-4 border border-amber-200 bg-amber-50/50 rounded-md text-amber-900 space-y-3 shadow-sm select-text">
+            <div className="p-4 border border-amber-200 bg-amber-50/60 rounded-md text-amber-900 space-y-3 shadow-sm select-text">
               <div className="flex gap-2.5 items-start">
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -232,7 +232,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-1.5 border-t border-amber-200/50 select-none">
+              <div className="flex flex-wrap gap-2 pt-1.5 border-t border-amber-200/60 select-none">
                 <button
                   type="button"
                   onClick={handleRetry}
@@ -245,7 +245,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                   onClick={() => setIsEditing(true)}
                   className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-amber-300 bg-white hover:bg-amber-50 text-amber-800 font-mono text-[9.5px] uppercase tracking-wider rounded transition cursor-pointer"
                 >
-                  <Edit className="w-3.5 h-3.5" /> Edit URL
+                  <Edit3 className="w-3.5 h-3.5" /> Edit URL
                 </button>
                 <button
                   type="button"
@@ -273,7 +273,7 @@ interface EntryImageEditorProps {
 
 export function EntryImageEditor({ url, alt, idx, onUpdate, onConvertToParagraph }: EntryImageEditorProps) {
   return (
-    <div className="border border-stone-200/70 rounded-md p-4 bg-white shadow-sm space-y-4">
+    <div className="border border-stone-200/60 rounded-md p-4 bg-white shadow-sm space-y-4">
       <div className="flex items-center justify-between border-b border-stone-100 pb-2">
         <span className="font-mono text-[9.5px] uppercase tracking-wider text-stone-500 font-semibold flex items-center gap-1">
           📷 Image Block Editor

@@ -279,7 +279,7 @@ export function MobileSignCanvas() {
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col text-stone-200 font-sans select-none overflow-hidden">
       {/* Standalone Header */}
-      <header className="border-b border-stone-800 p-4 shrink-0 flex items-center justify-between bg-stone-900/50">
+      <header className="border-b border-stone-800 p-4 shrink-0 flex items-center justify-between bg-stone-900/60">
         <div className="flex items-center gap-2">
           <PenTool className="w-4 h-4 text-adjung-maroon" />
           <h1 className="font-serif text-sm tracking-wide text-stone-100">Adjung Scholar Signature</h1>
@@ -304,7 +304,7 @@ export function MobileSignCanvas() {
         
         {/* Draw Instructions overlay */}
         {strokes.length === 0 && (
-          <div className="absolute text-stone-600 font-serif text-center pointer-events-none select-none text-xs z-10">
+          <div className="absolute text-stone-600 font-sans text-center pointer-events-none select-none text-xs z-10">
             Draw your signature here
             <span className="block font-mono text-[9px] uppercase tracking-widest text-stone-700 mt-1">Touch & swipe to sign</span>
           </div>
@@ -335,11 +335,11 @@ export function MobileSignCanvas() {
       </div>
 
       {/* Action Toolbar */}
-      <footer className="border-t border-stone-800 p-4 shrink-0 flex gap-4 bg-stone-900/50">
+      <footer className="border-t border-stone-800 p-4 shrink-0 flex gap-4 bg-stone-900/60">
         <button
           type="button"
           onClick={clearCanvas}
-          className="w-1/3 py-3 rounded-md bg-stone-800 hover:bg-stone-700 active:bg-stone-700 text-stone-300 font-mono text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 border border-stone-700/50 cursor-pointer"
+          className="w-1/3 py-3 rounded-md bg-stone-800 hover:bg-stone-700 active:bg-stone-700 text-stone-300 font-mono text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 border border-stone-700/60 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Clear
         </button>

@@ -24,7 +24,7 @@ export function AnimatedSignature() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="font-serif text-[10px] uppercase tracking-[0.25em] text-stone-400 mt-2 font-semibold"
+        className="font-sans text-[10px] uppercase tracking-[0.25em] text-stone-400 mt-2 font-semibold"
       >
         Adjung
       </motion.span>

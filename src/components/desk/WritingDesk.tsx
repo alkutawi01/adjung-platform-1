@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PenTool, ChevronLeft, FileEdit, Lock, Globe, Settings } from 'lucide-react';
+import { PenTool, ChevronLeft, Edit3, Lock, Globe } from 'lucide-react';
 import { Entry, User, EntryType } from '../../types';
 import { EntryRenderer } from '../rendering/EntryRenderer';
-import { parseInlineFormatting, stripMarkdown } from '../../utils';
+import { parseInlineFormatting, stripMarkdown, getVisualModeUnsupportedBlockTypes } from '../../utils';
 import { useAppContext } from '../../context/AppContext';
 import { resolveDigitalSignature } from '../../utils/signatureResolvers';
 
@@ -29,9 +29,7 @@ export function WritingDesk({
 }: WritingDeskProps = {}) {
   const {
     currentUser,
-    setCurrentUser,
     entries,
-    profiles,
     identities,
     editingEntry: contextEditingEntry,
     setEditingEntry: contextSetEditingEntry,
@@ -39,8 +37,6 @@ export function WritingDesk({
     createNewEntry,
     saveEntry: contextSaveEntry,
     deleteEntry: contextDeleteEntry,
-    saveWriterFromEditorium,
-    showToast
   } = useAppContext();
 
   const activeEntry = mode === 'laboratory' ? entry : contextEditingEntry;
@@ -48,55 +44,33 @@ export function WritingDesk({
   const [viewMode, setViewMode] = useState<'preview' | 'editor'>(viewModeOverride || 'preview');
   const lastScrollY = useRef<number>(0);
 
-  // Settings states
-  const [deskUsername, setDeskUsername] = useState('');
-  const [deskPenName, setDeskPenName] = useState('');
-  const [deskSignature, setDeskSignature] = useState('');
-  const [deskBioText, setDeskBioText] = useState('');
-  const [deskHeroTitle, setDeskHeroTitle] = useState('');
-  const [deskHeroSubtitle, setDeskHeroSubtitle] = useState('');
-
   useEffect(() => {
     if (viewModeOverride) {
       setViewMode(viewModeOverride);
     }
   }, [viewModeOverride]);
 
-  useEffect(() => {
-    if (currentUser) {
-      const userProfile = profiles.find(p => p.authorId === currentUser.id);
-      const identity = identities.find(i => i.accountId === currentUser.id);
-      setDeskUsername(currentUser.username);
-      setDeskPenName(currentUser.penName);
-      setDeskSignature(currentUser.signature);
-      setDeskBioText(identity ? identity.biography : '');
-      setDeskHeroTitle(userProfile?.heroTitle || '');
-      setDeskHeroSubtitle(userProfile?.heroSubtitle || '');
-    }
-  }, [currentUser, profiles, identities]);
+  // Visual mode's contentEditable canvas cannot round-trip tables, images,
+  // lists, code fences, XML quote/callout blocks, or dividers — opening one
+  // of these in Visual mode and making any edit silently destroys the
+  // block the moment the canvas re-serializes (htmlToMarkdown strips any
+  // tag it doesn't recognize). Until Visual mode actually supports these
+  // block types, pin affected entries to Source mode so nobody loses a
+  // table/image/quote without realizing it.
+  const unsupportedVisualBlockTypes = activeEntry ? getVisualModeUnsupportedBlockTypes(activeEntry.content) : [];
+  const visualModeBlocked = unsupportedVisualBlockTypes.length > 0;
 
   useEffect(() => {
     if (activeEntry && mode !== 'laboratory') {
-      setViewMode('preview');
+      setViewMode(getVisualModeUnsupportedBlockTypes(activeEntry.content).length > 0 ? 'editor' : 'preview');
     }
   }, [activeEntry?.id, mode]);
 
-  const handleSaveFolioSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser) return;
-
-    saveWriterFromEditorium({
-      id: currentUser.id,
-      username: deskUsername,
-      penName: deskPenName,
-      signature: deskSignature,
-      bioSummary: currentUser.bioSummary || '',
-      heroTitle: deskHeroTitle,
-      heroSubtitle: deskHeroSubtitle,
-      bioText: deskBioText,
-    });
-    setCurrentUser({ ...currentUser, username: deskUsername, penName: deskPenName, signature: deskSignature });
-  };
+  useEffect(() => {
+    if (visualModeBlocked && viewMode === 'preview') {
+      setViewMode('editor');
+    }
+  }, [visualModeBlocked, viewMode]);
 
   const handleSave = (updatedEntry: Entry) => {
     if (mode === 'laboratory') {
@@ -144,7 +118,9 @@ export function WritingDesk({
             <div className="flex items-center border border-[#111111]/10 rounded overflow-hidden bg-white p-0.5 shadow-sm">
               <button
                 type="button"
+                disabled={visualModeBlocked}
                 onClick={() => {
+                  if (visualModeBlocked) return;
                   lastScrollY.current = window.scrollY;
                   setViewMode('preview');
                   setTimeout(() => {
@@ -154,10 +130,13 @@ export function WritingDesk({
                     });
                   }, 0);
                 }}
-                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
-                  viewMode === 'preview'
-                    ? 'bg-adjung-maroon text-white font-medium shadow-sm'
-                    : 'text-[#111111]/60 hover:text-adjung-maroon'
+                title={visualModeBlocked ? `Visual mode can't yet edit this entry's ${unsupportedVisualBlockTypes.join(', ')} content without losing it — use Source mode` : undefined}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm ${
+                  visualModeBlocked
+                    ? 'text-[#111111]/25 cursor-not-allowed'
+                    : viewMode === 'preview'
+                    ? 'bg-stone-800 text-white font-medium shadow-sm cursor-pointer'
+                    : 'text-[#111111]/60 hover:text-adjung-maroon cursor-pointer'
                 }`}
               >
                 ● Visual
@@ -176,7 +155,7 @@ export function WritingDesk({
                 }}
                 className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition rounded-sm cursor-pointer ${
                   viewMode === 'editor'
-                    ? 'bg-adjung-maroon text-white font-medium shadow-sm'
+                    ? 'bg-stone-800 text-white font-medium shadow-sm'
                     : 'text-[#111111]/60 hover:text-adjung-maroon'
                 }`}
               >
@@ -185,6 +164,15 @@ export function WritingDesk({
             </div>
           </div>
         </div>
+
+        {visualModeBlocked && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800">
+            <span className="font-mono text-[10px] uppercase tracking-wider font-bold shrink-0">Source mode only —</span>
+            <span>
+              This entry has {unsupportedVisualBlockTypes.join(', ')} content that Visual mode would corrupt if edited here. Editing is locked to Source mode until Visual mode supports {unsupportedVisualBlockTypes.length > 1 ? 'these block types' : 'this block type'}.
+            </span>
+          </div>
+        )}
 
         <EntryRenderer
           entry={activeEntry}
@@ -240,7 +228,7 @@ export function WritingDesk({
             <button
               type="button"
               onClick={() => createNewEntry('Essay')}
-              className="px-3 py-1.5 bg-adjung-maroon text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:opacity-95 transition cursor-pointer"
+              className="px-3 py-1.5 bg-stone-800 text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:bg-stone-700 transition cursor-pointer"
             >
               + Essay
             </button>
@@ -257,7 +245,7 @@ export function WritingDesk({
             
             {/* Drafts list */}
             <div className="space-y-4">
-              <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/50 flex items-center justify-between border-b border-[#111111]/10 pb-2">
+              <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/60 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Drafts</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
                   {entries.filter(e => {
@@ -292,11 +280,11 @@ export function WritingDesk({
                           <span>•</span>
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
+                        <h4 className="font-sans font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(draft.title)}
                         </h4>
                       </div>
-                      <FileEdit className="w-4 h-4 text-[#111111]/40 group-hover:text-adjung-maroon flex-shrink-0" />
+                      <Edit3 className="w-4 h-4 text-[#111111]/40 group-hover:text-adjung-maroon flex-shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -305,7 +293,7 @@ export function WritingDesk({
 
             {/* Published list */}
             <div className="space-y-4">
-              <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/50 flex items-center justify-between border-b border-[#111111]/10 pb-2">
+              <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/60 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Published</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
                   {entries.filter(e => {
@@ -340,7 +328,7 @@ export function WritingDesk({
                           <span>•</span>
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
+                        <h4 className="font-sans font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(pub.title)}
                         </h4>
                       </div>
@@ -350,7 +338,7 @@ export function WritingDesk({
                         ) : (
                           <Globe className="w-3.5 h-3.5 text-stone-400" title="Public" />
                         )}
-                        <FileEdit className="w-4 h-4 group-hover:text-adjung-maroon" />
+                        <Edit3 className="w-4 h-4 group-hover:text-adjung-maroon" />
                       </div>
                     </div>
                   ))}

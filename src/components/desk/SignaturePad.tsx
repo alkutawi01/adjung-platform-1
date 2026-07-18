@@ -392,11 +392,11 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-8 bg-stone-950/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4 md:p-8 bg-stone-950/90 backdrop-blur-sm">
       <div className="flex flex-col bg-stone-900 border-0 sm:border border-stone-800 rounded-none sm:rounded-lg p-4 sm:p-5 shadow-2xl text-stone-200 w-full max-w-4xl h-full sm:h-auto xl:h-[530px] max-h-screen sm:max-h-[95vh] overflow-hidden">
         
         {/* Modal Header */}
-        <div className="flex justify-between items-center border-b border-stone-800/80 pb-3 mb-4 w-full select-none shrink-0">
+        <div className="flex justify-between items-center border-b border-stone-800/90 pb-3 mb-4 w-full select-none shrink-0">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-adjung-maroon" />
             <h2 className="font-serif text-[16px] text-stone-100">Signature Studio</h2>
@@ -405,7 +405,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
             <button
               type="button"
               onClick={onCancel}
-              className="text-stone-400 hover:text-stone-200 transition-colors cursor-pointer p-1.5 hover:bg-stone-800/50 rounded border border-stone-800"
+              className="text-stone-400 hover:text-stone-200 transition-colors cursor-pointer p-1.5 hover:bg-stone-800/60 rounded border border-stone-800"
               title="Close modal"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,7 +421,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
       {/* Settings Panel */}
       {showSettings && (
         <div className="w-full xl:w-72 flex flex-col gap-3 border-b xl:border-b-0 xl:border-r border-stone-800 pb-3 xl:pb-0 xl:pr-4 select-none overflow-y-auto max-h-[200px] xl:max-h-full scrollbar-none shrink-0">
-          <div className="flex items-center justify-between border-b border-stone-800/50 pb-1.5">
+          <div className="flex items-center justify-between border-b border-stone-800/60 pb-1.5">
             <h3 className="font-mono text-[9px] uppercase tracking-widest text-adjung-maroon font-bold flex items-center gap-1">
               <Sliders className="w-3 h-3" /> Studio Controls
             </h3>
@@ -766,7 +766,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                     setTypedText(filtered);
                   }}
                   placeholder="Type your signature here..."
-                  className="w-full bg-stone-950/40 border border-stone-800 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-adjung-maroon font-serif"
+                  className="w-full bg-stone-950/40 border border-stone-800 p-1.5 px-3 rounded text-stone-200 text-xs focus:outline-none focus:border-adjung-maroon font-sans"
                 />
                 <span className="font-mono text-[9px] text-stone-500 shrink-0 select-none bg-stone-950/20 px-2 py-1.5 rounded border border-stone-800">
                   {typedText.length}/15
@@ -841,14 +841,14 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
               />
               
               {/* Elegant baseline guideline */}
-              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/80 pointer-events-none flex justify-between items-end select-none">
-                <span className="font-mono text-[8px] tracking-widest text-stone-600/80 uppercase pb-1">Signature baseline</span>
-                <span className="font-serif text-[11px] italic text-stone-500/70 pb-0.5">Adjung studio</span>
+              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/90 pointer-events-none flex justify-between items-end select-none">
+                <span className="font-mono text-[8px] tracking-widest text-stone-600/90 uppercase pb-1">Signature baseline</span>
+                <span className="font-sans text-[11px] italic text-stone-500/60 pb-0.5">Adjung studio</span>
               </div>
 
               {strokes.length === 0 && (
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center opacity-20 transition-all select-none z-10">
-                  <span className="font-serif text-3xl italic tracking-wide text-stone-600">Sign Here</span>
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center opacity-30 transition-all select-none z-10">
+                  <span className="font-sans text-3xl italic tracking-wide text-stone-600">Sign Here</span>
                   <span className="font-mono text-[8px] uppercase tracking-widest text-stone-500 mt-2">
                     Supports pressure & stylus velocity
                   </span>
@@ -875,9 +875,9 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
               </span>
               
               {/* Elegant baseline guideline (matches Draw mode) */}
-              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/80 pointer-events-none flex justify-between items-end select-none">
-                <span className="font-mono text-[8px] tracking-widest text-stone-600/80 uppercase pb-1">Signature baseline</span>
-                <span className="font-serif text-[11px] italic text-stone-500/70 pb-0.5">Adjung studio</span>
+              <div className="absolute left-6 right-6 bottom-16 border-b border-dashed border-stone-500/90 pointer-events-none flex justify-between items-end select-none">
+                <span className="font-mono text-[8px] tracking-widest text-stone-600/90 uppercase pb-1">Signature baseline</span>
+                <span className="font-sans text-[11px] italic text-stone-500/60 pb-0.5">Adjung studio</span>
               </div>
             </>
           )}
