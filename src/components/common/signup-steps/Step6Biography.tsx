@@ -15,7 +15,7 @@ export default function Step6Biography({ formData, setFormData }: Step6Biography
         rows={4}
         value={formData.biography}
         onChange={e => setFormData({...formData, biography: e.target.value})}
-        className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2.5 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif leading-relaxed placeholder:italic placeholder:text-stone-400/60"
+        className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2.5 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-sans leading-relaxed placeholder:italic placeholder:text-stone-400/60"
         placeholder="Tell readers a little about yourself. You can always edit this later."
       ></textarea>
     </div>

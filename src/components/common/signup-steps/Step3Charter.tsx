@@ -46,7 +46,7 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
     >
       <div className="text-center w-full">
         {entryMode === 'oauth-completion' && (
-          <p className="font-serif text-stone-500 text-sm mb-2">Welcome back — one quick step before we set up your account.</p>
+          <p className="font-sans text-stone-500 text-sm mb-2">Welcome back — one quick step before we set up your account.</p>
         )}
         <h2 className="font-serif text-2xl md:text-3xl font-normal text-stone-900 mb-1 tracking-tight">Terms of Use</h2>
         <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-4 select-none">≈ 5 minutes</p>
@@ -55,10 +55,10 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
       <div 
         ref={containerRef}
         onScroll={handleScroll}
-        className="w-full max-w-md border border-stone-200/80 bg-stone-50/50 p-6 md:p-8 flex flex-col overflow-y-auto rounded-sm maroon-scrollbar" 
+        className="w-full max-w-md border border-stone-200/90 bg-stone-50/60 p-6 md:p-8 flex flex-col overflow-y-auto rounded-sm maroon-scrollbar" 
         style={{ maxHeight: '200px' }}
       >
-        <div className="text-stone-600 font-serif leading-relaxed text-sm text-justify space-y-4">
+        <div className="text-stone-600 font-sans leading-relaxed text-sm text-justify space-y-4">
           <div>
             <h3 className="font-serif text-base font-bold text-stone-900 mb-2">1. Introduction</h3>
             <p className="mb-2 font-normal">Welcome to Adjung.</p>
@@ -165,7 +165,7 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
             <motion.p 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
-              className="text-center text-adjung-maroon font-serif text-xs font-normal mt-6 pt-4 border-t border-stone-200"
+              className="text-center text-adjung-maroon font-sans text-xs font-normal mt-6 pt-4 border-t border-stone-200"
             >
               You have reached the end of the Adjung Terms of Use.
             </motion.p>
@@ -174,7 +174,7 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
       </div>
 
       <div className="w-full max-w-xl mt-6 flex flex-col items-center select-none">
-        <label className={`flex items-start gap-3 mb-6 ${scrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} max-w-md`}>
+        <label className={`flex items-start gap-3 mb-6 ${scrolledToBottom ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} max-w-md`}>
           <input 
             type="checkbox" 
             disabled={!scrolledToBottom}
@@ -204,7 +204,7 @@ export default function Step3Charter({ onNext, entryMode = 'standard' }: Step3Ch
           onClick={onNext} 
           className={`px-10 py-3 border font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm font-bold ${
             agreed && scrolledToBottom
-              ? 'bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] cursor-pointer shadow-sm' 
+              ? 'bg-stone-800 hover:bg-stone-900 text-[#FDFDFD] cursor-pointer shadow-sm'
               : 'border-stone-200 text-stone-400 cursor-not-allowed bg-transparent'
           }`}
         >

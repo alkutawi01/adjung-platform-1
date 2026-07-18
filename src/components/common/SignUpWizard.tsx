@@ -124,7 +124,7 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 text-stone-400 hover:text-adjung-maroon transition-all duration-300 z-40 p-1.5 rounded-full hover:bg-stone-100 cursor-pointer group"
+            className="absolute top-5 right-5 text-stone-400 hover:text-adjung-maroon transition-all duration-300 z-10 p-1.5 rounded-full hover:bg-stone-100 cursor-pointer group"
             aria-label="Cancel account setup"
           >
             <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
@@ -154,9 +154,9 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
                 </span>
               </div>
             </div>
-            <div className="w-24 h-[1.5px] bg-stone-200/50 rounded-full overflow-hidden relative mr-8">
+            <div className="w-24 h-[1.5px] bg-stone-200/60 rounded-full overflow-hidden relative mr-8">
               <div
-                className="h-full bg-adjung-maroon transition-all duration-500 ease-out"
+                className="h-full bg-adjung-maroon transition-all duration-300 ease-out"
                 style={{ width: `${((flowIndex + 1) / flow.length) * 100}%` }}
               />
             </div>

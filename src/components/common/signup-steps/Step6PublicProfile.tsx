@@ -35,17 +35,17 @@ export default function Step6PublicProfile({ formData, setFormData, onNext }: St
 
       <div className="w-full max-w-md flex-1 overflow-y-auto space-y-8 px-1">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/70 mb-3 font-bold">Biography</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/60 mb-3 font-bold">Biography</p>
           <Step6Biography formData={formData} setFormData={setFormData} />
         </div>
 
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/70 mb-3 font-bold">Personal Site</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/60 mb-3 font-bold">Personal Site</p>
           <Step7PersonalSite formData={formData} setFormData={setFormData} />
         </div>
 
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/70 mb-3 font-bold">Signature</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-adjung-maroon/60 mb-3 font-bold">Signature</p>
           <Step8Signature formData={formData} setFormData={setFormData} />
         </div>
       </div>

@@ -120,11 +120,11 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
 
         {/* Syncing Progress Overlay */}
         {isSyncing && (
-          <div className="bg-white border border-stone-200/80 p-8 rounded-sm text-center shadow-lg w-full max-w-md flex flex-col items-center justify-center space-y-4">
+          <div className="bg-white border border-stone-200/90 p-8 rounded-sm text-center shadow-lg w-full max-w-md flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-8 h-8 text-adjung-maroon animate-spin" />
             <div className="space-y-1">
               <p className="font-mono text-[10px] uppercase tracking-widest text-stone-400 font-bold">SIGNATURE SYNCHRONIZATION</p>
-              <p className="font-serif text-sm text-stone-600 font-normal">Copying signature data from mobile device...</p>
+              <p className="font-sans text-sm text-stone-600 font-normal">Copying signature data from mobile device...</p>
             </div>
             <div className="w-48 bg-stone-100 h-1 rounded-full overflow-hidden relative">
               <div className="bg-adjung-maroon h-full transition-all duration-300" style={{ width: `${syncProgress}%` }} />
@@ -139,7 +139,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
             
             {/* If signature exists, display certificate card */}
             {hasRecordedSignature ? (
-              <div className="border border-stone-200/80 bg-white p-5 rounded-sm shadow-sm relative overflow-hidden select-none">
+              <div className="border border-stone-200/90 bg-white p-5 rounded-sm shadow-sm relative overflow-hidden select-none">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-adjung-maroon" />
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -186,8 +186,8 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                   onClick={() => setIsDrawingPadOpen(true)}
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
-                      <PenTool className="w-4 h-4 text-adjung-maroon/80" /> Draw signature on PC / tablet
+                    <span className="text-sm font-semibold text-stone-800 font-serif group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <PenTool className="w-4 h-4 text-adjung-maroon/90" /> Draw signature on PC / tablet
                     </span>
                     <span className="text-xs text-stone-400 mt-1 font-sans">Use touch trackpad or mouse cursor</span>
                   </div>
@@ -200,8 +200,8 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                   onClick={() => setMode('typo')}
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
-                      <Type className="w-4 h-4 text-adjung-maroon/80" /> Typographic signature
+                    <span className="text-sm font-semibold text-stone-800 font-serif group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <Type className="w-4 h-4 text-adjung-maroon/90" /> Typographic signature
                     </span>
                     <span className="text-xs text-stone-400 mt-1 font-sans">Generate stylized signature from your pen name</span>
                   </div>
@@ -214,8 +214,8 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                   onClick={() => setMode('qr')}
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-stone-800 font-sans group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
-                      <QrCode className="w-4 h-4 text-adjung-maroon/80" /> Draw on mobile (Scan QR)
+                    <span className="text-sm font-semibold text-stone-800 font-serif group-hover:text-adjung-maroon transition-colors flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-adjung-maroon/90" /> Draw on mobile (Scan QR)
                     </span>
                     <span className="text-xs text-stone-400 mt-1 font-sans">Scan to sign easily on your smartphone touch screen</span>
                   </div>
@@ -254,7 +254,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                 value={typedText}
                 onChange={e => setTypedText(e.target.value)}
                 maxLength={20}
-                className="w-full border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon transition-all font-serif"
+                className="w-full border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 rounded-sm focus:outline-none focus:border-adjung-maroon transition-all font-sans"
                 placeholder="E.g. Al-Ghazali"
               />
             </div>
@@ -311,19 +311,19 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
               <div className="space-y-3">
                 <div className="flex gap-2.5 items-start">
                   <Smartphone className="w-5 h-5 text-adjung-maroon shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-stone-600 font-serif leading-relaxed font-normal">
+                  <p className="text-[12px] text-stone-600 font-sans leading-relaxed font-normal">
                     Scan the QR code on the left with your smartphone's camera to open the mobile <span className="font-sans font-semibold text-stone-800">Calligraphy Pad</span>.
                   </p>
                 </div>
                 <div className="flex gap-2.5 items-start">
                   <Laptop className="w-5 h-5 text-stone-400 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-stone-600 font-serif leading-relaxed font-normal">
+                  <p className="text-[12px] text-stone-600 font-sans leading-relaxed font-normal">
                     The signature drawn on your phone screen will be synchronized directly to this computer.
                   </p>
                 </div>
 
                 {/* Direct Testing URL */}
-                <div className="bg-stone-50 border border-stone-200/80 p-2 rounded text-[10px] text-stone-500 font-sans leading-relaxed select-all">
+                <div className="bg-stone-50 border border-stone-200/90 p-2 rounded text-[10px] text-stone-500 font-sans leading-relaxed select-all">
                   <span className="font-bold text-stone-700 block mb-0.5">Direct link (for local testing):</span>
                   <a href={mobileSignUrl} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline break-all block">
                     {mobileSignUrl}
@@ -366,7 +366,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 bg-[#0c0a09]/85 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
+            className="absolute inset-0 bg-[#0c0a09]/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <SimulatedMobileCanvas 
               onSave={handleSimulateMobileSign} 

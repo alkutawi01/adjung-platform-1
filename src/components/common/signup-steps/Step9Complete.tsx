@@ -40,9 +40,9 @@ export default function Step9Complete({ onComplete }: Step9CompleteProps) {
       <AnimatePresence>
         {!showFinal && (
           <motion.div exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.6 }} className="flex flex-col gap-6 w-full items-center justify-center min-h-[250px] select-none">
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(0) ? 1 : 0, y: visibleLines.includes(0) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 font-normal">Your account has been established.</motion.p>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(1) ? 1 : 0, y: visibleLines.includes(1) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 font-normal">Your intellectual identity has been created.</motion.p>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(2) ? 1 : 0, y: visibleLines.includes(2) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-serif text-xl text-stone-500 font-normal">Adjung is ready for you.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(0) ? 1 : 0, y: visibleLines.includes(0) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-sans text-xl text-stone-500 font-normal">Your account has been established.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(1) ? 1 : 0, y: visibleLines.includes(1) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-sans text-xl text-stone-500 font-normal">Your intellectual identity has been created.</motion.p>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: visibleLines.includes(2) ? 1 : 0, y: visibleLines.includes(2) ? 0 : 10 }} transition={{ duration: 0.8 }} className="font-sans text-xl text-stone-500 font-normal">Adjung is ready for you.</motion.p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -59,7 +59,7 @@ export default function Step9Complete({ onComplete }: Step9CompleteProps) {
               </svg>
             </div>
             <h1 className="font-serif text-3xl md:text-4xl font-normal text-stone-900 mb-3 tracking-tight">Welcome to Adjung.</h1>
-            <p className="font-serif text-stone-500 text-sm mb-10 max-w-sm leading-relaxed font-normal">
+            <p className="font-sans text-stone-500 text-sm mb-10 max-w-sm leading-relaxed font-normal">
               You can start reading immediately. Publishing tools are waiting whenever you're ready.
             </p>
             <button

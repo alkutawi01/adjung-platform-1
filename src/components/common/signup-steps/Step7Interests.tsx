@@ -84,7 +84,7 @@ export default function Step7Interests({ formData, setFormData, onNext }: Step7I
                   className={`px-3 py-1.5 text-xs font-sans rounded-full border transition-all ${
                     active
                       ? 'bg-adjung-maroon border-adjung-maroon text-white'
-                      : 'bg-white border-stone-200 text-stone-600 hover:border-adjung-maroon disabled:opacity-40 disabled:cursor-not-allowed'
+                      : 'bg-white border-stone-200 text-stone-600 hover:border-adjung-maroon disabled:opacity-50 disabled:cursor-not-allowed'
                   }`}
                 >
                   {topic}
@@ -125,7 +125,7 @@ export default function Step7Interests({ formData, setFormData, onNext }: Step7I
           <select
             value={formData.preferredEdition || ''}
             onChange={e => setFormData({ ...formData, preferredEdition: e.target.value })}
-            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif"
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-sans"
           >
             <option value="">No preference</option>
             {EDITIONS.map(edition => (
@@ -139,7 +139,7 @@ export default function Step7Interests({ formData, setFormData, onNext }: Step7I
       </div>
 
       <div className="w-full border-t border-stone-200 pt-4 mt-4 flex justify-between items-center bg-[#FFFFFF] select-none">
-        <span className="text-[11px] text-stone-400 font-serif font-normal">
+        <span className="text-[11px] text-stone-400 font-sans font-normal">
           {canContinue ? '' : 'Choose at least one language to continue'}
         </span>
         <button

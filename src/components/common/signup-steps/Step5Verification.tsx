@@ -59,16 +59,16 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
       </div>
 
       <form onSubmit={handleVerify} className="space-y-6 w-full max-w-md font-sans">
-        <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-sm text-left relative overflow-hidden select-all text-amber-900">
+        <div className="bg-amber-50/60 border border-amber-200 p-4 rounded-sm text-left relative overflow-hidden select-all text-amber-900">
           <div className="flex gap-2">
             <span className="font-mono text-xs font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">DEMO MODE</span>
             <span className="font-sans text-[11px] leading-relaxed">
               Real email delivery isn't wired up yet — this code is shown here so you can continue testing. Intended recipient: <strong className="font-mono">{formData.email || 'scholar@adjung.com'}</strong>
             </span>
           </div>
-          <div className="mt-2.5 pt-2.5 border-t border-amber-200/50 flex justify-between items-center text-[12px] font-serif">
+          <div className="mt-2.5 pt-2.5 border-t border-amber-200/60 flex justify-between items-center text-[12px] font-sans">
             <span>Your 6-digit verification code:</span>
-            <strong className="font-mono text-sm tracking-widest text-adjung-maroon font-bold select-all bg-white px-2 py-0.5 border border-amber-200/50 rounded shadow-sm animate-pulse">
+            <strong className="font-mono text-sm tracking-widest text-adjung-maroon font-bold select-all bg-white px-2 py-0.5 border border-amber-200/60 rounded shadow-sm animate-pulse">
               {generatedCode}
             </strong>
           </div>
@@ -108,7 +108,7 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
           <button 
             type="button"
             onClick={() => setCode(generatedCode)}
-            className="text-adjung-maroon/80 hover:text-adjung-maroon font-mono uppercase tracking-wider transition font-semibold"
+            className="text-adjung-maroon/90 hover:text-adjung-maroon font-mono uppercase tracking-wider transition font-semibold"
           >
             Auto-fill
           </button>

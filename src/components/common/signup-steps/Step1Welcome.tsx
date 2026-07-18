@@ -24,7 +24,7 @@ export default function Step1Welcome({ onNext }: Step1WelcomeProps) {
       <div className="flex flex-col items-center justify-center flex-1 py-4">
         <h1 className="font-serif text-3xl md:text-4xl font-normal text-[#111111] mb-3 tracking-tight leading-tight">Adjung</h1>
         <p className="text-adjung-maroon text-sm mb-5 font-mono uppercase tracking-widest">Knowledge worth keeping.</p>
-        <p className="text-stone-500 text-base max-w-sm leading-relaxed font-serif font-normal">
+        <p className="text-stone-500 text-base max-w-sm leading-relaxed font-sans font-normal">
           Adjung is a place for people who value knowledge over noise. Read, write, discover, and preserve ideas that matter.
         </p>
       </div>

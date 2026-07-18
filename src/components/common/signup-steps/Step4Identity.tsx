@@ -100,7 +100,7 @@ export default function Step4Identity({ formData, setFormData, onNext, entryMode
             required
             value={formData.displayName}
             onChange={e => setFormData({...formData, displayName: e.target.value})}
-            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60"
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-sans placeholder:italic placeholder:text-stone-400/60"
             placeholder="e.g. Alex Morgan"
           />
         </div>
@@ -115,7 +115,7 @@ export default function Step4Identity({ formData, setFormData, onNext, entryMode
             required
             value={formData.penName}
             onChange={e => setFormData({...formData, penName: e.target.value})}
-            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-serif placeholder:italic placeholder:text-stone-400/60"
+            className="w-full border-b-2 border-t-0 border-x-0 border-stone-200/60 bg-transparent px-0 py-2 text-sm text-stone-900 rounded-none focus:outline-none focus:border-adjung-maroon transition-all font-sans placeholder:italic placeholder:text-stone-400/60"
             placeholder="e.g. Alex M."
           />
         </div>

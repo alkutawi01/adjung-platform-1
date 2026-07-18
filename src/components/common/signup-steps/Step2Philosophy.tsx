@@ -65,7 +65,7 @@ export default function Step2Philosophy({ onNext }: Step2PhilosophyProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.3 }}
-          className="w-full bg-white border border-stone-200/80 rounded-sm shadow-sm p-8 text-center cursor-grab active:cursor-grabbing select-none"
+          className="w-full bg-white border border-stone-200/90 rounded-sm shadow-sm p-8 text-center cursor-grab active:cursor-grabbing select-none"
         >
           <p className="font-serif text-xl text-stone-900 font-normal mb-3 leading-snug">{CARDS[index].title}</p>
           <p className="font-sans text-sm text-stone-500 leading-relaxed">{CARDS[index].body}</p>
@@ -88,7 +88,7 @@ export default function Step2Philosophy({ onNext }: Step2PhilosophyProps) {
 
       <button
         onClick={onNext}
-        className="px-10 py-3 bg-adjung-maroon hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
+        className="px-10 py-3 bg-stone-800 hover:bg-stone-900 text-[#FDFDFD] font-mono text-xs tracking-widest uppercase transition-all duration-300 rounded-sm shadow-sm font-bold cursor-pointer"
       >
         Continue
       </button>
