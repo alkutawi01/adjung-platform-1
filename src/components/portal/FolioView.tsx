@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Entry, WriterProfile, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { isArabicText, parseInlineFormatting, toRoman } from '../../utils';
+import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, getReadingTime } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { EntryRenderer } from '../rendering/EntryRenderer';
@@ -140,7 +140,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
             Independent Folios
           </h2>
           <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
-          <p className="font-serif text-stone-600 text-sm md:text-base leading-loose max-w-lg mx-auto">
+          <p className="font-sans text-stone-600 text-sm md:text-base leading-loose max-w-lg mx-auto">
             {systemSettings.editorialPolicy}
           </p>
         </div>
@@ -184,7 +184,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     onChange={(e) => setEditedTitle(e.target.value.slice(0, 200))}
                     onKeyDown={(e) => handleKeyDownShortcut(e, setEditedTitle)}
                     maxLength={200}
-                    className="w-full border border-stone-200 p-2 pr-16 rounded text-2xl md:text-[28px] font-serif text-[#111111] focus:outline-none focus:border-adjung-maroon leading-tight"
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[22px] md:text-[26px] font-sans text-[#111111] focus:outline-none focus:border-adjung-maroon leading-tight"
                     placeholder="Folio Hero Title"
                   />
                   <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
@@ -197,7 +197,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     onChange={(e) => setEditedSubtitle(e.target.value.slice(0, 300))}
                     onKeyDown={(e) => handleKeyDownShortcut(e, setEditedSubtitle)}
                     maxLength={300}
-                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[14px] md:text-[15px] font-serif text-stone-500 focus:outline-none focus:border-adjung-maroon min-h-[140px] leading-relaxed"
+                    className="w-full border border-stone-200 p-2 pr-16 rounded text-[14px] md:text-[15px] font-sans text-stone-500 focus:outline-none focus:border-adjung-maroon min-h-[140px] leading-relaxed"
                     placeholder="Folio Hero Subtitle"
                   />
                   <span className="absolute right-2 bottom-2 text-[9px] font-mono text-stone-400 select-none">
@@ -215,7 +215,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                   <button
                     type="button"
                     onClick={handleSaveHeader}
-                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 cursor-pointer"
                   >
                     Save
                   </button>
@@ -223,7 +223,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
               </div>
             ) : (
               <>
-                <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight relative group/title inline-block">
+                <h2 className="font-serif text-[22px] md:text-[26px] font-normal tracking-tight text-[#111111] leading-tight relative group/title inline-block">
                   <span>{parseInlineFormatting(authorProfile?.heroTitle || '')}</span>
                   {currentUser?.id === currentAuthor.id && (
                     <button
@@ -237,15 +237,22 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     </button>
                   )}
                 </h2>
-                <p className="font-serif text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
+                <p className="font-sans text-[14px] md:text-[15px] text-stone-500 leading-relaxed max-w-xl">
                   {parseInlineFormatting(authorProfile?.heroSubtitle || '')}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bio')}
+                  className="font-mono text-[10px] uppercase tracking-wider text-stone-400 hover:text-adjung-maroon transition cursor-pointer"
+                >
+                  View Biography
+                </button>
               </>
             )}
           </div>
           {/* Writer Signature replacement of traditional avatar (refined personal seal style) */}
           <div className="flex-shrink-0 text-center border-l border-stone-300 pl-8 py-1.5 select-none flex flex-col justify-center">
-            <div className="h-16 w-64 flex items-center justify-center z-10 relative mix-blend-multiply">
+            <div className="h-28 w-72 flex items-center justify-center z-10 relative mix-blend-multiply">
               {currentAuthor && (() => {
                 const heroSig = resolveDigitalSignature(currentAuthor.id, identities);
                 return (
@@ -274,7 +281,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
           <div className="text-center py-20 bg-transparent border-none max-w-xl mx-auto">
             <FileText className="w-10 h-10 text-stone-300 mx-auto mb-3" />
             <h3 className="font-serif text-stone-700 text-lg">Folio Archives Empty</h3>
-            <p className="font-serif text-xs text-stone-500 mt-1">This writer has not yet cataloged any public publications in this category.</p>
+            <p className="font-sans text-xs text-stone-500 mt-1">This writer has not yet cataloged any public publications in this category.</p>
           </div>
         ) : (
           <div className="space-y-12">
@@ -290,13 +297,13 @@ export const FolioView: React.FC<FolioViewProps> = ({
                 <section key={year} className="relative pl-0 md:pl-28">
                   {/* Left side year indicator (Floating anchor) */}
                   <div className="absolute left-0 top-1 text-center hidden md:block">
-                    <span className="font-serif text-2xl font-bold tracking-tight text-adjung-maroon block">
+                    <span className="font-mono text-2xl font-medium tracking-tight text-adjung-maroon block">
                       {year}
                     </span>
                   </div>
 
-                  <div className="border-t border-stone-200/50 pt-3 mb-3 md:hidden">
-                    <span className="font-serif text-xl font-bold tracking-tight text-adjung-maroon mr-2">{year}</span>
+                  <div className="border-t border-stone-200/60 pt-3 mb-3 md:hidden">
+                    <span className="font-mono text-xl font-medium tracking-tight text-adjung-maroon mr-2">{year}</span>
                   </div>
 
                   {/* Timeline items list */}
@@ -304,48 +311,133 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     {yearEntries.map((item) => {
                       const dateObj = new Date(item.publishedDate || item.createdDate);
                       const isAr = isArabicText(item.title || item.content);
-                      
+
                       const formatDate = (d: Date) => {
                         const day = d.getDate();
                         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
                         return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
                       };
 
+                      // Same serial#/version derivation as the full-view header
+                      // (EntryRenderer.tsx) — kept in step so the card's
+                      // metadata bar always matches what the reader sees
+                      // after clicking through.
+                      const sortedPublished = [...authorPublishedEntries]
+                        .filter(e => e.status === 'Published' && e.publishedDate)
+                        .sort((a, b) => new Date(a.publishedDate!).getTime() - new Date(b.publishedDate!).getTime());
+                      const serialIndex = Math.max(0, sortedPublished.findIndex(e => e.id === item.id));
+                      const serialNum = `#${serialIndex.toString(36).padStart(4, '0').toUpperCase()}`;
+
+                      let majorV = 1;
+                      let minorV = 0;
+                      const pubDate = new Date(item.publishedDate || item.createdDate);
+                      if (item.revisions && item.revisions.length > 0) {
+                        const revs = [...item.revisions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                        let currentDay = pubDate.toDateString();
+                        revs.forEach(rev => {
+                          const revDay = new Date(rev.timestamp).toDateString();
+                          if (revDay === currentDay) minorV++;
+                          else { majorV++; minorV = 0; currentDay = revDay; }
+                        });
+                      } else if (item.updatedDate) {
+                        const upDate = new Date(item.updatedDate);
+                        if (upDate.toDateString() !== pubDate.toDateString()) majorV = 2;
+                        else if (upDate.getTime() - pubDate.getTime() > 1000) minorV = 1;
+                      }
+                      const versionStr = `v${majorV}.${minorV}`;
+                      const readingTimeStr = `${parseInt(getReadingTime(item.content || '')) || 1} MIN READ`;
+                      const authorDomain = `${currentAuthor?.username || 'scholar'}.adjung.com`;
+                      const displayTitle = truncateTitle(item.title || '', 55);
+
                       return (
-                        <div 
+                        <div
                           key={item.id}
-                          className="group bg-[#FDFDFD] border border-stone-200/80 rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between text-center select-text cursor-default relative overflow-hidden min-h-[180px] w-full"
+                          className="group bg-white border border-stone-200/90 rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between text-center select-text cursor-default relative overflow-hidden min-h-[180px] w-full"
                         >
                           {/* Center Content Area */}
                           <div className="flex-1 flex flex-col justify-center items-center select-text">
-                            {/* Metadata */}
-                            <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-2 select-text">
-                              <span>{formatDate(dateObj)}</span>
+                            {/* Metadata bar — mirrors the full-view header bar */}
+                            <div className="w-full flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-400 mb-4 border-b border-adjung-maroon pb-3 select-text">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span>{serialNum}</span>
+                                <span className="text-stone-300 font-bold">·</span>
+                                <span>{versionStr}</span>
+                                <span className="text-stone-300 font-bold">·</span>
+                                <span>{formatDate(dateObj)}</span>
+                                <span className="text-stone-300 font-bold">·</span>
+                                <span>{readingTimeStr}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="normal-case text-stone-400">{authorDomain}</span>
+                                {/* Visual echo of the full view's actions-menu
+                                    glyph — decorative here, not wired to
+                                    EntryActionsMenu (that lives on the
+                                    destination page, not the preview card). */}
+                                <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
+                              </div>
                             </div>
 
-                            {/* Title */}
-                            <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text ${isAr ? 'font-arabic' : ''}`}>
-                              {parseInlineFormatting(item.title || '')}
+                            {/* Title — serif to match the full-view h1, capped
+                                to one line so the card never grows past its
+                                fixed slot height. */}
+                            <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text px-9 ${isAr ? 'font-arabic' : ''}`}>
+                              {parseInlineFormatting(displayTitle)}
                             </h3>
 
-                            {/* Author Name */}
-                            <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mt-1.5 mb-3.5 select-text">
-                              by {currentAuthor?.penName || currentAuthor?.displayName || 'Scholar'}
+                            {/* Byline — "by" stays mono/UI, the name itself
+                                is serif with the same underline treatment as
+                                full view's author stamp. */}
+                            <div className="flex items-baseline gap-1.5 mt-1.5 mb-3.5 select-text">
+                              <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">by</span>
+                              <span className="font-serif font-medium text-stone-700 text-[11px] border-b border-stone-200 pb-0.5">
+                                {currentAuthor?.penName || currentAuthor?.displayName || 'Scholar'}
+                              </span>
                             </div>
 
-                            {/* Short Excerpt */}
-                            <div className="text-xs text-stone-500 font-serif leading-relaxed max-w-xl mx-auto line-clamp-3 select-text w-full text-left">
+                            {/* Short Excerpt — 2 lines, justified. Latin gets
+                                a real floating drop cap matching full view
+                                (text-4xl float-left, via CSS ::first-letter —
+                                fine for Latin since a drop cap is only ever
+                                one character). Arabic does NOT get a drop
+                                cap (not a script convention — see
+                                EntryRenderer.tsx's own `!isAr` guard) but
+                                DOES get its whole first word bolded/tinted
+                                maroon — ::first-letter can't express "whole
+                                word," so that's done with real markup via
+                                TimelineEntryCollapseRenderer's
+                                accentFirstWord prop instead. [&_p] overrides
+                                win over the component's own text-left
+                                default, tuned for its other (non-card)
+                                usages.
+
+                                Truncation: maxWordsOverride/maxCharsOverride
+                                keep the component's OWN word-safe cut (it
+                                never splits mid-word — see
+                                truncatePreviewContent) inside a budget that
+                                actually fits 2 lines at this font size, so
+                                its "..." is what readers see. line-clamp-3
+                                below is a generous safety net only, not the
+                                primary cut mechanism — CSS line-clamp has no
+                                notion of word boundaries and was the actual
+                                cause of the mid-word "menja..." cutoff. */}
+                            <div className={`text-xs text-stone-500 leading-relaxed max-w-xl mx-auto select-text w-full px-9 line-clamp-3 [&_p]:!text-justify ${isAr ? '' : '[&::first-letter]:text-4xl [&::first-letter]:font-serif [&::first-letter]:font-normal [&::first-letter]:text-adjung-maroon [&::first-letter]:float-left [&::first-letter]:leading-none [&::first-letter]:mr-1 [&::first-letter]:mt-0.5'}`}>
                               <TimelineEntryCollapseRenderer
                                 item={item}
                                 isExpanded={false}
                                 onToggle={() => {}}
+                                accentFirstWord
+                                maxWordsOverride={22}
+                                maxCharsOverride={115}
                                 onOpenText={() => {}}
                                 showInlineToggle={false}
                               />
                             </div>
                           </div>
 
-                          {/* Circular Action Button -> on the right */}
+                          {/* Circular Action Button -> on the right. Maroon
+                              by default (not just on hover) and the ONLY
+                              click target on the card — the box itself is
+                              cursor-default, not a click surface. */}
                           <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
                             <button
                               type="button"
@@ -353,7 +445,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                 e.stopPropagation();
                                 handleRestrictedAction(() => setSelectedEntry(item));
                               }}
-                              className="w-8 h-8 rounded-full border border-stone-200 hover:border-adjung-maroon bg-white flex items-center justify-center text-stone-400 hover:text-white hover:bg-adjung-maroon transition-all duration-200 cursor-pointer shadow-sm"
+                              className="w-8 h-8 rounded-full border border-adjung-maroon bg-white flex items-center justify-center text-adjung-maroon hover:text-white hover:bg-adjung-maroon transition-all duration-200 cursor-pointer shadow-sm"
                               title="Read full essay"
                             >
                               <ArrowRight className="w-4 h-4" />

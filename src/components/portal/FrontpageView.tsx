@@ -527,7 +527,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     : "Adjung will begin accepting applications for the 2027 Fellowship Programme in September. Details will be published in the Directory.";
 
   return (
-    <div className="bg-transparent text-[#1F1F1F] font-serif w-full min-h-screen px-4 md:px-8 py-12 select-none animate-fade-in">
+    <div className="bg-transparent text-[#1F1F1F] font-sans w-full min-h-screen px-4 md:px-8 py-12 select-none animate-fade-in">
       <div className="max-w-5xl mx-auto">
         
         {/* Wordmark Hero */}
@@ -591,7 +591,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     {holidayName}
                   </div>
                 )}
-                <p className="font-serif text-xs md:text-sm text-[#1F1F1F] font-light min-w-[140px]">
+                <p className="font-sans text-xs md:text-sm text-[#1F1F1F] font-light min-w-[140px]">
                   {timeData ? timeData.timeStr : 'Loading...'}
                 </p>
               </div>
@@ -609,7 +609,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               setShowNewsOverlay(true);
             }
           }}
-          className="py-3 px-0 bg-transparent hover:opacity-85 transition duration-300 cursor-pointer text-left space-y-2 group relative"
+          className="py-3 px-0 bg-transparent hover:opacity-95 transition duration-300 cursor-pointer text-left space-y-2 group relative"
         >
           <div className="flex justify-between items-center select-none">
             <p className="font-sans text-[10px] tracking-editorial uppercase text-[#7B2737] font-semibold">
@@ -631,7 +631,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
-                  className="font-serif text-[#1F1F1F] text-base md:text-lg leading-snug tracking-tight"
+                  className="font-sans text-[#1F1F1F] text-base md:text-lg leading-snug tracking-tight"
                 >
                   <strong 
                     className="font-sans text-[11px] md:text-xs uppercase tracking-wider mr-2.5 font-bold inline-block"
@@ -644,7 +644,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            <p className="font-serif italic text-stone-400 text-xs py-2 select-none">No curated news items available.</p>
+            <p className="font-sans italic text-stone-400 text-xs py-2 select-none">No curated news items available.</p>
           )}
         </div>
 
@@ -659,7 +659,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             {canCurate && (
               <button
                 onClick={() => setActiveTab('editorium')}
-                className="ml-3 flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/50 px-1.5 py-0.5 rounded border border-[#7B2737]/25 transition cursor-pointer"
+                className="ml-3 flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/60 px-1.5 py-0.5 rounded border border-[#7B2737]/30 transition cursor-pointer"
                 title="Manage Frontpage Curation"
               >
                 <Settings className="w-2.5 h-2.5" /> Curate
@@ -706,7 +706,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               >
                 {featuredAuthorName}
               </span>
-              <span className="sig italic font-serif text-[9.5px] opacity-70">
+              <span className="sig italic font-sans text-[9.5px] opacity-50">
                 {featuredAuthorSig}
               </span>
               <span className="text-[#E0DDD8]">·</span>
@@ -727,7 +727,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
             {/* Author Script Signature stamp */}
             <div className="pt-2">
-              <p className="sig font-serif text-[16px] md:text-[18px] text-[#1F1F1F] opacity-80 select-none">
+              <p className="sig font-sans text-[16px] md:text-[18px] text-[#1F1F1F] opacity-95 select-none">
                 {featuredAuthorSig.replace(/\./g, '')}
               </p>
             </div>
@@ -768,7 +768,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 <h4 className="font-serif text-lg md:text-xl text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
-                <p className="font-serif text-sm leading-relaxed text-[#2D2D2D] italic">
+                <p className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
                   <HoverWords text={dbEditorNote.excerpt || dbEditorNote.content.substring(0, 220) + '...'} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
@@ -777,7 +777,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="font-serif text-[14px] leading-relaxed text-[#2D2D2D]">
+                <p className="font-sans text-[14px] leading-relaxed text-[#2D2D2D]">
                   <HoverWords text="This week we return to a question that has occupied Adjung since its founding: what does it mean to publish something that endures? In an era of ephemeral content and algorithmic decay, the act of writing for permanence is itself a form of resistance. We present Dr. Vasquez's essay as both argument and demonstration." />
                 </p>
                 <p className="font-sans text-[9px] tracking-editorial uppercase text-[#555555] font-medium leading-normal">
@@ -800,7 +800,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             {canCurate && (
               <button
                 onClick={() => setActiveTab('editorium')}
-                className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/50 px-1.5 py-0.5 rounded border border-[#7B2737]/25 transition-all duration-200 hover:font-bold cursor-pointer"
+                className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/60 px-1.5 py-0.5 rounded border border-[#7B2737]/30 transition-all duration-200 hover:font-bold cursor-pointer"
               >
                 Curate Selection
               </button>
@@ -835,7 +835,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                         {item.authorName.toUpperCase()}
                       </span>
-                      <span className="sig italic text-[9px] text-[#555555] opacity-70">
+                      <span className="sig italic text-[9px] text-[#555555] opacity-50">
                         {item.authorSig}
                       </span>
                     </div>
@@ -882,7 +882,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       </h3>
                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-[#555555]">
                         <span className="font-sans font-light">{essay.author}</span>
-                        <span className="sig italic font-serif text-[9px] opacity-70">{essay.sig}</span>
+                        <span className="sig italic font-sans text-[9px] opacity-50">{essay.sig}</span>
                       </div>
                     </>
                   ) : (
@@ -920,7 +920,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       </h3>
                       <div className="flex items-center gap-2 text-[10px] text-[#555555]">
                         <span className="font-sans font-light">{note.author}</span>
-                        <span className="sig italic text-[9px] opacity-70">{note.sig}</span>
+                        <span className="sig italic text-[9px] opacity-50">{note.sig}</span>
                       </div>
                     </>
                   ) : (
@@ -948,7 +948,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 NOTICE BOARD
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
+              <p className="font-sans text-sm leading-relaxed text-[#2D2D2D]">
                 {parseInlineFormatting(noticeBoardText)}
               </p>
             </div>
@@ -958,7 +958,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 PUBLISHING POLICY
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
+              <p className="font-sans text-sm leading-relaxed text-[#2D2D2D]">
                 All works are reviewed for intellectual merit and editorial clarity. Adjung does not optimise for engagement. We publish what endures.
               </p>
             </div>
@@ -968,7 +968,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555] mb-2 font-medium">
                 ABOUT ADJUNG
               </p>
-              <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
+              <p className="font-sans text-sm leading-relaxed text-[#2D2D2D]">
                 Adjung is a knowledge publishing platform dedicated to thoughtful writing, scholarly publishing, and the long-term preservation of human knowledge.
               </p>
             </div>
@@ -996,7 +996,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setActiveTab('folio');
                     }
                   }} 
-                  className="font-serif text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 mb-2.5 cursor-pointer inline-block w-full"
+                  className="font-sans text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 mb-2.5 cursor-pointer inline-block w-full"
                 >
                   {coll.title}
                 </p>
@@ -1017,7 +1017,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       }
                       setActiveTab('index');
                     }}
-                    className="font-serif text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 cursor-pointer"
+                    className="font-sans text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 cursor-pointer"
                   >
                     {topic}
                   </p>
@@ -1032,7 +1032,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       {/* Full-screen Reading Display Overlay */}
       {showNewsOverlay && overlayItem && (
         <div 
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-lg transition-all duration-300 animate-fade-in p-6 select-none"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/90 backdrop-blur-lg transition-all duration-300 animate-fade-in p-6 select-none"
           onClick={() => setShowNewsOverlay(false)}
         >
           {/* Top Centered Logo */}
@@ -1050,7 +1050,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             <button 
               type="button"
               onClick={handlePrevNewsItem}
-              className="absolute left-6 top-1/2 -translate-y-1/2 p-3 text-stone-400 hover:text-adjung-maroon transition cursor-pointer hover:bg-stone-200/50 rounded-full animate-fade-in"
+              className="absolute left-6 top-1/2 -translate-y-1/2 p-3 text-stone-400 hover:text-adjung-maroon transition cursor-pointer hover:bg-stone-200/60 rounded-full animate-fade-in"
               title="Previous News (Left Arrow)"
             >
               <ChevronLeft className="w-8 h-8" />
@@ -1062,7 +1062,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             <button 
               type="button"
               onClick={handleNextNewsItem}
-              className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-stone-400 hover:text-adjung-maroon transition cursor-pointer hover:bg-stone-200/50 rounded-full animate-fade-in"
+              className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-stone-400 hover:text-adjung-maroon transition cursor-pointer hover:bg-stone-200/60 rounded-full animate-fade-in"
               title="Next News (Right Arrow)"
             >
               <ChevronRight className="w-8 h-8" />
@@ -1094,7 +1094,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 </h1>
 
                 {/* Brief body */}
-                <p className="font-serif text-lg md:text-xl text-stone-600 leading-relaxed max-w-xl mx-auto px-4 font-light">
+                <p className="font-sans text-lg md:text-xl text-stone-600 leading-relaxed max-w-xl mx-auto px-4 font-light">
                   {overlayItem.brief}
                 </p>
 

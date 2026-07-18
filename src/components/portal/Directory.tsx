@@ -197,7 +197,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
         </div>
 
         {/* Row 2: Location, Language, and Tag Filters */}
-        <div className="flex flex-wrap items-center gap-6 pt-3 border-t border-stone-200/50 text-xs">
+        <div className="flex flex-wrap items-center gap-6 pt-3 border-t border-stone-200/60 text-xs">
           {/* Location/Country Filter */}
           <div className="flex items-center gap-2">
             <span className="text-[#111111]/40 font-mono uppercase tracking-wider text-[10px]">Country:</span>
@@ -264,7 +264,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                 <th className="p-3 pr-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
+            <tbody className="divide-y divide-[#111111]/5 font-sans text-sm">
                {sortedUsers.map((u) => {
                 const uMeta = getUserMetadata(u.id);
                 const identity = identities.find(i => i.accountId === u.id);
@@ -280,7 +280,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                     className="hover:bg-stone-50 cursor-pointer transition-colors"
                   >
                     {/* Scholar (Pen Name) */}
-                    <td className="p-3 pl-4 font-serif font-bold text-[#111111]">
+                    <td className="p-3 pl-4 font-sans font-bold text-[#111111]">
                       <div className="flex items-center gap-1.5">
                         <span>{u.penName}</span>
                         {u.isAi && (

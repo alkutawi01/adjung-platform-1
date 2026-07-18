@@ -38,7 +38,7 @@ export function FolioTimeline({
     <div className="space-y-12">
       {/* Editorial Hero */}
       <header className="mb-12 border-b border-[#111111]/10 pb-8">
-        <h1 className="text-4xl md:text-6xl lg:text-7xl leading-[1.0] tracking-tighter mb-6 text-[#111111] font-serif font-light text-left">
+        <h1 className="text-[22px] md:text-[26px] leading-[1.0] tracking-tighter mb-6 text-[#111111] font-serif font-light text-left">
           {authorProfile.heroTitle}
         </h1>
         <div className="flex items-center gap-4 text-xs font-sans text-[#111111]/60">
@@ -57,7 +57,7 @@ export function FolioTimeline({
             className={`px-3 py-1 transition-colors ${
               selectedTagFilter === 'All' 
                 ? 'text-adjung-maroon border-b border-adjung-maroon' 
-                : 'text-[#111111]/50 hover:text-[#111111]'
+                : 'text-[#111111]/60 hover:text-[#111111]'
             }`}
           >
             All Entries ({authorPublishedEntries.length})
@@ -70,7 +70,7 @@ export function FolioTimeline({
               className={`px-3 py-1 transition-colors ${
                 selectedTagFilter === tag 
                   ? 'text-adjung-maroon border-b border-adjung-maroon' 
-                  : 'text-[#111111]/50 hover:text-[#111111]'
+                  : 'text-[#111111]/60 hover:text-[#111111]'
               }`}
             >
               #{tag.replace(/^#+/, '')} ({authorPublishedEntries.filter(e => e.tags.includes(tag)).length})
@@ -81,9 +81,9 @@ export function FolioTimeline({
 
       {/* Chronological list of publications */}
       {sortedYears.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-[#111111]/10 rounded max-w-xl mx-auto font-serif">
+        <div className="text-center py-16 border border-dashed border-[#111111]/10 rounded max-w-xl mx-auto font-sans">
           <FileText className="w-10 h-10 text-[#111111]/20 mx-auto mb-3" />
-          <h3 className="text-stone-700 text-lg">Folio Archives Empty</h3>
+          <h3 className="font-serif text-stone-700 text-lg">Folio Archives Empty</h3>
           <p className="text-xs text-stone-500 mt-1">This scholar has not yet cataloged any public publications in this category.</p>
         </div>
       ) : (
@@ -92,13 +92,13 @@ export function FolioTimeline({
             <div key={year} className="relative">
               {/* Year Header absolute positioning */}
               <div className="absolute -left-12 top-0 -rotate-90 origin-top-left select-none hidden md:block">
-                <span className="text-5xl font-bold text-[#111111]/5 font-sans">
+                <span className="text-5xl font-medium text-[#111111]/5 font-mono">
                   {year}
                 </span>
               </div>
 
               <div className="md:hidden border-b border-[#111111]/10 pb-2 mb-4">
-                <span className="text-2xl font-bold text-adjung-maroon font-serif">{year}</span>
+                <span className="text-2xl font-medium text-adjung-maroon font-mono">{year}</span>
               </div>
 
               <div className="space-y-12 pl-0 md:pl-12 border-l-0 md:border-l border-[#111111]/5 md:ml-6">
@@ -125,7 +125,7 @@ export function FolioTimeline({
                           </div>
                           {item.contentType !== 'Note' && (
                             <h3 
-                              className={`text-xl md:text-2xl font-serif text-[#111111] group-hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium text-left ${isAr ? 'font-arabic text-right' : ''}`}
+                              className={`text-xl md:text-2xl font-sans text-[#111111] group-hover:text-adjung-maroon transition-colors leading-snug tracking-tight font-medium text-left ${isAr ? 'font-arabic text-right' : ''}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedEntry(item);

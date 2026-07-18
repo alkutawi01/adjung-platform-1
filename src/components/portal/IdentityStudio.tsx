@@ -229,7 +229,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     type="text"
                     value={penName}
                     onChange={(e) => setPenName(e.target.value)}
-                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-serif font-semibold text-sm"
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-sans font-semibold text-sm"
                     required
                   />
                 </div>
@@ -267,7 +267,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
           </form>
 
           {/* Placeholder for Future Verification & Privacy */}
-          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm opacity-60">
+          <div className="bg-white border border-stone-200 rounded p-6 shadow-sm opacity-50">
              <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-stone-600 flex items-center gap-2 border-b pb-3 mb-4">
               <Key className="w-4 h-4" /> Verification & Credentials
             </h3>
@@ -288,7 +288,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
             </h3>
             
             <div className="flex items-center justify-between py-1.5 px-2.5 rounded bg-stone-50 border border-stone-100">
-              <span className="text-xs font-serif font-bold text-stone-900">
+              <span className="text-xs font-sans font-bold text-stone-900">
                 {username}.adjung.com
               </span>
               {isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
@@ -335,7 +335,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                   ];
 
                   return items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs font-serif">
+                    <div key={idx} className="flex items-center gap-2 text-xs font-sans">
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                         item.done ? 'bg-emerald-50 border-emerald-400 text-emerald-600 font-bold' : 'bg-stone-50 border-stone-200 text-stone-300'
                       }`}>

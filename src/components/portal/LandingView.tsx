@@ -211,13 +211,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
               {/* Footnotes */}
               {fnData.length > 0 && (
                 <div id="manifesto-footnotes" className="pt-8 scroll-mt-20">
-                  <div className="border-t border-stone-200/50 w-24 my-4 mx-auto" />
+                  <div className="border-t border-stone-200/60 w-24 my-4 mx-auto" />
                   <div className="space-y-3 max-w-xl mx-auto">
                     {fnData.map((fn, idx) => (
                       <div
                         key={fn.id}
                         id={`manifesto-footnote-dest-${fn.id}`}
-                        className="group flex gap-3 hover:bg-stone-50/50 p-1.5 rounded transition scroll-mt-24 duration-700"
+                        className="group flex gap-3 hover:bg-stone-50/60 p-1.5 rounded transition scroll-mt-24 duration-700"
                       >
                         <span
                           className="font-sans text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none mr-1 cursor-pointer hover:underline hover:text-[#611522]"

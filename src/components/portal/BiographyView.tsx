@@ -3,7 +3,7 @@ import { BiographyItem, IdentityProfile, User } from '../../types';
 import { stripMarkdown, parseInlineFormatting } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
-import { Fingerprint, Edit3, Sparkles } from 'lucide-react';
+import { Edit3, Sparkles, ChevronLeft } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { IdentityStudio } from './IdentityStudio';
 import { FieldTooltip } from '../common/FieldTooltip';
@@ -18,6 +18,7 @@ interface BiographyViewProps {
   setShowAddBioModal: (show: boolean) => void;
   handleRemoveBioItem: (itemId: string) => void;
   presentationSpec?: PresentationSpec;
+  setActiveTab?: (tab: string) => void;
 }
 
 export function BiographyView({
@@ -29,6 +30,7 @@ export function BiographyView({
   setShowAddBioModal,
   handleRemoveBioItem,
   presentationSpec,
+  setActiveTab,
 }: BiographyViewProps) {
   const activeSpec = presentationSpec || getPresentationSpec('Essay');
   const { refreshDbState, requestConfirm } = useAppContext();
@@ -54,10 +56,20 @@ export function BiographyView({
   };
   return (
     <div className="space-y-16">
+      {setActiveTab && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('folio')}
+          className="inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Return to Folio
+        </button>
+      )}
       {/* Intro Profile */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-b border-stone-300 pb-12">
         <div className="lg:col-span-8 space-y-6">
-          <h2 className="font-serif text-3xl md:text-4xl font-light tracking-tight text-[#111111] text-left">
+          <h2 className="font-serif text-2xl md:text-[28px] font-normal tracking-tight text-[#111111] leading-tight text-left">
             Biography
           </h2>
           
@@ -67,7 +79,7 @@ export function BiographyView({
                 <textarea
                   value={editedBio}
                   onChange={(e) => setEditedBio(e.target.value)}
-                  className="w-full border border-stone-200 p-3 rounded text-sm font-serif leading-relaxed text-[#111111]/90 focus:outline-none focus:border-adjung-maroon min-h-[200px] resize-y"
+                  className="w-full border border-stone-200 p-3 rounded text-sm font-sans leading-relaxed text-[#111111]/90 focus:outline-none focus:border-adjung-maroon min-h-[200px] resize-y"
                   placeholder="Enter a description of yourself, your intellectual background, or interests..."
                 />
                 <p className="text-[10.5px] font-sans text-stone-400 leading-relaxed">
@@ -84,7 +96,7 @@ export function BiographyView({
                   <button
                     type="button"
                     onClick={handleSaveBio}
-                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-90 cursor-pointer"
+                    className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 cursor-pointer"
                   >
                     Save Biography
                   </button>
@@ -92,7 +104,7 @@ export function BiographyView({
               </div>
             ) : (
               <div className="relative">
-                <div className="font-serif text-stone-900 leading-relaxed text-justify text-sm md:text-base font-normal space-y-4 pr-2">
+                <div className="font-sans text-stone-900 leading-relaxed text-justify text-sm md:text-base font-normal space-y-4 pr-2">
                   {authorProfile.biography ? (
                     authorProfile.biography.split(/\n+/).map((para, index) => {
                       const trimmed = para.trim();
@@ -102,7 +114,7 @@ export function BiographyView({
                       // as before, unaffected.
                       if (trimmed.startsWith('# ')) {
                         return (
-                          <h3 key={index} className="font-serif font-bold text-stone-900 text-base md:text-lg text-left pt-1">
+                          <h3 key={index} className="font-sans font-bold text-stone-900 text-base md:text-lg text-left pt-1">
                             {parseInlineFormatting(trimmed.slice(2).trim())}
                           </h3>
                         );
@@ -137,8 +149,8 @@ export function BiographyView({
         <div style={{ fontSize: '14px' }} className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-8 lg:pt-0 lg:pl-8 text-center select-none">
           <span className="font-sans text-[9px] uppercase tracking-widest text-[#111111]/40 block mb-2">Signature</span>
           
-          {/* Signature Graphic Area with Baseline */}
-          <div className="relative w-[22em] h-[6.47em] mx-auto overflow-visible mix-blend-multiply flex items-center justify-center shrink-0">
+          {/* Signature Graphic Area — same fixed size as the Folio hero signature so the same signature renders at a consistent size across pages */}
+          <div className="relative w-72 h-28 mx-auto overflow-visible mix-blend-multiply flex items-center justify-center shrink-0">
             {(() => {
               const sig = authorProfile.signatures.find(s => s.status === 'Default');
               const type = sig?.type || 'drawn';
@@ -164,9 +176,9 @@ export function BiographyView({
             })()}
           </div>
           
-          <div className="border-t border-stone-300/80 pt-4 mt-[0.5em] space-y-2">
+          <div className="border-t border-stone-300/90 pt-4 mt-[0.5em] space-y-2">
             <div>
-              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Pen Name</span>
+              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold">Pen Name</span>
               <div className="flex items-center justify-center gap-1.5 mt-0.5">
                 <span className="font-serif text-base font-semibold text-[#111111] leading-none text-center w-full">
                   {currentAuthor.penName}
@@ -180,18 +192,18 @@ export function BiographyView({
             </div>
             {authorProfile.displayName && authorProfile.displayName !== currentAuthor.penName && (
               <div>
-                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Full Name</span>
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold">Full Name</span>
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.displayName}</span>
               </div>
             )}
             {authorProfile.affiliation && (
               <div>
-                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold">Affiliation</span>
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold">Affiliation</span>
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.affiliation}</span>
               </div>
             )}
-            <div className="pt-2 border-t border-stone-300/70">
-              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/70 font-bold mb-0.5">Email / Contact</span>
+            <div className="pt-2 border-t border-stone-300/60">
+              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold mb-0.5">Email / Contact</span>
               <a
                 href={`mailto:${currentAuthor.email}`}
                 className="font-mono text-xs text-adjung-maroon hover:underline block"
@@ -200,12 +212,12 @@ export function BiographyView({
               </a>
             </div>
             {currentUser?.id === selectedAuthorId && (
-              <div className="pt-3 border-t border-stone-300/70 mt-2">
+              <div className="pt-3 border-t border-stone-300/60 mt-2">
                 <button
                   onClick={() => setShowIdentityModal(true)}
                   className="w-full flex items-center justify-center gap-1.5 bg-adjung-maroon text-white hover:opacity-95 py-2 px-3 rounded font-mono text-[9px] uppercase tracking-wider transition cursor-pointer font-semibold shadow-sm"
                 >
-                  <Fingerprint className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3.5 h-3.5" />
                   Edit Identity
                 </button>
               </div>
@@ -227,7 +239,7 @@ export function BiographyView({
                 setEditingBioItem(null);
                 setShowAddBioModal(true);
               }}
-              className="bg-adjung-maroon text-white px-3 py-1.5 uppercase tracking-wider text-[10px] font-sans font-medium hover:opacity-90 transition shadow-sm"
+              className="bg-adjung-maroon text-white px-3 py-1.5 uppercase tracking-wider text-[10px] font-sans font-medium hover:opacity-95 transition shadow-sm"
             >
               Add Milestone
             </button>
@@ -242,7 +254,7 @@ export function BiographyView({
               <div key={item.id} className="relative group">
                 
                 {/* Left float year for desktop layout */}
-                <span className="absolute -left-[145px] top-0.5 hidden md:block w-24 text-right font-serif font-bold text-lg text-adjung-maroon">
+                <span className="absolute -left-[145px] top-0.5 hidden md:block w-24 text-right font-sans font-bold text-lg text-adjung-maroon">
                   {item.year}
                 </span>
 
@@ -252,22 +264,22 @@ export function BiographyView({
                 {/* Content block */}
                 <div className="space-y-2 max-w-2xl pb-6 text-left">
                   <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                    <span className="md:hidden font-serif font-bold text-base text-adjung-maroon">{item.year}</span>
+                    <span className="md:hidden font-sans font-bold text-base text-adjung-maroon">{item.year}</span>
                     <span className="md:hidden text-stone-300">|</span>
-                    <h4 className="font-serif font-semibold text-stone-900 text-[17px] leading-tight">
+                    <h4 className="font-sans font-semibold text-stone-900 text-[17px] leading-tight">
                       {parseInlineFormatting(item.title)}
                     </h4>
-                    <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-semibold bg-adjung-maroon/5 px-1.5 py-0.5 rounded border border-adjung-maroon/15">
+                    <span className="font-mono text-[8px] uppercase tracking-widest text-adjung-maroon font-semibold bg-adjung-maroon/5 px-1.5 py-0.5 rounded border border-adjung-maroon/20">
                       {item.category}
                     </span>
                   </div>
-                  <p className="font-serif text-stone-700 text-sm leading-relaxed text-justify">
+                  <p className="font-sans text-stone-700 text-sm leading-relaxed text-justify">
                     {item.description}
                   </p>
                   
                   {/* Remove milestone for owner */}
                   {currentUser && currentUser.id === selectedAuthorId && (
-                    <div className="pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                    <div className="pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
                         type="button"
                         onClick={() => {

@@ -174,7 +174,7 @@ export function EditorialIndex({
         </div>
 
         {/* Row 2: Type, Language, and Tag Filters */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-3 border-t border-stone-200/50">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-3 border-t border-stone-200/60">
           {/* Type Filters */}
           <div className="flex flex-wrap items-center gap-1 text-xs font-mono select-none">
             <span className="text-[#111111]/40 uppercase tracking-wider mr-2 text-[10px]">Type:</span>
@@ -275,7 +275,7 @@ export function EditorialIndex({
                       )}
                     </td>
                     <td className="p-3 font-sans"><span className="text-adjung-maroon font-semibold">{item.contentType}</span></td>
-                    <td className="p-3 font-mono text-[#111111]/50 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
+                    <td className="p-3 font-mono text-[#111111]/60 text-[10px]">{item.publishedDate ? new Date(item.publishedDate).toLocaleDateString() : 'N/A'}</td>
                     <td className="p-3 font-mono text-[#111111]/40 text-[10px] pr-4">{item.slug}</td>
                   </tr>
                 );
