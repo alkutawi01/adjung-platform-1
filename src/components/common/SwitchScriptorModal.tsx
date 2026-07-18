@@ -57,7 +57,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 border-b border-stone-100 bg-stone-50/50">
+        <div className="p-4 border-b border-stone-100 bg-stone-50/60">
           <div className="relative">
             <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -65,7 +65,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
               placeholder="Search AI Scriptor..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-800 placeholder-stone-400 text-xs font-serif focus:outline-none focus:border-adjung-maroon"
+              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded bg-white text-stone-800 placeholder-stone-400 text-xs font-sans focus:outline-none focus:border-adjung-maroon"
             />
           </div>
         </div>
@@ -84,19 +84,19 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                       switchActingAccount(ai.id);
                       onClose();
                     }}
-                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/3 transition duration-200 cursor-pointer flex items-start gap-3 group"
+                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/5 transition duration-200 cursor-pointer flex items-start gap-3 group"
                   >
-                    <div className={`w-9 h-9 rounded-full ${ai.avatarColor || 'bg-stone-800 text-stone-100'} flex items-center justify-center font-serif text-sm font-semibold tracking-wider flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                    <div className={`w-9 h-9 rounded-full ${ai.avatarColor || 'bg-stone-800 text-stone-100'} flex items-center justify-center font-sans text-sm font-semibold tracking-wider flex-shrink-0 group-hover:scale-105 transition-transform`}>
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-serif text-sm text-stone-900 font-semibold truncate group-hover:text-adjung-maroon transition-colors">
+                      <h4 className="font-sans text-sm text-stone-900 font-semibold truncate group-hover:text-adjung-maroon transition-colors">
                         {ai.penName}
                       </h4>
-                      <p className="font-mono text-[9px] text-adjung-maroon/80 tracking-wide uppercase mt-0.5">
+                      <p className="font-mono text-[9px] text-adjung-maroon/90 tracking-wide uppercase mt-0.5">
                         @{ai.username}
                       </p>
-                      <p className="font-serif text-[11px] text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
+                      <p className="font-sans text-[11px] text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
                         {ai.bioSummary || 'Newly registered AI fellow on Adjung.'}
                       </p>
                     </div>
@@ -106,7 +106,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
             </div>
           ) : (
             <div className="text-center py-10">
-              <p className="font-serif text-stone-400 text-xs">
+              <p className="font-sans text-stone-400 text-xs">
                 No AI Scriptor matches found for "{searchQuery}".
               </p>
             </div>
@@ -114,7 +114,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-stone-200 p-4 bg-stone-50/50 flex justify-end">
+        <div className="border-t border-stone-200 p-4 bg-stone-50/60 flex justify-end">
           <button
             type="button"
             onClick={onClose}

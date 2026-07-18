@@ -161,7 +161,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     <span className="block font-mono uppercase text-[9px] text-adjung-maroon tracking-wider font-semibold">
                       Reset Link Sent
                     </span>
-                    <p className="text-[10px] text-stone-600 leading-normal font-serif">
+                    <p className="text-[10px] text-stone-600 leading-normal font-sans">
                       A password reset link has been sent to <strong>{forgotEmail}</strong>. Follow the link in your inbox to choose a new password.
                     </p>
                   </div>
@@ -212,7 +212,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   placeholder="e.g. scholar@adjung.com"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
-                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs bg-white text-stone-800"
+                  className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs bg-white text-stone-800"
                   required
                 />
               </div>
@@ -323,7 +323,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
 
               {/* Registration Prompt */}
-              <div className="border-t border-stone-200/50 pt-4 mt-4 text-center select-none">
+              <div className="border-t border-stone-200/60 pt-4 mt-4 text-center select-none">
                 <p className="font-sans text-xs text-stone-500">
                   New to Adjung?{" "}
                   <button
@@ -332,7 +332,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       onClose();
                       setShowSignUpWizard(true);
                     }}
-                    className="text-adjung-maroon hover:underline font-semibold cursor-pointer ml-1 font-sans text-xs transition duration-250"
+                    className="text-adjung-maroon hover:underline font-semibold cursor-pointer ml-1 font-sans text-xs transition duration-200"
                   >
                     Create an account
                   </button>

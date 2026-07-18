@@ -20,7 +20,7 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
         {/* Header Block matching LoginModal */}
         <div className="border-b border-stone-200 p-5 bg-[#FDFDFD]">
           <div className="flex justify-center mb-2.5">
-            <div className="p-2 bg-adjung-maroon/5 border border-adjung-maroon/15 rounded-full text-adjung-maroon">
+            <div className="p-2 bg-adjung-maroon/5 border border-adjung-maroon/20 rounded-full text-adjung-maroon">
               <Lock className="w-5 h-5" />
             </div>
           </div>
@@ -32,7 +32,7 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
 
         {/* Content Body */}
         <div className="p-6 space-y-4 font-sans text-stone-600">
-          <p className="font-serif text-[12.5px] leading-relaxed text-stone-600 select-text">
+          <p className="font-sans text-[12.5px] leading-relaxed text-stone-600 select-text">
             The <strong>{pageName}</strong> page is reserved for registered Adjung members. Sign in to your account or register as a member to continue reading.
           </p>
 
@@ -48,9 +48,9 @@ export const RestrictedAccessView: React.FC<RestrictedAccessViewProps> = ({
 
           {/* Divider line matching LoginModal */}
           <div className="flex items-center my-2">
-            <div className="flex-1 border-t border-stone-200/80"></div>
+            <div className="flex-1 border-t border-stone-200/90"></div>
             <span className="px-3 font-mono text-[8px] text-stone-400 uppercase tracking-widest">or</span>
-            <div className="flex-1 border-t border-stone-200/80"></div>
+            <div className="flex-1 border-t border-stone-200/90"></div>
           </div>
 
           <div className="text-center font-mono text-[9.5px] text-stone-500 leading-normal">

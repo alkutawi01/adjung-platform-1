@@ -58,7 +58,7 @@ export function PhilosophyCarousel({
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="w-full flex flex-col items-center justify-center px-4 md:px-8 py-2 text-center space-y-1.5"
         >
-          <p className="font-serif text-[#2D2D2D] text-[16px] md:text-[18px] leading-relaxed max-w-xl">
+          <p className="font-sans text-[#2D2D2D] text-[16px] md:text-[18px] leading-relaxed max-w-xl">
             "{activeFinding.finding}"
           </p>
           {activeFinding.source && (

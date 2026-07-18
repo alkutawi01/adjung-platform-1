@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Left: Beautiful brand wordmark logo linking back to Frontpage */}
         <div 
           onClick={handleBrandClick}
-          className="flex items-center cursor-pointer group text-white hover:opacity-85 transition-opacity"
+          className="flex items-center cursor-pointer group text-white hover:opacity-95 transition-opacity"
         >
           <span className="font-serif text-lg font-semibold tracking-wider">
             {BRAND.logoText}
@@ -128,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setShowMobileMenu(prev => !prev)}
-              className="md:hidden flex items-center justify-center w-10 h-10 text-white/80 hover:text-white transition cursor-pointer"
+              className="md:hidden flex items-center justify-center w-10 h-10 text-white/90 hover:text-white transition cursor-pointer"
               aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -147,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                       activeTab === 'directory'
                         ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                        : 'text-white/70 hover:text-white'
+                        : 'text-white/60 hover:text-white'
                     }`}
                   >
                     Directory
@@ -162,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                       activeTab === 'index'
                         ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                        : 'text-white/70 hover:text-white'
+                        : 'text-white/60 hover:text-white'
                     }`}
                   >
                     Index
@@ -178,7 +178,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                     activeTab === 'folio'
                       ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/60 hover:text-white'
                   }`}
                 >
                   Folio
@@ -190,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
                     activeTab === 'bio'
                       ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/60 hover:text-white'
                   }`}
                 >
                   Biography
@@ -206,7 +206,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className={`px-2.5 py-1 text-xs font-mono tracking-wider uppercase transition border rounded-sm cursor-pointer ${
                         activeTab === 'desk'
                           ? 'bg-white border-white text-adjung-maroon font-semibold'
-                          : 'text-white/80 border-white/20 hover:bg-white/10 font-medium'
+                          : 'text-white/90 border-white/20 hover:bg-white/10 font-medium'
                       }`}
                       title="Your private workspace"
                     >
@@ -226,17 +226,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white transition uppercase cursor-pointer"
+                className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/90 hover:text-white transition uppercase cursor-pointer"
               >
                 <span>{currentUser.penName}</span>
-                <span className="text-[10px] opacity-60">▾</span>
+                <span className="text-[10px] opacity-50">▾</span>
               </button>
 
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-52 bg-[#FDFDFD] border border-stone-200 shadow-md rounded-sm py-2 z-50 animate-fade-in font-sans text-left">
                   <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/40 select-none">
                     <div className="flex items-center gap-1.5 leading-tight">
-                      <span className="font-serif text-[13px] font-semibold text-stone-950">
+                      <span className="font-sans text-[13px] font-semibold text-stone-950">
                         {currentUser.penName}
                       </span>
                       {currentUser.isAi && (
@@ -350,7 +350,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setLoginError('');
                 setShowLoginModal(true);
               }}
-              className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/80 hover:text-white font-semibold transition uppercase cursor-pointer"
+              className="px-1.5 py-1 text-xs font-mono tracking-wider text-white/90 hover:text-white font-semibold transition uppercase cursor-pointer"
             >
               Sign In
             </button>
@@ -368,7 +368,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => handleTabClick('directory')}
                   className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
-                    activeTab === 'directory' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                    activeTab === 'directory' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   Directory
@@ -379,7 +379,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => handleTabClick('index')}
                   className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
-                    activeTab === 'index' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                    activeTab === 'index' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   Index
@@ -392,7 +392,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={() => handleTabClick('folio')}
                 className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
-                  activeTab === 'folio' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  activeTab === 'folio' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Folio
@@ -401,7 +401,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={() => handleTabClick('bio')}
                 className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
-                  activeTab === 'bio' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  activeTab === 'bio' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Biography
@@ -411,7 +411,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => handleTabClick('desk')}
                   className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
-                    activeTab === 'desk' ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'
+                    activeTab === 'desk' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   Desk

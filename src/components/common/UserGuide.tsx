@@ -18,7 +18,7 @@ export function UserGuide() {
         <h1 className="font-serif text-4xl md:text-5xl font-light text-adjung-maroon tracking-tight mb-3">
           Adjung Scholarly Guide
         </h1>
-        <p className="font-serif text-stone-500 italic max-w-xl mx-auto text-sm leading-relaxed">
+        <p className="font-sans text-stone-500 italic max-w-xl mx-auto text-sm leading-relaxed">
           Understanding the topology, markup conventions, keyboard shortcuts, and launch path of the Adjung platform.
         </p>
       </div>
@@ -78,7 +78,7 @@ export function UserGuide() {
       <div className="bg-[#FDFDFD] border border-stone-200 rounded p-6 md:p-8 shadow-sm">
         {/* TAB 1: PHILOSOPHY */}
         {activeTab === 'philosophy' && (
-          <div className="space-y-6 font-serif text-[15px] text-stone-800 leading-relaxed">
+          <div className="space-y-6 font-sans text-[15px] text-stone-800 leading-relaxed">
             <h3 className="font-serif text-xl font-semibold text-stone-950 border-b border-stone-100 pb-2 mb-4">
               Slow Reading & Scholarly Calm
             </h3>
@@ -131,13 +131,13 @@ export function UserGuide() {
                     </span>
                   </button>
                 </div>
-                <p className="font-serif text-sm leading-relaxed mb-3 text-stone-800">
+                <p className="font-sans text-sm leading-relaxed mb-3 text-stone-800">
                   Used for inline lexical translation or definitions. The translated word is shown in tiny colored script directly above or below the term on hover.
                 </p>
                 <div className="bg-stone-50 p-2 border border-stone-200 font-mono text-[11px] text-stone-700 rounded select-all mb-2">
                   [kalimat](gloss:sentence)
                 </div>
-                <div className="text-[10px] text-stone-500 italic font-serif">
+                <div className="text-[10px] text-stone-500 italic font-sans">
                   Renders as: <span className="inline-block border-b border-adjung-maroon/30 pb-0.5 relative group">kalimat<span className="absolute left-1/2 -translate-x-1/2 -top-3.5 text-[9px] font-mono text-adjung-maroon whitespace-nowrap bg-white px-0.5 leading-none">sentence</span></span>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export function UserGuide() {
                     </span>
                   </button>
                 </div>
-                <p className="font-serif text-sm leading-relaxed mb-3 text-stone-800">
+                <p className="font-sans text-sm leading-relaxed mb-3 text-stone-800">
                   Places secondary commentary or active dialogue in the margins of Articles.
                 </p>
                 <div className="bg-stone-50 p-2 border border-stone-200 font-mono text-[11px] text-stone-700 rounded select-all mb-2">
@@ -178,7 +178,7 @@ export function UserGuide() {
                     </span>
                   </button>
                 </div>
-                <p className="font-serif text-sm leading-relaxed mb-3 text-stone-800">
+                <p className="font-sans text-sm leading-relaxed mb-3 text-stone-800">
                   Links specific paragraphs to formal academic bibliographies at the bottom of Essays or Articles.
                 </p>
                 <div className="bg-stone-50 p-2 border border-stone-200 font-mono text-[11px] text-stone-700 rounded select-all mb-2">
@@ -215,52 +215,52 @@ export function UserGuide() {
                 </thead>
                 <tbody className="divide-y divide-stone-200 text-stone-700 font-mono">
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ā</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ā</td>
                     <td className="p-3">Alt + A</td>
                     <td className="p-3 font-sans text-xs">A-macron (Long a / Alif)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ī</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ī</td>
                     <td className="p-3">Alt + I</td>
                     <td className="p-3 font-sans text-xs">I-macron (Long i / Ya)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ū</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ū</td>
                     <td className="p-3">Alt + U</td>
                     <td className="p-3 font-sans text-xs">U-macron (Long u / Waw)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ḥ</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ḥ</td>
                     <td className="p-3">Alt + H</td>
                     <td className="p-3 font-sans text-xs">H-dot (Ha / ح)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ṣ</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ṣ</td>
                     <td className="p-3">Alt + S</td>
                     <td className="p-3 font-sans text-xs">S-dot (Sad / ص)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ḍ</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ḍ</td>
                     <td className="p-3">Alt + D</td>
                     <td className="p-3 font-sans text-xs">D-dot (Dad / ض)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ṭ</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ṭ</td>
                     <td className="p-3">Alt + T</td>
                     <td className="p-3 font-sans text-xs">T-dot (Ta / ط)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">ẓ</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">ẓ</td>
                     <td className="p-3">Alt + Z</td>
                     <td className="p-3 font-sans text-xs">Z-dot (Za / ظ)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">‘</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">‘</td>
                     <td className="p-3">Alt + C</td>
                     <td className="p-3 font-sans text-xs">Left single quotation mark (Ayn / ع)</td>
                   </tr>
                   <tr className="hover:bg-stone-50/30 transition">
-                    <td className="p-3 pl-4 font-serif text-base font-bold text-stone-900">’</td>
+                    <td className="p-3 pl-4 font-sans text-base font-bold text-stone-900">’</td>
                     <td className="p-3">Alt + G</td>
                     <td className="p-3 font-sans text-xs">Right single quotation mark (Hamzah / ء)</td>
                   </tr>
@@ -289,7 +289,7 @@ export function UserGuide() {
                 </div>
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
-                    Milestone A: Scholarly Archetypes & Digital Twin 
+                    Milestone A: Scholarly Archetypes & Digital Twin
                     <span className="font-mono text-[8px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold uppercase">Completed</span>
                   </h4>
                   <p className="text-stone-500 mt-1">
@@ -308,7 +308,7 @@ export function UserGuide() {
                 </div>
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
-                    Milestone B: Localization, Arabic RTL & Keyboards 
+                    Milestone B: Localization, Arabic RTL & Keyboards
                     <span className="font-mono text-[8px] bg-adjung-maroon/10 text-adjung-maroon border border-adjung-maroon/20 px-1.5 py-0.5 rounded font-bold uppercase">Next Up</span>
                   </h4>
                   <p className="text-stone-500 mt-1">

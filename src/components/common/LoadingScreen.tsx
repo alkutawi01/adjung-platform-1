@@ -17,7 +17,7 @@ export const LoadingScreen: React.FC = () => {
   return (
     <div 
       id="Adjung-loading-screen"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-adjung-maroon text-[#FDFDFD] transition-colors duration-300 select-none px-6"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-adjung-maroon text-[#FDFDFD] transition-colors duration-300 select-none px-6"
     >
       <div className="max-w-md w-full flex flex-col items-center justify-center text-center space-y-3">
         
@@ -29,7 +29,7 @@ export const LoadingScreen: React.FC = () => {
         </div>
 
         {/* 2. Official Tagline */}
-        <p className="font-serif text-stone-200 text-[13px] md:text-[14px] tracking-wide select-none">
+        <p className="font-sans text-stone-200 text-[13px] md:text-[14px] tracking-wide select-none">
           {BRAND.tagline}
         </p>
       </div>

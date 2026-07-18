@@ -87,14 +87,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-stone-900/65 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div
         ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-modal-title"
         tabIndex={-1}
-        className="bg-[#FDFDFD] border border-adjung-maroon/25 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border animate-fade-in text-left outline-none"
+        className="bg-[#FDFDFD] border border-adjung-maroon/30 rounded shadow-2xl max-w-md w-full overflow-hidden scholarly-border animate-fade-in text-left outline-none"
       >
 
         {/* Modal header */}
@@ -148,7 +148,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               type="email"
               value={accountEmail}
               onChange={(e) => setAccountEmail(e.target.value)}
-              className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
+              className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs"
               placeholder="e.g. scholar@adjung.com"
               disabled={showVerification}
             />
@@ -163,7 +163,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <span className="block font-mono uppercase text-[9px] text-adjung-maroon tracking-wider font-semibold">
                 Email Verification Code Required
               </span>
-              <p className="text-[10px] text-stone-600 leading-normal font-serif">
+              <p className="text-[10px] text-stone-600 leading-normal font-sans">
                 We have sent a 6-digit confirmation code to your new email <strong>{accountEmail}</strong>. Please enter the code below to authorize the change.
               </p>
               <input
@@ -191,7 +191,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   type="password"
                   value={accountPassword}
                   onChange={(e) => setAccountPassword(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
+                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs"
                   placeholder="Min 4 characters"
                   disabled={showVerification}
                 />
@@ -202,7 +202,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   type="password"
                   value={accountConfirmPassword}
                   onChange={(e) => setAccountConfirmPassword(e.target.value)}
-                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs"
+                  className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs"
                   placeholder="Repeat password"
                   disabled={showVerification}
                 />

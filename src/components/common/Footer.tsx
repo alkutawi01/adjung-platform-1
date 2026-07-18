@@ -27,7 +27,7 @@ export const Footer: React.FC<FooterProps> = ({
       <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center items-start">
         <div className="space-y-4 flex flex-col items-center text-center">
           <h1 className="font-serif text-2xl font-semibold tracking-wider text-adjung-maroon">{BRAND.logoText}</h1>
-          <p className="font-serif italic text-stone-600 text-sm max-w-sm mx-auto">{systemSettings.editorialPolicy}</p>
+          <p className="font-sans italic text-stone-600 text-sm max-w-sm mx-auto">{systemSettings.editorialPolicy}</p>
         </div>
         
         <div className="space-y-4 flex flex-col items-center text-center">
@@ -98,7 +98,7 @@ export const Footer: React.FC<FooterProps> = ({
       </div>
 
       {/* Copyright Bottom Bar */}
-      <div className="max-w-4xl mx-auto px-4 border-t border-stone-200/50 mt-8 pt-6 text-center">
+      <div className="max-w-4xl mx-auto px-4 border-t border-stone-200/60 mt-8 pt-6 text-center">
         <p className="font-mono uppercase tracking-widest text-[9px] text-stone-400">
           {BRAND.copyright}
         </p>
