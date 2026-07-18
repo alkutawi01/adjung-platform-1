@@ -13,13 +13,13 @@ export const ChangelogView: React.FC = () => {
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
           Version History
         </h1>
-        <p className="font-serif italic text-stone-500 text-sm mt-2">
+        <p className="font-sans italic text-stone-500 text-sm mt-2">
           Changelogs, releases, and platform versions of the Adjung repository.
         </p>
       </header>
       <div className="relative border-l border-stone-200 ml-4 pl-8 space-y-12 text-left">
         {releaseLogs.length === 0 ? (
-          <p className="text-center italic text-stone-400 font-serif py-12 ml-[-2rem]">
+          <p className="text-center italic text-stone-400 font-sans py-12 ml-[-2rem]">
             No releases are cataloged in version history.
           </p>
         ) : (
@@ -45,14 +45,14 @@ export const ChangelogView: React.FC = () => {
                       })}
                     </time>
                   </div>
-                  <h3 className="font-serif text-xl font-medium text-stone-800">
+                  <h3 className="font-sans text-xl font-medium text-stone-800">
                     {log.version} Release
                   </h3>
-                  <p className="font-serif italic text-stone-500 text-xs">
+                  <p className="font-sans italic text-stone-500 text-xs">
                     Released by: Adjung Editorial Board
                   </p>
 
-                  <div className="font-serif text-stone-600 text-sm leading-relaxed pt-2 space-y-3">
+                  <div className="font-sans text-stone-600 text-sm leading-relaxed pt-2 space-y-3">
                     {log.changes.added && log.changes.added.length > 0 && (
                       <div>
                         <span className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold mb-1 text-left">

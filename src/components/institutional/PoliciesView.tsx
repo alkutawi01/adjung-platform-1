@@ -17,7 +17,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
           Publishing & Platform Policies
         </h1>
-        <p className="font-serif italic text-stone-500 text-sm mt-2">
+        <p className="font-sans italic text-stone-500 text-sm mt-2">
           Constitution, editorial covenants, and guidelines governing the Adjung repository.
         </p>
       </header>
@@ -35,7 +35,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
               onClick={() => setSelectedPolicyId(p.id)}
               className={`w-full text-left px-3 py-2 rounded-sm text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
                 selectedPolicyId === p.id
-                  ? 'bg-adjung-maroon/8 text-adjung-maroon font-semibold border-l-2 border-adjung-maroon'
+                  ? 'bg-adjung-maroon/10 text-adjung-maroon font-semibold border-l-2 border-adjung-maroon'
                   : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
               }`}
             >
@@ -62,10 +62,10 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
                 {currentPolicy.sections &&
                   currentPolicy.sections.map((section) => (
                     <div key={section.id} className="space-y-2">
-                      <h3 className="font-serif text-lg font-semibold text-stone-900 border-b border-stone-100/50 pb-1.5">
+                      <h3 className="font-sans text-lg font-semibold text-stone-900 border-b border-stone-100/60 pb-1.5">
                         {section.title}
                       </h3>
-                      <p className="font-serif text-stone-700 text-[14.5px] leading-relaxed whitespace-pre-wrap">
+                      <p className="font-sans text-stone-700 text-[14.5px] leading-relaxed whitespace-pre-wrap">
                         {section.content}
                       </p>
                     </div>
@@ -73,7 +73,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
               </div>
             </div>
           ) : (
-            <p className="italic text-stone-400 font-serif">
+            <p className="italic text-stone-400 font-sans">
               Select a policy document from the sidebar to read.
             </p>
           )}
