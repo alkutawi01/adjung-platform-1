@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase';
-import { User, WriterProfile, IdentityProfile, Entry, SystemSettings, PolicyDocument, SystemLog } from '../types';
+import { User, WriterProfile, IdentityProfile, Entry, SystemSettings, PolicyDocument, SystemLog, LayoutSettings, EntryType } from '../types';
 
 // ==========================================
 // Row <-> App Model Mappers
@@ -243,6 +243,32 @@ function systemSettingsToRow(settings: SystemSettings) {
   };
 }
 
+function rowToLayoutSettings(row: any): LayoutSettings {
+  return {
+    contentType: row.content_type,
+    alignment: row.alignment,
+    columnWidth: row.column_width,
+    marginNoteWidth: row.margin_note_width,
+    padding: row.padding,
+    spacingBefore: row.spacing_before,
+    spacingAfter: row.spacing_after,
+    lineHeight: Number(row.line_height),
+  };
+}
+
+function layoutSettingsToRow(settings: LayoutSettings) {
+  return {
+    content_type: settings.contentType,
+    alignment: settings.alignment,
+    column_width: settings.columnWidth,
+    margin_note_width: settings.marginNoteWidth,
+    padding: settings.padding,
+    spacing_before: settings.spacingBefore,
+    spacing_after: settings.spacingAfter,
+    line_height: settings.lineHeight,
+  };
+}
+
 function rowToPolicy(row: any): PolicyDocument {
   return {
     id: row.id,
@@ -373,9 +399,10 @@ export const supabaseService = {
     if (error) throw error;
 
     if (entry.footnotesData) {
-      await supabase.from('footnotes').delete().eq('entry_id', entry.id);
+      const { error: fnDeleteError } = await supabase.from('footnotes').delete().eq('entry_id', entry.id);
+      if (fnDeleteError) throw fnDeleteError;
       if (entry.footnotesData.length > 0) {
-        await supabase.from('footnotes').insert(
+        const { error: fnInsertError } = await supabase.from('footnotes').insert(
           entry.footnotesData.map((f, idx) => ({
             entry_id: entry.id,
             label: f.label,
@@ -383,20 +410,23 @@ export const supabaseService = {
             sort_order: idx,
           }))
         );
+        if (fnInsertError) throw fnInsertError;
       }
     }
 
     if (entry.marginNotesData) {
-      await supabase.from('margin_notes').delete().eq('entry_id', entry.id);
+      const { error: mnDeleteError } = await supabase.from('margin_notes').delete().eq('entry_id', entry.id);
+      if (mnDeleteError) throw mnDeleteError;
       const keys = Object.keys(entry.marginNotesData);
       if (keys.length > 0) {
-        await supabase.from('margin_notes').insert(
+        const { error: mnInsertError } = await supabase.from('margin_notes').insert(
           keys.map(key => ({
             entry_id: entry.id,
             block_key: key,
             content: entry.marginNotesData![key],
           }))
         );
+        if (mnInsertError) throw mnInsertError;
       }
     }
   },
@@ -408,6 +438,26 @@ export const supabaseService = {
 
   async saveSystemSettings(settings: SystemSettings) {
     const { error } = await supabase.from('system_settings').upsert(systemSettingsToRow(settings));
+    if (error) throw error;
+  },
+
+  // Returns null if no override is stored yet (or the table/migration doesn't
+  // exist yet) — callers fall back to the hardcoded src/presentation/*.ts spec.
+  async fetchLayoutSettings(contentType: EntryType): Promise<LayoutSettings | null> {
+    const { data, error } = await supabase
+      .from('layout_settings')
+      .select('*')
+      .eq('content_type', contentType)
+      .maybeSingle();
+    if (error) {
+      console.warn('[layout_settings] fetch failed (migration likely not run yet):', error.message);
+      return null;
+    }
+    return data ? rowToLayoutSettings(data) : null;
+  },
+
+  async saveLayoutSettings(settings: LayoutSettings) {
+    const { error } = await supabase.from('layout_settings').upsert(layoutSettingsToRow(settings));
     if (error) throw error;
   },
 

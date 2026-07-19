@@ -273,6 +273,19 @@ export interface SystemSettings {
   researchFindingsLastFetched?: string;
 }
 
+export interface LayoutSettings {
+  contentType: EntryType;
+  alignment: 'left' | 'justify';
+  columnWidth: number;      // px, the actual reading-text measure inside the card — a real dial
+  marginNoteWidth: number;  // px, the reserved margin-note column (Essay only — ignored otherwise) — a real dial
+  padding: number;          // px, the gap between the card's border and the column/margin-note block — a real dial
+  spacingBefore: number; // px, space above each paragraph
+  spacingAfter: number;  // px, space below each paragraph
+  lineHeight: number;    // unitless multiplier, e.g. 1.65
+  // Card width is NOT a field here — it's always computed (padding*2 + column
+  // + margin note + gap) by computeReadingLayout(), never set directly.
+}
+
 export interface SystemLog {
   id: string;
   timestamp: string;

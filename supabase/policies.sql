@@ -172,6 +172,10 @@ create policy "Authors manage own entry footnotes"
   on footnotes for all
   using (entry_id in (select id from entries where author_id = current_app_user_id()));
 
+create policy "Editors manage all entry footnotes"
+  on footnotes for all
+  using (current_app_user_role() in ('Editor', 'Chief Editor'));
+
 create policy "Margin notes follow entry visibility"
   on margin_notes for select
   using (
@@ -187,6 +191,10 @@ create policy "Authors manage own margin notes"
   on margin_notes for all
   using (entry_id in (select id from entries where author_id = current_app_user_id()));
 
+create policy "Editors manage all margin notes"
+  on margin_notes for all
+  using (current_app_user_role() in ('Editor', 'Chief Editor'));
+
 create policy "Revisions readable by author and editors"
   on revisions for select
   using (
@@ -200,6 +208,10 @@ create policy "Revisions readable by author and editors"
 create policy "Authors manage own revisions"
   on revisions for all
   using (entry_id in (select id from entries where author_id = current_app_user_id()));
+
+create policy "Editors manage all revisions"
+  on revisions for all
+  using (current_app_user_role() in ('Editor', 'Chief Editor'));
 
 create policy "Published representations follow entry visibility"
   on published_representations for select
@@ -215,6 +227,10 @@ create policy "Published representations follow entry visibility"
 create policy "Authors manage own representations"
   on published_representations for all
   using (entry_id in (select id from entries where author_id = current_app_user_id()));
+
+create policy "Editors manage all representations"
+  on published_representations for all
+  using (current_app_user_role() in ('Editor', 'Chief Editor'));
 
 -- ============================================================
 -- CITATIONS / ENTRY_CITATIONS (public reference library)
@@ -239,6 +255,10 @@ create policy "Entry citations follow entry visibility"
 create policy "Authors manage own entry citations"
   on entry_citations for all
   using (entry_id in (select id from entries where author_id = current_app_user_id()));
+
+create policy "Editors manage all entry citations"
+  on entry_citations for all
+  using (current_app_user_role() in ('Editor', 'Chief Editor'));
 
 -- ============================================================
 -- SYSTEM LOGS (Editorial audit trail — Editor/Chief Editor only)

@@ -115,17 +115,7 @@ interface AppContextType {
   // User operations
   toggleUserSuspension: (targetUserId: string) => void;
   changeUserRole: (targetUserId: string, newRole: User['role']) => void;
-  saveWriterFromEditorium: (writerData: {
-    id: string;
-    username: string;
-    penName: string;
-    signature: string;
-    bioSummary: string;
-    heroTitle: string;
-    heroSubtitle: string;
-    bioText: string;
-  }) => void;
-  
+
   // RBAC permissions helper
   hasPermission: (permissionKey: keyof RolePermissions) => boolean;
 }
@@ -502,6 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
       .catch(err => {
         console.error('Failed to save entry to Supabase:', err);
+        showToast('Save failed — your changes may not have been recorded. Please retry.', 'error');
       });
   };
 
@@ -647,64 +638,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .catch(err => console.error('Failed to change role:', err));
   };
 
-  const saveWriterFromEditorium = (writerData: {
-    id: string;
-    username: string;
-    penName: string;
-    signature: string;
-    bioSummary: string;
-    heroTitle: string;
-    heroSubtitle: string;
-    bioText: string;
-  }) => {
-    const { id, username, penName, signature, bioSummary, heroTitle, heroSubtitle, bioText } = writerData;
-    const writer = users.find(u => u.id === id);
-    if (!writer) return;
-
-    const updatedUser: User = {
-      ...writer,
-      username,
-      penName,
-      signature,
-      bioSummary,
-    };
-
-    const profile = profiles.find(p => p.authorId === id) || { authorId: id, heroTitle: '', heroSubtitle: '' };
-    const updatedProfile: WriterProfile = {
-      ...profile,
-      heroTitle,
-      heroSubtitle,
-    };
-
-    firestoreService.fetchDbState().then(data => {
-      const identitiesList: IdentityProfile[] = data.identities;
-      const identity = identitiesList.find(i => i.accountId === id);
-      const updatedIdentity = identity ? {
-        ...identity,
-        biography: bioText,
-      } : {
-        identityId: `id-${id}`,
-        accountId: id,
-        username,
-        displayName: penName,
-        penName,
-        biography: bioText,
-        publicVisibility: 'Public' as const,
-        lifeTimeline: [],
-        signatures: []
-      };
-
-      Promise.all([
-        firestoreService.saveUser(updatedUser),
-        firestoreService.saveProfile(updatedProfile),
-        firestoreService.saveIdentity(updatedIdentity)
-      ]).then(() => {
-        refreshDbState();
-        showToast('Settings updated', 'success');
-      });
-    }).catch(err => console.error('Failed to update writer settings:', err));
-  };
-  
   const switchActingAccount = (targetUserId: string) => {
     const target = users.find(u => u.id === targetUserId);
     if (!target) return;
@@ -794,8 +727,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       toggleUserSuspension,
       changeUserRole,
-      saveWriterFromEditorium,
-      
+
       hasPermission
     }}>
       {children}

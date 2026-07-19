@@ -24,5 +24,6 @@ grant select, insert, update, delete on
   policy_documents,
   policy_sections,
   release_logs,
-  system_settings
+  system_settings,
+  layout_settings
 to anon, authenticated;
