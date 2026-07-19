@@ -213,6 +213,31 @@ AI writing assistant, translation, peer review, institutional accounts, public A
 
 ---
 
+## 11a. Planned — Portal / Segment System
+
+Status: 📜 Spec Only (scoped 2026-07-18, discussed previously with ChatGPT/Gemini outside this codebase). Zero implementation. Recorded here so the scope survives across sessions.
+
+**Concept (Izzat's definition, verbatim intent):** "Portal" is the umbrella nav concept containing **Frontpage** (✅ already built) and **Segment** (❌ not started). A Segment is a themed page that aggregates content around a specific local/topical theme — first three planned: **Malaysian Edition**, **Journal of Hadith**, **IT Magazine**. Each Segment page uses the 6-slot mosaic/bento card layout (Full Horizontal-hero / Horizontal / Vertical / Square / Compact / Bar — see the Folio card redesign artifact, [[project_adjung_folio_mosaic_artifact]] in Claude's memory) to display its content.
+
+**Full target (long-term, not Phase 1):** Segments are populated *automatically*, regenerated daily, from a mix of heterogeneous content types — not just Entries. Confirmed by Izzat: entries, editorial-written blurbs, news items, Qur'an verses/ayat, and images all need to be placeable into mosaic slots. This requires a selection/ranking algorithm deciding what fills which slot each day per segment, plus a scheduled daily regeneration job. This is effectively the "Composition Engine" already flagged elsewhere in this matrix (§11, §12) as out of scope pre-Beta — Segment is a concrete surface for that same deferred engine.
+
+**What's confirmed NOT to exist yet (verified by code audit 2026-07-18):**
+- No "Portal" nav concept in code — `src/components/portal/` is just a directory name; `ActiveTabType` (`AppContext.tsx`) has no `portal`/`segment` value.
+- No cross-author theme/collection data model — `Entry.tags`/`Entry.editorialCategory` exist but are per-author, single-entry fields only, never used to assemble a themed page spanning multiple authors.
+- No real React mosaic grid component — the 6-slot layout exists only as an HTML mockup artifact; only the Full-Horizontal/hero slot's design has been ported into real code, and only into `FolioView.tsx` (a single-author list, not a grid).
+- No `/segment/:slug` routing.
+- No content-type abstraction for non-Entry mosaic content (news/Qur'an/image blocks).
+- No scheduling/cron infrastructure for daily auto-regeneration.
+
+**Agreed phased approach (Izzat's decision, 2026-07-18) — build in this order, do not skip to automation first:**
+1. **Phase 1 (next up):** Manual curation, Entries only. New `segments` data model (slug, name, theme) + editor-assigned entry-to-slot mapping (same manual pattern as today's Frontpage curation). Real `/segment/:slug` pages + routing under a new Portal nav concept. Build the remaining 5 mosaic slots as real React components (Vertical/Horizontal/Square/Compact/Bar — currently 0% built), matching the rigor already applied to the finalized FH slot. 3 segments (Malaysian Edition, Journal of Hadith, IT Magazine) created as data once the system works — not 3x separate code paths.
+2. **Phase 2:** Add non-Entry content types to the editor's slot-assignment UI — news items, Qur'an verses, images, editorial blurbs. Still manually placed by an editor.
+3. **Phase 3:** Automation — a selection/ranking algorithm + scheduled daily regeneration, with editor override remaining available. This is the real "Composition Engine" build-out.
+
+**Explicitly rejected for now:** building full automation (Phase 3) before Phase 1/2 exist — Izzat chose the phased path specifically to get a working, visible surface sooner rather than a longer up-front build with nothing to show.
+
+---
+
 ## 12. What This Means for Sequencing
 
 Cross-referencing this matrix against the required column gives the actual MVP scope — much smaller than the full spec set:
