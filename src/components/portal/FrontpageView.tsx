@@ -374,7 +374,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       .join('.') + '.';
   };
 
-  // Helper to estimate reading duration
+  // Fallback only — real published entries carry an authoritative
+  // reading_time_minutes (SPEC-028 §14.1), same field FolioView/
+  // EntryRenderer read. This local estimate exists only for content that
+  // somehow predates that column being populated.
   const estimateReadingTime = (content: string): number => {
     if (!content) return 1;
     const words = content.trim().split(/\s+/).length;
@@ -717,7 +720,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </span>
               <span className="text-[#E0DDD8]">·</span>
               <span className="font-sans">
-                {estimateReadingTime(activeFeatured.content)} min read
+                {activeFeatured.readingTimeMinutes ?? estimateReadingTime(activeFeatured.content)} min read
               </span>
               <span className="text-[#E0DDD8]">·</span>
               <span className="font-sans">
