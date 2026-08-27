@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Entry, WriterProfile, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, getReadingTime } from '../../utils';
+import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, formatSerialNumber } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { EntryRenderer } from '../rendering/EntryRenderer';
@@ -18,7 +18,6 @@ interface FolioViewProps {
   allUniqueTags: string[];
   selectedTagFilter: string;
   setSelectedTagFilter: (tag: string) => void;
-  authorPublishedEntries: Entry[];
   sortedYears: number[];
   timelineGroupedByYear: Record<number, Entry[]>;
   expandedNoteIds: string[];
@@ -38,7 +37,6 @@ export const FolioView: React.FC<FolioViewProps> = ({
   allUniqueTags,
   selectedTagFilter,
   setSelectedTagFilter,
-  authorPublishedEntries,
   sortedYears,
   timelineGroupedByYear,
   expandedNoteIds,
@@ -318,34 +316,15 @@ export const FolioView: React.FC<FolioViewProps> = ({
                         return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
                       };
 
-                      // Same serial#/version derivation as the full-view header
-                      // (EntryRenderer.tsx) — kept in step so the card's
-                      // metadata bar always matches what the reader sees
-                      // after clicking through.
-                      const sortedPublished = [...authorPublishedEntries]
-                        .filter(e => e.status === 'Published' && e.publishedDate)
-                        .sort((a, b) => new Date(a.publishedDate!).getTime() - new Date(b.publishedDate!).getTime());
-                      const serialIndex = Math.max(0, sortedPublished.findIndex(e => e.id === item.id));
-                      const serialNum = `#${serialIndex.toString(36).padStart(4, '0').toUpperCase()}`;
-
-                      let majorV = 1;
-                      let minorV = 0;
-                      const pubDate = new Date(item.publishedDate || item.createdDate);
-                      if (item.revisions && item.revisions.length > 0) {
-                        const revs = [...item.revisions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-                        let currentDay = pubDate.toDateString();
-                        revs.forEach(rev => {
-                          const revDay = new Date(rev.timestamp).toDateString();
-                          if (revDay === currentDay) minorV++;
-                          else { majorV++; minorV = 0; currentDay = revDay; }
-                        });
-                      } else if (item.updatedDate) {
-                        const upDate = new Date(item.updatedDate);
-                        if (upDate.toDateString() !== pubDate.toDateString()) majorV = 2;
-                        else if (upDate.getTime() - pubDate.getTime() > 1000) minorV = 1;
-                      }
-                      const versionStr = `v${majorV}.${minorV}`;
-                      const readingTimeStr = `${parseInt(getReadingTime(item.content || '')) || 1} MIN READ`;
+                      // serial_no / current_version / reading_time_minutes are
+                      // authoritative, DB-trigger-computed columns (SPEC-028
+                      // §14.1) — this card and the full-view header
+                      // (EntryRenderer.tsx) both just read them now, instead
+                      // of each independently recomputing (and drifting from)
+                      // the same numbers.
+                      const serialNum = formatSerialNumber(item.serialNo);
+                      const versionStr = item.currentVersion || 'v1.0';
+                      const readingTimeStr = `${item.readingTimeMinutes || 1} MIN READ`;
                       const authorDomain = `${currentAuthor?.username || 'scholar'}.adjung.com`;
                       const displayTitle = truncateTitle(item.title || '', 55);
 

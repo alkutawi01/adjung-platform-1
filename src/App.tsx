@@ -1491,7 +1491,6 @@ Editorial Board of Adjung`;
                 allUniqueTags={allUniqueTags}
                 selectedTagFilter={selectedTagFilter}
                 setSelectedTagFilter={setSelectedTagFilter}
-                authorPublishedEntries={authorPublishedEntries}
                 sortedYears={sortedYears}
                 timelineGroupedByYear={timelineGroupedByYear}
                 expandedNoteIds={expandedNoteIds}

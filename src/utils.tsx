@@ -1926,6 +1926,15 @@ export function getReadingTime(text: string): string {
   return minutes === 1 ? '1 min read' : `${minutes} min read`;
 }
 
+// Single formatter for an entry's authoritative serial_no (SPEC-028 §14.1) —
+// used by both FolioView's card and EntryRenderer's canonical header so the
+// two surfaces can never disagree on how the number is displayed, only ever
+// on the underlying value (which is now DB-authoritative, not derived here).
+export function formatSerialNumber(serialNo: number | undefined | null): string {
+  const n = serialNo ?? 0;
+  return `#${n.toString(36).padStart(4, '0').toUpperCase()}`;
+}
+
 export const getFootnotesReadingOrderMap = (content: string) => {
   const map: Record<string, number> = {};
   const occurrences: string[] = [];

@@ -113,6 +113,9 @@ function rowToEntry(row: any, footnotes: any[] = [], marginNotes: any[] = []): E
     subtitle: row.subtitle,
     slug: row.slug,
     canonicalUrl: row.canonical_url || '',
+    serialNo: row.serial_no ?? undefined,
+    currentVersion: row.current_version ?? undefined,
+    readingTimeMinutes: row.reading_time_minutes ?? undefined,
     content: row.content || '',
     excerpt: row.excerpt,
     featuredImage: row.featured_image,
@@ -139,6 +142,9 @@ function rowToEntry(row: any, footnotes: any[] = [], marginNotes: any[] = []): E
 }
 
 function entryToRow(entry: Entry) {
+  // Deliberately omits serial_no / current_version / reading_time_minutes —
+  // those are authoritative DB-trigger-computed columns (SPEC-028 §14.1);
+  // the client must never write to them.
   return {
     id: entry.id,
     author_id: entry.authorId,

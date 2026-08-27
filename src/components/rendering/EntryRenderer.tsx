@@ -4,7 +4,7 @@ import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, Vec
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout } from '../../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -3364,36 +3364,12 @@ export function EntryRenderer({
     const isArticle = contentType === 'Essay';
     const isNote = contentType === 'Note';
 
-    const allEntries = entries.filter(e => e.authorId === entry.authorId);
-    // Must match FolioView's authorPublishedEntries filter (App.tsx) exactly —
-    // that's the list a reader actually sees on the Folio card, and this
-    // serial number is what the card promises before the reader clicks
-    // through. A missing visibility check here previously let a Public
-    // entry's serial# silently shift whenever the author also had a
-    // non-Public Published entry mixed into their timeline.
-    const sortedPublished = allEntries
-      .filter(e => e.status === 'Published' && e.visibility === 'Public' && e.publishedDate)
-      .sort((a, b) => new Date(a.publishedDate!).getTime() - new Date(b.publishedDate!).getTime());
-    const serialIndex = Math.max(0, sortedPublished.findIndex(e => e.id === entry.id));
-    const serialNum = `#${serialIndex.toString(36).padStart(4, '0').toUpperCase()}`;
-
-    let majorV = 1;
-    let minorV = 0;
-    const pubDate = new Date(entry.publishedDate || entry.createdDate);
-    if (entry.revisions && entry.revisions.length > 0) {
-      const revs = [...entry.revisions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      let currentDay = pubDate.toDateString();
-      revs.forEach(rev => {
-        const revDay = new Date(rev.timestamp).toDateString();
-        if (revDay === currentDay) minorV++;
-        else { majorV++; minorV = 0; currentDay = revDay; }
-      });
-    } else if (entry.updatedDate) {
-      const upDate = new Date(entry.updatedDate);
-      if (upDate.toDateString() !== pubDate.toDateString()) majorV = 2;
-      else if (upDate.getTime() - pubDate.getTime() > 1000) minorV = 1;
-    }
-    const versionStr = `v${majorV}.${minorV}`;
+    // serial_no / current_version / reading_time_minutes are authoritative,
+    // DB-trigger-computed columns (SPEC-028 §14.1) — Folio's card and this
+    // canonical view both just read them now, instead of each independently
+    // recomputing (and drifting from) the same numbers.
+    const serialNum = formatSerialNumber(entry.serialNo);
+    const versionStr = entry.currentVersion || 'v1.0';
 
     const formatMetadataDate = (dateStr: string) => {
       const d = new Date(dateStr);
@@ -3402,13 +3378,7 @@ export function EntryRenderer({
       return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
     };
 
-    // Read from entry.content (the persisted source), matching what
-    // FolioView's card computes its own "MIN READ" stat from — not
-    // getFullContentString(), whose Essay branch rejoins the live
-    // `paragraphs` edit-buffer array (trimmed, blank lines dropped) and so
-    // can silently disagree with the raw content on word/reading-time
-    // count even when nothing was actually edited.
-    const readingTimeStr = `${parseInt(getReadingTime(entry.content)) || 1} MIN READ`;
+    const readingTimeStr = `${entry.readingTimeMinutes || 1} MIN READ`;
 
     const isArContent = isArabicText(entry.content);
     const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm relative overflow-visible ${

@@ -178,6 +178,13 @@ export interface Entry {
   slug: string;
   tags: string[];
   canonicalUrl: string;
+  // Authoritative, DB-computed publication metadata (SPEC-028 §14.1) —
+  // assigned/recomputed by Postgres triggers on write, never client-side.
+  // Read-only from the client: not included in entryToRow()'s upsert
+  // payload, so a save can never accidentally overwrite these.
+  serialNo?: number;
+  currentVersion?: string;
+  readingTimeMinutes?: number;
   content: string; // Rich text / markdown or custom structured format
   footnotes?: string[]; // Used for Essay
   footnotesData?: Footnote[];
