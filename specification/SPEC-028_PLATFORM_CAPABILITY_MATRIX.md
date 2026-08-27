@@ -278,15 +278,15 @@ Update this matrix whenever a capability changes status. This document — not a
 
 ---
 
-## 14. Relaunch Roadmap (locked 2026-08-27)
+## 14. Active Relaunch Plan (locked 2026-08-27)
 
-Status: Platform development is **paused** — attention has moved to Adjung Brief and Adjung Quick, which are more active. Before leaving Platform dormant again, the items below were scoped and locked (6-round review with ChatGPT, cross-checked against this matrix and specs 05/07/12/14/18) so the next resumption doesn't restart from architectural drift. Do not expand this list opportunistically ("since we're touching Index anyway") — everything past §14.1 is deliberately deferred.
+Status: Platform development is **active again**, with a concrete goal — get it to a real, personally-usable MVP (Izzat will use it himself as a writer), then progress deliberately through Beta to an official public launch. This is not a "finish up loose ends and shelve it" pass; it's the start of the next build phase. Attention is still split with the more active Adjung Brief/Quick, so the items below were scoped and locked (7-round review with ChatGPT, cross-checked against this matrix and specs 05/07/12/14/18) to sequence what's required for each phase and avoid rework. Do not expand §14.1 opportunistically ("since we're touching Index anyway") — §14.2/14.3 are deliberately sequenced for later phases, not skipped.
 
 **Naming decision:** the cross-author browsing/filtering surface keeps the name **Index** — it is not renamed "Feed". Rationale: SPEC-012 already defines Index as a queryable public catalogue ("discoverable, connected, reusable"), which covers filtered/sorted results without becoming a social feed. Rejected alternatives: Catalogue (too static/library-record), Directory (already means the writer/institution directory), Archive/Corpus/Bibliography (wrong register). UI copy pattern: "Index" (place) → "Browse" (action) → "Search"/"Filters" (query) → "Results" (output) — never "feed".
 
 **Governing rule (applies to Index, Frontpage, and any future discovery surface):** personalisation by explicit query is allowed (a reader choosing filters); personalisation by inferred behaviour is not (no reading-history-driven ranking, no "recommended for you"). Concretely: *"User chooses what to see; Adjung does not learn what to keep showing them."* The signup wizard's "Your Interests" data (topics/languages/edition, captured but unused, meant for the future Segment/Composition Engine) must **not** auto-apply to Index filters — that would cross from explicit into inferred/default-personalized. If ever surfaced, it must be an explicit opt-in action ("Apply my interests"), not a silent default.
 
-### 14.1 Do now (before Platform is left dormant again)
+### 14.1 Do now — required for a real, personal-use MVP
 
 1. **Fix the metadata single-source-of-truth gap** — the Folio-card/canonical-page drift bug this session (§ commit history) is a symptom, not a one-off: two components independently computing `serial_no`/`reading_time` will keep drifting. Move these to stored, authoritative columns on `entries`:
    - `serial_no` — assigned atomically at first publish, DB-level uniqueness (e.g. `(author_id, serial_no)`), never recomputed client-side.
@@ -299,7 +299,9 @@ Status: Platform development is **paused** — attention has moved to Adjung Bri
 
 Client-side search/pagination staying temporary is acceptable **performance debt** (small corpus). Two components each computing their own authoritative metadata is **integrity debt** and is the thing this pass must actually close.
 
-### 14.2 KIV — defer until Platform is a priority again, or until public registration produces a real corpus
+### 14.2 Beta phase — defer until the corpus/usage is real enough to need it
+
+Not needed for Izzat's own personal-use MVP; scale this in during Beta, as usage grows past what client-side handling can comfortably serve.
 
 - Server-side filtering/query and pagination via Supabase/Postgres (replacing the client-side implementation behind the §14.1.2 interface).
 - Postgres full-text search (`tsvector` + GIN index) — current gap: despite an earlier (stale) note in this matrix claiming body-content search was fixed in `EditorialIndex.tsx`, it was not — `matchesSearch` only checks title/author/type/tags/slug/id, never `content`. Fix this for real once search moves server-side; a client-side `.filter()` including body content is an acceptable stopgap before then.
@@ -307,7 +309,7 @@ Client-side search/pagination staying temporary is acceptable **performance debt
 - Full revision-history table (`entries.current_version` is sufficient until then).
 - Using signup "Interests" data for any Index/Segment/Composition Engine feature — still 📜 spec-only, no change from §11a.
 
-### 14.3 WAJIB before "anyone can join" (public registration opens)
+### 14.3 Launch phase — required before "anyone can join" (public registration opens)
 
 - Email verification actually wired (custom SMTP via Resend/`mail.adjung.com` — DNS already verified, not yet connected to Supabase Auth) — accounts may be created, but publishing should be gated on a verified email.
 - Reserved username/handle blocklist (admin/api/search/settings/login/register, Adjung's own names, system routes) — SPEC-005 Routing already requires reserved paths can't become usernames; this closes the self-registration gap.
@@ -321,6 +323,6 @@ Client-side search/pagination staying temporary is acceptable **performance debt
 
 ### 14.4 Relationship to the rest of the Adjung Press family (Brief, Quick, NIQAB)
 
-Checked explicitly (round 7 of the review): Platform stays **architecturally standalone** — its own repo, its own database, its own implementation. §14.1's work does not need to wait for or copy whatever pattern Brief/Quick have built while Platform was paused, and no shared package/shared DB schema/shared service should be created now just for "product-family consistency" — that would add coupling while Platform itself is dormant.
+Checked explicitly (round 7 of the review): Platform stays **architecturally standalone** — its own repo, its own database, its own implementation. §14.1's work does not need to wait for or copy whatever pattern Brief/Quick have built in the meantime, and no shared package/shared DB schema/shared service should be created now just for "product-family consistency" — that would add coupling for no real integration yet.
 
 What's worth keeping aligned across the family is **philosophy and terminology, not code**: the authoritative-metadata principle, finite (non-infinite-scroll) pagination, and explicit-query-over-inferred-personalisation should hold wherever they're relevant elsewhere too. Field naming (`language`, `published_at`, `slug`, `reading_time`) is worth keeping consistent in spirit, in case a real cross-product integration (RSS, shared identity, cross-product discovery) is ever built. Editorial ranking (e.g. Quick's `editorial_v1`) is fine to exist in other products but must not be pulled into Platform's Index. Re-evaluate any shared boundary only when an actual integration is being built, not preemptively.
