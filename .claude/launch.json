@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start"],
       "port": 5000
+    },
+    {
+      "name": "Adjung Frontend (agent, isolated port)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port=3100", "--host=0.0.0.0"],
+      "port": 3100
     }
   ]
 }

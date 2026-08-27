@@ -21,7 +21,14 @@ export default defineConfig(() => {
       },
       proxy: {
         '/api': {
-          target: 'http://localhost:5000',
+          // NOTE: `PORT` is set via `cross-env PORT=... tsx server.js` in the
+          // sibling `concurrently` command — that env var does NOT propagate
+          // to this (the `vite`) process, so reading process.env.PORT here
+          // is always empty and silently falls back to 5000. Use a
+          // vite-process-own var instead (set alongside the `vite` command
+          // itself), so each dev:* script can point the proxy at its own
+          // backend without an unreachable-port hang.
+          target: `http://localhost:${process.env.VITE_BACKEND_PORT || 5000}`,
           changeOrigin: true,
         },
       },

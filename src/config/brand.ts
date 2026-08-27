@@ -6,5 +6,5 @@ export const BRAND = {
   description: "A long-term knowledge publishing ecosystem centered on intellectual quality, editorial integrity, and long-term preservation.",
   logo: "Adjung",
   version: "1.1.0",
-  copyright: "© 2026 Adjung Platform"
+  copyright: "© 2026 Adjung Press"
 };
