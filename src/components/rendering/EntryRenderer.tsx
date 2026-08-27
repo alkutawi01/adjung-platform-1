@@ -6,7 +6,7 @@ import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
-import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter } from 'lucide-react';
+import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter, Search } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -549,6 +549,112 @@ export function EntryRenderer({
     setContextCoords(null);
   };
 
+  // Find & replace. Works over the editor's live text nodes rather than the
+  // markdown string, so existing inline formatting and the
+  // footnote/margin-note badges (which are contenteditable="false" elements,
+  // not text) are left untouched — a naive string replace over the markdown
+  // could match inside a [^fn-...] marker and corrupt it.
+  const collectFindMatches = (query: string): { node: Text; index: number }[] => {
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (!editorEl || !query) return [];
+    const needle = query.toLowerCase();
+    const matches: { node: Text; index: number }[] = [];
+    const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        // Skip text inside badges — their content is generated, not authored.
+        const parent = (node as Text).parentElement;
+        if (parent?.closest('.footnote-badge, .margin-note-badge')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      const text = (node as Text).data.toLowerCase();
+      let from = 0;
+      let at = text.indexOf(needle, from);
+      while (at !== -1) {
+        matches.push({ node: node as Text, index: at });
+        from = at + needle.length;
+        at = text.indexOf(needle, from);
+      }
+    }
+    return matches;
+  };
+
+  const selectFindMatch = (matchIdx: number, query: string) => {
+    const matches = collectFindMatches(query);
+    if (matches.length === 0) {
+      setFindMatchInfo({ current: 0, total: 0 });
+      return null;
+    }
+    const safeIdx = ((matchIdx % matches.length) + matches.length) % matches.length;
+    const m = matches[safeIdx];
+    const range = document.createRange();
+    range.setStart(m.node, m.index);
+    range.setEnd(m.node, m.index + query.length);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    m.node.parentElement?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setFindMatchInfo({ current: safeIdx + 1, total: matches.length });
+    return range;
+  };
+
+  const handleFindNext = (step: number = 1) => {
+    if (!findQuery) return;
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    editorEl?.focus();
+    selectFindMatch(findMatchInfo.current - 1 + step, findQuery);
+  };
+
+  const handleReplaceCurrent = () => {
+    if (!findQuery) return;
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    editorEl?.focus();
+    // Re-select the current match first, so Replace works even after the
+    // caret moved (e.g. the user clicked into the Replace field).
+    const range = selectFindMatch(Math.max(0, findMatchInfo.current - 1), findQuery);
+    if (!range) return;
+    // insertText keeps this on the browser's native undo stack, unlike a
+    // direct DOM mutation.
+    document.execCommand('insertText', false, replaceQuery);
+    triggerEditorChange();
+    setTimeout(() => {
+      const remaining = collectFindMatches(findQuery);
+      setFindMatchInfo({ current: remaining.length ? 1 : 0, total: remaining.length });
+      if (remaining.length) selectFindMatch(0, findQuery);
+    }, 0);
+  };
+
+  const handleReplaceAll = () => {
+    if (!findQuery) return;
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    if (!editorEl) return;
+    editorEl.focus();
+    let replacements = 0;
+    // Re-collect after each replacement: mutating a text node invalidates
+    // the offsets of every later match inside that same node.
+    let guard = 0;
+    while (guard++ < 5000) {
+      const matches = collectFindMatches(findQuery);
+      if (matches.length === 0) break;
+      const m = matches[0];
+      const range = document.createRange();
+      range.setStart(m.node, m.index);
+      range.setEnd(m.node, m.index + findQuery.length);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      document.execCommand('insertText', false, replaceQuery);
+      replacements++;
+      // A replacement that contains the search term would loop forever.
+      if (replaceQuery.toLowerCase().includes(findQuery.toLowerCase())) break;
+    }
+    triggerEditorChange();
+    setFindMatchInfo({ current: 0, total: 0 });
+    showToast(replacements === 1 ? '1 replacement made' : `${replacements} replacements made`, 'success');
+  };
+
   // Highlight is applied as a semantic <mark>, never via execCommand's
   // hiliteColor — that would bake an author-chosen colour into the saved
   // content, which is exactly the kind of presentation decision Adjung
@@ -861,6 +967,11 @@ export function EntryRenderer({
     text: string;
     textareaId: string;
   } | null>(null);
+
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [findMatchInfo, setFindMatchInfo] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -3832,6 +3943,7 @@ export function EntryRenderer({
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertUnorderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Bulleted list"><List className="w-3.5 h-3.5" /></button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertOrderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => openLinkEditor()} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Insert or edit link (Ctrl+K)"><LinkIcon className="w-3.5 h-3.5" /></button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setShowFindReplace(v => !v)} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Find and replace (Ctrl+F)"><Search className="w-3.5 h-3.5" /></button>
                   <div className="flex-1" />
                   {/* Autosave feedback. The autosave engine itself has been
                       working all along (debounced, writes to Supabase), but
@@ -3850,6 +3962,45 @@ export function EntryRenderer({
                     {getWordCount(content)}/{(contentType === 'Note' ? 100 : contentType === 'Essay' ? 1000 : 10000).toLocaleString()} words
                   </span>
                 </div>
+                {showFindReplace && (
+                  <div className="mb-3 flex flex-wrap items-center gap-2 bg-stone-50 border border-stone-200 rounded p-2 animate-fade-in">
+                    <Search className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+                    <input
+                      type="text"
+                      autoFocus
+                      value={findQuery}
+                      onChange={(e) => {
+                        setFindQuery(e.target.value);
+                        const total = collectFindMatches(e.target.value).length;
+                        setFindMatchInfo({ current: 0, total });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleFindNext(e.shiftKey ? -1 : 1); }
+                        if (e.key === 'Escape') { e.preventDefault(); setShowFindReplace(false); }
+                      }}
+                      placeholder="Find"
+                      className="w-40 bg-white border border-stone-200 focus:border-adjung-maroon rounded px-2 py-1 text-xs font-sans focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={replaceQuery}
+                      onChange={(e) => setReplaceQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') { e.preventDefault(); setShowFindReplace(false); }
+                      }}
+                      placeholder="Replace with"
+                      className="w-40 bg-white border border-stone-200 focus:border-adjung-maroon rounded px-2 py-1 text-xs font-sans focus:outline-none"
+                    />
+                    <span className="text-[10px] font-mono text-stone-400 min-w-[52px]">
+                      {findQuery ? (findMatchInfo.total ? `${findMatchInfo.current}/${findMatchInfo.total}` : 'none') : ''}
+                    </span>
+                    <button type="button" onClick={() => handleFindNext(-1)} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Prev</button>
+                    <button type="button" onClick={() => handleFindNext(1)} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Next</button>
+                    <button type="button" onClick={handleReplaceCurrent} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Replace</button>
+                    <button type="button" onClick={handleReplaceAll} disabled={!findMatchInfo.total} className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 disabled:opacity-40 cursor-pointer">All</button>
+                    <button type="button" onClick={() => setShowFindReplace(false)} className="px-2 py-1 text-stone-400 hover:text-stone-600 text-[10px] uppercase font-mono tracking-wider cursor-pointer">Close</button>
+                  </div>
+                )}
                 {showLinkInput && (
                   <div className="mb-3 flex items-center gap-2 bg-stone-50 border border-stone-200 rounded p-2 animate-fade-in">
                     <LinkIcon className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
@@ -3886,6 +4037,12 @@ export function EntryRenderer({
                     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                       e.preventDefault();
                       openLinkEditor();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                      // Override the browser's own find bar, which can't see
+                      // into this editor's model or offer replace.
+                      e.preventDefault();
+                      setShowFindReplace(true);
                     }
                   }}
                   onChange={(newHtml) => {
