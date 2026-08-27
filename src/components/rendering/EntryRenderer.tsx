@@ -3485,6 +3485,7 @@ export function EntryRenderer({
                 <RichTextEditable
                   tagName="h1"
                   html={markdownToHtml(title)}
+                  selectAllOnFocus={/^Untitled /.test(title)}
                   onChange={(newHtml: string) => {
                     let val = htmlToMarkdown(newHtml);
                     if (val.length > 100) {
@@ -4373,6 +4374,13 @@ export function EntryRenderer({
                     const val = e.target.value.substring(0, 100);
                     setTitle(val);
                     triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val);
+                  }}
+                  onFocus={(e) => {
+                    // A new draft's title starts as real text ("Untitled
+                    // Essay"), not just a placeholder — without this, a
+                    // plain click drops the caret mid-word and typing
+                    // merges into the default instead of replacing it.
+                    if (/^Untitled /.test(title)) e.target.select();
                   }}
                   placeholder="Enter Title..."
                   className={`text-2xl md:text-3.5xl ${proseFont} text-[#111111] font-medium tracking-tight leading-tight w-full bg-transparent border-b border-dashed border-stone-200/90 focus:border-adjung-maroon focus:outline-none py-1 pr-16`}

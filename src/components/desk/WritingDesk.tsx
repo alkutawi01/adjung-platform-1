@@ -269,8 +269,8 @@ export function WritingDesk({
                     const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
                     return (isOwner || isInst) && e.status === 'Draft';
                   }).map(draft => (
-                    <div 
-                      key={draft.id} 
+                    <div
+                      key={draft.id}
                       onClick={() => contextSetEditingEntry(draft)}
                       className="bg-white hover:bg-[#FDFDFD] border border-stone-200 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
                     >

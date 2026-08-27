@@ -10,6 +10,12 @@ interface RichTextEditableProps {
   dir?: string;
   id?: string;
   onContextMenu?: (e: React.MouseEvent) => void;
+  // Select the entire current content the first time this field is
+  // focused — for short fields (like a title) that start out holding a
+  // real default value (e.g. "Untitled Essay", not just a placeholder),
+  // a plain click drops the caret mid-text, so typing merges into the
+  // default instead of replacing it.
+  selectAllOnFocus?: boolean;
 }
 
 export const RichTextEditable: React.FC<RichTextEditableProps> = ({
@@ -22,6 +28,7 @@ export const RichTextEditable: React.FC<RichTextEditableProps> = ({
   dir,
   id,
   onContextMenu,
+  selectAllOnFocus,
 }) => {
   const editorRef = useRef<HTMLElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -52,6 +59,13 @@ export const RichTextEditable: React.FC<RichTextEditableProps> = ({
           document.execCommand('defaultParagraphSeparator', false, 'p');
         } catch (e) {
           console.warn('[RichTextEditable] Failed to set defaultParagraphSeparator:', e);
+        }
+        if (selectAllOnFocus && editorRef.current) {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(editorRef.current);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
         }
       }}
       onBlur={() => {
