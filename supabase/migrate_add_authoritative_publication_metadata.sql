@@ -25,14 +25,16 @@ create or replace function assign_entry_serial_no()
 returns trigger as $$
 begin
   if new.status = 'Published' and new.serial_no is null then
-    -- FOR UPDATE locks this author's existing rows for the duration of the
-    -- transaction, so two concurrent first-publishes by the same author
-    -- can't race to the same serial_no.
+    -- Postgres rejects FOR UPDATE combined with an aggregate in the same
+    -- query, so the lock and the max() read are split into two statements:
+    -- lock this author's existing rows first (blocks concurrent
+    -- first-publishes from racing to the same serial_no), then read the max.
+    perform 1 from entries where author_id = new.author_id for update;
+
     select coalesce(max(serial_no), -1) + 1
       into new.serial_no
       from entries
-      where author_id = new.author_id
-      for update;
+      where author_id = new.author_id;
   end if;
   return new;
 end;

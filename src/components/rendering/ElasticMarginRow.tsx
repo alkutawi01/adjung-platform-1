@@ -83,7 +83,7 @@ export function ElasticMarginRow({
                     </span>
                   )}
                 </div>
-                <div className={`text-stone-500 italic text-[13px] md:text-[13.5px] leading-relaxed ${proseFont}`}>
+                <div className={`text-stone-500 text-[13px] md:text-[13.5px] leading-relaxed ${proseFont}`}>
                   {noteContent}
                 </div>
               </div>
@@ -125,7 +125,7 @@ export function ElasticMarginRow({
                 </span>
               )}
             </div>
-            <div className={`text-stone-500 italic text-[11px] leading-snug ${proseFont}`}>
+            <div className={`text-stone-500 text-[11px] leading-snug ${proseFont}`}>
               {noteContent}
             </div>
           </div>

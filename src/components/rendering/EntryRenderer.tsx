@@ -4217,7 +4217,7 @@ export function EntryRenderer({
                             <span className="uppercase font-semibold text-stone-500">Margin Note ({toRoman(mMap[id]).toLowerCase()})</span>
                             <span className="text-[7.5px] uppercase tracking-wider text-adjung-maroon font-medium font-mono animate-pulse opacity-95">● click to edit</span>
                           </div>
-                          <p className={`text-xs ${proseFont} text-stone-500 truncate pr-2 mt-0.5 italic`}>
+                          <p className={`text-xs ${proseFont} text-stone-500 truncate pr-2 mt-0.5`}>
                             {marginNotesData[id] || 'Empty side note...'}
                           </p>
                         </div>
