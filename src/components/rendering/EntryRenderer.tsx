@@ -734,6 +734,7 @@ export function EntryRenderer({
     if (existing) {
       setLinkEditorState({ url: existing.getAttribute('href') || '', isEditingExisting: true });
       setLinkSavedRange(null);
+      setLinkTargetAnchor(existing);
       setShowLinkInput(true);
       return;
     }
@@ -744,6 +745,7 @@ export function EntryRenderer({
     // execCommand needs the selection intact, but focusing the URL field
     // destroys it — stash the range and restore it on apply.
     setLinkSavedRange(sel.getRangeAt(0).cloneRange());
+    setLinkTargetAnchor(null);
     setLinkEditorState({ url: 'https://', isEditingExisting: false });
     setShowLinkInput(true);
   };
@@ -752,7 +754,7 @@ export function EntryRenderer({
     const url = linkEditorState.url.trim();
     if (!url) return;
     if (linkEditorState.isEditingExisting) {
-      const anchor = getAnchorAtCaret();
+      const anchor = linkTargetAnchor || getAnchorAtCaret();
       if (anchor) anchor.setAttribute('href', url);
     } else if (linkSavedRange) {
       const sel = window.getSelection();
@@ -762,11 +764,12 @@ export function EntryRenderer({
     }
     setShowLinkInput(false);
     setLinkSavedRange(null);
+    setLinkTargetAnchor(null);
     triggerEditorChange();
   };
 
   const removeLinkAtCaret = () => {
-    const anchor = getAnchorAtCaret();
+    const anchor = linkTargetAnchor || getAnchorAtCaret();
     if (anchor) {
       // Unwrap: keep the text, drop the <a>.
       while (anchor.firstChild) anchor.parentNode?.insertBefore(anchor.firstChild, anchor);
@@ -774,6 +777,7 @@ export function EntryRenderer({
     }
     setShowLinkInput(false);
     setLinkSavedRange(null);
+    setLinkTargetAnchor(null);
     triggerEditorChange();
   };
 
@@ -993,6 +997,10 @@ export function EntryRenderer({
   // The selection is lost the moment the URL field takes focus, so
   // execCommand('createLink') would have nothing to wrap — keep the range.
   const [linkSavedRange, setLinkSavedRange] = useState<Range | null>(null);
+  // Likewise for editing an existing link: by the time Update/Remove is
+  // clicked the caret is no longer inside the <a>, so re-deriving it from the
+  // live selection finds nothing. Hold the element itself instead.
+  const [linkTargetAnchor, setLinkTargetAnchor] = useState<HTMLAnchorElement | null>(null);
   const [showInsertMenu, setShowInsertMenu] = useState(false);
 
   useEffect(() => {
@@ -4025,7 +4033,7 @@ export function EntryRenderer({
                       onChange={(e) => setLinkEditorState(s => ({ ...s, url: e.target.value }))}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') { e.preventDefault(); applyLinkFromEditor(); }
-                        if (e.key === 'Escape') { e.preventDefault(); setShowLinkInput(false); setLinkSavedRange(null); }
+                        if (e.key === 'Escape') { e.preventDefault(); setShowLinkInput(false); setLinkSavedRange(null); setLinkTargetAnchor(null); }
                       }}
                       placeholder="https://example.com"
                       className="flex-1 bg-white border border-stone-200 focus:border-adjung-maroon rounded px-2 py-1 text-xs font-sans focus:outline-none"
@@ -4038,7 +4046,7 @@ export function EntryRenderer({
                         Remove
                       </button>
                     )}
-                    <button type="button" onClick={() => { setShowLinkInput(false); setLinkSavedRange(null); }} className="px-2 py-1 text-stone-400 hover:text-stone-600 text-[10px] uppercase font-mono tracking-wider cursor-pointer">
+                    <button type="button" onClick={() => { setShowLinkInput(false); setLinkSavedRange(null); setLinkTargetAnchor(null); }} className="px-2 py-1 text-stone-400 hover:text-stone-600 text-[10px] uppercase font-mono tracking-wider cursor-pointer">
                       Cancel
                     </button>
                   </div>
