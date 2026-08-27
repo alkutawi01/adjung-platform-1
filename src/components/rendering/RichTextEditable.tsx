@@ -19,7 +19,14 @@ interface RichTextEditableProps {
   // Native browser spellcheck. Defaults on — a real word processor always
   // spellchecks; this field was simply never set before.
   spellCheck?: boolean;
+  // Called once per paste that contained recognizable Word/Google Docs
+  // footnotes, with the extracted {id, content} pairs — the caller (an
+  // Essay's canvas editor) is the one that owns footnotesData, so it has
+  // to be the one to actually register them.
+  onFootnotesFromPaste?: (footnotes: { id: string; content: string }[]) => void;
 }
+
+interface ExtractedFootnote { id: string; content: string; }
 
 // A word processor's paste should never carry in Word/Google Docs's own
 // styling (mso-* inline styles, font/color spans, conditional comments,
@@ -28,9 +35,60 @@ interface RichTextEditableProps {
 // attribute except <a href>.
 const PASTE_ALLOWED_TAGS = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'A']);
 
-function sanitizePastedHtml(html: string): string {
+// Word and Google Docs both export footnotes as a reference/definition
+// pair of anchors linked by a matching href="#x" / id-or-name="x": the
+// reference sits inline (usually wrapped in <sup>), the definition lives
+// in a block elsewhere in the same clipboard HTML. Without this step, the
+// generic tag-stripping below would unwrap the <sup>/<div> wrappers and
+// leave the footnote number as dead inline text with its body demoted to
+// a stray trailing paragraph — the content survives, but it stops being a
+// footnote. This finds each such pair, converts the reference into
+// Adjung's own footnote-badge marker (the same element insertNote() in
+// EntryRenderer.tsx creates), and removes the original definition block
+// so it isn't left behind as body text.
+function extractAndRewriteFootnotes(container: HTMLElement): ExtractedFootnote[] {
+  const extracted: ExtractedFootnote[] = [];
+  const MARKER_RE = /^\[?[0-9ivxlcIVXLC]{1,4}\]?\.?$/;
+
+  Array.from(container.querySelectorAll('a[href^="#"]')).forEach(refAnchor => {
+    const targetId = refAnchor.getAttribute('href')!.slice(1);
+    if (!targetId || !MARKER_RE.test(refAnchor.textContent?.trim() || '')) return;
+
+    let defAnchor: Element | null = null;
+    try {
+      defAnchor = container.querySelector(`a[name="${CSS.escape(targetId)}"], [id="${CSS.escape(targetId)}"]`);
+    } catch {
+      // Malformed id/name (unlikely, but paste content isn't trustworthy) — skip this one.
+    }
+    if (!defAnchor || defAnchor === refAnchor || defAnchor.contains(refAnchor) || refAnchor.contains(defAnchor)) return;
+
+    const defBlock = defAnchor.closest('p, div, li') || defAnchor.parentElement;
+    if (!defBlock || !container.contains(defBlock)) return;
+
+    const defText = (defBlock.textContent || '').replace(/^\s*\[?[0-9ivxlcIVXLC]{1,4}\]?\.?\s*/, '').trim();
+    if (!defText) return;
+
+    const id = `fn-${Math.random().toString(36).slice(2, 10)}`;
+    extracted.push({ id, content: defText });
+
+    const badge = document.createElement('span');
+    badge.className = 'footnote-badge';
+    badge.setAttribute('data-id', id);
+    badge.setAttribute('contenteditable', 'false');
+    badge.textContent = '​';
+    (refAnchor.closest('sup') || refAnchor).replaceWith(badge);
+
+    defBlock.remove();
+  });
+
+  return extracted;
+}
+
+function sanitizePastedHtml(html: string): { html: string; footnotes: ExtractedFootnote[] } {
   const container = document.createElement('div');
   container.innerHTML = html;
+
+  const footnotes = extractAndRewriteFootnotes(container);
 
   const clean = (node: Node) => {
     Array.from(node.childNodes).forEach(child => {
@@ -41,6 +99,8 @@ function sanitizePastedHtml(html: string): string {
       if (child.nodeType !== Node.ELEMENT_NODE) return;
       const el = child as HTMLElement;
       clean(el);
+      const isFootnoteBadge = el.tagName === 'SPAN' && el.classList.contains('footnote-badge');
+      if (isFootnoteBadge) return; // Leave the badge exactly as extractAndRewriteFootnotes built it.
       if (!PASTE_ALLOWED_TAGS.has(el.tagName)) {
         // Unwrap disallowed elements (e.g. Word's <span style="...">,
         // <o:p>, <div>) instead of dropping their text content.
@@ -56,7 +116,7 @@ function sanitizePastedHtml(html: string): string {
     });
   };
   clean(container);
-  return container.innerHTML;
+  return { html: container.innerHTML, footnotes };
 }
 
 export const RichTextEditable: React.FC<RichTextEditableProps> = ({
@@ -71,6 +131,7 @@ export const RichTextEditable: React.FC<RichTextEditableProps> = ({
   onContextMenu,
   selectAllOnFocus,
   spellCheck = true,
+  onFootnotesFromPaste,
 }) => {
   const editorRef = useRef<HTMLElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -91,14 +152,23 @@ export const RichTextEditable: React.FC<RichTextEditableProps> = ({
     e.preventDefault();
     const rawHtml = e.clipboardData.getData('text/html');
     const plainText = e.clipboardData.getData('text/plain');
-    const insertable = rawHtml
-      ? sanitizePastedHtml(rawHtml)
-      : plainText
-          .split(/\r?\n+/)
-          .map(line => `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
-          .join('');
+    let insertable: string;
+    let pastedFootnotes: ExtractedFootnote[] = [];
+    if (rawHtml) {
+      const result = sanitizePastedHtml(rawHtml);
+      insertable = result.html;
+      pastedFootnotes = result.footnotes;
+    } else {
+      insertable = plainText
+        .split(/\r?\n+/)
+        .map(line => `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
+        .join('');
+    }
     document.execCommand('insertHTML', false, insertable);
     handleInput();
+    if (pastedFootnotes.length && onFootnotesFromPaste) {
+      onFootnotesFromPaste(pastedFootnotes);
+    }
   };
 
   const Tag = tagName as any;

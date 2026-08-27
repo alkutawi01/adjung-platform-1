@@ -3739,6 +3739,23 @@ export function EntryRenderer({
                   }}
                   placeholder="Begin writing your manuscript here... Right-click to insert Footnotes and Margin Notes."
                   onContextMenu={handleContextMenu}
+                  onFootnotesFromPaste={(pasted) => {
+                    // Pasting an essay written in Word/Google Docs previously
+                    // dropped its footnotes to plain dead-link text plus a
+                    // stray trailing paragraph (the definition survived as
+                    // body text but was disconnected from the reference).
+                    // RichTextEditable now converts recognized footnote
+                    // pairs into Adjung's own footnote-badge markers before
+                    // this fires; registering their content here is the
+                    // other half — same setTimeout+triggerEditorChange
+                    // pattern insertNote() uses, since the DOM needs to
+                    // settle before re-reading it for the markdown save.
+                    const updatedFootnotesData = [...footnotesData, ...pasted];
+                    setFootnotesData(updatedFootnotesData);
+                    setTimeout(() => {
+                      triggerEditorChange(undefined, undefined, updatedFootnotesData);
+                    }, 50);
+                  }}
                   className={`w-full min-h-[140px] bg-transparent border-none focus:outline-none resize-none ${proseFont} text-xs leading-relaxed text-[#111111] outline-none`}
                 />
               </div>
