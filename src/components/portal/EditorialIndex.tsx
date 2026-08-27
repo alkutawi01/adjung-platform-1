@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ListOrdered, Info, Search } from 'lucide-react';
+import { ListOrdered, Info, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../../types';
-import { isArabicText, stripMarkdown, parseInlineFormatting } from '../../utils';
+import { isArabicText, parseInlineFormatting } from '../../utils';
+import { getIndexEntries, getIndexFacets, IndexSortOrder } from '../../utils/getIndexEntries';
 
 interface EditorialIndexProps {
   entries: Entry[];
@@ -12,6 +13,44 @@ interface EditorialIndexProps {
   onSearchQueryChange?: (query: string) => void;
 }
 
+const PAGE_SIZE = 20;
+
+// Reads/writes ?type=&language=&tag=&q=&sort=&page= on the current URL so a
+// filtered Index view can be bookmarked or shared — per SPEC-028 §14.1,
+// Index must behave as already-finite (fixed page size, Prev/Next, no
+// infinite scroll) even while the query engine behind it stays client-side.
+function readParamsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    query: params.get('q') || '',
+    type: (params.get('type') as 'All' | 'Essay' | 'Note') || 'All',
+    language: params.get('language') || 'All',
+    tag: params.get('tag') || 'All',
+    sort: (params.get('sort') as IndexSortOrder) || 'newest',
+    page: Math.max(1, parseInt(params.get('page') || '1', 10) || 1),
+  };
+}
+
+function writeParamsToUrl(state: {
+  query: string; type: string; language: string; tag: string; sort: string; page: number;
+}) {
+  const params = new URLSearchParams(window.location.search);
+  const setOrDelete = (key: string, value: string, defaultValue: string) => {
+    if (value && value !== defaultValue) params.set(key, value);
+    else params.delete(key);
+  };
+  setOrDelete('q', state.query, '');
+  setOrDelete('type', state.type, 'All');
+  setOrDelete('language', state.language, 'All');
+  setOrDelete('tag', state.tag, 'All');
+  setOrDelete('sort', state.sort, 'newest');
+  setOrDelete('page', String(state.page), '1');
+
+  const qs = params.toString();
+  const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+  window.history.replaceState(null, '', newUrl);
+}
+
 export function EditorialIndex({
   entries,
   users,
@@ -20,111 +59,45 @@ export function EditorialIndex({
   initialSearchQuery = '',
   onSearchQueryChange,
 }: EditorialIndexProps) {
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [typeFilter, setTypeFilter] = useState<'All' | 'Essay' | 'Note'>('All');
-  const [languageFilter, setLanguageFilter] = useState<string>('All');
-  const [selectedTag, setSelectedTag] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title-az' | 'title-za'>('newest');
+  const initial = React.useMemo(readParamsFromUrl, []);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || initial.query);
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Essay' | 'Note'>(initial.type);
+  const [languageFilter, setLanguageFilter] = useState<string>(initial.language);
+  const [selectedTag, setSelectedTag] = useState<string>(initial.tag);
+  const [sortBy, setSortBy] = useState<IndexSortOrder>(initial.sort);
+  const [page, setPage] = useState<number>(initial.page);
 
   React.useEffect(() => {
-    setSearchQuery(initialSearchQuery);
+    if (initialSearchQuery) setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery]);
 
-  // Extract all unique tags from the published content entries
-  const allTags = React.useMemo(() => {
-    const tagsSet = new Set<string>();
-    entries.forEach(e => {
-      if (
-        e.status === 'Published' && 
-        e.contentType !== 'Notice' && 
-        e.contentType !== "Editor's Note" && 
-        e.tags
-      ) {
-        e.tags.forEach(t => {
-          if (t && t.trim()) {
-            tagsSet.add(t.trim());
-          }
-        });
-      }
-    });
-    return Array.from(tagsSet).sort();
-  }, [entries]);
+  // Any filter/sort change resets to page 1 — a stale page number from a
+  // wider result set would otherwise silently show an empty page.
+  const resetToFirstPage = () => setPage(1);
 
-  // Extract all unique languages from the published content entries
-  const allLanguages = React.useMemo(() => {
-    const langsSet = new Set<string>();
-    entries.forEach(e => {
-      if (
-        e.status === 'Published' && 
-        e.contentType !== 'Notice' && 
-        e.contentType !== "Editor's Note"
-      ) {
-        // Use the entry's language metadata if available, otherwise auto-detect based on script
-        const lang = e.language || (isArabicText(e.title || e.content) ? 'Arabic' : 'English');
-        langsSet.add(lang);
-      }
-    });
-    return Array.from(langsSet).sort();
-  }, [entries]);
+  React.useEffect(() => {
+    writeParamsToUrl({ query: searchQuery, type: typeFilter, language: languageFilter, tag: selectedTag, sort: sortBy, page });
+  }, [searchQuery, typeFilter, languageFilter, selectedTag, sortBy, page]);
 
-  // Filter entries based on search query, type, language, and tag filters
-  const filteredEntries = entries.filter(e => {
-    // Only published entries should be visible in the catalog
-    if (e.status !== 'Published') return false;
+  const { tags: allTags, languages: allLanguages } = React.useMemo(
+    () => getIndexFacets(entries),
+    [entries]
+  );
 
-    // Index is only for main content entries, not administrative / notice board contents
-    if (e.contentType === 'Notice' || e.contentType === "Editor's Note") return false;
-
-    const matchesType = typeFilter === 'All' || e.contentType === typeFilter;
-
-    // Resolve language from the metadata field, defaulting dynamically
-    const lang = e.language || (isArabicText(e.title || e.content) ? 'Arabic' : 'English');
-    const matchesLanguage = languageFilter === 'All' || lang === languageFilter;
-
-    // Filter by tag
-    const matchesTag = selectedTag === 'All' || (e.tags && e.tags.includes(selectedTag));
-
-    const query = searchQuery.trim().toLowerCase();
-    const author = users.find(u => u.id === e.authorId);
-    const authorName = e.publicationClass === 'Institutional'
-      ? (e.publisher || 'Adjung Editorial Board')
-      : (author?.penName || 'Anonymous');
-
-    const matchesSearch = !query ||
-      e.title.toLowerCase().includes(query) ||
-      authorName.toLowerCase().includes(query) ||
-      e.contentType.toLowerCase().includes(query) ||
-      (e.tags && e.tags.some((t: string) => t.toLowerCase().includes(query))) ||
-      (e.slug && e.slug.toLowerCase().includes(query)) ||
-      e.id.toLowerCase().includes(query);
-
-    return matchesType && matchesLanguage && matchesTag && matchesSearch;
-  });
-
-  // Sort the filtered entries
-  const sortedEntries = React.useMemo(() => {
-    const result = [...filteredEntries];
-    result.sort((a, b) => {
-      if (sortBy === 'newest') {
-        const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
-        const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
-        return dateB - dateA;
-      }
-      if (sortBy === 'oldest') {
-        const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
-        const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
-        return dateA - dateB;
-      }
-      if (sortBy === 'title-az') {
-        return a.title.localeCompare(b.title);
-      }
-      if (sortBy === 'title-za') {
-        return b.title.localeCompare(a.title);
-      }
-      return 0;
-    });
-    return result;
-  }, [filteredEntries, sortBy]);
+  const { results, total, totalPages, page: currentPage } = React.useMemo(
+    () => getIndexEntries({
+      entries,
+      users,
+      query: searchQuery,
+      type: typeFilter,
+      language: languageFilter,
+      tag: selectedTag,
+      sort: sortBy,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    [entries, users, searchQuery, typeFilter, languageFilter, selectedTag, sortBy, page]
+  );
 
   return (
     <div className="space-y-8 text-left">
@@ -146,10 +119,11 @@ export function EditorialIndex({
           <div className="relative w-full md:max-w-md">
             <input
               type="text"
-              placeholder="Search entries by title, author, slug..."
+              placeholder="Search entries by title, author, content..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
+                resetToFirstPage();
                 if (onSearchQueryChange) onSearchQueryChange(e.target.value);
               }}
               className="w-full border border-stone-200 p-2.5 pl-8 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white transition-all hover:border-stone-300"
@@ -162,7 +136,7 @@ export function EditorialIndex({
             <span className="text-[#111111]/40 font-mono uppercase tracking-wider text-[10px] whitespace-nowrap">Sort By:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => { setSortBy(e.target.value as IndexSortOrder); resetToFirstPage(); }}
               className="border border-stone-200 p-2 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
             >
               <option value="newest">Published Date (Newest)</option>
@@ -182,7 +156,7 @@ export function EditorialIndex({
               <button
                 key={type}
                 type="button"
-                onClick={() => setTypeFilter(type)}
+                onClick={() => { setTypeFilter(type); resetToFirstPage(); }}
                 className={`px-3 py-1 rounded text-[11px] transition-all duration-200 cursor-pointer border ${
                   typeFilter === type
                     ? 'bg-adjung-maroon text-white border-adjung-maroon font-semibold shadow-sm'
@@ -201,7 +175,7 @@ export function EditorialIndex({
               <span className="text-[#111111]/40 font-mono uppercase tracking-wider text-[10px]">Language:</span>
               <select
                 value={languageFilter}
-                onChange={(e) => setLanguageFilter(e.target.value)}
+                onChange={(e) => { setLanguageFilter(e.target.value); resetToFirstPage(); }}
                 className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors"
               >
                 <option value="All">All Languages ({allLanguages.length})</option>
@@ -216,7 +190,7 @@ export function EditorialIndex({
               <span className="text-[#111111]/40 font-mono uppercase tracking-wider text-[10px]">Tag:</span>
               <select
                 value={selectedTag}
-                onChange={(e) => setSelectedTag(e.target.value)}
+                onChange={(e) => { setSelectedTag(e.target.value); resetToFirstPage(); }}
                 className="border border-stone-200 p-1.5 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white pr-4 cursor-pointer hover:border-stone-300 transition-colors max-w-[150px]"
               >
                 <option value="All">All Tags</option>
@@ -243,12 +217,12 @@ export function EditorialIndex({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#111111]/5 font-serif text-sm">
-              {sortedEntries.map((item) => {
+              {results.map((item) => {
                 const author = users.find(u => u.id === item.authorId);
                 const isAr = item.contentType === 'Note' ? isArabicText(item.content) : isArabicText(item.title);
                 return (
-                  <tr 
-                    key={item.id} 
+                  <tr
+                    key={item.id}
                     onClick={() => setSelectedEntry(item)}
                     className="hover:bg-stone-50 cursor-pointer transition-colors"
                   >
@@ -257,7 +231,7 @@ export function EditorialIndex({
                         ? (item.publisher || 'Adjung Editorial Board')
                         : (author?.penName || 'Anonymous')}
                     </td>
-                    <td 
+                    <td
                       dir={isAr ? 'rtl' : 'ltr'}
                       className={`p-3 text-[#111111] font-medium ${isAr ? 'text-right' : 'text-left'}`}
                     >
@@ -280,9 +254,9 @@ export function EditorialIndex({
                   </tr>
                 );
               })}
-              {sortedEntries.length === 0 && (
+              {results.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center italic text-stone-400 font-sans">
+                  <td colSpan={5} className="p-8 text-center text-stone-400 font-sans">
                     No matching published entries are indexed in the shared database.
                   </td>
                 </tr>
@@ -290,6 +264,34 @@ export function EditorialIndex({
             </tbody>
           </table>
         </div>
+
+        {/* Finite pagination — no infinite scroll, per SPEC-028 §14.1 */}
+        {total > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#111111]/10 bg-stone-50 font-sans text-[11px] text-[#111111]/60">
+            <span>
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} of {total}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-stone-200 bg-white hover:border-adjung-maroon hover:text-adjung-maroon disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-stone-200 disabled:hover:text-inherit transition-colors"
+              >
+                <ChevronLeft className="w-3 h-3" /> Previous
+              </button>
+              <span className="px-2 font-mono">{currentPage} / {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-stone-200 bg-white hover:border-adjung-maroon hover:text-adjung-maroon disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-stone-200 disabled:hover:text-inherit transition-colors"
+              >
+                Next <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
