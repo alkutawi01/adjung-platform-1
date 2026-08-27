@@ -280,7 +280,7 @@ export function WritingDesk({
                           <span>•</span>
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
-                        <h4 className="font-sans font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
+                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(draft.title)}
                         </h4>
                       </div>
@@ -328,7 +328,7 @@ export function WritingDesk({
                           <span>•</span>
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>
-                        <h4 className="font-sans font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
+                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
                           {parseInlineFormatting(pub.title)}
                         </h4>
                       </div>
