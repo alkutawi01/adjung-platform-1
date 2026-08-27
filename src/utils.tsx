@@ -1512,13 +1512,33 @@ export function getSubdomainFromHostname(hostname: string): string | null {
  * getRootDomain, which needs the identical rule for its cross-subdomain
  * session cookie.
  */
+// Multi-tenant hosting suffixes where "the last two labels" is someone
+// else's whole platform, not a domain Adjung owns — e.g. adjung-platform-1
+// .vercel.app's naive last-two-labels root would be "vercel.app" itself.
+// Browsers correctly refuse to ever set a cookie scoped to a public
+// suffix like that (it would leak to every other *.vercel.app site), so
+// any code that tried silently failed to persist a session at all. This
+// only matters for preview/staging URLs — the real adjung.com domain
+// isn't on this list — but as long as adjung.com itself shows a holding
+// page (see project notes) a vercel.app URL is what's actually used.
+const PUBLIC_SUFFIX_HOSTS = new Set([
+  'vercel.app', 'netlify.app', 'github.io', 'pages.dev', 'herokuapp.com',
+]);
+
 export function getRootDomainFromHostname(hostname: string): string {
   if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
     return 'localhost';
   }
   const parts = hostname.split('.');
   if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join('.');
+  const candidateRoot = parts.slice(-2).join('.');
+  if (PUBLIC_SUFFIX_HOSTS.has(candidateRoot)) {
+    // No real "root domain" to share a cookie across on a public suffix —
+    // scope it to this exact host instead (still lets the cookie work,
+    // just without the cross-subdomain sharing Adjung's own domain needs).
+    return hostname;
+  }
+  return candidateRoot;
 }
 
 export class DocumentExporter {
