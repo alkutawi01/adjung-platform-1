@@ -1451,12 +1451,20 @@ export function serializeBlocks(blocks: ContentBlock[]): string {
 // Block types the Visual-mode contentEditable canvas cannot round-trip.
 // markdownToHtml has no rendering for them, and htmlToMarkdown strips any
 // HTML tag it doesn't recognize — so opening one of these blocks in Visual
-// mode and making any edit silently destroys the table/image/list/code
+// mode and making any edit silently destroys the table/image/code
 // fence/XML quote-callout/divider the moment the canvas re-serializes.
 // Used to keep an entry pinned to Source mode until Visual mode actually
 // supports the block type it contains.
+//
+// 'list' was removed from this set once markdownToHtml/htmlToMarkdown gained
+// real <ul>/<ol>/<li> handling: lists now render as actual lists in the
+// canvas and survive re-serialization byte-identically (verified across
+// bulleted, numbered, lists between paragraphs, and items containing bold /
+// italic / links / footnote markers). Leaving it here would have kept every
+// entry containing a list locked out of Visual mode for a limitation that no
+// longer exists.
 const VISUAL_MODE_UNSUPPORTED_BLOCK_TYPES: ContentBlock['type'][] = [
-  'list', 'table', 'image', 'divider', 'code-block', 'latin-quote', 'arabic-quote', 'callout',
+  'table', 'image', 'divider', 'code-block', 'latin-quote', 'arabic-quote', 'callout',
 ];
 
 export function getVisualModeUnsupportedBlockTypes(content: string): ContentBlock['type'][] {
