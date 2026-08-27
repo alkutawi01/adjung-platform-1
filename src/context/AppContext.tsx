@@ -392,21 +392,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Startup Session Restore & Verification
   useEffect(() => {
     refreshDbState().finally(() => {
-      // Determine initial tab from current pathname
-      const path = window.location.pathname;
-      const parts = path.split('/').filter(Boolean);
-      const route = parts[0];
-      const PUBLIC_ROUTES = ['frontpage', 'directory', 'index', 'notices', 'notice', 'editorial', 'changelog', 'policies'];
-      
-      const activeSessionUser = SessionService.validateAndRetrieveSession();
-      if (activeSessionUser) {
-        setActiveTab('folio');
-      } else if (route && PUBLIC_ROUTES.includes(route)) {
-        setActiveTab(route as ActiveTabType);
-      } else {
-        setActiveTab('landing');
+      try {
+        // Determine initial tab from current pathname
+        const path = window.location.pathname;
+        const parts = path.split('/').filter(Boolean);
+        const route = parts[0];
+        const PUBLIC_ROUTES = ['frontpage', 'directory', 'index', 'notices', 'notice', 'editorial', 'changelog', 'policies'];
+
+        const activeSessionUser = SessionService.validateAndRetrieveSession();
+        if (activeSessionUser) {
+          setActiveTab('folio');
+        } else if (route && PUBLIC_ROUTES.includes(route)) {
+          setActiveTab(route as ActiveTabType);
+        } else {
+          setActiveTab('landing');
+        }
+      } catch (e) {
+        console.error('[DEBUG-INIT] threw before setTimeout scheduled:', e);
       }
-      
+
       setTimeout(() => {
         setInitializing(false);
       }, 1000);

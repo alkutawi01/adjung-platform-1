@@ -66,7 +66,6 @@ import { RestrictedAccessView } from './components/common/RestrictedAccessView';
 import { FieldTooltip } from './components/common/FieldTooltip';
 import { ElasticMarginRow } from './components/rendering/ElasticMarginRow';
 import { AnimatedSignature } from './components/desk/AnimatedSignature';
-import { motion, AnimatePresence } from 'motion/react';
 import { BRAND } from './config/brand';
 
 
@@ -295,6 +294,19 @@ export default function App() {
   // which pushes the URL back to match the *old* selectedAuthorId, which
   // re-triggers this effect again — an infinite navigate() ping-pong.
   const isSyncingFromUrlRef = useRef(false);
+  // The URL->state effect below also depends on `entries`/`currentUser`/etc
+  // (needed to resolve lookups like /desk/edit/:id -> an actual Entry) —
+  // but re-running just because entries got a new array reference (which
+  // happens on nearly every autosave/refresh) unconditionally re-armed
+  // isSyncingFromUrlRef, which then made the state->URL effect below skip
+  // its next push even though nothing about the URL had actually changed.
+  // Net effect: clicking a draft set editingEntry, but the URL never
+  // advanced to /desk/edit/:id, so this same effect's own "desk" branch
+  // saw no ?edit segment on its next run and reset editingEntry straight
+  // back to null — the composer could never open. Tracking the last
+  // pathname this effect actually processed lets it skip re-deriving state
+  // when it reruns for a reason other than a real navigation.
+  const lastSyncedPathnameRef = useRef<string | null>(null);
   const [indexSearchQuery, setIndexSearchQuery] = useState('');
 
   // Synchronize browser title with central brand identity on mount
@@ -480,6 +492,16 @@ export default function App() {
 
   useEffect(() => {
     if (initializing) return;
+    // Only re-derive state from the URL when the URL itself actually
+    // changed since the last time this ran — this effect's dependency
+    // array also includes entries/currentUser/authorFromSubdomain (needed
+    // to resolve /desk/edit/:id etc into real objects), which change far
+    // more often than the pathname does. Re-running the full sync (and
+    // re-arming isSyncingFromUrlRef) on those alone was clobbering state
+    // that a click had just set, before the state->URL effect got a
+    // chance to push the URL forward. See lastSyncedPathnameRef above.
+    if (lastSyncedPathnameRef.current === location.pathname) return;
+    lastSyncedPathnameRef.current = location.pathname;
 
     const path = location.pathname;
     const parts = path.split('/').filter(Boolean);
@@ -1313,26 +1335,20 @@ Editorial Board of Adjung`;
     return <MobileSignCanvas />;
   }
 
-  return (
-    <AnimatePresence mode="wait">
-      {initializing ? (
-        <motion.div
-          key="loading"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: 'easeInOut' }}
-          className="fixed inset-0 z-[100] bg-[#FDFDFD]"
-        >
-          <LoadingScreen />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900"
-        >
+  // Plain conditional render (no AnimatePresence) for this gate: the
+  // loading->app swap must never depend on a requestAnimationFrame-driven
+  // exit animation completing, since backgrounded/throttled tabs can pause
+  // rAF indefinitely — framer-motion's AnimatePresence mode="wait" would
+  // then never unmount the LoadingScreen, leaving the whole app stuck
+  // behind it forever. Plain CSS transition (animate-fade-in, already used
+  // elsewhere) degrades gracefully instead: worst case under throttling is
+  // a missed fade, never a stuck screen.
+  return initializing ? (
+    <div className="fixed inset-0 z-[100] bg-[#FDFDFD]">
+      <LoadingScreen />
+    </div>
+  ) : (
+    <div className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 animate-fade-in">
           {/* Top Thin Reading Progress Bar */}
           <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-adjung-maroon/5 z-50 pointer-events-none">
             <div
@@ -1891,8 +1907,6 @@ Editorial Board of Adjung`;
             setEditingEntry={setEditingEntry}
           />
 
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
   );
 }
