@@ -6,7 +6,7 @@ import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
-import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered } from 'lucide-react';
+import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -549,10 +549,69 @@ export function EntryRenderer({
     setContextCoords(null);
   };
 
-  const insertLinkVisual = () => {
-    const url = window.prompt("Enter link URL:", "https://");
+  // Returns the <a> the caret currently sits inside, if any — so the link
+  // control can act as "edit this link" rather than only ever creating a
+  // new one (previously the only behaviour, via a native window.prompt).
+  const getAnchorAtCaret = (): HTMLAnchorElement | null => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    let node: Node | null = sel.getRangeAt(0).startContainer;
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    while (node && node !== editorEl) {
+      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'A') {
+        return node as HTMLAnchorElement;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  };
+
+  const openLinkEditor = () => {
+    const sel = window.getSelection();
+    const existing = getAnchorAtCaret();
+    if (existing) {
+      setLinkEditorState({ url: existing.getAttribute('href') || '', isEditingExisting: true });
+      setLinkSavedRange(null);
+      setShowLinkInput(true);
+      return;
+    }
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      showToast('Select the text you want to turn into a link first.', 'info');
+      return;
+    }
+    // execCommand needs the selection intact, but focusing the URL field
+    // destroys it — stash the range and restore it on apply.
+    setLinkSavedRange(sel.getRangeAt(0).cloneRange());
+    setLinkEditorState({ url: 'https://', isEditingExisting: false });
+    setShowLinkInput(true);
+  };
+
+  const applyLinkFromEditor = () => {
+    const url = linkEditorState.url.trim();
     if (!url) return;
-    document.execCommand('createLink', false, url);
+    if (linkEditorState.isEditingExisting) {
+      const anchor = getAnchorAtCaret();
+      if (anchor) anchor.setAttribute('href', url);
+    } else if (linkSavedRange) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(linkSavedRange);
+      document.execCommand('createLink', false, url);
+    }
+    setShowLinkInput(false);
+    setLinkSavedRange(null);
+    triggerEditorChange();
+  };
+
+  const removeLinkAtCaret = () => {
+    const anchor = getAnchorAtCaret();
+    if (anchor) {
+      // Unwrap: keep the text, drop the <a>.
+      while (anchor.firstChild) anchor.parentNode?.insertBefore(anchor.firstChild, anchor);
+      anchor.parentNode?.removeChild(anchor);
+    }
+    setShowLinkInput(false);
+    setLinkSavedRange(null);
     triggerEditorChange();
   };
 
@@ -763,6 +822,10 @@ export function EntryRenderer({
 
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkEditorState, setLinkEditorState] = useState<{ url: string; isEditingExisting: boolean }>({ url: '', isEditingExisting: false });
+  // The selection is lost the moment the URL field takes focus, so
+  // execCommand('createLink') would have nothing to wrap — keep the range.
+  const [linkSavedRange, setLinkSavedRange] = useState<Range | null>(null);
   const [showInsertMenu, setShowInsertMenu] = useState(false);
 
   useEffect(() => {
@@ -3695,7 +3758,7 @@ export function EntryRenderer({
                     </button>
                   );
                 })()}
-                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertLinkVisual()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Link">Link</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => openLinkEditor()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert or edit link (Ctrl+K)">Link</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Auto Number)">FN</button>
                 {(contentType === 'Essay') && (
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('margin-note')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Margin Note">MN</button>
@@ -3714,6 +3777,9 @@ export function EntryRenderer({
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-100 rounded font-bold text-xs text-stone-600 transition" title="Bold (Ctrl+B)">B</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-100 rounded italic text-xs text-stone-600 transition" title="Italic (Ctrl+I)">I</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-100 rounded underline text-xs text-stone-600 transition" title="Underline (Ctrl+U)">U</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('strikeThrough')} className="px-2 py-1 hover:bg-stone-100 rounded line-through text-xs text-stone-600 transition" title="Strikethrough">S</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('superscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Superscript">x²</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('subscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Subscript">x₂</button>
                   <div className="h-4 w-px bg-stone-200 mx-1" />
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H1</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H2</button>
@@ -3722,15 +3788,63 @@ export function EntryRenderer({
                   <div className="h-4 w-px bg-stone-200 mx-1" />
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertUnorderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Bulleted list"><List className="w-3.5 h-3.5" /></button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertOrderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => openLinkEditor()} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Insert or edit link (Ctrl+K)"><LinkIcon className="w-3.5 h-3.5" /></button>
                   <div className="flex-1" />
+                  {/* Autosave feedback. The autosave engine itself has been
+                      working all along (debounced, writes to Supabase), but
+                      saveStatus/lastSavedTime were computed and never
+                      rendered anywhere — so the writer had no way to tell
+                      whether their work was actually safe. */}
+                  <span
+                    className={`text-[10px] font-mono mr-3 ${saveStatus === 'error' ? 'text-red-600' : saveStatus === 'saving' ? 'text-stone-400' : 'text-stone-500'}`}
+                    title={saveStatus === 'error' ? 'Your latest changes could not be saved' : lastSavedTime ? `Last saved at ${lastSavedTime}` : undefined}
+                  >
+                    {saveStatus === 'saving' && 'Saving…'}
+                    {saveStatus === 'saved' && (lastSavedTime ? `Saved ${lastSavedTime}` : 'Saved')}
+                    {saveStatus === 'error' && 'Not saved — retrying'}
+                  </span>
                   <span className="text-[10px] font-mono text-stone-400" title="Word count">
                     {getWordCount(content)}/{(contentType === 'Note' ? 100 : contentType === 'Essay' ? 1000 : 10000).toLocaleString()} words
                   </span>
                 </div>
+                {showLinkInput && (
+                  <div className="mb-3 flex items-center gap-2 bg-stone-50 border border-stone-200 rounded p-2 animate-fade-in">
+                    <LinkIcon className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+                    <input
+                      type="url"
+                      autoFocus
+                      value={linkEditorState.url}
+                      onChange={(e) => setLinkEditorState(s => ({ ...s, url: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); applyLinkFromEditor(); }
+                        if (e.key === 'Escape') { e.preventDefault(); setShowLinkInput(false); setLinkSavedRange(null); }
+                      }}
+                      placeholder="https://example.com"
+                      className="flex-1 bg-white border border-stone-200 focus:border-adjung-maroon rounded px-2 py-1 text-xs font-sans focus:outline-none"
+                    />
+                    <button type="button" onClick={applyLinkFromEditor} className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 cursor-pointer">
+                      {linkEditorState.isEditingExisting ? 'Update' : 'Apply'}
+                    </button>
+                    {linkEditorState.isEditingExisting && (
+                      <button type="button" onClick={removeLinkAtCaret} className="px-2.5 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 cursor-pointer">
+                        Remove
+                      </button>
+                    )}
+                    <button type="button" onClick={() => { setShowLinkInput(false); setLinkSavedRange(null); }} className="px-2 py-1 text-stone-400 hover:text-stone-600 text-[10px] uppercase font-mono tracking-wider cursor-pointer">
+                      Cancel
+                    </button>
+                  </div>
+                )}
                 <RichTextEditable
                   tagName="div"
                   id="editorial-canvas-editor"
                   html={markdownToHtml(content)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                      e.preventDefault();
+                      openLinkEditor();
+                    }
+                  }}
                   onChange={(newHtml) => {
                     const editorEl = document.getElementById('editorial-canvas-editor');
                     if (editorEl) {

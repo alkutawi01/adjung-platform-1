@@ -178,6 +178,7 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
     .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
+    .replace(/~~(.*?)~~/g, '<s>$1</s>')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
       if (url.startsWith('gloss:')) {
         const glossVal = url.substring(6);
@@ -241,10 +242,16 @@ export function htmlToMarkdown(html: string): string {
     .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
     .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
     .replace(/<u[^>]*>(.*?)<\/u>/gi, '++$1++')
+    .replace(/<(?:s|strike|del)[^>]*>([\s\S]*?)<\/(?:s|strike|del)>/gi, '~~$1~~')
     .replace(/<bdi[^>]*class=["']?[^"'>]*(?:ruby-wrapper|script-rtl-ruby)[^"'>]*["']?[^>]*>\s*<ruby[^>]*class=["']?[^"'>]*(?:interlinear-word|script-rtl-word)[^"'>]*["']?[^>]*>\s*([\s\S]*?)\s*<rt[^>]*class=["']?[^"'>]*(?:interlinear-gloss|script-rtl-gloss)[^"'>]*["']?[^>]*>(.*?)<\/rt>\s*<\/ruby>\s*<\/bdi>/gi, '[$1](gloss:$2)')
     .replace(/<span[^>]*class=["']?[^"'>]*interlinear-word[^"'>]*["']?[^>]*>\s*<span[^>]*class=["']?[^"'>]*interlinear-gloss[^"'>]*["']?[^>]*>(.*?)<\/span>\s*<bdi>([\s\S]*?)<\/bdi>\s*<\/span>/gi, '[$2](gloss:$1)')
     .replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
-    .replace(/<[^>]+>/g, '')
+    // Superscript/subscript have no markdown equivalent, so they survive as
+    // literal inline HTML — exempted from the catch-all strip below, and
+    // passed straight back through by markdownToHtml (which never escapes
+    // inline HTML). Without this exemption the strip would silently discard
+    // them, the same way it used to discard list structure.
+    .replace(/<(?!\/?(?:sup|sub)\b)[^>]+>/g, '')
     .replace(/\n\n\n+/g, '\n\n')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
