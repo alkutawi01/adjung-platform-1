@@ -275,3 +275,46 @@ Cross-referencing this matrix against the required column gives the actual MVP s
 ## 13. Maintenance
 
 Update this matrix whenever a capability changes status. This document — not a spec's aspirational text — is what determines "are we ready to launch."
+
+---
+
+## 14. Relaunch Roadmap (locked 2026-08-27)
+
+Status: Platform development is **paused** — attention has moved to Adjung Brief and Adjung Quick, which are more active. Before leaving Platform dormant again, the items below were scoped and locked (6-round review with ChatGPT, cross-checked against this matrix and specs 05/07/12/14/18) so the next resumption doesn't restart from architectural drift. Do not expand this list opportunistically ("since we're touching Index anyway") — everything past §14.1 is deliberately deferred.
+
+**Naming decision:** the cross-author browsing/filtering surface keeps the name **Index** — it is not renamed "Feed". Rationale: SPEC-012 already defines Index as a queryable public catalogue ("discoverable, connected, reusable"), which covers filtered/sorted results without becoming a social feed. Rejected alternatives: Catalogue (too static/library-record), Directory (already means the writer/institution directory), Archive/Corpus/Bibliography (wrong register). UI copy pattern: "Index" (place) → "Browse" (action) → "Search"/"Filters" (query) → "Results" (output) — never "feed".
+
+**Governing rule (applies to Index, Frontpage, and any future discovery surface):** personalisation by explicit query is allowed (a reader choosing filters); personalisation by inferred behaviour is not (no reading-history-driven ranking, no "recommended for you"). Concretely: *"User chooses what to see; Adjung does not learn what to keep showing them."* The signup wizard's "Your Interests" data (topics/languages/edition, captured but unused, meant for the future Segment/Composition Engine) must **not** auto-apply to Index filters — that would cross from explicit into inferred/default-personalized. If ever surfaced, it must be an explicit opt-in action ("Apply my interests"), not a silent default.
+
+### 14.1 Do now (before Platform is left dormant again)
+
+1. **Fix the metadata single-source-of-truth gap** — the Folio-card/canonical-page drift bug this session (§ commit history) is a symptom, not a one-off: two components independently computing `serial_no`/`reading_time` will keep drifting. Move these to stored, authoritative columns on `entries`:
+   - `serial_no` — assigned atomically at first publish, DB-level uniqueness (e.g. `(author_id, serial_no)`), never recomputed client-side.
+   - `current_version` — stored; a full `publication_revisions` table is not required for MVP.
+   - `reading_time` — recomputed only at publish/revise time, then stored; renderers only read it (never recompute per-render — this was the exact bug just fixed in `EntryRenderer.tsx`).
+   - Canonical identity — store `slug`/`publication_id`, not a full URL string; a centralized URL builder (already exists — `resolveEntryCanonicalUrl`) is the only thing allowed to construct the display URL.
+   - **Backfill** existing published entries once so old and new publications carry the same authoritative fields — don't let the fix only apply going forward.
+2. **Wrap Index's data access behind one interface** (conceptually `getIndexEntries({ query, type, language, tag, sort, page, pageSize })`) before writing the Index UI. Implementation may stay client-side (`.filter()/.sort()/.slice()` over the loaded `entries` array) for now — the point is that `Index.tsx` itself must never know it's touching a plain in-memory array, so swapping the implementation to a real Supabase query later requires zero UI rewrite.
+3. **Ship Index's UX as already-finite**, even while the query engine behind it stays simple: fixed page size (20–25), Previous/Next, filters (type/language/tag), search, sort (default newest-first), and all of it reflected in a shareable URL (`/index?type=essay&language=ms&q=hadis&page=2`). No infinite scroll, no auto-refresh — those would make Index behave like a feed regardless of what the header says.
+
+Client-side search/pagination staying temporary is acceptable **performance debt** (small corpus). Two components each computing their own authoritative metadata is **integrity debt** and is the thing this pass must actually close.
+
+### 14.2 KIV — defer until Platform is a priority again, or until public registration produces a real corpus
+
+- Server-side filtering/query and pagination via Supabase/Postgres (replacing the client-side implementation behind the §14.1.2 interface).
+- Postgres full-text search (`tsvector` + GIN index) — current gap: despite an earlier (stale) note in this matrix claiming body-content search was fixed in `EditorialIndex.tsx`, it was not — `matchesSearch` only checks title/author/type/tags/slug/id, never `content`. Fix this for real once search moves server-side; a client-side `.filter()` including body content is an acceptable stopgap before then.
+- Cursor/keyset pagination (only matters once the corpus is large enough that OFFSET pagination degrades).
+- Full revision-history table (`entries.current_version` is sufficient until then).
+- Using signup "Interests" data for any Index/Segment/Composition Engine feature — still 📜 spec-only, no change from §11a.
+
+### 14.3 WAJIB before "anyone can join" (public registration opens)
+
+- Email verification actually wired (custom SMTP via Resend/`mail.adjung.com` — DNS already verified, not yet connected to Supabase Auth) — accounts may be created, but publishing should be gated on a verified email.
+- Reserved username/handle blocklist (admin/api/search/settings/login/register, Adjung's own names, system routes) — SPEC-005 Routing already requires reserved paths can't become usernames; this closes the self-registration gap.
+- An RLS/permission audit pass — confirm no cross-user read/write of private drafts or restricted content.
+- Basic anti-abuse/rate-limiting on signup, login, publish, and search.
+- A report → unpublish/restrict path (uses the existing `Restricted` identity-lifecycle status) — this is required; a full pre-publish moderation queue is not (see below).
+- Basic published acceptable-use rules, stated somewhere a new writer will see them.
+- A tested backup + admin-recovery path, since external users will now depend on the platform.
+
+**Explicitly OK to KIV even after public beta opens:** a pre-publish moderation queue. Reactive, post-publication moderation (report → review → unpublish/restrict) is sufficient for an initial public beta as long as the report/unpublish/restrict mechanics above exist.
