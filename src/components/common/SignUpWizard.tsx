@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ChevronLeft, X } from 'lucide-react';
 
 import Step1Welcome from './signup-steps/Step1Welcome';
@@ -66,9 +66,16 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
     setIsTransitioning(true);
     setOverlayTitle(STEP_TITLES[flow[nextIndex]] || '');
     setShowOverlay(true);
+    // Advance the real step immediately — the overlay is a purely cosmetic
+    // maroon transition screen on top of it. Previously this was gated
+    // inside the setTimeout below, so a throttled/backgrounded tab (timers
+    // are suspended, not just slowed, once a tab is frozen) left the wizard
+    // showing stale step content under a stuck "Getting Started" overlay
+    // indefinitely. Advancing state first means the worst case under
+    // throttling is a lingering decorative overlay, not a stuck wizard.
+    setFlowIndex(nextIndex);
 
     setTimeout(() => {
-      setFlowIndex(nextIndex);
       setShowOverlay(false);
       setIsTransitioning(false);
     }, 900);
@@ -93,32 +100,21 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="bg-[#FFFFFF] border border-stone-200 shadow-2xl max-w-xl w-full h-[620px] max-h-[95vh] overflow-hidden scholarly-border flex flex-col relative my-4 text-stone-900 font-sans"
       >
-        <AnimatePresence>
-          {showOverlay && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0 z-50 bg-adjung-maroon flex items-center justify-center flex-col text-center p-8 select-none"
-            >
-              <div className="space-y-4 max-w-md">
-                <span className="block font-mono text-[9px] uppercase tracking-[0.35em] text-[#FDFBF7]/60 font-semibold">
-                  GETTING STARTED
-                </span>
-                <motion.h2
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-light flex items-start justify-center"
-                >
-                  {overlayTitle}
-                </motion.h2>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Plain CSS opacity transition (no AnimatePresence/rAF dependency)
+            — this is a purely decorative overlay now that goNext() advances
+            flowIndex immediately, so it never needs to gate real content. */}
+        <div
+          className={`absolute inset-0 z-50 bg-adjung-maroon flex items-center justify-center flex-col text-center p-8 select-none transition-opacity duration-300 ${showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        >
+          <div className="space-y-4 max-w-md">
+            <span className="block font-mono text-[9px] uppercase tracking-[0.35em] text-[#FDFBF7]/60 font-semibold">
+              GETTING STARTED
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-light flex items-start justify-center">
+              {overlayTitle}
+            </h2>
+          </div>
+        </div>
 
         {currentStepId !== COMPLETE_STEP_ID && !showOverlay && (
           <button
@@ -163,17 +159,20 @@ export default function SignUpWizard({ onClose, onComplete, entryMode = 'standar
           </div>
         )}
 
-        <main className="flex-1 w-full flex items-center justify-center p-6 md:p-10 overflow-y-auto relative">
-          <AnimatePresence mode="wait">
-            {currentStepId === 1 && <Step1Welcome key="s1" onNext={goNext} />}
-            {currentStepId === 2 && <Step2Philosophy key="s2" onNext={goNext} />}
-            {currentStepId === 3 && <Step3Charter key="s3" onNext={goNext} entryMode={entryMode} />}
-            {currentStepId === 4 && <Step4Identity key="s4" formData={formData} setFormData={setFormData} onNext={goNext} entryMode={entryMode} />}
-            {currentStepId === 5 && <Step5Verification key="s5" formData={formData} onNext={goNext} goBack={goBack} />}
-            {currentStepId === 6 && <Step6PublicProfile key="s6" formData={formData} setFormData={setFormData} onNext={goNext} />}
-            {currentStepId === 7 && <Step7Interests key="s7" formData={formData} setFormData={setFormData} onNext={goNext} />}
-            {currentStepId === COMPLETE_STEP_ID && <Step9Complete key="s8" onComplete={handleComplete} />}
-          </AnimatePresence>
+        {/* Plain conditional render (no AnimatePresence mode="wait") — with
+            goNext() now advancing flowIndex immediately, a rAF-blocked exit
+            animation here would otherwise strand the OLD step mounted
+            (mode="wait" holds the next step back until the previous one's
+            exit finishes), stuck behind the cosmetic overlay above. */}
+        <main className="flex-1 w-full flex items-center justify-center p-6 md:p-10 overflow-y-auto relative animate-fade-in" key={currentStepId}>
+          {currentStepId === 1 && <Step1Welcome onNext={goNext} />}
+          {currentStepId === 2 && <Step2Philosophy onNext={goNext} />}
+          {currentStepId === 3 && <Step3Charter onNext={goNext} entryMode={entryMode} />}
+          {currentStepId === 4 && <Step4Identity formData={formData} setFormData={setFormData} onNext={goNext} entryMode={entryMode} />}
+          {currentStepId === 5 && <Step5Verification formData={formData} onNext={goNext} goBack={goBack} />}
+          {currentStepId === 6 && <Step6PublicProfile formData={formData} setFormData={setFormData} onNext={goNext} />}
+          {currentStepId === 7 && <Step7Interests formData={formData} setFormData={setFormData} onNext={goNext} />}
+          {currentStepId === COMPLETE_STEP_ID && <Step9Complete onComplete={handleComplete} />}
         </main>
       </motion.div>
     </div>
