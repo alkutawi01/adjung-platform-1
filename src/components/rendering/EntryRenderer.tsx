@@ -3705,6 +3705,25 @@ export function EntryRenderer({
 
             {mode === 'edit' ? (
               <div className="relative border-b border-dashed border-stone-200/60 pb-6">
+                {/* Persistent formatting bar — the toolbar above (renderFloatingToolbar
+                    at the top of this view / the one at line ~3663) only appears once
+                    text is selected, which means there's no way to turn on Bold before
+                    typing new text, unlike a real word processor. This one is always
+                    visible while editing. */}
+                <div className="flex items-center gap-1 mb-3 pb-2 border-b border-stone-100 select-none">
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-100 rounded font-bold text-xs text-stone-600 transition" title="Bold (Ctrl+B)">B</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-100 rounded italic text-xs text-stone-600 transition" title="Italic (Ctrl+I)">I</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-100 rounded underline text-xs text-stone-600 transition" title="Underline (Ctrl+U)">U</button>
+                  <div className="h-4 w-px bg-stone-200 mx-1" />
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H1</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H2</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">Quote</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">Para</button>
+                  <div className="flex-1" />
+                  <span className="text-[10px] font-mono text-stone-400" title="Word count">
+                    {getWordCount(content)}/{(contentType === 'Note' ? 100 : contentType === 'Essay' ? 1000 : 10000).toLocaleString()} words
+                  </span>
+                </div>
                 <RichTextEditable
                   tagName="div"
                   id="editorial-canvas-editor"
