@@ -632,13 +632,28 @@ export function EntryRenderer({
     if (!editorEl) return;
     editorEl.focus();
     let replacements = 0;
-    // Re-collect after each replacement: mutating a text node invalidates
-    // the offsets of every later match inside that same node.
+    // How many fresh matches each replacement introduces — "cat" -> "cats and
+    // cats" seeds two. Those must be stepped over rather than replaced again,
+    // otherwise replace-all never terminates.
+    const needle = findQuery.toLowerCase();
+    const inserted = replaceQuery.toLowerCase();
+    let selfMatches = 0;
+    for (let at = inserted.indexOf(needle); at !== -1; at = inserted.indexOf(needle, at + needle.length)) {
+      selfMatches++;
+    }
+
+    // Re-collect after each replacement: mutating a text node invalidates the
+    // offsets of every later match inside that same node. `processed` is how
+    // far into the (freshly recollected) match list to skip — it advances only
+    // by the number of self-matches just introduced, so when the replacement
+    // does NOT contain the search term it stays at 0 and every match is
+    // consumed from the front.
+    let processed = 0;
     let guard = 0;
     while (guard++ < 5000) {
       const matches = collectFindMatches(findQuery);
-      if (matches.length === 0) break;
-      const m = matches[0];
+      if (processed >= matches.length) break;
+      const m = matches[processed];
       const range = document.createRange();
       range.setStart(m.node, m.index);
       range.setEnd(m.node, m.index + findQuery.length);
@@ -647,8 +662,7 @@ export function EntryRenderer({
       sel?.addRange(range);
       document.execCommand('insertText', false, replaceQuery);
       replacements++;
-      // A replacement that contains the search term would loop forever.
-      if (replaceQuery.toLowerCase().includes(findQuery.toLowerCase())) break;
+      processed += selfMatches;
     }
     triggerEditorChange();
     setFindMatchInfo({ current: 0, total: 0 });
