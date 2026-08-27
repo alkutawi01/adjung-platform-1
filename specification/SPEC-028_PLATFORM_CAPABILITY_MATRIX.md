@@ -318,3 +318,9 @@ Client-side search/pagination staying temporary is acceptable **performance debt
 - A tested backup + admin-recovery path, since external users will now depend on the platform.
 
 **Explicitly OK to KIV even after public beta opens:** a pre-publish moderation queue. Reactive, post-publication moderation (report → review → unpublish/restrict) is sufficient for an initial public beta as long as the report/unpublish/restrict mechanics above exist.
+
+### 14.4 Relationship to the rest of the Adjung Press family (Brief, Quick, NIQAB)
+
+Checked explicitly (round 7 of the review): Platform stays **architecturally standalone** — its own repo, its own database, its own implementation. §14.1's work does not need to wait for or copy whatever pattern Brief/Quick have built while Platform was paused, and no shared package/shared DB schema/shared service should be created now just for "product-family consistency" — that would add coupling while Platform itself is dormant.
+
+What's worth keeping aligned across the family is **philosophy and terminology, not code**: the authoritative-metadata principle, finite (non-infinite-scroll) pagination, and explicit-query-over-inferred-personalisation should hold wherever they're relevant elsewhere too. Field naming (`language`, `published_at`, `slug`, `reading_time`) is worth keeping consistent in spirit, in case a real cross-product integration (RSS, shared identity, cross-product discovery) is ever built. Editorial ranking (e.g. Quick's `editorial_v1`) is fine to exist in other products but must not be pulled into Platform's Index. Re-evaluate any shared boundary only when an actual integration is being built, not preemptively.
