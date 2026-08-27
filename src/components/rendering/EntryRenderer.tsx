@@ -3365,8 +3365,14 @@ export function EntryRenderer({
     const isNote = contentType === 'Note';
 
     const allEntries = entries.filter(e => e.authorId === entry.authorId);
+    // Must match FolioView's authorPublishedEntries filter (App.tsx) exactly —
+    // that's the list a reader actually sees on the Folio card, and this
+    // serial number is what the card promises before the reader clicks
+    // through. A missing visibility check here previously let a Public
+    // entry's serial# silently shift whenever the author also had a
+    // non-Public Published entry mixed into their timeline.
     const sortedPublished = allEntries
-      .filter(e => e.status === 'Published' && e.publishedDate)
+      .filter(e => e.status === 'Published' && e.visibility === 'Public' && e.publishedDate)
       .sort((a, b) => new Date(a.publishedDate!).getTime() - new Date(b.publishedDate!).getTime());
     const serialIndex = Math.max(0, sortedPublished.findIndex(e => e.id === entry.id));
     const serialNum = `#${serialIndex.toString(36).padStart(4, '0').toUpperCase()}`;
@@ -3396,7 +3402,13 @@ export function EntryRenderer({
       return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
     };
 
-    const readingTimeStr = `${parseInt(getReadingTime(getFullContentString())) || 1} MIN READ`;
+    // Read from entry.content (the persisted source), matching what
+    // FolioView's card computes its own "MIN READ" stat from — not
+    // getFullContentString(), whose Essay branch rejoins the live
+    // `paragraphs` edit-buffer array (trimmed, blank lines dropped) and so
+    // can silently disagree with the raw content on word/reading-time
+    // count even when nothing was actually edited.
+    const readingTimeStr = `${parseInt(getReadingTime(entry.content)) || 1} MIN READ`;
 
     const isArContent = isArabicText(entry.content);
     const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm relative overflow-visible ${
