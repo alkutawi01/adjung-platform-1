@@ -179,6 +179,7 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
     .replace(/~~(.*?)~~/g, '<s>$1</s>')
+    .replace(/==(.*?)==/g, '<mark>$1</mark>')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
       if (url.startsWith('gloss:')) {
         const glossVal = url.substring(6);
@@ -243,6 +244,11 @@ export function htmlToMarkdown(html: string): string {
     .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
     .replace(/<u[^>]*>(.*?)<\/u>/gi, '++$1++')
     .replace(/<(?:s|strike|del)[^>]*>([\s\S]*?)<\/(?:s|strike|del)>/gi, '~~$1~~')
+    // Any highlight pasted in from Word/Docs arrives as an inline
+    // background style rather than <mark>; the sanitizer drops those, so
+    // only a mark the author applied in Adjung survives — deliberately,
+    // since the tint is Adjung's to set, not the source document's.
+    .replace(/<mark[^>]*>([\s\S]*?)<\/mark>/gi, '==$1==')
     .replace(/<bdi[^>]*class=["']?[^"'>]*(?:ruby-wrapper|script-rtl-ruby)[^"'>]*["']?[^>]*>\s*<ruby[^>]*class=["']?[^"'>]*(?:interlinear-word|script-rtl-word)[^"'>]*["']?[^>]*>\s*([\s\S]*?)\s*<rt[^>]*class=["']?[^"'>]*(?:interlinear-gloss|script-rtl-gloss)[^"'>]*["']?[^>]*>(.*?)<\/rt>\s*<\/ruby>\s*<\/bdi>/gi, '[$1](gloss:$2)')
     .replace(/<span[^>]*class=["']?[^"'>]*interlinear-word[^"'>]*["']?[^>]*>\s*<span[^>]*class=["']?[^"'>]*interlinear-gloss[^"'>]*["']?[^>]*>(.*?)<\/span>\s*<bdi>([\s\S]*?)<\/bdi>\s*<\/span>/gi, '[$2](gloss:$1)')
     .replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
@@ -262,7 +268,7 @@ export function htmlToMarkdown(html: string): string {
   return md.trim();
 }
 
-type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'LINK' | 'INTERLINEAR';
+type TokenType = 'TRIPLE_AST' | 'TRIPLE_UND' | 'DOUBLE_AST' | 'DOUBLE_UND' | 'SINGLE_AST' | 'SINGLE_UND' | 'BACKTICK' | 'TEXT' | 'DOUBLE_PLUS' | 'DOUBLE_TILDE' | 'DOUBLE_EQUALS' | 'HTML_U_OPEN' | 'HTML_U_CLOSE' | 'HTML_SUP_OPEN' | 'HTML_SUP_CLOSE' | 'HTML_SUB_OPEN' | 'HTML_SUB_CLOSE' | 'LINK' | 'INTERLINEAR';
 
 interface Token {
   type: TokenType;
@@ -317,6 +323,14 @@ function tokenize(text: string): Token[] {
       flushText();
       tokens.push({ type: 'DOUBLE_PLUS', text: '++' });
       i += 2;
+    } else if (text.startsWith('~~', i)) {
+      flushText();
+      tokens.push({ type: 'DOUBLE_TILDE', text: '~~' });
+      i += 2;
+    } else if (text.startsWith('==', i)) {
+      flushText();
+      tokens.push({ type: 'DOUBLE_EQUALS', text: '==' });
+      i += 2;
     } else if (text.startsWith('<u>', i)) {
       flushText();
       tokens.push({ type: 'HTML_U_OPEN', text: '<u>' });
@@ -325,6 +339,22 @@ function tokenize(text: string): Token[] {
       flushText();
       tokens.push({ type: 'HTML_U_CLOSE', text: '</u>' });
       i += 4;
+    } else if (text.startsWith('<sup>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_SUP_OPEN', text: '<sup>' });
+      i += 5;
+    } else if (text.startsWith('</sup>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_SUP_CLOSE', text: '</sup>' });
+      i += 6;
+    } else if (text.startsWith('<sub>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_SUB_OPEN', text: '<sub>' });
+      i += 5;
+    } else if (text.startsWith('</sub>', i)) {
+      flushText();
+      tokens.push({ type: 'HTML_SUB_CLOSE', text: '</sub>' });
+      i += 6;
     } else if (text.toLowerCase().startsWith('<ruby>', i)) {
       const closeRuby = text.toLowerCase().indexOf('</ruby>', i);
       if (closeRuby !== -1) {
@@ -443,6 +473,8 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
     let matchIdx = -1;
     let closingType = token.type;
     if (token.type === 'HTML_U_OPEN') closingType = 'HTML_U_CLOSE';
+    if (token.type === 'HTML_SUP_OPEN') closingType = 'HTML_SUP_CLOSE';
+    if (token.type === 'HTML_SUB_OPEN') closingType = 'HTML_SUB_CLOSE';
 
     for (let j = i + 1; j < tokens.length; j++) {
       if (tokens[j].type === closingType) {
@@ -486,6 +518,25 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
             {innerParsed}
           </u>
         );
+      } else if (token.type === 'DOUBLE_TILDE') {
+        result.push(
+          <s key={elementKey} className="line-through decoration-stone-400">
+            {innerParsed}
+          </s>
+        );
+      } else if (token.type === 'DOUBLE_EQUALS') {
+        // Semantic marking, not a decorative colour choice — the tint is
+        // fixed by Adjung (see `mark` in index.css), never picked by the
+        // author, so a marked passage looks the same in every entry.
+        result.push(
+          <mark key={elementKey}>
+            {innerParsed}
+          </mark>
+        );
+      } else if (token.type === 'HTML_SUP_OPEN') {
+        result.push(<sup key={elementKey}>{innerParsed}</sup>);
+      } else if (token.type === 'HTML_SUB_OPEN') {
+        result.push(<sub key={elementKey}>{innerParsed}</sub>);
       }
       i = matchIdx + 1;
     } else {

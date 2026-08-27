@@ -101,6 +101,32 @@ html, body {
   margin-bottom: 0;
 }
 
+/* Marked passage. One fixed tint, set by Adjung and never chosen by the
+   author — a highlight here means "this passage is being marked", not
+   "I picked yellow". Uses the same maroon the rest of the design language
+   is built on, at a low enough alpha to sit under body text without
+   fighting it (deliberately not a highlighter yellow, which would read as
+   a word-processor artifact rather than an Adjung editorial mark). */
+mark {
+  background-color: rgba(128, 35, 52, 0.13);
+  color: inherit;
+  padding: 0.05em 0.15em;
+  border-radius: 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Scholarly notation (H₂O, 2¹⁰) — sized so it doesn't disturb the line
+   rhythm of the body text it sits inside. */
+sup, sub {
+  font-size: 0.72em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sup { top: -0.45em; }
+sub { bottom: -0.2em; }
+
 .footnote-badge {
   counter-increment: footnote-badge;
   color: var(--color-adjung-maroon);

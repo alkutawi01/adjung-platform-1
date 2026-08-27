@@ -33,7 +33,7 @@ interface ExtractedFootnote { id: string; content: string; }
 // etc) — only Adjung's own maroon/serif design language should ever apply.
 // Strips everything down to a small allowed-tag set and drops every
 // attribute except <a href>.
-const PASTE_ALLOWED_TAGS = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'A', 'S', 'STRIKE', 'DEL', 'SUP', 'SUB']);
+const PASTE_ALLOWED_TAGS = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'A', 'S', 'STRIKE', 'DEL', 'SUP', 'SUB', 'MARK']);
 
 // Word and Google Docs both export footnotes as a reference/definition
 // pair of anchors linked by a matching href="#x" / id-or-name="x": the

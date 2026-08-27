@@ -6,7 +6,7 @@ import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
-import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon } from 'lucide-react';
+import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -547,6 +547,48 @@ export function EntryRenderer({
     setGlossTargetText('');
     setContextRange(null);
     setContextCoords(null);
+  };
+
+  // Highlight is applied as a semantic <mark>, never via execCommand's
+  // hiliteColor — that would bake an author-chosen colour into the saved
+  // content, which is exactly the kind of presentation decision Adjung
+  // fixes platform-side. The tint lives in index.css instead, so every
+  // marked passage across every entry looks identical.
+  const toggleHighlight = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    // Already inside a mark? Then this is an un-mark.
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    let node: Node | null = sel.getRangeAt(0).startContainer;
+    while (node && node !== editorEl) {
+      if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'MARK') {
+        const markEl = node as HTMLElement;
+        while (markEl.firstChild) markEl.parentNode?.insertBefore(markEl.firstChild, markEl);
+        markEl.parentNode?.removeChild(markEl);
+        triggerEditorChange();
+        return;
+      }
+      node = node.parentNode;
+    }
+
+    if (sel.isCollapsed) {
+      showToast('Select the passage you want to mark first.', 'info');
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const markEl = document.createElement('mark');
+    try {
+      range.surroundContents(markEl);
+    } catch {
+      // surroundContents throws when the selection only partially covers a
+      // node (e.g. it starts mid-way through a <strong>) — extracting and
+      // re-inserting handles those cases.
+      markEl.appendChild(range.extractContents());
+      range.insertNode(markEl);
+    }
+    triggerEditorChange();
   };
 
   // Returns the <a> the caret currently sits inside, if any — so the link
@@ -3780,6 +3822,7 @@ export function EntryRenderer({
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('strikeThrough')} className="px-2 py-1 hover:bg-stone-100 rounded line-through text-xs text-stone-600 transition" title="Strikethrough">S</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('superscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Superscript">x²</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('subscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Subscript">x₂</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={toggleHighlight} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Mark passage"><Highlighter className="w-3.5 h-3.5" /></button>
                   <div className="h-4 w-px bg-stone-200 mx-1" />
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H1</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H2</button>
