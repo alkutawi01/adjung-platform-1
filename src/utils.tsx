@@ -146,7 +146,22 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
         .join('<br>');
       return `<blockquote>${quoteContent}</blockquote>`;
     }
-    
+
+    // Lists. A block counts as a list only if EVERY line carries a marker,
+    // so a paragraph that merely happens to start with "- " (e.g. a dash
+    // opening a sentence) isn't silently converted into a one-item list.
+    const listLines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
+    const isBulleted = listLines.length > 0 && listLines.every(l => /^[-*+]\s+/.test(l));
+    const isNumbered = listLines.length > 0 && listLines.every(l => /^\d+[.)]\s+/.test(l));
+    if (isBulleted || isNumbered) {
+      const tag = isBulleted ? 'ul' : 'ol';
+      const items = listLines
+        .map(l => l.replace(isBulleted ? /^[-*+]\s+/ : /^\d+[.)]\s+/, ''))
+        .map(l => `<li>${l}</li>`)
+        .join('');
+      return `<${tag}>${items}</${tag}>`;
+    }
+
     // Otherwise it is a paragraph
     const paraContent = trimmed.replace(/\n/g, '<br>');
     return `<p>${paraContent}</p>`;
@@ -191,6 +206,26 @@ export function htmlToMarkdown(html: string): string {
     })
     .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
     .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
+    // Lists must be handled before the generic <p>/<div>/tag-stripping
+    // rules below, which would otherwise flatten every <li> into one
+    // run-on line (the catch-all strip has no notion of list items).
+    .replace(/<(ul|ol)[^>]*>([\s\S]*?)<\/\1>/gi, (_match, tag: string, inner: string) => {
+      const ordered = tag.toLowerCase() === 'ol';
+      let n = 0;
+      const items = Array.from(inner.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)).map(m => {
+        // A list item can itself contain block wrappers (browsers add <p>
+        // inside <li> in some paste paths) — flatten those to inline text
+        // so the marker stays on one line.
+        const text = m[1]
+          .replace(/<\/?(p|div)[^>]*>/gi, ' ')
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        n += 1;
+        return `${ordered ? `${n}.` : '-'} ${text}`;
+      });
+      return `\n\n${items.join('\n')}\n\n`;
+    })
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<\/div>/gi, '\n\n')
     .replace(/<div[^>]*>/gi, '\n')
