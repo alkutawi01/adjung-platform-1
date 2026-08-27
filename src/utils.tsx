@@ -120,6 +120,24 @@ export function handleMarkdownShortcut(
   }
 }
 
+// Chrome (and every other browser) auto-inserts &nbsp; while typing two or
+// more consecutive spaces in a contentEditable, specifically so the gap
+// stays visible — plain HTML text collapses any run of spaces to one on
+// render. Confirmed live: typing "Test   end" (three spaces) produces
+// "Test&nbsp; &nbsp;end" in the DOM. htmlToMarkdown correctly stores that
+// back as three literal space characters (so the markdown itself isn't
+// polluted with &nbsp; entities) — but without this, re-rendering that
+// markdown on reload (or for a reader) emits three PLAIN spaces, which the
+// browser then visually collapses to one. The multi-space gap a writer
+// typed would silently vanish the moment the page reloaded. Alternates
+// nbsp/space starting from nbsp, matching the exact pattern Chrome itself
+// produces for a 3-space run.
+function preserveMultipleSpaces(html: string): string {
+  return html.replace(/ {2,}/g, (run) =>
+    Array.from(run).map((_, i) => (i % 2 === 0 ? '&nbsp;' : ' ')).join('')
+  );
+}
+
 export function markdownToHtml(md: string, typography?: TypographyContext): string {
   if (!md) return '';
   let content = md.replace(/\r\n/g, '\n');
@@ -169,7 +187,7 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
   
   const html = htmlBlocks.filter(Boolean).join('');
 
-  return html
+  return preserveMultipleSpaces(html)
     .replace(/\[\^(fn-[a-zA-Z0-9-]+)\]/g, '<span class="footnote-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(mn-[a-zA-Z0-9-]+)\]/g, '<span class="margin-note-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(\d+)\]/g, '<span class="footnote-badge" data-id="fn-legacy-$1" contenteditable="false"></span>')
