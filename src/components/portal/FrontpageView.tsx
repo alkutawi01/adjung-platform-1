@@ -431,6 +431,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     : null;
   const featuredAuthorName = featuredAuthor?.penName || activeFeatured.publisher || 'Elena Vasquez';
   const featuredAuthorSig = featuredAuthor?.signature || getInitials(featuredAuthorName);
+  const isFeaturedAr = isArabicText(activeFeatured.title || activeFeatured.content);
 
   // Editorial Note Aside
   const dbEditorNote = entries
@@ -725,8 +726,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         <section className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-3 pb-8">
           
           {/* Left: Main Featured Article */}
-          <div className="md:col-span-2 space-y-4">
-            <h2 
+          <div className={`md:col-span-2 space-y-4 ${isFeaturedAr ? 'text-right' : ''}`} dir={isFeaturedAr ? 'rtl' : 'ltr'}>
+            <h2
               onClick={() => {
                 if (activeFeatured.id !== 'fallback-featured') {
                   setSelectedEntry(activeFeatured);
@@ -734,15 +735,17 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   setActiveTab('folio');
                 }
               }}
-              className={`font-serif font-light leading-tight text-3xl md:text-4xl text-[#1F1F1F] hover:text-[#7B2737] transition-all duration-200 ${
+              className={`font-light leading-tight text-3xl md:text-4xl text-[#1F1F1F] hover:text-[#7B2737] transition-all duration-200 ${isFeaturedAr ? 'font-arabic leading-loose' : 'font-serif'} ${
                 activeFeatured.id !== 'fallback-featured' ? 'cursor-pointer hover:font-medium' : ''
               }`}
             >
-              <HoverWords text={activeFeatured.title} />
+              {isFeaturedAr ? activeFeatured.title : <HoverWords text={activeFeatured.title} />}
             </h2>
-            
-            <p className="font-serif text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed">
-              <HoverWords text={activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...'} />
+
+            <p className={`text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed ${isFeaturedAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+              {isFeaturedAr
+                ? (activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...')
+                : <HoverWords text={activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...'} />}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#555555]">
@@ -758,9 +761,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 }`}
               >
                 {featuredAuthorName}
-              </span>
-              <span className="sig italic font-sans text-[9.5px] opacity-50">
-                {featuredAuthorSig}
               </span>
               <span className="text-[#E0DDD8]">·</span>
               <span className="font-sans">
@@ -861,9 +861,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
-            {selectionsList.map((item, idx) => (
-              <div 
-                key={item.id} 
+            {selectionsList.map((item, idx) => {
+              const isAr = item.entryObj ? isArabicText(item.title || item.excerpt) : false;
+              return (
+              <div
+                key={item.id}
                 onClick={() => {
                   if (item.entryObj) {
                     setSelectedEntry(item.entryObj);
@@ -871,20 +873,21 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     setActiveTab('folio');
                   }
                 }}
-                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''}`}
+                dir={isAr ? 'rtl' : 'ltr'}
+                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'}`}
               >
                 {item.entryObj ? (
                   <>
                     <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555]">
                       {item.discipline}
                     </p>
-                    <h3 className="font-serif font-light text-[20px] md:text-[22px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
-                      <HoverWords text={item.title} />
+                    <h3 className={`font-light text-[20px] md:text-[22px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+                      {isAr ? item.title : <HoverWords text={item.title} />}
                     </h3>
-                    <p className="font-serif text-sm leading-relaxed text-[#2D2D2D]">
-                      <HoverWords text={item.excerpt} />
+                    <p className={`text-sm leading-relaxed text-[#2D2D2D] ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+                      {isAr ? item.excerpt : <HoverWords text={item.excerpt} />}
                     </p>
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
                       <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                         {item.authorName.toUpperCase()}
                       </span>
@@ -899,7 +902,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -914,8 +918,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               FEATURED ESSAYS
             </span>
             <div className="space-y-4">
-              {displayEssays.map((essay) => (
-                <div 
+              {displayEssays.map((essay) => {
+                const isAr = essay.entryObj ? isArabicText(essay.title) : false;
+                return (
+                <div
                   key={essay.id}
                   onClick={() => {
                     if (essay.entryObj) {
@@ -924,16 +930,17 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setActiveTab('folio');
                     }
                   }}
+                  dir={isAr ? 'rtl' : 'ltr'}
                   className={`flex justify-between items-baseline border-b border-stone-300 pb-3 ${
                     essay.entryObj ? 'cursor-pointer group' : ''
                   }`}
                 >
                   {essay.entryObj ? (
                     <>
-                      <h3 className="font-serif font-light text-[18px] md:text-[20px] text-[#1F1F1F] group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 max-w-[70%]">
-                        <HoverWords text={essay.title} />
+                      <h3 className={`font-light text-[18px] md:text-[20px] text-[#1F1F1F] group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 max-w-[70%] ${isAr ? 'font-arabic leading-loose text-right' : 'font-serif'}`}>
+                        {isAr ? essay.title : <HoverWords text={essay.title} />}
                       </h3>
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-[#555555]">
+                      <div className={`flex items-center gap-2 text-[10px] md:text-xs text-[#555555] ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans font-light">{essay.author}</span>
                         <span className="sig italic font-sans text-[9px] opacity-50">{essay.sig}</span>
                       </div>
@@ -944,7 +951,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -954,8 +962,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               FEATURED NOTES
             </span>
             <div className="space-y-5">
-              {displayNotes.map((note) => (
-                <div 
+              {displayNotes.map((note) => {
+                const isAr = note.entryObj ? isArabicText(note.title) : false;
+                return (
+                <div
                   key={note.id}
                   onClick={() => {
                     if (note.entryObj) {
@@ -964,14 +974,15 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setActiveTab('folio');
                     }
                   }}
-                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group' : ''}`}
+                  dir={isAr ? 'rtl' : 'ltr'}
+                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : ''}`}
                 >
                   {note.entryObj ? (
                     <>
-                      <h3 className="font-serif font-light text-[18px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
-                        <HoverWords text={note.title} />
+                      <h3 className={`font-light text-[18px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+                        {isAr ? note.title : <HoverWords text={note.title} />}
                       </h3>
-                      <div className="flex items-center gap-2 text-[10px] text-[#555555]">
+                      <div className={`flex items-center gap-2 text-[10px] text-[#555555] ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans font-light">{note.author}</span>
                         <span className="sig italic text-[9px] opacity-50">{note.sig}</span>
                       </div>
@@ -982,7 +993,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
