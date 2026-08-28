@@ -210,7 +210,7 @@ export function EditorialIndex({
             <thead>
               <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
                 <th className="p-3 pl-4 text-left">Author / Publisher</th>
-                <th className="p-3 text-left">Title</th>
+                <th className="p-3 text-left">Title / Excerpt</th>
                 <th className="p-3 text-left">Type</th>
                 <th className="p-3 text-left">Published</th>
                 <th className="p-3 pr-4 text-left">Slug</th>
@@ -241,7 +241,11 @@ export function EditorialIndex({
                             const cleanText = item.content.replace(/\[\^.*?\]/g, '').trim();
                             const firstPara = cleanText.split(/\n+/)[0] || '';
                             const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
-                            return sentenceMatch ? sentenceMatch[0] : firstPara.substring(0, 80) + '...';
+                            const preview = sentenceMatch ? sentenceMatch[0] : firstPara;
+                            // An unusually long first sentence (no punctuation
+                            // for a while) shouldn't blow out the row — cap it
+                            // the same way the no-punctuation fallback does.
+                            return preview.length > 80 ? `${preview.substring(0, 80)}...` : preview;
                           })()}
                         </span>
                       ) : (
