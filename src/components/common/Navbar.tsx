@@ -87,7 +87,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     setShowMobileMenu(false);
   };
 
-  const hasMobileNavLinks = selectedAuthorId !== '' || (currentUser && (hasPermission('viewDirectory') || hasPermission('viewIndex')));
+  // Content is paired with Frontpage as the public "portal" reading surface
+  // (no permission gate, same tier as Frontpage) — so any signed-in user
+  // reaching the platform portal nav should see it, unlike Directory/Index
+  // which stay permission-gated.
+  const hasMobileNavLinks = selectedAuthorId !== '' || Boolean(currentUser);
 
   return (
     <nav 
@@ -137,8 +141,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="hidden md:flex items-center gap-1.5 md:gap-3">
             {selectedAuthorId === '' ? (
-              /* PLATFORM PORTAL NAVIGATION (DIRECTORY, INDEX) */
+              /* PLATFORM PORTAL NAVIGATION (CONTENT, DIRECTORY, INDEX) */
               <>
+                {/* Content — paired with Frontpage, no permission gate */}
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => handleTabClick('content')}
+                    className={`relative px-2 py-1 text-xs font-mono tracking-wider uppercase transition cursor-pointer ${
+                      activeTab === 'content'
+                        ? 'text-white font-bold after:absolute after:bottom-[-9px] after:left-2 after:right-2 after:h-[1.5px] after:bg-white'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    Content
+                  </button>
+                )}
+
                 {/* Directory */}
                 {currentUser && hasPermission('viewDirectory') && (
                   <button
@@ -363,6 +382,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="md:hidden max-w-6xl mx-auto pb-3 flex flex-col gap-1 animate-fade-in">
           {selectedAuthorId === '' ? (
             <>
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('content')}
+                  className={`text-left px-2 py-2.5 text-xs font-mono tracking-wider uppercase transition cursor-pointer rounded-sm ${
+                    activeTab === 'content' ? 'text-white font-bold bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Content
+                </button>
+              )}
               {currentUser && hasPermission('viewDirectory') && (
                 <button
                   type="button"

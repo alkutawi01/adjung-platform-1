@@ -58,6 +58,7 @@ import { ConfirmDialog } from './components/common/ConfirmDialog';
 
 import { WritingDesk } from './components/desk/WritingDesk';
 import { EditorialIndex } from './components/portal/EditorialIndex';
+import { ContentView } from './components/portal/ContentView';
 import { Editorium } from './components/studio/Editorium';
 import { Directory } from './components/portal/Directory';
 import { IdentityStudio } from './components/portal/IdentityStudio';
@@ -1669,6 +1670,16 @@ Editorial Board of Adjung`;
                 inTheNewsGoogleDocText={inTheNewsGoogleDocText}
                 worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
                 setIndexSearchQuery={setIndexSearchQuery}
+              />
+            )}
+
+            {/* ACTIVE MODULE 0C: CONTENT (chronological Note+Essay feed, paired with Frontpage) */}
+            {activeTab === 'content' && !selectedEntry && (
+              <ContentView
+                entries={entries}
+                users={users}
+                setSelectedEntry={setSelectedEntry}
+                setSelectedAuthorId={setSelectedAuthorId}
               />
             )}
 
