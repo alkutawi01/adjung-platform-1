@@ -772,11 +772,24 @@ export default function App() {
         isActive: activeTab === 'desk'
       });
 
+      items.push({
+        id: 'content',
+        label: 'Content',
+        action: () => {
+          setSelectedAuthorId('');
+          setActiveTab('content');
+          setSelectedEntry(null);
+          setEditingEntry(null);
+        },
+        isActive: activeTab === 'content'
+      });
+
       if (hasPermission('viewIndex')) {
         items.push({
           id: 'index',
           label: 'Index',
           action: () => {
+            setSelectedAuthorId('');
             setActiveTab('index');
             setSelectedEntry(null);
             setEditingEntry(null);
