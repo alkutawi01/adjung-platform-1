@@ -64,18 +64,31 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
               key={entry.id}
               type="button"
               onClick={() => openEntry(entry)}
-              className="w-full text-left bg-white border border-stone-200/70 rounded-md p-5 hover:border-adjung-maroon/40 hover:shadow-sm transition-all"
+              className={`w-full text-left border rounded-md p-5 hover:shadow-sm transition-all ${
+                isNote
+                  ? 'bg-[#FDFBF7] border-adjung-maroon/15 hover:border-adjung-maroon/35'
+                  : 'bg-white border-stone-200/70 hover:border-adjung-maroon/40'
+              }`}
             >
               <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40 mb-2">
                 <span className="text-adjung-maroon font-semibold uppercase tracking-wider">{authorName}</span>
                 <span>•</span>
-                <span className="uppercase tracking-wider">{entry.contentType}</span>
+                {isNote ? (
+                  <span className="text-adjung-maroon font-bold border border-adjung-maroon/30 rounded px-1.5 py-0.5">NOTE</span>
+                ) : (
+                  <span className="uppercase tracking-wider">{entry.contentType}</span>
+                )}
                 <span>•</span>
                 <span>{entry.publishedDate ? new Date(entry.publishedDate).toLocaleDateString() : ''}</span>
               </div>
 
               {isNote ? (
-                <p dir={isAr ? 'rtl' : 'ltr'} className={`font-serif text-[15px] text-[#111111] leading-relaxed ${isAr ? 'text-right' : 'text-left'}`}>
+                // Note reads in its own handwritten voice (same face as
+                // Folio's Note card) at a larger size than Essay's excerpt —
+                // the text itself is the point, not a teaser toward "read
+                // more," so it gets more room (280 chars) and no drop-cap-
+                // adjacent essay styling.
+                <p dir={isAr ? 'rtl' : 'ltr'} className={`font-handwritten text-[19px] text-black leading-relaxed ${isAr ? 'text-right' : 'text-left'}`}>
                   {preview.length > 280 ? `${preview.slice(0, 280)}…` : preview}
                 </p>
               ) : (
