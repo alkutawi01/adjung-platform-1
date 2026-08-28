@@ -389,6 +389,19 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     (e) => e.id === systemSettings.featuredEntryId && e.status === 'Published'
   );
 
+  // Shared fallback pool for every curation slot below (splash, Editor's
+  // Selections, Featured Essays, Featured Notes): before any manual
+  // curation has ever happened, these must never show as visibly empty
+  // placeholders to a real reader — the same principle "Newest Essays"
+  // above already follows (real entries first, hardcoded demo copy only
+  // when there are truly zero published entries). usedEntryIds tracks
+  // what's already been placed so the same real entry doesn't get
+  // silently duplicated across multiple slots/sections.
+  const publishedPool = entries
+    .filter(e => e.status === 'Published' && (e.contentType === 'Essay' || e.contentType === 'Note'))
+    .sort((a, b) => new Date(b.publishedDate || b.createdDate).getTime() - new Date(a.publishedDate || a.createdDate).getTime());
+  const usedEntryIds = new Set<string>();
+
   const fallbackFeatured: Entry = {
     id: 'fallback-featured',
     authorId: null,
@@ -407,9 +420,14 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     excerpt: `A meditation on why civilizations forget, how libraries burn, and what it means to build institutions that outlast their founders. This essay traces the arc from Alexandria to the digital present, arguing that preservation is not passive but an active, moral commitment.`
   };
 
-  const activeFeatured = featuredEntry || fallbackFeatured;
-  const featuredAuthor = activeFeatured.authorId 
-    ? users.find(u => u.id === activeFeatured.authorId) 
+  // Splash/lead story: explicit curation wins; otherwise the most
+  // recently published real Essay (preferred) or Note; the hardcoded demo
+  // essay is the last resort only, for a genuinely empty database.
+  const fallbackRealFeatured = publishedPool.find(e => e.contentType === 'Essay') || publishedPool[0];
+  const activeFeatured = featuredEntry || fallbackRealFeatured || fallbackFeatured;
+  usedEntryIds.add(activeFeatured.id);
+  const featuredAuthor = activeFeatured.authorId
+    ? users.find(u => u.id === activeFeatured.authorId)
     : null;
   const featuredAuthorName = featuredAuthor?.penName || activeFeatured.publisher || 'Elena Vasquez';
   const featuredAuthorSig = featuredAuthor?.signature || getInitials(featuredAuthorName);
@@ -450,13 +468,23 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     currentUser.role === 'Admin'
   );
 
-  // Editor's Selections Grid (3 Columns)
-  // Editor's Selections Grid (3 Columns)
+  // Editor's Selections Grid (3 Columns). Manual curation wins, and any
+  // slots it doesn't fill are backfilled from the shared fallback pool —
+  // a real reader should never see a visibly blank "empty selection" box
+  // just because nobody has curated yet.
   const selectedEntries = (systemSettings.editorialSelectionIds || [])
     .map(id => entries.find(e => e.id === id && e.status === 'Published'))
     .filter(Boolean) as Entry[];
+  selectedEntries.forEach(e => usedEntryIds.add(e.id));
 
-  let selectionsList: any[] = selectedEntries.map(e => {
+  for (const candidate of publishedPool) {
+    if (selectedEntries.length >= 3) break;
+    if (usedEntryIds.has(candidate.id)) continue;
+    selectedEntries.push(candidate);
+    usedEntryIds.add(candidate.id);
+  }
+
+  const selectionsList: any[] = selectedEntries.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
     const authName = auth?.penName || e.publisher || 'Scholar';
     return {
@@ -470,6 +498,50 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     };
   });
 
+  // Featured Essays (3 entries) — same backfill principle, restricted to
+  // Essay-type entries and never repeating the splash or an already-used
+  // Editor's Selection.
+  const essaySelections = (systemSettings.featuredEssayIds || [])
+    .map(id => entries.find(e => e.id === id && e.status === 'Published' && e.id !== activeFeatured.id))
+    .filter(Boolean) as Entry[];
+  essaySelections.forEach(e => usedEntryIds.add(e.id));
+
+  for (const candidate of publishedPool) {
+    if (essaySelections.length >= 3) break;
+    if (candidate.contentType !== 'Essay' || usedEntryIds.has(candidate.id)) continue;
+    essaySelections.push(candidate);
+    usedEntryIds.add(candidate.id);
+  }
+
+  const displayEssays: any[] = essaySelections.slice(0, 3).map(e => {
+    const auth = users.find(u => u.id === e.authorId);
+    const name = auth?.penName || e.publisher || 'Writer';
+    return { id: e.id, title: e.title, author: name, sig: auth?.signature || getInitials(name), entryObj: e };
+  });
+
+  // Featured Notes (3 entries) — same backfill principle, restricted to
+  // Note-type entries.
+  const noteSelections = (systemSettings.featuredNoteIds || [])
+    .map(id => entries.find(e => e.id === id && e.status === 'Published'))
+    .filter(Boolean) as Entry[];
+  noteSelections.forEach(n => usedEntryIds.add(n.id));
+
+  for (const candidate of publishedPool) {
+    if (noteSelections.length >= 3) break;
+    if (candidate.contentType !== 'Note' || usedEntryIds.has(candidate.id)) continue;
+    noteSelections.push(candidate);
+    usedEntryIds.add(candidate.id);
+  }
+
+  const displayNotes: any[] = noteSelections.slice(0, 3).map(n => {
+    const auth = users.find(u => u.id === n.authorId);
+    const name = auth?.penName || n.publisher || 'Writer';
+    return { id: n.id, title: n.title || n.content.substring(0, 80) + '...', author: name, sig: auth?.signature || getInitials(name), entryObj: n };
+  });
+
+  // Still pad to exactly 3 with true empty slots — only reachable now
+  // when the platform genuinely doesn't have 3 eligible entries yet
+  // (e.g. only 1 Note published so far).
   while (selectionsList.length < 3) {
     selectionsList.push({
       id: `empty-selection-${selectionsList.length}`,
@@ -482,17 +554,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     });
   }
 
-  // Featured Essays (3 entries)
-  const essaySelections = (systemSettings.featuredEssayIds || [])
-    .map(id => entries.find(e => e.id === id && e.status === 'Published' && e.id !== activeFeatured.id))
-    .filter(Boolean) as Entry[];
-
-  const displayEssays: any[] = essaySelections.map(e => {
-    const auth = users.find(u => u.id === e.authorId);
-    const name = auth?.penName || e.publisher || 'Writer';
-    return { id: e.id, title: e.title, author: name, sig: auth?.signature || getInitials(name), entryObj: e };
-  });
-
   while (displayEssays.length < 3) {
     displayEssays.push({
       id: `empty-essay-${displayEssays.length}`,
@@ -502,17 +563,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       entryObj: null
     });
   }
-
-  // Featured Notes (3 entries)
-  const noteSelections = (systemSettings.featuredNoteIds || [])
-    .map(id => entries.find(e => e.id === id && e.status === 'Published'))
-    .filter(Boolean) as Entry[];
-
-  const displayNotes: any[] = noteSelections.map(n => {
-    const auth = users.find(u => u.id === n.authorId);
-    const name = auth?.penName || n.publisher || 'Writer';
-    return { id: n.id, title: n.title || n.content.substring(0, 80) + '...', author: name, sig: auth?.signature || getInitials(name), entryObj: n };
-  });
 
   while (displayNotes.length < 3) {
     displayNotes.push({
