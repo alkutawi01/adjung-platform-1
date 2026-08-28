@@ -295,6 +295,52 @@ export const Navbar: React.FC<NavbarProps> = ({
                       type="button"
                       onClick={() => {
                         setShowUserMenu(false);
+                        setSelectedAuthorId('');
+                        setActiveTab('content');
+                        setSelectedEntry(null);
+                        setEditingEntry(null);
+                      }}
+                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
+                    >
+                      Content
+                    </button>
+
+                    {hasPermission('viewDirectory') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setSelectedAuthorId('');
+                          setActiveTab('directory');
+                          setSelectedEntry(null);
+                          setEditingEntry(null);
+                        }}
+                        className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
+                      >
+                        Directory
+                      </button>
+                    )}
+
+                    {hasPermission('viewIndex') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setSelectedAuthorId('');
+                          setActiveTab('index');
+                          setSelectedEntry(null);
+                          setEditingEntry(null);
+                        }}
+                        className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
+                      >
+                        Index
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
                         setShowAccountModal(true);
                       }}
                       className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
