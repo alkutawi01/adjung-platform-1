@@ -14,7 +14,17 @@ interface ContentViewProps {
 const PAGE_SIZE = 15;
 
 function cleanPreview(content: string): string {
-  return stripMarkdown(content.replace(/\[\^.*?\]/g, '')).trim();
+  // stripMarkdown only handles inline emphasis — a feed preview also needs
+  // block-level markup (headings, list bullets) and footnote/margin-note
+  // markers stripped, since it's meant to read as a plain sentence, not a
+  // rendered document.
+  return stripMarkdown(
+    content
+      .replace(/\[\^.*?\]/g, '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[-*+]\s+/gm, '')
+      .replace(/^\d+[.)]\s+/gm, '')
+  ).replace(/\n+/g, ' ').trim();
 }
 
 export function ContentView({ entries, users, setSelectedEntry, setSelectedAuthorId }: ContentViewProps) {
