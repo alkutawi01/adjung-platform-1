@@ -227,6 +227,13 @@ export function WritingDesk({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => createNewEntry('Note')}
+              className="px-3 py-1.5 border border-stone-300 text-stone-700 uppercase text-[10px] tracking-wider font-sans font-medium hover:bg-stone-100 transition cursor-pointer"
+            >
+              + Note
+            </button>
+            <button
+              type="button"
               onClick={() => createNewEntry('Essay')}
               className="px-3 py-1.5 bg-stone-800 text-white uppercase text-[10px] tracking-wider font-sans font-medium hover:bg-stone-700 transition cursor-pointer"
             >
@@ -281,7 +288,9 @@ export function WritingDesk({
                           <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
                         </div>
                         <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
-                          {parseInlineFormatting(draft.title)}
+                          {draft.title
+                            ? parseInlineFormatting(draft.title)
+                            : (draft.content || 'Empty note...').slice(0, 80)}
                         </h4>
                       </div>
                       <Edit3 className="w-4 h-4 text-[#111111]/40 group-hover:text-adjung-maroon flex-shrink-0" />
@@ -329,7 +338,9 @@ export function WritingDesk({
                           <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
                         </div>
                         <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
-                          {parseInlineFormatting(pub.title)}
+                          {pub.title
+                            ? parseInlineFormatting(pub.title)
+                            : (pub.content || 'Empty note...').slice(0, 80)}
                         </h4>
                       </div>
                       <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">
