@@ -32,6 +32,30 @@ interface TimelineEntryCollapseRendererProps {
   maxCharsOverride?: number;
 }
 
+// truncatePreviewContent below cuts by raw words/chars with no notion of
+// XML block boundaries (<quote>, <callout>). An entry that opens with one
+// of these (a common structure for classical/religious texts quoting a
+// hadith or verse before the author's own prose) would get its closing
+// tag cut off mid-truncation — parseContentToBlocks then fails to match
+// the now-unclosed tag and falls through to plain-paragraph parsing,
+// leaking the raw <arabic>/<quote> markup as visible text in the card
+// preview. Flattening these blocks to plain text before truncation means
+// the cut always lands on real words; the full (untruncated) reading view
+// is unaffected since it parses item.content directly, never this
+// preview-only flattened copy.
+function flattenXmlBlocksForPreview(content: string): string {
+  return content
+    .replace(/<quote[^>]*>([\s\S]*?)<\/quote>/g, (_match, inner: string) =>
+      inner
+        .replace(/<\/?(arabic|text|translation)>/g, '\n')
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join(' — ')
+    )
+    .replace(/<callout[^>]*>([\s\S]*?)<\/callout>/g, '$1');
+}
+
 function truncatePreviewContent(
   content: string,
   maxLinesLimit: number,
@@ -40,7 +64,8 @@ function truncatePreviewContent(
 ): { text: string; exceeded: boolean } {
   if (!content) return { text: '', exceeded: false };
 
-  const rawLines = content.split('\n');
+  const flattenedContent = flattenXmlBlocksForPreview(content);
+  const rawLines = flattenedContent.split('\n');
   let charCount = 0;
   let wordCount = 0;
   let lineCount = 0;
@@ -112,7 +137,7 @@ function truncatePreviewContent(
   }
 
   let truncatedText = finalLines.join('\n');
-  if (exceeded || truncatedText.length < content.length) {
+  if (exceeded || truncatedText.length < flattenedContent.length) {
     exceeded = true;
     truncatedText = truncatedText.trim();
   }
