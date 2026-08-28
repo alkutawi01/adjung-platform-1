@@ -309,6 +309,16 @@ export const FolioView: React.FC<FolioViewProps> = ({
                     {yearEntries.map((item) => {
                       const dateObj = new Date(item.publishedDate || item.createdDate);
                       const isAr = isArabicText(item.title || item.content);
+                      // Note has no title by design and is meant to read as a
+                      // short, standalone fragment (X/Threads-post register),
+                      // not a compressed essay — so it skips the title slot,
+                      // the essay's centered/justified layout, and the drop
+                      // cap. Research backs the drop-cap cut specifically:
+                      // it's a long-form-narrative convention (reserved for
+                      // ~1200+ word prose with a deliberate opening), and
+                      // readers rate it as "trying too hard" on short/
+                      // transactional posts (Nieman Lab, Feb 2026).
+                      const isNote = item.contentType === 'Note';
 
                       const formatDate = (d: Date) => {
                         const day = d.getDate();
@@ -331,63 +341,80 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       return (
                         <div
                           key={item.id}
-                          className="group bg-white border border-stone-200/90 rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between text-center select-text cursor-default relative overflow-hidden min-h-[180px] w-full"
+                          className={`group border rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between select-text cursor-default relative overflow-hidden min-h-[180px] w-full ${
+                            isNote ? 'bg-[#FDFBF7] border-adjung-maroon/15 text-left' : 'bg-white border-stone-200/90 text-center'
+                          }`}
                         >
-                          {/* Center Content Area */}
-                          <div className="flex-1 flex flex-col justify-center items-center select-text">
+                          {/* Content Area — Essay centers around its title;
+                              Note (no title) reads left-aligned instead, so
+                              the card doesn't visually collapse around an
+                              empty center. */}
+                          <div className={`flex-1 flex flex-col justify-center select-text ${isNote ? 'items-start' : 'items-center'}`}>
                             {/* Metadata bar — mirrors the full-view header bar */}
                             <div className="w-full flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-400 mb-4 border-b border-adjung-maroon pb-3 select-text">
                               <div className="flex flex-wrap items-center gap-1.5">
+                                {isNote && (
+                                  <span className="text-adjung-maroon font-bold border border-adjung-maroon/30 rounded px-1.5 py-0.5 mr-1">NOTE</span>
+                                )}
                                 <span>{serialNum}</span>
                                 <span className="text-stone-300 font-bold">·</span>
                                 <span>{versionStr}</span>
                                 <span className="text-stone-300 font-bold">·</span>
                                 <span>{formatDate(dateObj)}</span>
-                                <span className="text-stone-300 font-bold">·</span>
-                                <span>{readingTimeStr}</span>
+                                {!isNote && (
+                                  <>
+                                    <span className="text-stone-300 font-bold">·</span>
+                                    <span>{readingTimeStr}</span>
+                                  </>
+                                )}
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="normal-case text-stone-400">{authorDomain}</span>
                                 {/* Visual echo of the full view's actions-menu
                                     glyph — decorative here, not wired to
                                     EntryActionsMenu (that lives on the
-                                    destination page, not the preview card). */}
+                                    destination page, not the preview page). */}
                                 <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
                               </div>
                             </div>
 
                             {/* Title — serif to match the full-view h1, capped
                                 to one line so the card never grows past its
-                                fixed slot height. */}
-                            <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text px-9 ${isAr ? 'font-arabic' : ''}`}>
-                              {parseInlineFormatting(displayTitle)}
-                            </h3>
+                                fixed slot height. Note skips this entirely —
+                                it has no title by design (a NOTE pill above
+                                already marks the type). */}
+                            {!isNote && (
+                              <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text px-9 ${isAr ? 'font-arabic' : ''}`}>
+                                {parseInlineFormatting(displayTitle)}
+                              </h3>
+                            )}
 
                             {/* Byline — "by" stays mono/UI, the name itself
                                 is serif with the same underline treatment as
                                 full view's author stamp. */}
-                            <div className="flex items-baseline gap-1.5 mt-1.5 mb-3.5 select-text">
+                            <div className={`flex items-baseline gap-1.5 mt-1.5 mb-3.5 select-text ${isNote ? '' : ''}`}>
                               <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">by</span>
                               <span className="font-serif font-medium text-stone-700 text-[11px] border-b border-stone-200 pb-0.5">
                                 {currentAuthor?.penName || currentAuthor?.displayName || 'Scholar'}
                               </span>
                             </div>
 
-                            {/* Short Excerpt — 2 lines, justified. Latin gets
-                                a real floating drop cap matching full view
-                                (text-4xl float-left, via CSS ::first-letter —
-                                fine for Latin since a drop cap is only ever
-                                one character). Arabic does NOT get a drop
-                                cap (not a script convention — see
-                                EntryRenderer.tsx's own `!isAr` guard) but
-                                DOES get its whole first word bolded/tinted
-                                maroon — ::first-letter can't express "whole
-                                word," so that's done with real markup via
-                                TimelineEntryCollapseRenderer's
-                                accentFirstWord prop instead. [&_p] overrides
-                                win over the component's own text-left
-                                default, tuned for its other (non-card)
-                                usages.
+                            {/* Short Excerpt. Essay: 2 lines, justified,
+                                centered, with a floating drop cap on its
+                                first letter (::first-letter, text-4xl serif)
+                                — a long-form-narrative convention. Note gets
+                                none of that: no drop cap (research backs this
+                                cut specifically — drop caps read as
+                                "trying too hard" on short/transactional
+                                posts; they're meant for ~1200+ word prose
+                                with a deliberate opening), left-aligned
+                                rather than justified (justify reads as
+                                "formatted document," not "quick post"), and
+                                the full handwritten-font body text is the
+                                whole point — nothing else needs to compete
+                                with it. Arabic also skips the drop cap (not
+                                a script convention) but keeps Essay's
+                                justified/centered treatment.
 
                                 Truncation: maxWordsOverride/maxCharsOverride
                                 keep the component's OWN word-safe cut (it
@@ -399,14 +426,18 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                 primary cut mechanism — CSS line-clamp has no
                                 notion of word boundaries and was the actual
                                 cause of the mid-word "menja..." cutoff. */}
-                            <div className={`text-xs text-stone-500 leading-relaxed max-w-xl mx-auto select-text w-full px-9 line-clamp-3 [&_p]:!text-justify ${isAr ? '' : '[&::first-letter]:text-4xl [&::first-letter]:font-serif [&::first-letter]:font-normal [&::first-letter]:text-adjung-maroon [&::first-letter]:float-left [&::first-letter]:leading-none [&::first-letter]:mr-1 [&::first-letter]:mt-0.5'}`}>
+                            <div className={`text-stone-500 leading-relaxed select-text w-full line-clamp-3 ${
+                              isNote
+                                ? 'text-sm text-left'
+                                : `text-xs max-w-xl mx-auto px-9 [&_p]:!text-justify ${isAr ? '' : '[&::first-letter]:text-4xl [&::first-letter]:font-serif [&::first-letter]:font-normal [&::first-letter]:text-adjung-maroon [&::first-letter]:float-left [&::first-letter]:leading-none [&::first-letter]:mr-1 [&::first-letter]:mt-0.5'}`
+                            }`}>
                               <TimelineEntryCollapseRenderer
                                 item={item}
                                 isExpanded={false}
                                 onToggle={() => {}}
                                 accentFirstWord
-                                maxWordsOverride={22}
-                                maxCharsOverride={115}
+                                maxWordsOverride={isNote ? 45 : 22}
+                                maxCharsOverride={isNote ? 240 : 115}
                                 onOpenText={() => {}}
                                 showInlineToggle={false}
                               />
