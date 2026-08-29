@@ -276,31 +276,17 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
 
   return (
     <div className="max-w-5xl mx-auto relative">
-      {/* xl+: a persistent left rail, vertically centered in the viewport
-          (not top-pinned like Threads' own nav) — full search+facets, room
-          to spare. md-to-xl: narrows to a single Filters icon in the same
-          spot — NOT a strip of per-writer circles. Adjung has no avatar
-          system (identity is a signature, never an icon), so compressing
-          "writer" into a small round glyph would fabricate exactly the
-          avatar pattern the rest of the platform deliberately avoids.
-          Below md: the rail disappears entirely behind the header's own
-          "Filters" button. */}
-      <aside className="hidden md:block fixed left-[max(12px,calc(50%-640px))] top-1/2 -translate-y-1/2 z-30">
-        <div className="hidden xl:block w-56 bg-white border border-stone-200/70 rounded-lg shadow-sm p-4 max-h-[70vh] overflow-y-auto">
+      {/* xl+ only: a persistent left rail, vertically centered in the
+          viewport (not top-pinned like Threads' own nav) — full
+          search+facets, room to spare. Below xl: no second trigger here —
+          the header's own "Filters" button is the sole entry point, all
+          the way down to mobile. (What else might live in this margin at
+          md-xl is still open — not decided yet.) */}
+      <aside className="hidden xl:block fixed left-[max(12px,calc(50%-640px))] top-1/2 -translate-y-1/2 z-30">
+        <div className="w-56 bg-white border border-stone-200/70 rounded-lg shadow-sm p-4 max-h-[70vh] overflow-y-auto">
           <span className="block font-mono text-[10px] uppercase tracking-widest text-[#111111]/40 mb-3">Filters</span>
           {filterPickerBody}
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowFilterPanel(true)}
-          title="Filter by writer or topic"
-          className={`xl:hidden w-11 h-11 rounded-full flex items-center justify-center shadow-sm border transition-colors ${
-            hasActiveFilters ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-white text-stone-500 border-stone-200/70 hover:text-adjung-maroon hover:border-adjung-maroon/40'
-          }`}
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-        </button>
       </aside>
 
       {/* Centered modal — used on md-and-below (the header's own "Filters"
