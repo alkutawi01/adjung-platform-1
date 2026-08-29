@@ -496,7 +496,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     const authName = auth?.penName || e.publisher || 'Scholar';
     return {
       id: e.id,
-      title: e.title || (e.contentType === 'Note' ? 'Philosophical Fragment' : 'Untitled'),
+      title: e.title || 'Untitled',
       excerpt: e.excerpt || `${flattenBlocksForPreview(e.content).slice(0, 150)}...`,
       discipline: e.discipline || e.tags[0] || e.contentType,
       authorName: authName,
@@ -870,7 +870,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
             {selectionsList.map((item, idx) => {
-              const isAr = item.entryObj ? isArabicText(item.title || item.excerpt) : false;
+              const isNote = item.entryObj?.contentType === 'Note';
+              const isAr = item.entryObj ? isArabicText(isNote ? item.excerpt : item.title) : false;
               return (
               <div
                 key={item.id}
@@ -882,9 +883,34 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   }
                 }}
                 dir={isAr ? 'rtl' : 'ltr'}
-                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'}`}
+                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'} ${isNote ? 'bg-[#FDFBF7] rounded-md p-4 -m-4 border border-adjung-maroon/15 hover:border-adjung-maroon/35 transition-colors' : ''}`}
               >
                 {item.entryObj ? (
+                  isNote ? (
+                    <>
+                      {/* Note has no title and no "discipline" tag by
+                          design — a fake title ("Philosophical Fragment")
+                          used to stand in here, which is exactly the kind
+                          of made-up label the rest of Note's identity work
+                          this session removed. Reads in the same
+                          handwritten voice as Folio/Content/Featured
+                          Notes instead. */}
+                      <span className="inline-block font-sans text-[8px] font-bold text-adjung-maroon border border-adjung-maroon/30 rounded px-1.5 py-0.5 uppercase tracking-wider">
+                        Note
+                      </span>
+                      <p className={`text-black leading-relaxed ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
+                        {item.excerpt}
+                      </p>
+                      <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
+                        <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
+                          {item.authorName.toUpperCase()}
+                        </span>
+                        <span className="sig italic text-[9px] text-[#555555] opacity-50">
+                          {item.authorSig}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
                   <>
                     <p className="font-sans text-[9px] md:text-[10px] tracking-editorial uppercase text-[#555555]">
                       {item.discipline}
@@ -904,6 +930,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       </span>
                     </div>
                   </>
+                  )
                 ) : (
                   <div className="min-h-[150px] flex items-center justify-center border border-dashed border-stone-300 rounded-sm select-none bg-stone-50/10">
                     <span className="font-sans text-[9px] uppercase tracking-wider text-stone-500">Empty Selection Slot</span>
