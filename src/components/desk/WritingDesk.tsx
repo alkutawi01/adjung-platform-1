@@ -41,6 +41,21 @@ export function WritingDesk({
 
   const activeEntry = mode === 'laboratory' ? entry : contextEditingEntry;
 
+  // Desk's own entries were never explicitly sorted — filter().map() just
+  // returned whatever order the DB fetch happened to come back in, not
+  // newest-first as the list visually implied.
+  const ownedEntries = entries.filter(e => {
+    const isOwner = e.authorId === currentUser?.id;
+    const isInst = e.publicationClass === 'Institutional' && (currentUser?.role === 'Chief Editor' || currentUser?.role === 'Editor');
+    return isOwner || isInst;
+  });
+  const draftEntries = ownedEntries
+    .filter(e => e.status === 'Draft')
+    .sort((a, b) => new Date(b.updatedDate).getTime() - new Date(a.updatedDate).getTime());
+  const publishedEntries = ownedEntries
+    .filter(e => e.status === 'Published')
+    .sort((a, b) => new Date(b.publishedDate || b.updatedDate).getTime() - new Date(a.publishedDate || a.updatedDate).getTime());
+
   const [viewMode, setViewMode] = useState<'preview' | 'editor'>(viewModeOverride || 'preview');
   const lastScrollY = useRef<number>(0);
 
@@ -249,107 +264,81 @@ export function WritingDesk({
         <div className="max-w-4xl mx-auto space-y-10">
           {/* Drafts & Published Lists */}
           <div className="space-y-10">
-            
-            {/* Drafts list */}
-            <div className="space-y-4">
+
+            {/* Drafts list — newest-updated first */}
+            <div className="space-y-3">
               <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/60 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Drafts</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
-                  {entries.filter(e => {
-                    const isOwner = e.authorId === currentUser.id;
-                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                    return (isOwner || isInst) && e.status === 'Draft';
-                  }).length}
+                  {draftEntries.length}
                 </span>
               </h3>
 
-              {entries.filter(e => {
-                const isOwner = e.authorId === currentUser.id;
-                const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                return (isOwner || isInst) && e.status === 'Draft';
-              }).length === 0 ? (
-                <p className="text-xs text-[#111111]/40 italic py-3">No pending drafts. Your mind is quiet.</p>
+              {draftEntries.length === 0 ? (
+                <p className="text-xs text-[#111111]/40 py-3">No pending drafts.</p>
               ) : (
-                <div className="space-y-3">
-                  {entries.filter(e => {
-                    const isOwner = e.authorId === currentUser.id;
-                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                    return (isOwner || isInst) && e.status === 'Draft';
-                  }).map(draft => (
+                <div className="border border-stone-200 rounded overflow-hidden bg-white">
+                  {draftEntries.map(draft => (
                     <div
                       key={draft.id}
                       onClick={() => contextSetEditingEntry(draft)}
-                      className="bg-white hover:bg-[#FDFDFD] border border-stone-200 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
+                      className="grid grid-cols-[80px_1fr_100px_28px] items-center gap-4 px-4 py-2.5 border-b border-stone-100 last:border-0 hover:bg-[#FDFDFD] cursor-pointer group transition-colors"
                     >
-                      <div className="space-y-1 pr-4">
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-adjung-maroon font-semibold">{draft.contentType}</span>
-                          <span>•</span>
-                          <span>Updated {new Date(draft.updatedDate).toLocaleDateString()}</span>
-                        </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
-                          {draft.title
-                            ? parseInlineFormatting(draft.title)
-                            : (draft.content || 'Empty note...').slice(0, 80)}
-                        </h4>
-                      </div>
-                      <Edit3 className="w-4 h-4 text-[#111111]/40 group-hover:text-adjung-maroon flex-shrink-0" />
+                      <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
+                        {draft.contentType}
+                      </span>
+                      <h4 className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate">
+                        {draft.title
+                          ? parseInlineFormatting(draft.title)
+                          : (draft.content || 'Empty note...').slice(0, 80)}
+                      </h4>
+                      <span className="font-mono text-[10px] text-[#111111]/40 text-right tabular-nums">
+                        {new Date(draft.updatedDate).toLocaleDateString()}
+                      </span>
+                      <Edit3 className="w-3.5 h-3.5 text-[#111111]/40 group-hover:text-adjung-maroon justify-self-end" />
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Published list */}
-            <div className="space-y-4">
+            {/* Published list — newest-published first */}
+            <div className="space-y-3">
               <h3 className="font-sans text-[11px] uppercase tracking-widest font-semibold text-[#111111]/60 flex items-center justify-between border-b border-[#111111]/10 pb-2">
                 <span>Published</span>
                 <span className="bg-[#111111]/5 text-[#111111] px-2 py-0.5 rounded text-[10px]">
-                  {entries.filter(e => {
-                    const isOwner = e.authorId === currentUser.id;
-                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                    return (isOwner || isInst) && e.status === 'Published';
-                  }).length}
+                  {publishedEntries.length}
                 </span>
               </h3>
 
-              {entries.filter(e => {
-                const isOwner = e.authorId === currentUser.id;
-                const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                return (isOwner || isInst) && e.status === 'Published';
-              }).length === 0 ? (
-                <p className="text-xs text-[#111111]/40 italic py-3">No published records on file.</p>
+              {publishedEntries.length === 0 ? (
+                <p className="text-xs text-[#111111]/40 py-3">No published records on file.</p>
               ) : (
-                <div className="space-y-3">
-                  {entries.filter(e => {
-                    const isOwner = e.authorId === currentUser.id;
-                    const isInst = e.publicationClass === 'Institutional' && (currentUser.role === 'Chief Editor' || currentUser.role === 'Editor');
-                    return (isOwner || isInst) && e.status === 'Published';
-                  }).map(pub => (
-                    <div 
-                      key={pub.id} 
+                <div className="border border-stone-200 rounded overflow-hidden bg-white">
+                  {publishedEntries.map(pub => (
+                    <div
+                      key={pub.id}
                       onClick={() => contextSetEditingEntry(pub)}
-                      className="bg-white hover:bg-[#FDFDFD] border border-stone-200 p-4 rounded flex items-center justify-between cursor-pointer group transition-colors shadow-sm"
+                      className="grid grid-cols-[80px_1fr_100px_50px] items-center gap-4 px-4 py-2.5 border-b border-stone-100 last:border-0 hover:bg-[#FDFDFD] cursor-pointer group transition-colors"
                     >
-                      <div className="space-y-1 pr-4">
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-[#111111]/40">
-                          <span className="text-adjung-maroon font-semibold">{pub.contentType}</span>
-                          <span>•</span>
-                          <span>Published {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                        <h4 className="font-serif font-semibold text-[#111111] text-base group-hover:text-adjung-maroon transition-colors text-left">
-                          {pub.title
-                            ? parseInlineFormatting(pub.title)
-                            : (pub.content || 'Empty note...').slice(0, 80)}
-                        </h4>
-                      </div>
-                      <div className="flex items-center gap-3 text-stone-400 flex-shrink-0">
+                      <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
+                        {pub.contentType}
+                      </span>
+                      <h4 className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate">
+                        {pub.title
+                          ? parseInlineFormatting(pub.title)
+                          : (pub.content || 'Empty note...').slice(0, 80)}
+                      </h4>
+                      <span className="font-mono text-[10px] text-[#111111]/40 text-right tabular-nums">
+                        {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}
+                      </span>
+                      <div className="flex items-center gap-2.5 text-stone-400 justify-self-end">
                         {pub.visibility === 'Private' ? (
                           <Lock className="w-3.5 h-3.5 text-red-600" title="Private" />
                         ) : (
                           <Globe className="w-3.5 h-3.5 text-stone-400" title="Public" />
                         )}
-                        <Edit3 className="w-4 h-4 group-hover:text-adjung-maroon" />
+                        <Edit3 className="w-3.5 h-3.5 group-hover:text-adjung-maroon" />
                       </div>
                     </div>
                   ))}
