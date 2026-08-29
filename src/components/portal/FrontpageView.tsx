@@ -743,8 +743,15 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               {isFeaturedAr ? activeFeatured.title : <HoverWords text={activeFeatured.title} />}
             </h2>
 
-            <p className={`text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed ${isFeaturedAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
-              {isFeaturedAr ? featuredExcerpt : <HoverWords text={featuredExcerpt} />}
+            {/* A flattened excerpt can mix scripts within one string (e.g.
+                a Latin heading followed by a quoted Arabic hadith) — the
+                parent's blanket isFeaturedAr direction is right for the
+                title (a clean single string) but wrong to force on a
+                preview that isn't. dir="auto" + unicode-bidi: plain-text
+                hands each embedded run to the browser's own Unicode Bidi
+                Algorithm instead. */}
+            <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed text-left ${isFeaturedAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+              <HoverWords text={featuredExcerpt} />
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#555555]">
@@ -820,7 +827,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 <h4 className="font-serif text-lg md:text-xl text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
-                <p className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
+                <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
                   <HoverWords text={dbEditorNote.excerpt || truncateAtWord(flattenBlocksForPreview(dbEditorNote.content), 36)} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
@@ -889,7 +896,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <span className="inline-block font-sans text-[8px] font-bold text-adjung-maroon border border-adjung-maroon/30 rounded px-1.5 py-0.5 uppercase tracking-wider">
                         Note
                       </span>
-                      <p className={`text-black leading-relaxed ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
+                      <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-black leading-relaxed text-left ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
                         {item.excerpt}
                       </p>
                       <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
@@ -909,8 +916,8 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     <h3 className={`font-light text-[20px] md:text-[22px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
                       {isAr ? item.title : <HoverWords text={item.title} />}
                     </h3>
-                    <p className={`text-sm leading-relaxed text-[#2D2D2D] ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
-                      {isAr ? item.excerpt : <HoverWords text={item.excerpt} />}
+                    <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-sm leading-relaxed text-[#2D2D2D] text-left ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
+                      <HoverWords text={item.excerpt} />
                     </p>
                     <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
                       <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
@@ -1012,7 +1019,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                           text, so it reads in the same handwritten voice as
                           every other Note on the platform (Folio, Content),
                           not Essay's serif/hover-reveal title treatment. */}
-                      <p className={`text-black leading-relaxed ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
+                      <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-black leading-relaxed text-left ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
                         {note.title}
                       </p>
                       <div className={`flex items-center gap-2 text-[10px] text-[#555555] pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>

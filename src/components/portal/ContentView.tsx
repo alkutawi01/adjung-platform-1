@@ -131,7 +131,15 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   </span>
 
                   {isNote ? (
-                    <p dir={isAr ? 'rtl' : 'ltr'} className={`font-handwritten text-[19px] text-black leading-relaxed ${isAr ? 'text-right' : 'text-left'}`}>
+                    // A flattened preview can mix scripts within one string
+                    // (e.g. a Malay heading followed by a quoted Arabic
+                    // hadith) — forcing the whole block to one direction via
+                    // isArabicText's single true/false verdict corrupted the
+                    // reading order of whichever script lost the vote.
+                    // dir="auto" + unicode-bidi: plain-text hands each
+                    // embedded run to the browser's own Unicode Bidi
+                    // Algorithm instead of one blanket guess.
+                    <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-handwritten text-[19px] text-black leading-relaxed text-left">
                       {truncateAtWord(preview, 46)}
                     </p>
                   ) : (
@@ -139,7 +147,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                       <h3 dir={isAr ? 'rtl' : 'ltr'} title={entry.title} className={`font-serif text-lg font-medium text-[#111111] mb-1.5 line-clamp-2 ${isAr ? 'text-right' : 'text-left'}`}>
                         {entry.title}
                       </h3>
-                      <p className="font-serif text-sm text-stone-500 leading-relaxed">
+                      <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-serif text-sm text-stone-500 leading-relaxed text-left">
                         {truncateAtWord(preview, 32)}
                       </p>
                     </>
