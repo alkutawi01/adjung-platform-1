@@ -141,9 +141,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="hidden md:flex items-center gap-1.5 md:gap-3">
             {selectedAuthorId === '' ? (
-              /* PLATFORM PORTAL NAVIGATION (CONTENT, DIRECTORY, INDEX) */
+              /* PLATFORM PORTAL NAVIGATION — two pairs, not one flat group:
+                 Content pairs with Frontpage (the brand wordmark, at far
+                 left, is Frontpage's own link) — the raw/curated pair.
+                 Directory+Index is the separate search/catalogue pair. A
+                 divider marks that boundary instead of letting all three
+                 read as one undifferentiated set. */
               <>
-                {/* Content — paired with Frontpage, no permission gate */}
                 {currentUser && (
                   <button
                     type="button"
@@ -156,6 +160,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     Content
                   </button>
+                )}
+
+                {currentUser && (hasPermission('viewDirectory') || hasPermission('viewIndex')) && (
+                  <span className="w-px h-3.5 bg-white/20" aria-hidden="true" />
                 )}
 
                 {/* Directory */}
@@ -291,6 +299,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </button>
                     )}
 
+                    {/* Frontpage + Content are the "portal" pair (curated
+                        home + its raw feed). Directory + Index, below the
+                        divider, is the separate search/catalogue pair. */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleBrandClick();
+                      }}
+                      className="w-full text-left px-4 py-1.5 text-stone-600 hover:text-adjung-maroon hover:bg-stone-50/60 transition-colors cursor-pointer"
+                    >
+                      Frontpage
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -304,6 +326,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       Content
                     </button>
+
+                    {(hasPermission('viewDirectory') || hasPermission('viewIndex')) && (
+                      <div className="h-px bg-stone-100 my-1" />
+                    )}
 
                     {hasPermission('viewDirectory') && (
                       <button
@@ -438,6 +464,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   Content
                 </button>
+              )}
+              {currentUser && (hasPermission('viewDirectory') || hasPermission('viewIndex')) && (
+                <div className="h-px bg-white/10 mx-2 my-1" aria-hidden="true" />
               )}
               {currentUser && hasPermission('viewDirectory') && (
                 <button
