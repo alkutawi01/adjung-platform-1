@@ -13,6 +13,12 @@ interface ContentViewProps {
 
 const PAGE_SIZE = 15;
 
+function newestTimestamp(entries: Entry[]): number {
+  return entries
+    .filter(e => e.status === 'Published' && (e.contentType === 'Note' || e.contentType === 'Essay'))
+    .reduce((max, e) => Math.max(max, e.publishedDate ? new Date(e.publishedDate).getTime() : 0), 0);
+}
+
 function formatDayLabel(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
@@ -28,11 +34,33 @@ function formatDayLabel(dateStr: string | null | undefined): string {
 
 export function ContentView({ entries, users, setSelectedEntry, setSelectedAuthorId }: ContentViewProps) {
   const [page, setPage] = useState(1);
+  // Snapshot on first view — anything published after this moment is "new"
+  // and waits behind an explicit "Show N new" action (same idea as X's
+  // "Show 35 posts" banner) rather than silently reordering the list a
+  // reader is already partway through, or auto-refreshing behind their
+  // back. No inferred personalization either way — just a plain count.
+  const [baselineTimestamp, setBaselineTimestamp] = useState(() => newestTimestamp(entries));
 
   const { results, total, hasMore } = React.useMemo(
     () => getContentEntries({ entries, page, pageSize: PAGE_SIZE }),
     [entries, page]
   );
+
+  const newCount = React.useMemo(
+    () => entries.filter(e =>
+      e.status === 'Published' &&
+      (e.contentType === 'Note' || e.contentType === 'Essay') &&
+      e.publishedDate &&
+      new Date(e.publishedDate).getTime() > baselineTimestamp
+    ).length,
+    [entries, baselineTimestamp]
+  );
+
+  const showNewEntries = () => {
+    setBaselineTimestamp(newestTimestamp(entries));
+    setPage(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const openEntry = (entry: Entry) => {
     setSelectedAuthorId(entry.authorId);
@@ -52,6 +80,18 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
           The latest notes and essays, newest first, from every writer on Adjung
         </p>
       </div>
+
+      {newCount > 0 && (
+        <div className="flex justify-center -mb-2">
+          <button
+            type="button"
+            onClick={showNewEntries}
+            className="px-4 py-1.5 rounded-full bg-adjung-maroon text-white text-xs font-sans font-medium shadow-sm hover:bg-adjung-maroon/90 transition-colors"
+          >
+            Show {newCount} new {newCount === 1 ? 'entry' : 'entries'}
+          </button>
+        </div>
+      )}
 
       <div className="space-y-0">
         {results.map(entry => {
