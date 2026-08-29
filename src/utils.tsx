@@ -107,6 +107,18 @@ export function truncateAtWord(text: string, maxWords: number): string {
     : text;
 }
 
+/** "Elena Vasquez" -> "E.V." — Adjung's identity mark is a signature (real
+ *  handwritten/typed script, or these dotted initials as its fallback),
+ *  never a photo avatar. Used wherever a real `signature` value is absent. */
+export function getInitials(name: string): string {
+  if (!name) return '';
+  return name
+    .split(/\s+/)
+    .map(w => w.charAt(0).toUpperCase())
+    .filter(c => /[A-Z]/.test(c))
+    .join('.') + '.';
+}
+
 export function stripMarkdown(text: string): string {
   if (!text) return '';
   return text

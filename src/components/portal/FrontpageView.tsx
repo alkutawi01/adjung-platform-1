@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../utils';
+import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord, getInitials } from '../../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -364,15 +364,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     return () => clearInterval(interval);
   }, [systemSettings.worldClockHolidaysText, worldClockHolidaysGoogleDocText]);
 
-  // Helper to extract name initials (e.g. "Elena Vasquez" -> "E.V.")
-  const getInitials = (name: string): string => {
-    if (!name) return '';
-    return name
-      .split(/\s+/)
-      .map(w => w.charAt(0).toUpperCase())
-      .filter(c => /[A-Z]/.test(c))
-      .join('.') + '.';
-  };
 
   // Fallback only — real published entries carry an authoritative
   // reading_time_minutes (SPEC-028 §14.1), same field FolioView/
