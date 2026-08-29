@@ -543,7 +543,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const displayNotes: any[] = noteSelections.slice(0, 3).map(n => {
     const auth = users.find(u => u.id === n.authorId);
     const name = auth?.penName || n.publisher || 'Writer';
-    return { id: n.id, title: n.title || n.content.substring(0, 80) + '...', author: name, sig: auth?.signature || getInitials(name), entryObj: n };
+    // Note has no title by design — this is always the fallback branch in
+    // practice, so it must go through flattenBlocksForPreview like every
+    // other Note excerpt on the platform (raw content.substring() would
+    // leak "## ..."/"<quote>..." markup, same bug fixed for the splash).
+    return { id: n.id, title: n.title || `${flattenBlocksForPreview(n.content).slice(0, 100)}...`, author: name, sig: auth?.signature || getInitials(name), entryObj: n };
   });
 
   // Still pad to exactly 3 with true empty slots — only reachable now
@@ -979,14 +983,21 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     }
                   }}
                   dir={isAr ? 'rtl' : 'ltr'}
-                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : ''}`}
+                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group rounded-md bg-[#FDFBF7] border border-adjung-maroon/15 hover:border-adjung-maroon/35 p-3 -m-3 transition-colors' : ''} ${isAr ? 'text-right' : ''}`}
                 >
                   {note.entryObj ? (
                     <>
-                      <h3 className={`font-light text-[18px] text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200 ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
-                        {isAr ? note.title : <HoverWords text={note.title} />}
-                      </h3>
-                      <div className={`flex items-center gap-2 text-[10px] text-[#555555] ${isAr ? 'flex-row-reverse' : ''}`}>
+                      <span className="inline-block font-sans text-[8px] font-bold text-adjung-maroon border border-adjung-maroon/30 rounded px-1.5 py-0.5 uppercase tracking-wider mb-1">
+                        Note
+                      </span>
+                      {/* Note has no title — this is its actual short-form
+                          text, so it reads in the same handwritten voice as
+                          every other Note on the platform (Folio, Content),
+                          not Essay's serif/hover-reveal title treatment. */}
+                      <p className={`text-black leading-relaxed ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
+                        {note.title}
+                      </p>
+                      <div className={`flex items-center gap-2 text-[10px] text-[#555555] pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans font-light">{note.author}</span>
                         <span className="sig italic text-[9px] opacity-50">{note.sig}</span>
                       </div>
