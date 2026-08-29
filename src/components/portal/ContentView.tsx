@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Rss } from 'lucide-react';
 import { Entry, User } from '../../types';
-import { isArabicText, flattenBlocksForPreview } from '../../utils';
+import { isArabicText, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { getContentEntries, resolveContentAuthorName } from '../../utils/getContentEntries';
 
 interface ContentViewProps {
@@ -75,15 +75,15 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                 // more," so it gets more room (280 chars) and no drop-cap-
                 // adjacent essay styling.
                 <p dir={isAr ? 'rtl' : 'ltr'} className={`font-handwritten text-[19px] text-black leading-relaxed ${isAr ? 'text-right' : 'text-left'}`}>
-                  {preview.length > 280 ? `${preview.slice(0, 280)}…` : preview}
+                  {truncateAtWord(preview, 46)}
                 </p>
               ) : (
                 <>
-                  <h3 dir={isAr ? 'rtl' : 'ltr'} className={`font-serif text-lg font-medium text-[#111111] mb-1.5 ${isAr ? 'text-right' : 'text-left'}`}>
+                  <h3 dir={isAr ? 'rtl' : 'ltr'} title={entry.title} className={`font-serif text-lg font-medium text-[#111111] mb-1.5 line-clamp-2 ${isAr ? 'text-right' : 'text-left'}`}>
                     {entry.title}
                   </h3>
                   <p className="font-serif text-sm text-stone-500 leading-relaxed">
-                    {preview.length > 200 ? `${preview.slice(0, 200)}…` : preview}
+                    {truncateAtWord(preview, 32)}
                   </p>
                 </>
               )}

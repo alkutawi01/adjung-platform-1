@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview } from '../../utils';
+import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -437,7 +437,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   // an XML <quote> block (classical/religious texts quoting a hadith or
   // verse before the author's own prose), which would otherwise leak as
   // literal "## ..." / "<quote><arabic>..." markup on the splash.
-  const featuredExcerpt = activeFeatured.excerpt || `${flattenBlocksForPreview(activeFeatured.content).slice(0, 300)}...`;
+  const featuredExcerpt = activeFeatured.excerpt || truncateAtWord(flattenBlocksForPreview(activeFeatured.content), 50);
 
   // Editorial Note Aside
   const dbEditorNote = entries
@@ -457,7 +457,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     "Study examines long-term effects of historical documentation practices on contemporary scholarship."
   ];
   const tickerItems = notices.length > 0
-    ? notices.map(n => `${n.title} - ${n.excerpt || flattenBlocksForPreview(n.content).slice(0, 100)}`)
+    ? notices.map(n => `${n.title} - ${n.excerpt || truncateAtWord(flattenBlocksForPreview(n.content), 16)}`)
     : fallbackTicker;
 
   useEffect(() => {
@@ -497,7 +497,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     return {
       id: e.id,
       title: e.title || 'Untitled',
-      excerpt: e.excerpt || `${flattenBlocksForPreview(e.content).slice(0, 150)}...`,
+      excerpt: e.excerpt || truncateAtWord(flattenBlocksForPreview(e.content), 25),
       discipline: e.discipline || e.tags[0] || e.contentType,
       authorName: authName,
       authorSig: auth?.signature || getInitials(authName),
@@ -547,7 +547,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     // practice, so it must go through flattenBlocksForPreview like every
     // other Note excerpt on the platform (raw content.substring() would
     // leak "## ..."/"<quote>..." markup, same bug fixed for the splash).
-    return { id: n.id, title: n.title || `${flattenBlocksForPreview(n.content).slice(0, 100)}...`, author: name, sig: auth?.signature || getInitials(name), entryObj: n };
+    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: auth?.signature || getInitials(name), entryObj: n };
   });
 
   // Still pad to exactly 3 with true empty slots — only reachable now
@@ -587,7 +587,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   // Institutional Notice Board
   const noticeBoardText = notices.length > 0
-    ? `${notices[0].title}: ${notices[0].excerpt || flattenBlocksForPreview(notices[0].content).slice(0, 150)}`
+    ? `${notices[0].title}: ${notices[0].excerpt || truncateAtWord(flattenBlocksForPreview(notices[0].content), 25)}`
     : "Adjung will begin accepting applications for the 2027 Fellowship Programme in September. Details will be published in the Directory.";
 
   return (
@@ -830,7 +830,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
                 <p className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
-                  <HoverWords text={dbEditorNote.excerpt || `${flattenBlocksForPreview(dbEditorNote.content).slice(0, 220)}...`} />
+                  <HoverWords text={dbEditorNote.excerpt || truncateAtWord(flattenBlocksForPreview(dbEditorNote.content), 36)} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
                   Continue Reading →

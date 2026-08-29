@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layers, Globe, Calendar, AlertTriangle } from 'lucide-react';
 import { User, Entry } from '../../../types';
-import { parseInlineFormatting, parseInTheNews, parseWorldClockHolidays, flattenBlocksForPreview } from '../../../utils';
+import { parseInlineFormatting, parseInTheNews, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../../utils';
 
 interface FrontpageCurationTabProps {
   // State Values
@@ -387,7 +387,7 @@ export function FrontpageCurationTab({
               {(() => {
                 const ent = publishedEntries.find(e => e.id === featuredEntryId);
                 if (!ent) return 'None Selected';
-                return ent.title ? parseInlineFormatting(ent.title) : `${flattenBlocksForPreview(ent.content).slice(0, 30)}...`;
+                return ent.title ? parseInlineFormatting(ent.title) : truncateAtWord(flattenBlocksForPreview(ent.content), 6);
               })()}
             </h5>
             <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-400">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ListOrdered, Info, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../../types';
-import { isArabicText, parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
+import { isArabicText, parseInlineFormatting, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { getIndexEntries, getIndexFacets, IndexSortOrder } from '../../utils/getIndexEntries';
 
 interface EditorialIndexProps {
@@ -244,8 +244,11 @@ export function EditorialIndex({
                             const preview = sentenceMatch ? sentenceMatch[0] : firstPara;
                             // An unusually long first sentence (no punctuation
                             // for a while) shouldn't blow out the row — cap it
-                            // the same way the no-punctuation fallback does.
-                            return preview.length > 80 ? `${preview.substring(0, 80)}...` : preview;
+                            // the same way the no-punctuation fallback does,
+                            // at a word boundary rather than a raw character
+                            // count (which could leave a single trailing
+                            // letter before the ellipsis).
+                            return truncateAtWord(preview, 13);
                           })()}
                         </span>
                       ) : (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, ChevronLeft, Edit3, Lock, Globe } from 'lucide-react';
 import { Entry, User, EntryType } from '../../types';
 import { EntryRenderer } from '../rendering/EntryRenderer';
-import { parseInlineFormatting, stripMarkdown, getVisualModeUnsupportedBlockTypes } from '../../utils';
+import { parseInlineFormatting, stripMarkdown, getVisualModeUnsupportedBlockTypes, truncateAtWord } from '../../utils';
 import { useAppContext } from '../../context/AppContext';
 import { resolveDigitalSignature } from '../../utils/signatureResolvers';
 
@@ -287,10 +287,13 @@ export function WritingDesk({
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
                         {draft.contentType}
                       </span>
-                      <h4 className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate">
+                      <h4
+                        title={draft.title || draft.content || 'Empty note...'}
+                        className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate"
+                      >
                         {draft.title
-                          ? parseInlineFormatting(draft.title)
-                          : (draft.content || 'Empty note...').slice(0, 80)}
+                          ? parseInlineFormatting(truncateAtWord(draft.title, 14))
+                          : truncateAtWord(draft.content || 'Empty note...', 14)}
                       </h4>
                       <span className="font-mono text-[10px] text-[#111111]/40 text-right tabular-nums">
                         {new Date(draft.updatedDate).toLocaleDateString()}
@@ -324,10 +327,13 @@ export function WritingDesk({
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
                         {pub.contentType}
                       </span>
-                      <h4 className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate">
+                      <h4
+                        title={pub.title || pub.content || 'Empty note...'}
+                        className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors text-left truncate"
+                      >
                         {pub.title
-                          ? parseInlineFormatting(pub.title)
-                          : (pub.content || 'Empty note...').slice(0, 80)}
+                          ? parseInlineFormatting(truncateAtWord(pub.title, 14))
+                          : truncateAtWord(pub.content || 'Empty note...', 14)}
                       </h4>
                       <span className="font-mono text-[10px] text-[#111111]/40 text-right tabular-nums">
                         {pub.publishedDate ? new Date(pub.publishedDate).toLocaleDateString() : 'N/A'}

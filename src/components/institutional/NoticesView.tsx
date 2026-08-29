@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry } from '../../types';
-import { parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
+import { parseInlineFormatting, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 
 interface NoticesViewProps {
   entries: Entry[];
@@ -53,7 +53,7 @@ export const NoticesView: React.FC<NoticesViewProps> = ({ entries, setSelectedEn
                   {parseInlineFormatting(notice.title)}
                 </h3>
                 <p className="font-sans text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">
-                  {parseInlineFormatting(notice.excerpt || `${flattenBlocksForPreview(notice.content).slice(0, 200)}...`)}
+                  {parseInlineFormatting(notice.excerpt || truncateAtWord(flattenBlocksForPreview(notice.content), 32))}
                 </p>
                 <span className="text-adjung-maroon hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">
                   Read Announcement →

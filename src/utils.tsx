@@ -90,6 +90,23 @@ export function flattenBlocksForPreview(content: string): string {
   ).replace(/\n+/g, ' ').trim();
 }
 
+/**
+ * Truncates to a maximum number of whole words, never mid-word. Every
+ * preview/excerpt on the platform used to cut by raw character count
+ * (`slice(0, 150) + '...'`), which regularly split a word in half —
+ * worst case, left a single trailing letter before the ellipsis. Word
+ * count, not character count, is what actually matches how these excerpts
+ * read ("a couple of sentences"), so it's also a better truncation target
+ * than characters, independent of the mid-word-cut bug.
+ */
+export function truncateAtWord(text: string, maxWords: number): string {
+  if (!text) return '';
+  const words = text.trim().split(/\s+/);
+  return words.length > maxWords
+    ? `${words.slice(0, maxWords).join(' ')}…`
+    : text;
+}
+
 export function stripMarkdown(text: string): string {
   if (!text) return '';
   return text
