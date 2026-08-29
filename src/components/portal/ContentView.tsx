@@ -15,7 +15,6 @@ interface ContentViewProps {
 const PAGE_SIZE = 15;
 const POPULAR_COUNT = 4;
 const SEARCH_RESULT_LIMIT = 8;
-const RAIL_WRITER_COUNT = 5;
 
 function newestTimestamp(entries: Entry[]): number {
   return entries
@@ -279,41 +278,29 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
     <div className="max-w-5xl mx-auto relative">
       {/* xl+: a persistent left rail, vertically centered in the viewport
           (not top-pinned like Threads' own nav) — full search+facets, room
-          to spare. md-to-xl: the same rail narrows to icons only (initials
-          for the top few writers + one icon that opens the same search
-          panel as a centered modal). Below md: the rail disappears
-          entirely behind the header's "Filters" button. */}
+          to spare. md-to-xl: narrows to a single Filters icon in the same
+          spot — NOT a strip of per-writer circles. Adjung has no avatar
+          system (identity is a signature, never an icon), so compressing
+          "writer" into a small round glyph would fabricate exactly the
+          avatar pattern the rest of the platform deliberately avoids.
+          Below md: the rail disappears entirely behind the header's own
+          "Filters" button. */}
       <aside className="hidden md:block fixed left-[max(12px,calc(50%-640px))] top-1/2 -translate-y-1/2 z-30">
         <div className="hidden xl:block w-56 bg-white border border-stone-200/70 rounded-lg shadow-sm p-4 max-h-[70vh] overflow-y-auto">
           <span className="block font-mono text-[10px] uppercase tracking-widest text-[#111111]/40 mb-3">Filters</span>
           {filterPickerBody}
         </div>
 
-        <div className="xl:hidden flex flex-col items-center gap-2 bg-white border border-stone-200/70 rounded-full py-3 px-2 shadow-sm">
-          {writers.slice(0, RAIL_WRITER_COUNT).map(w => (
-            <button
-              key={w.authorId}
-              type="button"
-              onClick={() => toggleWriter(w.authorId)}
-              title={w.name}
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-[10px] font-semibold transition-colors ${
-                selectedWriters.has(w.authorId) ? 'bg-adjung-maroon text-white' : 'bg-adjung-maroon/[0.08] text-adjung-maroon hover:bg-adjung-maroon/20'
-              }`}
-            >
-              {getInitials(w.name).replace(/\./g, '')}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowFilterPanel(true)}
-            title="Search writers or topics"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              hasActiveFilters ? 'bg-adjung-maroon text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowFilterPanel(true)}
+          title="Filter by writer or topic"
+          className={`xl:hidden w-11 h-11 rounded-full flex items-center justify-center shadow-sm border transition-colors ${
+            hasActiveFilters ? 'bg-adjung-maroon text-white border-adjung-maroon' : 'bg-white text-stone-500 border-stone-200/70 hover:text-adjung-maroon hover:border-adjung-maroon/40'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+        </button>
       </aside>
 
       {/* Centered modal — used on md-and-below (the header's own "Filters"
