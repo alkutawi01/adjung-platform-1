@@ -58,6 +58,38 @@ export function isArabicText(text: string): boolean {
   return arabicMatches.length > latinMatches.length;
 }
 
+/**
+ * Cleans raw entry content down to plain, readable preview text — for any
+ * surface that shows a short teaser (a card excerpt, a splash summary)
+ * without going through full block parsing. Handles what stripMarkdown()
+ * doesn't: block-level markup (headings, list bullets), footnote/margin-note
+ * markers, and the XML <quote>/<callout> blocks used for hadith/verse
+ * citations — flattening a quote to "original — translation" instead of
+ * leaving its raw <arabic>/<quote> tags visible as text. Found via a real
+ * classical-text simulation: an essay opening with a <quote type="arabic">
+ * block leaked its literal markup into both the Folio card preview and the
+ * Frontpage splash excerpt, since both previously read raw content directly.
+ */
+export function flattenBlocksForPreview(content: string): string {
+  if (!content) return '';
+  return stripMarkdown(
+    content
+      .replace(/<quote[^>]*>([\s\S]*?)<\/quote>/g, (_match, inner: string) =>
+        inner
+          .replace(/<\/?(arabic|text|translation)>/g, '\n')
+          .split('\n')
+          .map(s => s.trim())
+          .filter(Boolean)
+          .join(' — ')
+      )
+      .replace(/<callout[^>]*>([\s\S]*?)<\/callout>/g, '$1')
+      .replace(/\[\^.*?\]/g, '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[-*+]\s+/gm, '')
+      .replace(/^\d+[.)]\s+/gm, '')
+  ).replace(/\n+/g, ' ').trim();
+}
+
 export function stripMarkdown(text: string): string {
   if (!text) return '';
   return text

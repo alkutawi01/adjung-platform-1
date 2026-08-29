@@ -177,9 +177,14 @@ sub { bottom: -0.2em; }
   content: counter(margin-note-badge, lower-roman);
 }
 
-/* Styled elements inside the editor canvas */
-#editorial-canvas-editor blockquote,
-blockquote {
+/* Styled elements inside the editor canvas. Scoped to
+   #editorial-canvas-editor only — a bare `blockquote` selector here used to
+   apply this (including font-style: italic) to EVERY blockquote in the app,
+   which silently bled into EntryRenderer's arabic-quote/latin-quote reading
+   view (both already fully self-styled via their own Tailwind classes) and
+   made the Arabic original text italic with nobody having asked for it —
+   faux-slanting Arabic script isn't a real typographic convention anyway. */
+#editorial-canvas-editor blockquote {
   border-left: 3px solid rgba(128, 35, 52, 0.25);
   padding-left: 1.25rem;
   margin: 1.5rem 0;

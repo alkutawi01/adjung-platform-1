@@ -2669,15 +2669,15 @@ export function EntryRenderer({
           className="my-8 pr-6 border-r-2 border-adjung-maroon/20 text-right bg-transparent relative overflow-visible mx-auto max-w-[90%]"
         >
           <div dir="rtl">
-            <p className="font-arabic text-[18.5px] md:text-[20px] text-stone-900 leading-loose relative overflow-visible">
+            <p className="font-arabic not-italic text-[18.5px] md:text-[20px] text-stone-900 leading-loose relative overflow-visible">
               {parseInlineFormatting(block.arabic, citations, referenceSortOrder, citeMap, fMap)}
               {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
             </p>
           </div>
 
           {block.translation && (
-            <div dir="ltr" className="mt-4 pt-4 border-t border-stone-200/40 text-left">
-              <p className={`${proseFont} italic text-[13.5px] md:text-[14.5px] text-stone-500 leading-relaxed`}>
+            <div dir="ltr" className="mt-2 text-left">
+              <p className={`${proseFont} text-[13.5px] md:text-[14.5px] text-stone-500 leading-relaxed`}>
                 {parseInlineFormatting(block.translation, citations, referenceSortOrder, citeMap, fMap)}
               </p>
             </div>

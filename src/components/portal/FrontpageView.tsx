@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays } from '../../utils';
+import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview } from '../../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -432,6 +432,12 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const featuredAuthorName = featuredAuthor?.penName || activeFeatured.publisher || 'Elena Vasquez';
   const featuredAuthorSig = featuredAuthor?.signature || getInitials(featuredAuthorName);
   const isFeaturedAr = isArabicText(activeFeatured.title || activeFeatured.content);
+  // A stored excerpt is trusted as already plain text; the content fallback
+  // must be cleaned first — raw content can open with a heading marker or
+  // an XML <quote> block (classical/religious texts quoting a hadith or
+  // verse before the author's own prose), which would otherwise leak as
+  // literal "## ..." / "<quote><arabic>..." markup on the splash.
+  const featuredExcerpt = activeFeatured.excerpt || `${flattenBlocksForPreview(activeFeatured.content).slice(0, 300)}...`;
 
   // Editorial Note Aside
   const dbEditorNote = entries
@@ -491,7 +497,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     return {
       id: e.id,
       title: e.title || (e.contentType === 'Note' ? 'Philosophical Fragment' : 'Untitled'),
-      excerpt: e.excerpt || e.content.substring(0, 150) + '...',
+      excerpt: e.excerpt || `${flattenBlocksForPreview(e.content).slice(0, 150)}...`,
       discipline: e.discipline || e.tags[0] || e.contentType,
       authorName: authName,
       authorSig: auth?.signature || getInitials(authName),
@@ -743,9 +749,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             </h2>
 
             <p className={`text-[16px] md:text-[17px] text-[#2D2D2D] leading-relaxed ${isFeaturedAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
-              {isFeaturedAr
-                ? (activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...')
-                : <HoverWords text={activeFeatured.excerpt || activeFeatured.content.substring(0, 300) + '...'} />}
+              {isFeaturedAr ? featuredExcerpt : <HoverWords text={featuredExcerpt} />}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#555555]">
