@@ -413,11 +413,11 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
             const showDayDivider = dayLabel !== lastDayLabel;
             lastDayLabel = dayLabel;
 
-            // Role badge mirrors the Navbar's own rule: an unremarkable
-            // "Writer" role shows nothing (it's the default, not a
-            // distinction worth calling out); an AI scriptor or an
-            // editorial role does.
-            const roleBadge = author?.isAi ? 'AI Scriptor' : (author && author.role !== 'Writer' ? author.role : null);
+            // AI disclosure stays (a reader needs to know authorship type);
+            // internal editorial rank (Chief Editor, Editor) does not — a
+            // rank badge is staff-facing organizational detail, not
+            // something a reader of the content itself needs to see.
+            const roleBadge = author?.isAi ? 'AI Scriptor' : null;
 
             const readingTimeLabel = entry.readingTimeMinutes
               ? (entry.readingTimeMinutes < 1 ? '<1 min read' : `${entry.readingTimeMinutes} min read`)
@@ -467,15 +467,16 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                           </div>
                         </div>
                       </div>
-                      {/* Visual echo of Folio/Frontpage's own entry-actions
-                          glyph — decorative here too, same as those, not
-                          wired to a menu of its own. */}
-                      <span className="text-stone-300 tracking-widest select-none pt-0.5 shrink-0" aria-hidden="true">⋯</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-adjung-maroon border border-adjung-maroon/25 rounded px-1.5 py-0.5">
+                          {entry.contentType}
+                        </span>
+                        {/* Visual echo of Folio/Frontpage's own entry-actions
+                            glyph — decorative here too, same as those, not
+                            wired to a menu of its own. */}
+                        <span className="text-stone-300 tracking-widest select-none pt-0.5" aria-hidden="true">⋯</span>
+                      </div>
                     </div>
-
-                    <span className="inline-block font-mono text-[8.5px] font-bold uppercase tracking-wider text-adjung-maroon border border-adjung-maroon/25 rounded px-1.5 py-0.5 mb-2">
-                      {entry.contentType}
-                    </span>
 
                     {isNote ? (
                       // A flattened preview can mix scripts within one string
