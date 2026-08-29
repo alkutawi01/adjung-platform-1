@@ -395,7 +395,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                             <div className={`flex items-baseline gap-1.5 mt-1.5 mb-3.5 select-text ${isNote ? '' : ''}`}>
                               <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">by</span>
                               <span className="font-serif font-medium text-stone-700 text-[11px] border-b border-stone-200 pb-0.5">
-                                {currentAuthor?.penName || currentAuthor?.displayName || 'Scholar'}
+                                {currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'}
                               </span>
                             </div>
 

@@ -493,7 +493,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   const selectionsList: any[] = selectedEntries.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
-    const authName = auth?.penName || e.publisher || 'Scholar';
+    const authName = auth?.penName || e.publisher || 'Anonymous';
     return {
       id: e.id,
       title: e.title || 'Untitled',
@@ -522,7 +522,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   const displayEssays: any[] = essaySelections.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
-    const name = auth?.penName || e.publisher || 'Writer';
+    const name = auth?.penName || e.publisher || 'Anonymous';
     return { id: e.id, title: e.title, author: name, sig: auth?.signature || getInitials(name), entryObj: e };
   });
 
@@ -542,7 +542,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   const displayNotes: any[] = noteSelections.slice(0, 3).map(n => {
     const auth = users.find(u => u.id === n.authorId);
-    const name = auth?.penName || n.publisher || 'Writer';
+    const name = auth?.penName || n.publisher || 'Anonymous';
     // Note has no title by design — this is always the fallback branch in
     // practice, so it must go through flattenBlocksForPreview like every
     // other Note excerpt on the platform (raw content.substring() would

@@ -1484,10 +1484,10 @@ Editorial Board of Adjung`;
                   mode="view"
                   authorName={selectedEntry.publicationClass === 'Institutional'
                     ? (selectedEntry.publisher || 'Adjung Editorial Board')
-                    : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Writer')}
+                    : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Anonymous')}
                   authorSignature={selectedEntry.publicationClass === 'Institutional'
                     ? ''
-                    : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Writer', identities)}
+                    : resolveSignatureText(selectedEntry.authorId || '', users.find(u => u.id === selectedEntry.authorId)?.signature || 'Anonymous', identities)}
                   authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
                     ? []
                     : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '', identities)}

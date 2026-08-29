@@ -393,7 +393,7 @@ export function FrontpageCurationTab({
             <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-400">
               <span>{publishedEntries.find(e => e.id === featuredEntryId)?.contentType || 'Essay'}</span>
               <span>•</span>
-              <span>By {users.find(u => u.id === (publishedEntries.find(e => e.id === featuredEntryId)?.authorId || ''))?.penName || 'Scholar'}</span>
+              <span>By {users.find(u => u.id === (publishedEntries.find(e => e.id === featuredEntryId)?.authorId || ''))?.penName || 'Anonymous'}</span>
               {enableArabicAccent && <span className="text-adjung-maroon font-semibold">AR-TAG</span>}
             </div>
           </div>
