@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Rss } from 'lucide-react';
 import { Entry, User } from '../../types';
-import { isArabicText, stripMarkdown } from '../../utils';
+import { isArabicText, flattenBlocksForPreview } from '../../utils';
 import { getContentEntries, resolveContentAuthorName } from '../../utils/getContentEntries';
 
 interface ContentViewProps {
@@ -12,20 +12,6 @@ interface ContentViewProps {
 }
 
 const PAGE_SIZE = 15;
-
-function cleanPreview(content: string): string {
-  // stripMarkdown only handles inline emphasis — a feed preview also needs
-  // block-level markup (headings, list bullets) and footnote/margin-note
-  // markers stripped, since it's meant to read as a plain sentence, not a
-  // rendered document.
-  return stripMarkdown(
-    content
-      .replace(/\[\^.*?\]/g, '')
-      .replace(/^#{1,6}\s+/gm, '')
-      .replace(/^[-*+]\s+/gm, '')
-      .replace(/^\d+[.)]\s+/gm, '')
-  ).replace(/\n+/g, ' ').trim();
-}
 
 export function ContentView({ entries, users, setSelectedEntry, setSelectedAuthorId }: ContentViewProps) {
   const [page, setPage] = useState(1);
@@ -56,7 +42,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         {results.map(entry => {
           const authorName = resolveContentAuthorName(entry, users);
           const isNote = entry.contentType === 'Note';
-          const preview = cleanPreview(entry.content);
+          const preview = flattenBlocksForPreview(entry.content);
           const isAr = isArabicText(isNote ? preview : entry.title);
 
           return (
