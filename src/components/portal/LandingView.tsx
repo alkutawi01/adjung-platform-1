@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry, SystemSettings } from '../../types';
-import { parseInlineFormatting, toRoman, markdownToHtml, wrapBadgesWithWords, resolveTypographyContext } from '../../utils';
+import { parseInlineFormatting, toRoman, markdownToHtml, wrapBadgesWithWords, resolveTypographyContext, flattenBlocksForPreview } from '../../utils';
 import { PhilosophyCarousel } from '../common/PhilosophyCarousel';
 import { ElasticMarginRow } from '../rendering/ElasticMarginRow';
 import { AnimatedSignature } from '../desk/AnimatedSignature';
@@ -128,7 +128,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             {parseInlineFormatting(featuredEntry.title, undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </h2>
           <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
-            {parseInlineFormatting(featuredEntry.excerpt || featuredEntry.content.substring(0, 200) + '...', undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
+            {parseInlineFormatting(featuredEntry.excerpt || `${flattenBlocksForPreview(featuredEntry.content).slice(0, 200)}...`, undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </p>
         </div>
       )}

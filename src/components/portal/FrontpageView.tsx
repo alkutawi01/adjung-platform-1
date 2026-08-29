@@ -457,7 +457,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     "Study examines long-term effects of historical documentation practices on contemporary scholarship."
   ];
   const tickerItems = notices.length > 0
-    ? notices.map(n => `${n.title} - ${n.excerpt || n.content.substring(0, 100)}`)
+    ? notices.map(n => `${n.title} - ${n.excerpt || flattenBlocksForPreview(n.content).slice(0, 100)}`)
     : fallbackTicker;
 
   useEffect(() => {
@@ -587,7 +587,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   // Institutional Notice Board
   const noticeBoardText = notices.length > 0
-    ? `${notices[0].title}: ${notices[0].excerpt || notices[0].content.substring(0, 150)}`
+    ? `${notices[0].title}: ${notices[0].excerpt || flattenBlocksForPreview(notices[0].content).slice(0, 150)}`
     : "Adjung will begin accepting applications for the 2027 Fellowship Programme in September. Details will be published in the Directory.";
 
   return (
@@ -830,7 +830,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
                 <p className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
-                  <HoverWords text={dbEditorNote.excerpt || dbEditorNote.content.substring(0, 220) + '...'} />
+                  <HoverWords text={dbEditorNote.excerpt || `${flattenBlocksForPreview(dbEditorNote.content).slice(0, 220)}...`} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
                   Continue Reading →

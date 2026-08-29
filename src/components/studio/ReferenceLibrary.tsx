@@ -4,7 +4,7 @@ import { WritingDesk } from '../desk/WritingDesk';
 import { EntryRenderer } from '../rendering/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { getPresentationSpec, PresentationSpec } from '../../presentation';
-import { isArabicText, parseInlineFormatting } from '../../utils';
+import { isArabicText, parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
 import { 
   BookOpen, FileText, Layers, CheckCircle, Monitor, Layout, 
   Calendar, Search, RefreshCw, Copy, ShieldAlert, Award, FileCode,
@@ -307,7 +307,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   </h3>
                 )}
                 <div className="font-sans text-stone-700 text-xs leading-relaxed line-clamp-3">
-                  {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 160) + '...')}
+                  {parseInlineFormatting(tempEntry.excerpt || `${flattenBlocksForPreview(tempEntry.content).slice(0, 160)}...`)}
                 </div>
                 <div className="text-[10px] text-stone-500 font-sans pt-1 border-t border-stone-200/20">
                   By {authorName} • {new Date(tempEntry.publishedDate).toLocaleDateString()}
@@ -337,7 +337,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   : (isAr ? 'font-arabic text-xs leading-loose' : 'font-sans text-xs')
               }`}
             >
-              {parseInlineFormatting(tempEntry.excerpt || tempEntry.content.substring(0, 150) + '...')}
+              {parseInlineFormatting(tempEntry.excerpt || `${flattenBlocksForPreview(tempEntry.content).slice(0, 150)}...`)}
             </div>
             <div className="flex items-center justify-between text-[10px] text-stone-500 font-sans border-t border-stone-100 pt-2">
               <span>By {authorName}</span>
@@ -375,7 +375,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
               {tempEntry.title || 'Untitled Sandbox Entry'}
             </h4>
             <p className="font-sans text-stone-600 text-xs line-clamp-2 leading-relaxed">
-              ... {tempEntry.content.substring(0, 150)} ...
+              ... {flattenBlocksForPreview(tempEntry.content).slice(0, 150)} ...
             </p>
             <div className="flex items-center justify-between text-[10px] text-stone-500 pt-2 border-t border-stone-100/60">
               <span>By {authorName}</span>
@@ -389,7 +389,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
         );
 
       case 'archive':
-        const cleanContent = tempEntry.content.replace(/\[\^.*?\]/g, '').trim();
+        const cleanContent = flattenBlocksForPreview(tempEntry.content);
         const firstPara = cleanContent.split(/\n+/)[0] || '';
         const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
         const archiveRowText = tempEntry.contentType === 'Note'

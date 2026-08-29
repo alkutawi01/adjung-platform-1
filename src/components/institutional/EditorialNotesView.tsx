@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry } from '../../types';
-import { parseInlineFormatting } from '../../utils';
+import { parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
 
 interface EditorialNotesViewProps {
   entries: Entry[];
@@ -60,7 +60,7 @@ export const EditorialNotesView: React.FC<EditorialNotesViewProps> = ({
                   {parseInlineFormatting(note.title)}
                 </h3>
                 <p className="font-sans text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-4">
-                  {note.excerpt || note.content.substring(0, 200) + '...'}
+                  {note.excerpt || `${flattenBlocksForPreview(note.content).slice(0, 200)}...`}
                 </p>
                 <span className="text-adjung-maroon hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">
                   Read Note →

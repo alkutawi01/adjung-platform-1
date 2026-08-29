@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ListOrdered, Info, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../../types';
-import { isArabicText, parseInlineFormatting } from '../../utils';
+import { isArabicText, parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
 import { getIndexEntries, getIndexFacets, IndexSortOrder } from '../../utils/getIndexEntries';
 
 interface EditorialIndexProps {
@@ -238,7 +238,7 @@ export function EditorialIndex({
                       {item.contentType === 'Note' ? (
                         <span className="text-stone-600 font-normal">
                           {(() => {
-                            const cleanText = item.content.replace(/\[\^.*?\]/g, '').trim();
+                            const cleanText = flattenBlocksForPreview(item.content);
                             const firstPara = cleanText.split(/\n+/)[0] || '';
                             const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
                             const preview = sentenceMatch ? sentenceMatch[0] : firstPara;
