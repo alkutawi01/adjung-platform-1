@@ -473,6 +473,7 @@ export default function App() {
     } else {
       if (activeTab === 'landing') newPath = '/landing';
       else if (activeTab === 'frontpage') newPath = '/frontpage';
+      else if (activeTab === 'content') newPath = '/content';
       else if (activeTab === 'directory') newPath = '/directory';
       else if (activeTab === 'index') newPath = '/index';
       else if (activeTab === 'editorium') newPath = `/editorium/${editoriumActiveTab}`;
@@ -585,6 +586,11 @@ export default function App() {
     const route = parts[0];
     if (route === 'frontpage') {
       setActiveTab('frontpage');
+      setSelectedAuthorId('');
+      setSelectedEntry(null);
+      setEditingEntry(null);
+    } else if (route === 'content') {
+      setActiveTab('content');
       setSelectedAuthorId('');
       setSelectedEntry(null);
       setEditingEntry(null);
