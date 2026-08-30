@@ -79,7 +79,7 @@ export function FootnotesCitationsSection({
         <div className="lg:hidden mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700 animate-fade-in">
           <div className="flex items-center justify-between mb-6 pb-2 border-b border-stone-100 select-none">
             <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
-              Scholarly Margin Notes
+              Margin Notes
             </h3>
           </div>
           
@@ -147,7 +147,7 @@ export function FootnotesCitationsSection({
         <div className="mt-16 pt-8 border-t border-stone-300 font-sans text-stone-700">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-100 select-none">
             <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-800">
-              Scholarly Footnotes & Citations
+              Footnotes & Citations
             </h3>
             {mode === 'edit' && (
               <span className="text-[9px] font-mono text-stone-400">Total registered: {orderedFootnotes.length}</span>
