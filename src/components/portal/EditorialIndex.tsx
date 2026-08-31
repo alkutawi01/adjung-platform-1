@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ListOrdered, Info, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Entry, User, SystemSettings } from '../../types';
-import { isArabicText, parseInlineFormatting, flattenBlocksForPreview, truncateAtWord } from '../../utils';
+import { isArabicText, parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
 import { getIndexEntries, getIndexFacets, IndexSortOrder } from '../../utils/getIndexEntries';
+import { WordSafeEllipsis } from '../common/WordSafeEllipsis';
 
 interface EditorialIndexProps {
   entries: Entry[];
@@ -236,23 +237,20 @@ export function EditorialIndex({
                       className={`p-3 text-[#111111] font-medium ${isAr ? 'text-right' : 'text-left'}`}
                     >
                       {item.contentType === 'Note' ? (
-                        <span className="text-stone-600 font-normal">
-                          {(() => {
-                            const cleanText = flattenBlocksForPreview(item.content);
-                            const firstPara = cleanText.split(/\n+/)[0] || '';
-                            const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
-                            const preview = sentenceMatch ? sentenceMatch[0] : firstPara;
-                            // An unusually long first sentence (no punctuation
-                            // for a while) shouldn't blow out the row — cap it
-                            // the same way the no-punctuation fallback does,
-                            // at a word boundary rather than a raw character
-                            // count (which could leave a single trailing
-                            // letter before the ellipsis).
-                            return truncateAtWord(preview, 13);
-                          })()}
-                        </span>
+                        (() => {
+                          const cleanText = flattenBlocksForPreview(item.content);
+                          const firstPara = cleanText.split(/\n+/)[0] || '';
+                          const sentenceMatch = firstPara.match(/^[^.!?]+[.!?]/);
+                          const preview = sentenceMatch ? sentenceMatch[0] : firstPara;
+                          // A width-measured single-line cut (ResizeObserver-
+                          // based) instead of a fixed word budget — an
+                          // unusually long first sentence shouldn't blow out
+                          // the row regardless of how wide this column
+                          // actually renders at.
+                          return <WordSafeEllipsis text={preview} className="text-stone-600 font-normal" />;
+                        })()
                       ) : (
-                        parseInlineFormatting(item.title)
+                        <WordSafeEllipsis text={item.title} format={t => parseInlineFormatting(t)} />
                       )}
                     </td>
                     <td className="p-3 font-sans"><span className="text-adjung-maroon font-semibold">{item.contentType}</span></td>
