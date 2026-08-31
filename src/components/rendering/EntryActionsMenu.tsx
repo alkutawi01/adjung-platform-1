@@ -50,8 +50,9 @@ export function EntryActionsMenu({
             type="button"
             onClick={() => {
               const url = getCanonicalUrl();
-              navigator.clipboard.writeText(url);
-              showToast('Canonical link copied to clipboard!', 'success');
+              navigator.clipboard.writeText(url)
+                .then(() => showToast('Canonical link copied to clipboard!', 'success'))
+                .catch(() => showToast('Could not copy the link — your browser blocked clipboard access.', 'error'));
               setShowActionsMenu(false);
             }}
             className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
@@ -62,8 +63,9 @@ export function EntryActionsMenu({
             type="button"
             onClick={() => {
               const citeText = `${authorName}. (${new Date(entry.publishedDate || entry.createdDate).getFullYear()}). ${title || 'Untitled'}. Adjung. Retrieved from ${getCanonicalUrl()}`;
-              navigator.clipboard.writeText(citeText);
-              showToast('Citation copied to clipboard (APA Format)!', 'success');
+              navigator.clipboard.writeText(citeText)
+                .then(() => showToast('Citation copied to clipboard (APA Format)!', 'success'))
+                .catch(() => showToast('Could not copy the citation — your browser blocked clipboard access.', 'error'));
               setShowActionsMenu(false);
             }}
             className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"

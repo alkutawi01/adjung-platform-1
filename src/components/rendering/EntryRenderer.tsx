@@ -3754,8 +3754,9 @@ export function EntryRenderer({
                     type="button"
                     onClick={() => {
                       const url = getCanonicalUrl();
-                      navigator.clipboard.writeText(url);
-                      showToast('Entry link copied to clipboard!', 'success');
+                      navigator.clipboard.writeText(url)
+                        .then(() => showToast('Entry link copied to clipboard!', 'success'))
+                        .catch(() => showToast('Could not copy the link — your browser blocked clipboard access.', 'error'));
                     }}
                     className="inline-flex items-center gap-1 text-adjung-maroon hover:text-[#4a1521] text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-adjung-maroon/20 hover:border-adjung-maroon/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
                     title="Copy permanent entry URL"
@@ -4819,8 +4820,9 @@ export function EntryRenderer({
                       type="button"
                       onClick={() => {
                         const xmlStr = getXmlString();
-                        navigator.clipboard.writeText(xmlStr);
-                        showToast('XML copied to clipboard', 'success');
+                        navigator.clipboard.writeText(xmlStr)
+                          .then(() => showToast('XML copied to clipboard', 'success'))
+                          .catch(() => showToast('Could not copy the XML — your browser blocked clipboard access.', 'error'));
                       }}
                       className="text-[10px] text-adjung-maroon border border-adjung-maroon/20 hover:bg-adjung-maroon/5 px-2 py-1 rounded transition font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer"
                     >
