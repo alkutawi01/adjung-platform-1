@@ -19,19 +19,18 @@ export function PhilosophyCarousel({
     const { items: customFindingsGoogle } = parseResearchFindings(researchFindingsGoogleDocText || '');
     const allCustomFindings = [...customFindingsText, ...customFindingsGoogle];
 
+    // Shown only until a Chief Editor curates real findings via Editorium's
+    // "Research Findings & Deep Reading Digest" field (systemSettings.
+    // researchFindingsText / researchFindingsGoogleDocUrl, both wired above).
+    // These were previously three specific claims attributed to named
+    // journals/institutions that don't actually exist — verified via web
+    // search, none of them are real, findable publications. Replaced with
+    // unattributed statements of the platform's own philosophy instead of
+    // inventing more fake citations.
     const fallbacks = [
-      {
-        finding: "Social media usage is linked to decreased attention spans and cognitive fatigue.",
-        source: "Journal of Media Psychology, 2025"
-      },
-      {
-        finding: "Deep reading builds cognitive stamina and improves critical thinking skills.",
-        source: "Stanford Research Centre, 2026"
-      },
-      {
-        finding: "Regular digital disconnection restores neural pathways associated with empathy and reflection.",
-        source: "MIT Technology Review, 2024"
-      }
+      { finding: "Knowledge that endures is written slowly, and read even more slowly.", source: "" },
+      { finding: "A note read once and forgotten was never really read at all.", source: "" },
+      { finding: "The most valuable ideas rarely arrive first. They arrive intact.", source: "" }
     ];
 
     return allCustomFindings.length > 0 ? allCustomFindings : fallbacks;

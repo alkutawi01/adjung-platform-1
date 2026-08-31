@@ -449,18 +449,18 @@ Status: Working
   };
 
   const handleDownloadFindingsTemplate = () => {
-    const templateText = `Finding: Social media usage is linked to decreased attention spans and cognitive fatigue.
-Source: Journal of Media Psychology, 2025
+    const templateText = `Finding: [Summarize a real, verifiable finding here — one sentence.]
+Source: [Author or Publication, Year]
 
 ---
 
-Finding: Deep reading builds cognitive stamina and improves critical thinking skills.
-Source: Stanford Research Centre, 2026
+Finding: [A second finding.]
+Source: [Author or Publication, Year]
 
 ---
 
-Finding: Regular digital disconnection restores neural pathways associated with empathy and reflection.
-Source: MIT Technology Review, 2024
+Finding: [A third finding.]
+Source: [Author or Publication, Year]
 `;
     const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(templateText);
     const link = document.createElement('a');
@@ -654,7 +654,7 @@ Source: MIT Technology Review, 2024
                         value={researchFindingsRawText}
                         onChange={(e) => setResearchFindingsRawText(e.target.value)}
                         className="w-full border border-stone-200 p-3 rounded font-mono text-xs focus:outline-none focus:border-adjung-maroon min-h-[300px] resize-y bg-[#FAFAF9]"
-                        placeholder="Finding: Social media usage is linked to decreased attention spans and cognitive fatigue.&#10;Source: Journal of Media Psychology, 2025&#10;&#10;---&#10;&#10;Finding: Deep reading builds cognitive stamina and improves critical thinking skills.&#10;Source: Stanford Research Centre, 2026"
+                        placeholder="Finding: [Summarize a real, verifiable finding here.]&#10;Source: [Author or Publication, Year]&#10;&#10;---&#10;&#10;Finding: [A second finding.]&#10;Source: [Author or Publication, Year]"
                       />
                     </div>
                     
