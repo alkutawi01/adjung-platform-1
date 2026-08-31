@@ -1247,7 +1247,7 @@ Source: MIT Technology Review, 2024
                 Content Moderation Board
               </h3>
               <p className="font-mono text-[10px] text-stone-400 uppercase tracking-wider">
-                Review reported entries and enforce academic and community policy guidelines
+                Review reported entries and enforce community policy guidelines
               </p>
             </div>
 
