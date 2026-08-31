@@ -63,7 +63,7 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
           <div className="flex gap-2">
             <span className="font-mono text-xs font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">DEMO MODE</span>
             <span className="font-sans text-[11px] leading-relaxed">
-              Real email delivery isn't wired up yet — this code is shown here so you can continue testing. Intended recipient: <strong className="font-mono">{formData.email || 'scholar@adjung.com'}</strong>
+              Real email delivery isn't wired up yet — this code is shown here so you can continue testing. Intended recipient: <strong className="font-mono">{formData.email || 'writer@adjung.com'}</strong>
             </span>
           </div>
           <div className="mt-2.5 pt-2.5 border-t border-amber-200/60 flex justify-between items-center text-[12px] font-sans">

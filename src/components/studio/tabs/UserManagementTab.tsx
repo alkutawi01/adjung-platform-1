@@ -58,15 +58,15 @@ export function UserManagementTab({
       <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
         <div className="border-b border-stone-100 pb-2 text-left">
           <h3 className="font-serif text-lg font-semibold text-stone-900 flex items-center gap-1.5 select-none">
-            <ShieldAlert className="w-4.5 h-4.5 text-adjung-maroon" /> Scholar Suspension Manager
+            <ShieldAlert className="w-4.5 h-4.5 text-adjung-maroon" /> Writer Suspension Manager
           </h3>
-          <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Search and suspend scholar accounts, or manage suspended users</p>
+          <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400 mt-0.5">Search and suspend writer accounts, or manage suspended users</p>
         </div>
 
         {/* Part 1: Search and Suspend Input */}
         <div className="space-y-4 text-left text-xs font-sans">
           <div className="space-y-1.5">
-            <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">Search Scholar to Suspend</label>
+            <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold">Search Writer to Suspend</label>
             <div className="flex gap-2">
               <div className="relative flex-grow">
                 <input
@@ -93,7 +93,7 @@ export function UserManagementTab({
                     u.penName.toLowerCase() === cleanQuery
                   );
                   if (!found) {
-                    showToast('Scholar not found in database.', 'error');
+                    showToast('Writer not found in database.', 'error');
                     setFoundSuspendUser(null);
                   } else {
                     setFoundSuspendUser(found);
@@ -150,7 +150,7 @@ export function UserManagementTab({
                         : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
                     }`}
                   >
-                    {foundSuspendUser.suspended ? 'Reactivate Scholar' : 'Suspend Scholar'}
+                    {foundSuspendUser.suspended ? 'Reactivate Writer' : 'Suspend Writer'}
                   </button>
                 )}
               </div>
@@ -161,7 +161,7 @@ export function UserManagementTab({
         {/* Part 2: Suspended Scholars List */}
         <div className="space-y-3 pt-4 border-t border-stone-200 text-left">
           <div className="flex justify-between items-center">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold block">Suspended Scholars ({users.filter(u => u.suspended).length})</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-bold block">Suspended Writers ({users.filter(u => u.suspended).length})</span>
           </div>
 
           <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
@@ -189,7 +189,7 @@ export function UserManagementTab({
                 </div>
               ))
             ) : (
-              <p className="italic text-stone-400 py-6 text-center font-sans">No scholars are currently suspended.</p>
+              <p className="italic text-stone-400 py-6 text-center font-sans">No writers are currently suspended.</p>
             )}
           </div>
         </div>
@@ -199,9 +199,9 @@ export function UserManagementTab({
       <div className="lg:col-span-5 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-5">
         <div className="border-b border-stone-100 pb-2 text-left">
           <h3 className="font-mono text-xs uppercase tracking-widest font-semibold text-stone-700 flex items-center gap-1.5 select-none">
-            <Mail className="w-4 h-4 text-adjung-maroon" /> Invite Scholar to Platform
+            <Mail className="w-4 h-4 text-adjung-maroon" /> Invite Writer to Platform
           </h3>
-          <p className="text-stone-500 text-[10px] mt-0.5 leading-normal">Generate invitation letters and signup link criteria for external scholars</p>
+          <p className="text-stone-500 text-[10px] mt-0.5 leading-normal">Generate invitation letters and signup link criteria for external writers</p>
         </div>
 
         {!hasPermission('inviteWriters') ? (
@@ -215,7 +215,7 @@ export function UserManagementTab({
         ) : (
           <form onSubmit={handleSendInvitation} className="space-y-3.5 text-xs font-sans text-left">
             <div>
-              <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Full Name</label>
+              <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Full Name</label>
               <input
                 type="text"
                 placeholder="e.g. Professor Al-Qurtubi"
@@ -227,7 +227,7 @@ export function UserManagementTab({
             </div>
 
             <div>
-              <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Scholar Username (Email)</label>
+              <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Username (Email)</label>
               <input
                 type="email"
                 placeholder="e.g. qurtubi@adjung.com"

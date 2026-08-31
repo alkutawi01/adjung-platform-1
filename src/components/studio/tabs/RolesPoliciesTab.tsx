@@ -68,7 +68,7 @@ export function RolesPoliciesTab({
               <tr className="hover:bg-stone-50/40 transition">
                 <td className="p-3.5 pl-4 text-left">
                   <span className="font-bold text-stone-800 block text-sm">View Directory</span>
-                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows accessing the global searchable list of platform scholars and authors.</span>
+                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows accessing the global searchable list of platform writers and authors.</span>
                 </td>
                 {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
                   const hasPerm = systemSettings.rolePermissions?.[role]?.viewDirectory ?? false;
@@ -107,7 +107,7 @@ export function RolesPoliciesTab({
               <tr className="hover:bg-stone-50/40 transition">
                 <td className="p-3.5 pl-4 text-left">
                   <span className="font-bold text-stone-800 block text-sm">Curate Frontpage</span>
-                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows pinning featured scholars, articles, and editing main announcements.</span>
+                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows pinning featured writers, entries, and editing main announcements.</span>
                 </td>
                 {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
                   const hasPerm = systemSettings.rolePermissions?.[role]?.curateFrontpage ?? false;
@@ -146,7 +146,7 @@ export function RolesPoliciesTab({
               <tr className="hover:bg-stone-50/40 transition">
                 <td className="p-3.5 pl-4 text-left">
                   <span className="font-bold text-stone-800 block text-sm">Invite Writers</span>
-                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows generating formal scholar invitation letters and secure sign-up URLs.</span>
+                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows generating formal writer invitation letters and secure sign-up URLs.</span>
                 </td>
                 {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
                   const hasPerm = systemSettings.rolePermissions?.[role]?.inviteWriters ?? false;
@@ -264,7 +264,7 @@ export function RolesPoliciesTab({
               <tr className="hover:bg-stone-50/40 transition border-t border-stone-100">
                 <td className="p-3.5 pl-4 text-left">
                   <span className="font-bold text-stone-800 block text-sm">Manage RBAC</span>
-                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows modifying role assignments, inviting scholars, and editing system-wide permissions.</span>
+                  <span className="text-stone-500 text-[11px] block mt-0.5">Allows modifying role assignments, inviting writers, and editing system-wide permissions.</span>
                 </td>
                 {(['Visitor', 'Writer', 'Editor', 'Chief Editor'] as const).map(role => {
                   const hasPerm = systemSettings.rolePermissions?.[role]?.manageRbac ?? false;
@@ -358,7 +358,7 @@ export function RolesPoliciesTab({
             <span className="font-mono text-[9px] uppercase tracking-wider text-red-700 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded font-bold inline-block">PERMANENT LOCK</span>
             <h5 className="font-bold text-stone-800">Intellectual Property Integrity</h5>
             <p className="text-stone-500 text-[11px] leading-relaxed">
-              Writers, Editors, and Chief Editors are strictly forbidden from modifying or editing another scholar's original intellectual work (Essays, Articles, Biographies, or Folios).
+              Writers, Editors, and Chief Editors are strictly forbidden from modifying or editing another writer's original intellectual work (Essays, Notes, Biographies, or Folios).
             </p>
           </div>
 

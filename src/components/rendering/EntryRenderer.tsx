@@ -154,7 +154,7 @@ export function EntryRenderer({
       return `https://adjung.com/${typeSlug}/${entry.slug}`;
     } else {
       const author = users.find(u => u.id === entry.authorId);
-      const username = author ? author.username : 'scholar';
+      const username = author ? author.username : 'writer';
       return `https://${username}.adjung.com/${entry.contentType.toLowerCase()}/${entry.slug}`;
     }
   };
@@ -164,7 +164,7 @@ export function EntryRenderer({
   // is the one thing guaranteed unique per writer.
   const authorDomain = entry.publicationClass === 'Institutional'
     ? null
-    : `${(users.find(u => u.id === entry.authorId)?.username) || 'scholar'}.adjung.com`;
+    : `${(users.find(u => u.id === entry.authorId)?.username) || 'writer'}.adjung.com`;
 
   const handleReportEntry = () => {
     requestConfirm(

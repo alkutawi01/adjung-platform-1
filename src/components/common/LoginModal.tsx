@@ -126,7 +126,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Username (Email)</label>
                     <input
                       type="text"
-                      placeholder="e.g. scholar@adjung.com"
+                      placeholder="e.g. writer@adjung.com"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-mono text-xs bg-white text-stone-800"
@@ -209,7 +209,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Username (Email)</label>
                 <input
                   type="text"
-                  placeholder="e.g. scholar@adjung.com"
+                  placeholder="e.g. writer@adjung.com"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs bg-white text-stone-800"

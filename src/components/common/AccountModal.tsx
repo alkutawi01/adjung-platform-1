@@ -149,7 +149,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               value={accountEmail}
               onChange={(e) => setAccountEmail(e.target.value)}
               className="w-full border border-stone-200 p-2.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-xs"
-              placeholder="e.g. scholar@adjung.com"
+              placeholder="e.g. writer@adjung.com"
               disabled={showVerification}
             />
             <span className="text-[8px] font-mono text-stone-400 mt-1 block leading-normal">

@@ -123,7 +123,7 @@ export function FrontpageCurationTab({
       <div className="lg:col-span-7 bg-white border border-stone-200 rounded p-6 shadow-sm space-y-6">
         <div className="border-b border-stone-100 pb-3 text-left">
           <h3 className="font-serif text-lg font-semibold text-stone-950">Frontpage Curation & Pinning</h3>
-          <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Promote featured research or scholars to the main public landing feed</p>
+          <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Promote featured entries or writers to the main public landing feed</p>
         </div>
 
         <div className="space-y-4 text-xs font-sans">
@@ -314,7 +314,7 @@ export function FrontpageCurationTab({
           <div className="pt-4 border-t border-stone-200 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1 text-left">Featured Scholar</label>
+                <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1 text-left">Featured Writer</label>
                 <select
                   value={featuredScholarId}
                   onChange={(e) => setFeaturedScholarId(e.target.value)}

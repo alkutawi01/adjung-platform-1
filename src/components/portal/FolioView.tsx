@@ -335,7 +335,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       const serialNum = formatSerialNumber(item.serialNo);
                       const versionStr = item.currentVersion || 'v1.0';
                       const readingTimeStr = `${item.readingTimeMinutes || 1} MIN READ`;
-                      const authorDomain = `${currentAuthor?.username || 'scholar'}.adjung.com`;
+                      const authorDomain = `${currentAuthor?.username || 'writer'}.adjung.com`;
                       const displayTitle = truncateTitle(item.title || '', 55);
 
                       return (

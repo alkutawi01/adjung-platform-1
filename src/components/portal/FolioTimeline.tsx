@@ -84,7 +84,7 @@ export function FolioTimeline({
         <div className="text-center py-16 border border-dashed border-[#111111]/10 rounded max-w-xl mx-auto font-sans">
           <FileText className="w-10 h-10 text-[#111111]/20 mx-auto mb-3" />
           <h3 className="font-serif text-stone-700 text-lg">Folio Archives Empty</h3>
-          <p className="text-xs text-stone-500 mt-1">This scholar has not yet cataloged any public publications in this category.</p>
+          <p className="text-xs text-stone-500 mt-1">This writer has not yet published any public entries in this category.</p>
         </div>
       ) : (
         <div className="space-y-16">

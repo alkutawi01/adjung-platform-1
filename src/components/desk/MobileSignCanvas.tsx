@@ -282,7 +282,7 @@ export function MobileSignCanvas() {
       <header className="border-b border-stone-800 p-4 shrink-0 flex items-center justify-between bg-stone-900/60">
         <div className="flex items-center gap-2">
           <PenTool className="w-4 h-4 text-adjung-maroon" />
-          <h1 className="font-serif text-sm tracking-wide text-stone-100">Adjung Scholar Signature</h1>
+          <h1 className="font-serif text-sm tracking-wide text-stone-100">Adjung Signature</h1>
         </div>
         <div className="flex items-center gap-2">
           {Object.entries(INK_COLORS).map(([colorKey, colorOpt]) => (

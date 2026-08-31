@@ -1149,7 +1149,7 @@ Editorial Board of Adjung`;
         penName: penName.trim(),
         signature: signature.trim(),
         avatarColor: 'bg-stone-800 text-stone-100',
-        bioSummary: `Newly registered independent scholar on Adjung.`,
+        bioSummary: `Newly registered independent writer on Adjung.`,
         authUserId: signUpData.user?.id,
       };
 
@@ -1234,7 +1234,7 @@ Editorial Board of Adjung`;
       penName: resolvedPenName,
       signature: typeof signatureData === 'string' ? signatureData.trim() : resolvedPenName,
       avatarColor: 'bg-stone-800 text-stone-100',
-      bioSummary: `Newly registered independent scholar on Adjung.`,
+      bioSummary: `Newly registered independent writer on Adjung.`,
       authUserId,
     };
 
@@ -1550,7 +1550,7 @@ Editorial Board of Adjung`;
                         onClick={() => setActiveTab('directory')}
                         className="bg-adjung-maroon hover:opacity-95 text-[#FDFDFD] font-mono text-xs uppercase tracking-wider px-6 py-3 rounded shadow transition cursor-pointer"
                       >
-                        Open Scholar Directory
+                        Open Directory
                       </button>
                     )}
                   </div>
@@ -1845,7 +1845,7 @@ Editorial Board of Adjung`;
                 <div className="border-b border-stone-200 p-5 bg-[#FDFDFD] text-center">
                   <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block animate-pulse mr-2" />
                   <h3 className="font-serif text-2xl text-adjung-maroon inline-block">Invitation Transmitted</h3>
-                  <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Simulated Scholar Mail Delivery Server</p>
+                  <p className="font-mono text-[9px] uppercase tracking-wider text-stone-500 mt-1">Simulated Mail Delivery Server</p>
                 </div>
 
                 <div className="p-6 space-y-6 text-xs font-sans">
@@ -1897,7 +1897,7 @@ Editorial Board of Adjung`;
                           signature: generatedInvitation.name,
                           heroTitle: `Disquisitions on Reason & Form`,
                           heroSubtitle: `Selected philosophical treatises, essays, and notes authored by ${generatedInvitation.name}.`,
-                          bioText: `${generatedInvitation.name} is an independent writer and scholar newly registered on Adjung, dedicated to formal research and traditional literary studies.`
+                          bioText: `${generatedInvitation.name} is an independent writer newly registered on Adjung.`
                         });
                         setGeneratedInvitation(null);
                       }}

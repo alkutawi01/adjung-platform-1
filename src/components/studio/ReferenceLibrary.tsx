@@ -692,7 +692,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                       onChange={(e) => updateTempEntry({ publicationClass: e.target.value as any })}
                       className="w-full border border-stone-200 p-1.5 rounded bg-white text-stone-800 focus:outline-none focus:border-adjung-maroon"
                     >
-                      <option value="Personal">Personal (Scholar Folio)</option>
+                      <option value="Personal">Personal (Writer Folio)</option>
                       <option value="Institutional">Institutional (Editorial Board)</option>
                     </select>
                   </div>

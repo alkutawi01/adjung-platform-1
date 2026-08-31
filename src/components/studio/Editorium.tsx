@@ -721,13 +721,13 @@ Source: MIT Technology Review, 2024
           <div className="bg-white border border-stone-200 rounded p-6 shadow-sm">
             <div className="border-b border-stone-100 pb-3 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="font-serif text-lg font-semibold text-stone-900">Directory Configuration & Scholar Visibility</h3>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Configure public listing indices and check scholar visibility states</p>
+                <h3 className="font-serif text-lg font-semibold text-stone-900">Directory Configuration & Writer Visibility</h3>
+                <p className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Configure public listing indices and check writer visibility states</p>
               </div>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search scholars..."
+                  placeholder="Search writers..."
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
                   className="border border-stone-200 p-2 pl-7 rounded text-xs focus:outline-none focus:border-adjung-maroon font-sans bg-white w-48"
@@ -740,7 +740,7 @@ Source: MIT Technology Review, 2024
             <div className="p-4 bg-adjung-maroon/5 border border-adjung-maroon/20 rounded flex gap-3 text-xs text-stone-700 leading-relaxed font-sans mb-6 select-none text-left">
               <Lock className="w-4 h-4 text-adjung-maroon flex-shrink-0 mt-0.5" />
               <div>
-                <strong>Global Scholar Visibility:</strong> Standard writers and editorial board members are automatically listed in the public Directory unless suspended. Visitors are never listed in the Directory.
+                <strong>Global Writer Visibility:</strong> Standard writers and editorial board members are automatically listed in the public Directory unless suspended. Visitors are never listed in the Directory.
               </div>
             </div>
 
@@ -749,7 +749,7 @@ Source: MIT Technology Review, 2024
               <table className="w-full text-left border-collapse font-sans text-xs">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500">
-                    <th className="p-3.5 pl-4">Scholar Name</th>
+                    <th className="p-3.5 pl-4">Writer Name</th>
                     <th className="p-3.5">Subdomain / Domain</th>
                     <th className="p-3.5">Role</th>
                     <th className="p-3.5">Listing Status</th>
@@ -957,7 +957,7 @@ Source: MIT Technology Review, 2024
                         u.penName.toLowerCase() === cleanQuery
                       );
                       if (!target) {
-                        showToast('Scholar not found in database.', 'error');
+                        showToast('Writer not found in database.', 'error');
                         return;
                       }
                       if (target.role === 'Editor' || target.role === 'Chief Editor') {
@@ -1123,7 +1123,7 @@ Source: MIT Technology Review, 2024
                   }`}
                   placeholder="Enter policy text..."
                 />
-                <span className="text-stone-400 text-[9px] font-mono mt-1 block">Renders a verified policy overview displayed in scholar registration steps and guidelines.</span>
+                <span className="text-stone-400 text-[9px] font-mono mt-1 block">Renders a verified policy overview displayed in writer registration steps and guidelines.</span>
               </div>
 
               {/* Platform Policies Editor */}

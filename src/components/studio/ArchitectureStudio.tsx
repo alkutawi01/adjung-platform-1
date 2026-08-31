@@ -118,7 +118,7 @@ const initialNodes: Node[] = [
     data: { 
       label: 'Folio', 
       desc: 'Author-specific continuous archive timeline.', 
-      purpose: 'Displays a chronological feed of a single scholar\'s verified publications and biography.', 
+      purpose: 'Displays a chronological feed of a single writer\'s verified publications and biography.',
       spec: 'SPEC-009', 
       dbEntity: 'entries (Published status)', 
       files: ['src/components/FolioView.tsx'] 

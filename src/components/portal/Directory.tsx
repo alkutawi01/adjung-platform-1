@@ -254,7 +254,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
-                <th className="p-3 pl-4 text-left">Scholar / Pen Name</th>
+                <th className="p-3 pl-4 text-left">Pen Name</th>
                 <th className="p-3 text-left">Full Name</th>
                 <th className="p-3 text-left">Country</th>
                 <th className="p-3 text-left">Joined</th>
@@ -364,7 +364,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
               {sortedUsers.length === 0 && (
                 <tr>
                   <td colSpan={8} className="p-8 text-center italic text-stone-400 font-sans">
-                    No matching scholars are cataloged in the directory.
+                    No matching writers are listed in the directory.
                   </td>
                 </tr>
               )}
