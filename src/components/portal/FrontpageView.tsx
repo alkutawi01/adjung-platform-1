@@ -97,6 +97,8 @@ interface FrontpageViewProps {
   currentUser?: User | null;
   inTheNewsGoogleDocText?: string;
   worldClockHolidaysGoogleDocText?: string;
+  setIndexSearchQuery?: (query: string) => void;
+  setIndexSelectedTag?: (tag: string) => void;
 }
 
 export function HoverWords({ text, className }: { text: string; className?: string }) {
@@ -131,6 +133,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   inTheNewsGoogleDocText = '',
   worldClockHolidaysGoogleDocText = '',
   setIndexSearchQuery,
+  setIndexSelectedTag,
 }) => {
   // 1. World Clock State
   const [times, setTimes] = useState<(ClockTime | null)[]>([null, null, null, null, null]);
@@ -1123,8 +1126,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   <p 
                     key={topic}
                     onClick={() => {
-                      if (setIndexSearchQuery) {
-                        setIndexSearchQuery(topic);
+                      // An exact tag filter, not a free-text search — this
+                      // list is already frequency-counted straight from
+                      // entries' own tags, so a loose text search risked
+                      // pulling in something that merely mentions the word
+                      // in its body while missing nothing tag-relevant.
+                      if (setIndexSelectedTag) {
+                        setIndexSelectedTag(topic);
                       }
                       setActiveTab('index');
                     }}

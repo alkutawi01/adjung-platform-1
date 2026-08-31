@@ -309,6 +309,7 @@ export default function App() {
   // when it reruns for a reason other than a real navigation.
   const lastSyncedPathnameRef = useRef<string | null>(null);
   const [indexSearchQuery, setIndexSearchQuery] = useState('');
+  const [indexSelectedTag, setIndexSelectedTag] = useState('');
 
   // Synchronize browser title with central brand identity on mount
   useEffect(() => {
@@ -1625,6 +1626,7 @@ Editorial Board of Adjung`;
                       systemSettings={systemSettings}
                       initialSearchQuery={indexSearchQuery}
                       onSearchQueryChange={setIndexSearchQuery}
+                      initialTag={indexSelectedTag}
                     />
                   </div>
                 )
@@ -1686,6 +1688,7 @@ Editorial Board of Adjung`;
                 inTheNewsGoogleDocText={inTheNewsGoogleDocText}
                 worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
                 setIndexSearchQuery={setIndexSearchQuery}
+                setIndexSelectedTag={setIndexSelectedTag}
               />
             )}
 

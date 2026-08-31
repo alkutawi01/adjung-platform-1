@@ -12,6 +12,7 @@ interface EditorialIndexProps {
   systemSettings: SystemSettings;
   initialSearchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
+  initialTag?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -59,6 +60,7 @@ export function EditorialIndex({
   systemSettings,
   initialSearchQuery = '',
   onSearchQueryChange,
+  initialTag = '',
 }: EditorialIndexProps) {
   const initial = React.useMemo(readParamsFromUrl, []);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || initial.query);
@@ -71,6 +73,14 @@ export function EditorialIndex({
   React.useEffect(() => {
     if (initialSearchQuery) setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery]);
+
+  // Frontpage's Topics list picks a real, exact tag (frequency-counted from
+  // entries' own tags array) — filtering by that exact tag here, not a
+  // free-text search, avoids pulling in an unrelated entry that merely
+  // mentions the word somewhere in its body.
+  React.useEffect(() => {
+    if (initialTag) setSelectedTag(initialTag);
+  }, [initialTag]);
 
   // Any filter/sort change resets to page 1 — a stale page number from a
   // wider result set would otherwise silently show an empty page.
