@@ -113,14 +113,14 @@ export function EntryActionsMenu({
             disabled
             className="w-full text-left px-3 py-1.5 text-xs text-stone-300 cursor-not-allowed flex items-center gap-2 border-0 bg-transparent font-sans"
           >
-            Revision History (KIV)
+            Revision History (Coming Soon)
           </button>
           <button
             type="button"
             disabled
             className="w-full text-left px-3 py-1.5 text-xs text-stone-300 cursor-not-allowed flex items-center gap-2 border-0 bg-transparent font-sans"
           >
-            Report Error (KIV)
+            Report Error (Coming Soon)
           </button>
         </div>
       )}
