@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Rss, SlidersHorizontal, X, Search, ArrowRight } from 'lucide-react';
 import { Entry, User } from '../../types';
 import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumber, getInitials, resolveEntryCanonicalUrl } from '../../utils';
@@ -53,6 +53,19 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   const [noteDraft, setNoteDraft] = useState('');
   const [noteFocused, setNoteFocused] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // The modal is only meaningful below the xl breakpoint, where the
+  // persistent sidebar is hidden — React state doesn't know about CSS
+  // media queries, so widening the window past xl (e.g. after opening the
+  // modal at a narrower width) left it stuck open on top of the sidebar
+  // that had just appeared, showing the same filters twice at once.
+  useEffect(() => {
+    const closeIfWide = () => {
+      if (window.innerWidth >= 1280) setShowFilterPanel(false);
+    };
+    window.addEventListener('resize', closeIfWide);
+    return () => window.removeEventListener('resize', closeIfWide);
+  }, []);
 
   // Snapshot on first view — anything published after this moment is "new"
   // and waits behind an explicit "Show N new" action (same idea as X's
