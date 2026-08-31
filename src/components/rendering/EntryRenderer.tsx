@@ -242,8 +242,6 @@ export function EntryRenderer({
   const [contextCoords, setContextCoords] = useState<{ x: number; y: number } | null>(null);
   const [contextRange, setContextRange] = useState<Range | null>(null);
 
-  console.log("EntryRenderer Render - content:", content, "marginNotesData:", marginNotesData, "activeMarginNoteId:", activeMarginNoteId);
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1280);
@@ -961,7 +959,6 @@ export function EntryRenderer({
       });
 
       setMarginOffsets(resolvedOffsets);
-      console.log("DEBUG margin note offsets: occurrences =", occurrences, "rawOffsets =", rawOffsets, "resolvedOffsets =", resolvedOffsets);
     };
 
     updateOffsets();

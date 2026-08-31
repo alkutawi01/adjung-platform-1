@@ -507,7 +507,6 @@ export default function App() {
 
     const path = location.pathname;
     const parts = path.split('/').filter(Boolean);
-    console.log('[ROUTER] path:', path, 'parts:', parts, 'currentUser:', currentUser?.id, 'authorFromSubdomain:', authorFromSubdomain?.id);
 
     // Every state update below is derived FROM this URL — tell the
     // state->URL effect to skip its next run instead of re-deriving a URL
@@ -567,14 +566,12 @@ export default function App() {
     if (parts.length === 0 || parts[0] === 'landing') {
       if (currentUser) {
         if (activeTab === 'landing' || activeTab === 'frontpage') {
-          console.log('[ROUTER] Main portal sync: currentUser exists -> frontpage');
           setActiveTab('frontpage');
           setSelectedAuthorId('');
           setSelectedEntry(null);
           setEditingEntry(null);
         }
       } else {
-        console.log('[ROUTER] Main portal sync: no currentUser -> landing');
         setActiveTab('landing');
         setSelectedAuthorId('');
         setSelectedEntry(null);

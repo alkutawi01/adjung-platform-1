@@ -436,41 +436,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Enforce private environment & Access Control guards
   useEffect(() => {
     if (initializing) return;
-    console.log('[GUARD] running. currentUser:', currentUser?.id, 'activeTab:', activeTab, 'selectedAuthorId:', selectedAuthorId);
 
     if (currentUser && activeTab === 'landing') {
-      console.log('[GUARD] Redirecting because currentUser exists and activeTab is landing -> frontpage');
       setActiveTab('frontpage');
     }
 
     if (!currentUser && (activeTab === 'desk' || activeTab === 'index' || activeTab === 'editorium')) {
-      console.log('[GUARD] Redirecting because no currentUser and tab requires auth -> landing');
       setActiveTab('landing');
     }
-    
+
     if ((activeTab === 'folio' || activeTab === 'bio') && !selectedAuthorId) {
       if (currentUser) {
-        console.log('[GUARD] Restoring selectedAuthorId to currentUser.id:', currentUser.id);
         setSelectedAuthorId(currentUser.id);
       } else if (getSubdomainFromHostname(window.location.hostname)) {
         // A logged-out visitor on username.adjung.com is a valid, intended
         // state (public Folio/Biography) — App.tsx's own subdomain-routing
         // effect resolves selectedAuthorId a beat later. Don't treat this
         // as an error and bounce them to the landing page while it does.
-        console.log('[GUARD] folio/bio with empty selectedAuthorId on a subdomain — leaving as-is, App.tsx will resolve it');
       } else {
-        console.log('[GUARD] Redirecting because activeTab is folio/bio but selectedAuthorId is empty -> landing');
         setActiveTab('landing');
       }
     }
 
     if (activeTab === 'directory' && !hasPermission('viewDirectory')) {
-      console.log('[GUARD] Redirecting because no viewDirectory permission -> landing');
       setActiveTab('landing');
     }
 
     if (activeTab === 'editorium' && !hasPermission('curateFrontpage')) {
-      console.log('[GUARD] Redirecting because no curateFrontpage permission -> frontpage');
       setActiveTab('frontpage');
     }
   }, [currentUser, activeTab, systemSettings, selectedAuthorId, initializing]);
