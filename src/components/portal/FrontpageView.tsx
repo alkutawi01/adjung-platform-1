@@ -780,7 +780,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </span>
               <span className="text-[#E0DDD8]">·</span>
               <span className="font-sans">
-                {activeFeatured.tags[0] || 'Scholarly'}
+                {activeFeatured.tags[0] || activeFeatured.contentType}
               </span>
             </div>
 

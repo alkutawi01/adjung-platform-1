@@ -1532,17 +1532,17 @@ Editorial Board of Adjung`;
                       Biography Records
                     </span>
                     <h2 className="font-serif text-3xl font-light text-stone-900 leading-tight">
-                      Scholarly Biographies
+                      Biographies
                     </h2>
                     <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
                     <p className="font-sans italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
-                      Explore life journeys, publications, academic appointments, and achievements of our resident scholars.
+                      Explore life journeys, publications, and achievements of our resident writers.
                     </p>
                   </div>
 
                   <div className="pt-4">
                     <p className="font-sans text-xs text-stone-500 max-w-sm mx-auto mb-6">
-                      Please choose a member from the directory to view their complete academic biography and research milestones.
+                      Please choose a member from the directory to view their complete biography and milestones.
                     </p>
                     {hasPermission('viewDirectory') && (
                       <button
