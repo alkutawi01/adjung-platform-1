@@ -288,7 +288,7 @@ export function WritingDesk({
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
                         {draft.contentType}
                       </span>
-                      <h4 title={draft.title || draft.content || 'Empty note...'}>
+                      <h4 title={draft.title || draft.content || 'Empty note...'} className="min-w-0">
                         <WordSafeEllipsis
                           text={draft.title || draft.content || 'Empty note...'}
                           className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors"
@@ -327,7 +327,7 @@ export function WritingDesk({
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
                         {pub.contentType}
                       </span>
-                      <h4 title={pub.title || pub.content || 'Empty note...'}>
+                      <h4 title={pub.title || pub.content || 'Empty note...'} className="min-w-0">
                         <WordSafeEllipsis
                           text={pub.title || pub.content || 'Empty note...'}
                           className="font-serif text-[15px] text-[#111111] group-hover:text-adjung-maroon transition-colors"
