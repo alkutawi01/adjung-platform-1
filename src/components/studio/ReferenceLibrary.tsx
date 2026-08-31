@@ -70,9 +70,74 @@ const PUBLICATION_CONTEXTS: PublicationContext[] = [
   }
 ];
 
+// Fixed sandbox fixtures for the reference/preview tool below — these were
+// always meant to be static reference content (not real published entries),
+// but previously lived only as rows this code expected to find in the live
+// `entries` prop. Nothing ever seeded them, so the lookup below silently
+// never matched and the whole tool hung forever on "Initializing Sandbox
+// Environment...". Defining them locally means the tool no longer depends
+// on database state that was never guaranteed to exist.
+const CANONICAL_TEMPLATES: Entry[] = [
+  {
+    id: 'entry-canonical-note',
+    authorId: 'sandbox-author',
+    contentType: 'Note',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-01-01T00:00:00.000Z',
+    updatedDate: '2026-01-01T00:00:00.000Z',
+    publishedDate: '2026-01-01T00:00:00.000Z',
+    title: '',
+    slug: 'canonical-note',
+    tags: [],
+    canonicalUrl: 'https://sandbox.adjung.com/note/canonical-note',
+    content: "This is the standard reference Note. Notes are always shown without a heavy title, to keep the reading experience intimate and unhurried.",
+    serialNo: 1,
+    currentVersion: 'v1.0',
+    readingTimeMinutes: 1
+  },
+  {
+    id: 'entry-canonical-essay',
+    authorId: 'sandbox-author',
+    contentType: 'Essay',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-01-01T00:00:00.000Z',
+    updatedDate: '2026-01-01T00:00:00.000Z',
+    publishedDate: '2026-01-01T00:00:00.000Z',
+    title: 'The Reference Essay: Classical Typographic Standards',
+    slug: 'canonical-essay',
+    tags: [],
+    canonicalUrl: 'https://sandbox.adjung.com/essay/canonical-essay',
+    content: "Typography and letterform engineering are not merely a matter of choosing shapes for letters, but of shaping the visual space that surrounds a text.[^1] In the classical scholarly tradition, a text occupies sacred ground on the page.",
+    footnotes: ['A reference footnote, used to demonstrate citation placement and formatting.'],
+    serialNo: 2,
+    currentVersion: 'v1.0',
+    readingTimeMinutes: 1
+  },
+  {
+    id: 'entry-canonical-essay-digital',
+    authorId: 'sandbox-author',
+    contentType: 'Essay',
+    status: 'Published',
+    visibility: 'Public',
+    createdDate: '2026-01-01T00:00:00.000Z',
+    updatedDate: '2026-01-01T00:00:00.000Z',
+    publishedDate: '2026-01-01T00:00:00.000Z',
+    title: 'The Reference Essay: Digital Press Layout Model',
+    slug: 'canonical-essay-digital',
+    tags: [],
+    canonicalUrl: 'https://sandbox.adjung.com/essay/canonical-essay-digital',
+    content: "This essay demonstrates the digital press layout model, a resilient design system engineered for high-performance reading experiences. The system relies on CSS grids to achieve precise alignment across a range of screen dimensions.",
+    serialNo: 3,
+    currentVersion: 'v1.0',
+    readingTimeMinutes: 1
+  }
+];
+
 export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
   // 1. Template & Sandbox state
-  const canonicalTemplates = entries.filter(e => e.id.startsWith('entry-canonical-') && !e.id.endsWith('-ar'));
+  const canonicalTemplates = CANONICAL_TEMPLATES;
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(canonicalTemplates[0]?.id || '');
   const [language, setLanguage] = useState<'LTR' | 'RTL'>('LTR');
 
@@ -107,7 +172,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
 
   // Sync sandbox with canonical archetypes or language changes
   useEffect(() => {
-    const template = entries.find(e => e.id === selectedTemplateId);
+    const template = CANONICAL_TEMPLATES.find(e => e.id === selectedTemplateId);
     if (template) {
       const overrideObj = language === 'RTL' ? {
         content: template.id === 'entry-canonical-note' 
@@ -132,7 +197,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
       setTempEntry(mergedEntry);
       setOriginalEntry(JSON.parse(JSON.stringify(mergedEntry)));
     }
-  }, [selectedTemplateId, language, entries]);
+  }, [selectedTemplateId, language]);
 
   if (!tempEntry) {
     return <div className="p-8 text-center text-stone-500 font-sans">Initializing Sandbox Environment...</div>;
