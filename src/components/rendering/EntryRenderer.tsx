@@ -192,7 +192,10 @@ export function EntryRenderer({
         }
         showToast('Report sent. The article is now under review by the Editorial Board.', 'info');
       })
-      .catch(err => console.error('Failed to report entry:', err));
+      .catch(err => {
+        console.error('Failed to report entry:', err);
+        showToast('Could not send the report. Please try again.', 'error');
+      });
   };
 
   // Editor tab and validation states
