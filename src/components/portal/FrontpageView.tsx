@@ -608,7 +608,13 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         <hr className="rule border-t border-stone-300 my-3" />
 
         {/* World Clock Strip */}
-        <div className="py-2.5 flex justify-start md:justify-center items-center overflow-x-auto snap-x snap-mandatory gap-10 px-4 md:px-1 text-center" id="world-clock">
+        {/* justify-start always, never justify-center — the 5 cities'
+            natural width sits right at common breakpoint widths (e.g. still
+            15px wider than a 1024px viewport's content box), so centering
+            content that's overflowing a scroll container crops the first
+            city with no way to scroll left back into view (scrollLeft
+            can't go negative). Left-aligned avoids the bug entirely. */}
+        <div className="py-2.5 flex justify-start items-center overflow-x-auto snap-x snap-mandatory gap-10 px-4 text-center" id="world-clock">
           {[
             { city: 'New York', tz: 'America/New_York' },
             { city: 'London', tz: 'Europe/London' },
