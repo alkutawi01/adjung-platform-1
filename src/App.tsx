@@ -1082,7 +1082,7 @@ You are cordially invited by the Chief Editor of Adjung to join our publishing p
 Name: ${inviteName.trim()}
 Email: ${inviteEmail.trim()}
 ${inviteMessage.trim() ? `\nMessage from the Chief Editor:\n"${inviteMessage.trim()}"\n` : ''}
-To accept this invitation and initialize your personal scholarly Folio, please click the link below to choose your Username and signature:
+To accept this invitation and initialize your personal Folio, please click the link below to choose your Username and signature:
 ${signupUrl}
 
 Respectfully,
@@ -1156,7 +1156,7 @@ Editorial Board of Adjung`;
       const updatedProfile: WriterProfile = {
         authorId: newUserId,
         heroTitle: heroTitle.trim() || `${penName.trim()}’s Folio`,
-        heroSubtitle: heroSubtitle.trim() || 'A collection of writings and scholarly notes.'
+        heroSubtitle: heroSubtitle.trim() || 'A collection of writings and notes.'
       };
 
       const newIdentity: IdentityProfile = {
@@ -1241,7 +1241,7 @@ Editorial Board of Adjung`;
     const updatedProfile: WriterProfile = {
       authorId: newUserId,
       heroTitle: `${resolvedPenName}'s Folio`,
-      heroSubtitle: 'A collection of writings and scholarly notes.'
+      heroSubtitle: 'A collection of writings and notes.'
     };
 
     const newIdentity: IdentityProfile = {
@@ -1810,7 +1810,7 @@ Editorial Board of Adjung`;
                   <div>
                     <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Comprehensive Description</label>
                     <textarea
-                      placeholder="Provide precise details of the scholarly achievement or event..."
+                      placeholder="Provide precise details of the achievement or event..."
                       value={newBioDesc}
                       onChange={(e) => setNewBioDesc(e.target.value)}
                       className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon min-h-[80px]"

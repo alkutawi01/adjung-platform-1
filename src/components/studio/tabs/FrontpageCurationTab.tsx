@@ -334,7 +334,7 @@ export function FrontpageCurationTab({
                   onChange={(e) => setLayoutDensity(e.target.value as any)}
                   className="w-full border border-stone-200 p-2.5 rounded bg-white text-xs focus:outline-none focus:border-adjung-maroon text-stone-700"
                 >
-                  <option value="Standard">Standard (Scholarly Spacing)</option>
+                  <option value="Standard">Standard (Relaxed Spacing)</option>
                   <option value="Compact">Compact (Tight Line Heights)</option>
                   <option value="Classical">Classical (Broad Borders)</option>
                 </select>
@@ -370,7 +370,7 @@ export function FrontpageCurationTab({
         <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 block font-semibold text-left">Frontpage Curation Mockup</span>
         <div className="bg-[#FDFDFD] border border-stone-300 p-5 rounded scholarly-border shadow-inner text-left space-y-4 select-none relative overflow-hidden">
           <div className="border-b pb-2 flex justify-between items-center text-[8px] font-mono text-stone-400">
-            <span>ADJUNG SCHOLARLY PRESS</span>
+            <span>ADJUNG</span>
             <span>LAYOUT: {layoutDensity.toUpperCase()}</span>
           </div>
 

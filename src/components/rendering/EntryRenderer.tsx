@@ -3069,7 +3069,7 @@ export function EntryRenderer({
                   setMarginNotes(updatedNotes);
                   triggerSave(content, footnotes, updatedNotes);
                 }}
-                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                placeholder="Write aligned margin commentary or cross-reference..."
                 rows={1}
                 className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
               />
@@ -3161,7 +3161,7 @@ export function EntryRenderer({
                   setMarginNotes(updatedNotes);
                   triggerSave(content, footnotes, updatedNotes);
                 }}
-                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                placeholder="Write aligned margin commentary or cross-reference..."
                 rows={1}
                 className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
               />
@@ -3237,7 +3237,7 @@ export function EntryRenderer({
                   setMarginNotes(updatedNotes);
                   triggerSave(content, footnotes, updatedNotes);
                 }}
-                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                placeholder="Write aligned margin commentary or cross-reference..."
                 rows={1}
                 className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
               />
@@ -3305,7 +3305,7 @@ export function EntryRenderer({
                   setMarginNotes(updatedNotes);
                   triggerSave(content, footnotes, updatedNotes);
                 }}
-                placeholder="Write aligned scholarly margin commentary or cross-reference..."
+                placeholder="Write aligned margin commentary or cross-reference..."
                 rows={1}
                 className="w-full bg-transparent font-sans text-xs text-stone-600 focus:outline-none border-b border-dashed border-stone-200 hover:border-stone-300 focus:border-adjung-maroon py-0.5 resize-y"
               />

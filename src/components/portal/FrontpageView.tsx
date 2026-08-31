@@ -1074,7 +1074,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 ABOUT ADJUNG
               </p>
               <p className="font-sans text-sm leading-relaxed text-[#2D2D2D]">
-                Adjung is a knowledge publishing platform dedicated to thoughtful writing, scholarly publishing, and the long-term preservation of human knowledge.
+                Adjung is a knowledge publishing platform dedicated to thoughtful writing, careful publishing, and the long-term preservation of human knowledge.
               </p>
             </div>
           </div>

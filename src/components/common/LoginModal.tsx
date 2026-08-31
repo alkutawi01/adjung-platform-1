@@ -133,7 +133,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       required
                     />
                     <span className="text-[8px] font-mono text-stone-400 mt-1 block leading-normal">
-                      Enter the email address associated with your scholarly profile.
+                      Enter the email address associated with your profile.
                     </span>
                   </div>
 

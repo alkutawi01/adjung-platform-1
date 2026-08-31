@@ -197,7 +197,7 @@ export function Editorium() {
     systemSettings.featuredNoteIds || []
   );
   const [announcementBanner, setAnnouncementBanner] = useState(
-    systemSettings.announcementBanner || 'Welcome to the Adjung scholarly archive. The independent digital press.'
+    systemSettings.announcementBanner || 'Welcome to the Adjung archive. The independent digital press.'
   );
   const [enableArabicAccent, setEnableArabicAccent] = useState(
     systemSettings.enableArabicAccent ?? true

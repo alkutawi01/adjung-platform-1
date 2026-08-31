@@ -350,7 +350,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   value={noteDraft}
                   onChange={e => setNoteDraft(e.target.value)}
                   onFocus={() => setNoteFocused(true)}
-                  placeholder="Share a short scholarly note or fragment…"
+                  placeholder="Share a short note or fragment…"
                   rows={noteFocused || noteDraft ? 3 : 1}
                   className="w-full font-handwritten text-lg text-black leading-snug resize-none focus:outline-none placeholder:font-sans placeholder:text-sm placeholder:text-stone-400"
                 />

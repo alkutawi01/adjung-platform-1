@@ -524,7 +524,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? 'This is the primary discourse of your essay. You may incorporate footnotes[^1] directly inside your entry text. Margin notes can also be placed[^mn-1] along the side margins.\n\nAnother paragraph expanding on your thesis.'
       : type === 'Notice' ? 'Official notice regarding platform operations or schedule updates.'
         : type === "Editor's Note" ? 'Official reflections from the Editorial Board regarding the structural direction of the platform.'
-        : 'A concise scholarly note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
+        : 'A concise note or philosophical fragment. Supports right-to-left formatting for Arabic or Jawi script.';
 
     const slugSuffix = Date.now().toString().slice(-4);
     const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
@@ -551,7 +551,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ),
       content: defaultContent,
       footnotes: type === 'Essay' ? ['Your first footnote description citation goes here.'] : undefined,
-      marginNotesData: type === 'Essay' ? { 'mn-1': 'A scholarly side comment on the essay.' } : undefined
+      marginNotesData: type === 'Essay' ? { 'mn-1': 'A side comment on the essay.' } : undefined
     };
 
     setEntries(prev => [...prev, newEntry]);
