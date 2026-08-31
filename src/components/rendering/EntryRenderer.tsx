@@ -3952,15 +3952,15 @@ export function EntryRenderer({
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-100 rounded font-bold text-xs text-stone-600 transition" title="Bold (Ctrl+B)">B</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-100 rounded italic text-xs text-stone-600 transition" title="Italic (Ctrl+I)">I</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-100 rounded underline text-xs text-stone-600 transition" title="Underline (Ctrl+U)">U</button>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('strikeThrough')} className="px-2 py-1 hover:bg-stone-100 rounded line-through text-xs text-stone-600 transition" title="Strikethrough">S</button>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('superscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Superscript">x²</button>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('subscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Subscript">x₂</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('strikeThrough')} className="px-2 py-1 hover:bg-stone-100 rounded line-through text-xs text-stone-600 transition" title="Strikethrough (Ctrl+Shift+X)">S</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('superscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Superscript (Ctrl+.)">x²</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('subscript')} className="px-2 py-1 hover:bg-stone-100 rounded text-xs text-stone-600 transition" title="Subscript (Ctrl+,)">x₂</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={toggleHighlight} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Mark passage"><Highlighter className="w-3.5 h-3.5" /></button>
                   <div className="h-4 w-px bg-stone-200 mx-1" />
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H1')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H1</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('H2')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">H2</button>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">Quote</button>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition">Para</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('blockquote')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition" title="Quote (Ctrl+Shift+9)">Quote</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyBlockFormat('P')} className="px-1.5 py-1 hover:bg-stone-100 rounded text-[10px] font-mono uppercase tracking-wider text-stone-600 transition" title="Paragraph (Ctrl+Shift+0)">Para</button>
                   <div className="h-4 w-px bg-stone-200 mx-1" />
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertUnorderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Bulleted list"><List className="w-3.5 h-3.5" /></button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('insertOrderedList')} className="px-2 py-1 hover:bg-stone-100 rounded text-stone-600 transition" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
@@ -4065,6 +4065,43 @@ export function EntryRenderer({
                       // into this editor's model or offer replace.
                       e.preventDefault();
                       setShowFindReplace(true);
+                    }
+                    // Every button in the persistent formatting bar above
+                    // this canvas should have a keyboard equivalent — Bold
+                    // and Italic mostly worked already via the browser's own
+                    // native contenteditable handling, but Underline,
+                    // Strikethrough, Superscript, Subscript, Quote, and
+                    // Paragraph had no shortcut at all. Wiring all of them
+                    // through the exact same applyFormat/applyBlockFormat
+                    // calls the toolbar buttons use keeps behavior identical
+                    // regardless of mouse or keyboard.
+                    if (e.ctrlKey || e.metaKey) {
+                      const key = e.key.toLowerCase();
+                      if (!e.shiftKey && key === 'b') {
+                        e.preventDefault();
+                        applyFormat('bold');
+                      } else if (!e.shiftKey && key === 'i') {
+                        e.preventDefault();
+                        applyFormat('italic');
+                      } else if (!e.shiftKey && key === 'u') {
+                        e.preventDefault();
+                        applyFormat('underline');
+                      } else if (e.shiftKey && key === 'x') {
+                        e.preventDefault();
+                        applyFormat('strikeThrough');
+                      } else if (!e.shiftKey && e.key === '.') {
+                        e.preventDefault();
+                        applyFormat('superscript');
+                      } else if (!e.shiftKey && e.key === ',') {
+                        e.preventDefault();
+                        applyFormat('subscript');
+                      } else if (e.shiftKey && (e.key === '(' || key === '9')) {
+                        e.preventDefault();
+                        applyBlockFormat('blockquote');
+                      } else if (e.shiftKey && (e.key === ')' || key === '0')) {
+                        e.preventDefault();
+                        applyBlockFormat('P');
+                      }
                     }
                   }}
                   onChange={(newHtml) => {
