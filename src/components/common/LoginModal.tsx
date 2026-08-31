@@ -222,7 +222,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Password matches 'password'"
+                    placeholder="Enter your password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     className="w-full border border-stone-200 p-2.5 pr-10 rounded focus:outline-none focus:border-adjung-maroon bg-white text-stone-800"
