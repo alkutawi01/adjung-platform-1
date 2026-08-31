@@ -75,6 +75,17 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
 
+  // "Unsaved Changes" previously showed unconditionally (it was just
+  // !saveSuccess, true by default before any edit at all) — compare
+  // against the loaded baseline instead so it only appears when something
+  // has actually changed.
+  const isDirty =
+    username !== identity.username ||
+    displayName !== (identity.displayName || '') ||
+    penName !== identity.penName ||
+    visibility !== (identity.publicVisibility || 'Public') ||
+    affiliation !== (identity.affiliation || '');
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -239,7 +250,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     type="text"
                     value={affiliation}
                     onChange={(e) => setAffiliation(e.target.value)}
-                    placeholder="e.g. Universiti Mu'tah, Jordan or Cairo, Egypt"
+                    placeholder="e.g. your organization or city"
                     className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs font-sans"
                   />
                 </div>
@@ -247,14 +258,16 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
             </div>
 
             <div className="pt-2 flex items-center justify-between border-t border-stone-100">
-              {saveSuccess ? (
+              {saveSuccess && !isDirty ? (
                 <span className="text-emerald-600 font-mono text-[10px] uppercase tracking-wider flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" /> Identity Saved
                 </span>
-              ) : (
+              ) : isDirty ? (
                 <span className="text-stone-400 font-mono text-[10px] uppercase tracking-wider">
                   Unsaved Changes
                 </span>
+              ) : (
+                <span />
               )}
               <button
                 type="submit"

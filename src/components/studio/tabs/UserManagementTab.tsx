@@ -218,7 +218,7 @@ export function UserManagementTab({
               <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-400 mb-1">Full Name</label>
               <input
                 type="text"
-                placeholder="e.g. Professor Al-Qurtubi"
+                placeholder="e.g. Al-Qurtubi"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
                 className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs bg-white text-stone-800"
