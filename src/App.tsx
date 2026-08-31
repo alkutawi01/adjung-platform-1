@@ -431,12 +431,14 @@ export default function App() {
 
   // Synchronize state-to-URL (pushState adapter)
   useEffect(() => {
+    console.log('[DIAG-STATE2URL] fired. initializing:', initializing, 'isRouteSynced:', isRouteSynced, 'isSyncingFromUrlRef:', isSyncingFromUrlRef.current, 'activeTab:', activeTab, 'selectedEntry:', selectedEntry?.slug, 'pathname:', location.pathname);
     if (initializing || !isRouteSynced) return;
     if (isSyncingFromUrlRef.current) {
       // This state change came from the URL->state effect below reacting to
       // a route change, not from an in-app action — don't push it back to
       // the URL, or the two effects fight forever.
       isSyncingFromUrlRef.current = false;
+      console.log('[DIAG-STATE2URL] bailed: isSyncingFromUrlRef was true');
       return;
     }
 
@@ -487,6 +489,7 @@ export default function App() {
       else if (activeTab === 'policies') newPath = '/policies';
     }
 
+    console.log('[DIAG-STATE2URL] computed newPath:', newPath, 'vs current pathname:', location.pathname, 'authorFromSubdomain:', authorFromSubdomain);
     if (location.pathname !== newPath) {
       navigate(newPath);
     }
