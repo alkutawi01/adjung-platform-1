@@ -508,7 +508,7 @@ export function FrontpageCurationTab({
                       </span>
                       <ul className="list-disc pl-4 text-[10px] text-red-700 font-mono space-y-1 max-h-[150px] overflow-y-auto">
                         {newsParseErrors.map((err, i) => (
-                          <li key={i}>{err}</li>
+                          <li key={i}>Item {err.index}: {err.error}</li>
                         ))}
                       </ul>
                     </div>
@@ -616,7 +616,7 @@ export function FrontpageCurationTab({
                       </span>
                       <ul className="list-disc pl-4 text-[10px] text-red-700 font-mono space-y-1 max-h-[150px] overflow-y-auto">
                         {holidayParseErrors.map((err, i) => (
-                          <li key={i}>{err}</li>
+                          <li key={i}>Item {err.index}: {err.error}</li>
                         ))}
                       </ul>
                     </div>
