@@ -345,7 +345,7 @@ export function Editorium() {
     };
     setSystemSettings(updatedSettings);
 
-    firestoreService.logAction(`Modified Frontpage Curation: Scholar='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser);
+    firestoreService.logAction(`Modified Frontpage Curation: Writer='${featuredScholarId}', Entry='${featuredEntryId}', Accent=${enableArabicAccent}, Density='${layoutDensity}'.`, currentUser);
     showToast('Frontpage curation settings saved and synchronized.', 'success');
   };
 
