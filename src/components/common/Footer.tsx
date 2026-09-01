@@ -23,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({
   };
 
   return (
-    <footer className="w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
+    <footer className="print:hidden w-full mt-12 pt-12 pb-8 border-t border-[#EAE8E3] bg-stone-50 select-none">
       <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center items-start">
         <div className="space-y-4 flex flex-col items-center text-center">
           <h1 className="font-serif text-2xl font-semibold tracking-wider text-adjung-maroon">{BRAND.logoText}</h1>

@@ -97,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav 
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
-      className={`w-full sticky ${originalUser ? 'top-[36px]' : 'top-0'} z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
+      className={`print:hidden w-full sticky ${originalUser ? 'top-[36px]' : 'top-0'} z-40 px-4 md:px-8 select-none border-b transition-all ease-out backdrop-blur-md ${
         isHeaderHovered ? 'duration-200' : 'duration-[1500ms]'
       } ${
         isFloating 

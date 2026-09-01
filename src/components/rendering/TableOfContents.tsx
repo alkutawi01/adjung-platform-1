@@ -19,8 +19,8 @@ export function TableOfContents({ contentType, fullContent }: TableOfContentsPro
       <details className="group" open>
         <summary className="font-mono text-[9px] uppercase tracking-wider text-adjung-maroon font-bold cursor-pointer list-none flex items-center justify-between">
           <span>Table of Contents Outline</span>
-          <span className="text-stone-400 group-open:hidden">show</span>
-          <span className="text-stone-400 hidden group-open:inline">hide</span>
+          <span className="print:hidden text-stone-400 group-open:hidden">show</span>
+          <span className="print:hidden text-stone-400 hidden group-open:inline">hide</span>
         </summary>
 
         <ul className="mt-3.5 space-y-2 border-t border-stone-200/60 pt-3">

@@ -127,7 +127,7 @@ export function LayoutInspector({ contentType, currentSettings, defaultSettings,
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-stone-100 rounded-full pl-3 pr-4 py-2.5 shadow-xl hover:bg-stone-800 transition cursor-pointer"
+        className="print:hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-stone-900 text-stone-100 rounded-full pl-3 pr-4 py-2.5 shadow-xl hover:bg-stone-800 transition cursor-pointer"
         title="Layout Inspector (Chief Editor only)"
       >
         <Settings2 className="w-4 h-4" />
@@ -137,7 +137,7 @@ export function LayoutInspector({ contentType, currentSettings, defaultSettings,
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[300px] bg-white border border-stone-200 rounded-lg shadow-2xl overflow-hidden">
+    <div className="print:hidden fixed bottom-6 right-6 z-50 w-[300px] bg-white border border-stone-200 rounded-lg shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 bg-stone-900 text-stone-100">
         <span className="font-mono text-[10px] uppercase tracking-widest font-semibold">Layout Inspector — {contentType}</span>
         <button type="button" onClick={() => setOpen(false)} className="text-stone-400 hover:text-white cursor-pointer">

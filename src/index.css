@@ -434,6 +434,22 @@ select:focus-visible,
   }
 }
 
+/* Entry printing (Print / Export PDF on Notes & Essays) — physical page
+   setup only. Screen chrome (navbar, footer, floating panels, action
+   menus) is hidden per-element via Tailwind's print: variant at each
+   call site instead of being listed here, so this stays in sync
+   automatically as that chrome changes. */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+  }
+}
+
 
 
 

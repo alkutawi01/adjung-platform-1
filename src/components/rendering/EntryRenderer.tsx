@@ -3619,7 +3619,7 @@ export function EntryRenderer({
     const readingTimeStr = `${entry.readingTimeMinutes || 1} MIN READ`;
 
     const isArContent = isArabicText(entry.content);
-    const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm relative overflow-visible ${
+    const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm print:shadow-none print:border-0 print:rounded-none print:p-0 relative overflow-visible ${
       layoutEditMode ? 'outline outline-2 outline-dashed outline-sky-400 outline-offset-8' : ''
     } ${
       isArContent ? 'text-right' : 'text-left'
@@ -3671,19 +3671,21 @@ export function EntryRenderer({
                     {authorDomain}
                   </span>
                 )}
-                <EntryActionsMenu
-                  showActionsMenu={showActionsMenu}
-                  setShowActionsMenu={setShowActionsMenu}
-                  entry={entry}
-                  getCanonicalUrl={getCanonicalUrl}
-                  showToast={showToast}
-                  authorName={authorName}
-                  title={title}
-                  currentUser={currentUser}
-                  setEditingEntry={setEditingEntry}
-                  setSelectedEntry={setSelectedEntry}
-                  setActiveTab={setActiveTab}
-                />
+                <span className="print:hidden">
+                  <EntryActionsMenu
+                    showActionsMenu={showActionsMenu}
+                    setShowActionsMenu={setShowActionsMenu}
+                    entry={entry}
+                    getCanonicalUrl={getCanonicalUrl}
+                    showToast={showToast}
+                    authorName={authorName}
+                    title={title}
+                    currentUser={currentUser}
+                    setEditingEntry={setEditingEntry}
+                    setSelectedEntry={setSelectedEntry}
+                    setActiveTab={setActiveTab}
+                  />
+                </span>
               </div>
             </div>
 
@@ -4859,7 +4861,7 @@ export function EntryRenderer({
 
       {/* Sticky Bottom/Fixed Footer Actions Bar */}
       {mode === 'edit' && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1e1c18] text-stone-100 border-t border-stone-800 shadow-2xl py-3.5 px-4 md:px-8 backdrop-blur-md bg-opacity-95">
+        <div className="print:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1e1c18] text-stone-100 border-t border-stone-800 shadow-2xl py-3.5 px-4 md:px-8 backdrop-blur-md bg-opacity-95">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
             {/* Left section: Info/Metadata */}
@@ -4982,7 +4984,7 @@ export function EntryRenderer({
       {toast && (
         <div 
           onClick={() => setToastVisible(false)}
-          className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-md w-auto ${
+          className={`print:hidden fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-md w-auto ${
             toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >

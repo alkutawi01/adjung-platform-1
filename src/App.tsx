@@ -1388,7 +1388,7 @@ Editorial Board of Adjung`;
           )}
           {/* ==================== 1. IMPERSONATION BANNER ==================== */}
           {originalUser && (
-            <div className="w-full h-9 bg-amber-50 border-b border-amber-200/60 text-amber-900 px-4 md:px-8 flex items-center justify-between text-xs select-none sticky top-0 z-40 shrink-0">
+            <div className="print:hidden w-full h-9 bg-amber-50 border-b border-amber-200/60 text-amber-900 px-4 md:px-8 flex items-center justify-between text-xs select-none sticky top-0 z-40 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 <span className="font-sans font-medium">
@@ -1421,7 +1421,7 @@ Editorial Board of Adjung`;
           />
           {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
           {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
-            <header className="w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
+            <header className="print:hidden w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
               <div className="max-w-6xl mx-auto text-center relative">
                 {/* Main classical visual focus: The Author's Identity with refined lines */}
                 <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">
@@ -1468,7 +1468,7 @@ Editorial Board of Adjung`;
                 <button
                   type="button"
                   onClick={() => setSelectedEntry(null)}
-                  className="mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
+                  className="print:hidden mb-8 inline-flex items-center gap-2 text-stone-500 hover:text-adjung-maroon font-sans text-xs uppercase tracking-wider group transition cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                   {selectedEntry.publicationClass === 'Institutional'
