@@ -19,13 +19,6 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'name-az' | 'name-za'>('name-az');
 
-  // Helper to extract country from location/affiliation
-  const getCountry = (location?: string) => {
-    if (!location) return 'N/A';
-    const parts = location.split(',');
-    return parts[parts.length - 1].trim();
-  };
-
   // Helper to get languages and tags written by the user in published entries
   const getUserMetadata = React.useCallback((userId: string) => {
     const userEntries = entries.filter(e => 
@@ -60,11 +53,8 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
   const allCountries = React.useMemo(() => {
     const countriesSet = new Set<string>();
     users.forEach(u => {
-      if (!u.suspended && u.affiliation) {
-        const country = getCountry(u.affiliation);
-        if (country && country !== 'N/A') {
-          countriesSet.add(country);
-        }
+      if (!u.suspended && u.country) {
+        countriesSet.add(u.country);
       }
     });
     return Array.from(countriesSet).sort();
@@ -112,7 +102,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
 
     const uMeta = getUserMetadata(u.id);
 
-    const matchesCountry = countryFilter === 'All' || getCountry(u.affiliation) === countryFilter;
+    const matchesCountry = countryFilter === 'All' || u.country === countryFilter;
     const matchesLanguage = languageFilter === 'All' || uMeta.languages.includes(languageFilter);
     const matchesTag = selectedTag === 'All' || uMeta.tags.includes(selectedTag);
 
@@ -301,7 +291,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
 
                     {/* Country */}
                     <td className="p-3 font-sans text-stone-700">
-                      {getCountry(u.affiliation)}
+                      {u.country || 'N/A'}
                     </td>
 
                     {/* Joined */}

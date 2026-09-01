@@ -3,6 +3,7 @@ import { User, IdentityProfile } from '../../types';
 import { SignatureManager } from '../desk/SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe, Check, X } from 'lucide-react';
 import { isSubdomainUnlocked, generateUUID } from '../../utils';
+import { COUNTRIES } from '../../constants/countries';
 
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -31,6 +32,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
   const [penName, setPenName] = useState('');
   const [visibility, setVisibility] = useState<'Public' | 'Private'>('Public');
   const [affiliation, setAffiliation] = useState('');
+  const [country, setCountry] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -71,6 +73,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     setPenName(ident.penName);
     setVisibility(ident.publicVisibility || 'Public');
     setAffiliation(ident.affiliation || '');
+    setCountry(ident.country || '');
   }, [currentUser, identities]);
 
   if (!identity) return <div className="p-8 text-center text-stone-500 font-mono text-sm">Loading Identity...</div>;
@@ -84,7 +87,8 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     displayName !== (identity.displayName || '') ||
     penName !== identity.penName ||
     visibility !== (identity.publicVisibility || 'Public') ||
-    affiliation !== (identity.affiliation || '');
+    affiliation !== (identity.affiliation || '') ||
+    country !== (identity.country || '');
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +102,8 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       penName,
       publicVisibility: visibility,
       signatures: identity.signatures,
-      affiliation
+      affiliation,
+      country
     };
 
     // Also update the User object penName & username & signature to keep in sync
@@ -108,6 +113,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       username,
       penName,
       affiliation,
+      country,
       signature: defaultSig ? (defaultSig.type === 'typed' ? defaultSig.typedText || '' : defaultSig.label) : currentUser.signature
     };
 
@@ -224,7 +230,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Full Name</label>
                   <input
@@ -253,6 +259,19 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                     placeholder="e.g. your organization or city"
                     className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs font-sans"
                   />
+                </div>
+                <div>
+                  <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1">Country</label>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full border border-stone-200 p-2 rounded focus:outline-none focus:border-adjung-maroon text-xs font-sans bg-white"
+                  >
+                    <option value="">Not specified</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

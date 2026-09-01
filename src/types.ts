@@ -70,6 +70,7 @@ export interface User {
   bioSummary?: string;
   suspended?: boolean;
   affiliation?: string;
+  country?: string;
   createdAt?: string; // ISO timestamp or YYYY-MM-DD
   isAi?: boolean;
   subdomainApprovedEarly?: boolean;
@@ -240,6 +241,7 @@ export interface IdentityProfile {
   signatures: DigitalSignature[];
   publicVisibility: 'Public' | 'Private';
   affiliation?: string;
+  country?: string;
   interests?: string[];
   preferredLanguages?: string[];
   preferredEdition?: string;

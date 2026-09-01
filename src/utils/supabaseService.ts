@@ -1,6 +1,13 @@
 import { supabase } from '../config/supabase';
 import { User, WriterProfile, IdentityProfile, Entry, SystemSettings, PolicyDocument, SystemLog, LayoutSettings, EntryType } from '../types';
 
+// Postgres error 42703 ("undefined_column") — lets a save fall back to
+// omitting a brand-new field instead of failing outright when its schema
+// migration hasn't been applied to this database yet.
+function isMissingColumnError(error: { code?: string; message?: string }, column: string): boolean {
+  return error?.code === '42703' && !!error.message?.includes(column);
+}
+
 // ==========================================
 // Row <-> App Model Mappers
 // ==========================================
@@ -17,6 +24,7 @@ function rowToUser(row: any): User {
     bioSummary: row.bio_summary || '',
     suspended: !!row.suspended,
     affiliation: row.affiliation || '',
+    country: row.country || '',
     createdAt: row.created_at,
     isAi: !!row.is_ai,
     subdomainApprovedEarly: !!row.subdomain_approved_early,
@@ -35,6 +43,7 @@ function userToRow(user: User) {
     bio_summary: user.bioSummary,
     suspended: !!user.suspended,
     affiliation: user.affiliation,
+    country: user.country,
     is_ai: !!user.isAi,
     subdomain_approved_early: !!user.subdomainApprovedEarly,
   };
@@ -72,6 +81,7 @@ function rowToIdentity(row: any, bioItems: any[] = [], signatures: any[] = []): 
     biography: row.biography || '',
     publicVisibility: row.public_visibility || 'Public',
     affiliation: row.affiliation || '',
+    country: row.country || '',
     interests: row.interests || [],
     preferredLanguages: row.preferred_languages || [],
     preferredEdition: row.preferred_edition || '',
@@ -336,7 +346,16 @@ export const supabaseService = {
   },
 
   async saveUser(user: User) {
-    const { error } = await supabase.from('users').upsert(userToRow(user));
+    const row = userToRow(user);
+    let { error } = await supabase.from('users').upsert(row);
+    // The `country` column ships in code before the migration that adds it
+    // is run by hand in Supabase (schema changes here aren't part of the
+    // auto-deploy) — degrade gracefully instead of failing every profile
+    // save in the meantime.
+    if (error && isMissingColumnError(error, 'country')) {
+      delete row.country;
+      ({ error } = await supabase.from('users').upsert(row));
+    }
     if (error) throw error;
   },
 
@@ -346,7 +365,7 @@ export const supabaseService = {
   },
 
   async saveIdentity(identity: IdentityProfile) {
-    const identityRow = {
+    const identityRow: Record<string, unknown> = {
       account_id: identity.accountId,
       username: identity.username,
       display_name: identity.displayName,
@@ -354,15 +373,25 @@ export const supabaseService = {
       biography: identity.biography,
       public_visibility: identity.publicVisibility,
       affiliation: identity.affiliation,
+      country: identity.country,
       interests: identity.interests || [],
       preferred_languages: identity.preferredLanguages || [],
       preferred_edition: identity.preferredEdition || null,
     };
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('identities')
       .upsert(identityRow, { onConflict: 'account_id' })
       .select('id')
       .single();
+    // See saveUser — same pre-migration graceful degradation for `country`.
+    if (error && isMissingColumnError(error, 'country')) {
+      delete identityRow.country;
+      ({ data, error } = await supabase
+        .from('identities')
+        .upsert(identityRow, { onConflict: 'account_id' })
+        .select('id')
+        .single());
+    }
     if (error) throw error;
     const identityId = data.id;
 
