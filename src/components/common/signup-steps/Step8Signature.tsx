@@ -23,6 +23,17 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
   const [sessionId, setSessionId] = useState<string>('');
 
   const hasRecordedSignature = !!formData.signatureData;
+  // signatureType stays 'draw' whenever the signature came through
+  // SignaturePad (its onSave payload carries the real type), including when
+  // the user used the pad's own Type toggle rather than drawing — only the
+  // separate handleSaveTypo() path (Step8's own typing UI, a plain string)
+  // sets signatureType to 'typo'. Check both so the confirmation card
+  // doesn't render an empty "Handdrawn Signature" for a typed one.
+  const isTypedSignature = formData.signatureType === 'typo'
+    || (!!formData.signatureData && typeof formData.signatureData === 'object' && formData.signatureData.type === 'typed');
+  const recordedTypedText = formData.signatureType === 'typo'
+    ? formData.signatureData
+    : formData.signatureData?.typedText;
 
   // Real-time Supabase Realtime (Broadcast) sync listener
   useEffect(() => {
@@ -144,7 +155,7 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="font-mono text-[8px] uppercase tracking-widest bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 font-bold">
-                      {formData.signatureType === 'typo' ? 'Typographic Signature' : 'Handdrawn Signature'}
+                      {isTypedSignature ? 'Typographic Signature' : 'Handdrawn Signature'}
                     </span>
                     <h4 className="font-serif text-sm font-semibold text-stone-900 mt-1.5">Aesthetic Seal Registered</h4>
                   </div>
@@ -155,9 +166,9 @@ export default function Step8Signature({ formData, setFormData }: Step8Signature
                 <div className="bg-stone-50 border border-stone-200 h-28 rounded flex items-center justify-center relative p-4">
                   <div className="absolute inset-0 bg-[radial-gradient(#802334/0.015_1px,transparent_1px)] [background-size:12px_12px]" />
                   <SignatureRenderer
-                    strokes={formData.signatureType === 'typo' ? [] : (formData.signatureData?.strokes || [])}
-                    type={formData.signatureType === 'typo' ? 'typed' : 'drawn'}
-                    typedText={formData.signatureType === 'typo' ? formData.signatureData : ''}
+                    strokes={isTypedSignature ? [] : (formData.signatureData?.strokes || [])}
+                    type={isTypedSignature ? 'typed' : 'drawn'}
+                    typedText={isTypedSignature ? recordedTypedText : ''}
                     className="w-full h-full relative z-10"
                   />
                   <span className="absolute bottom-2 right-3 font-mono text-[7px] text-stone-300 tracking-wider">ADJUNG SECURE</span>
