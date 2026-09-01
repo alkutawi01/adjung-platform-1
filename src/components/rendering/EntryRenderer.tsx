@@ -3735,29 +3735,46 @@ export function EntryRenderer({
             <div className="flex items-center gap-2">
               <span>{formatDate(entry.publishedDate || entry.createdDate)}</span>
               {mode === 'view' && visibility === 'Public' && (
-                <span className="print:hidden flex items-center gap-2">
+                <span className="print:hidden relative" onMouseLeave={() => setShowActionsMenu(false)}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const url = getCanonicalUrl();
-                      navigator.clipboard.writeText(url)
-                        .then(() => showToast('Entry link copied to clipboard!', 'success'))
-                        .catch(() => showToast('Could not copy the link — your browser blocked clipboard access.', 'error'));
-                    }}
-                    className="inline-flex items-center gap-1 text-adjung-maroon hover:text-[#4a1521] text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-adjung-maroon/20 hover:border-adjung-maroon/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
-                    title="Copy permanent entry URL"
+                    onClick={() => setShowActionsMenu(!showActionsMenu)}
+                    className="text-stone-400 hover:text-adjung-maroon font-bold text-xs tracking-normal px-1.5 py-0.5 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans"
+                    title="Actions Menu"
+                    aria-label="Entry actions menu"
+                    aria-haspopup="true"
+                    aria-expanded={showActionsMenu}
                   >
-                    <Copy className="w-2.5 h-2.5" /> Copy
+                    ⋯
                   </button>
-                  {currentUser?.id !== entry.authorId && !entry.underReview && (
-                    <button
-                      type="button"
-                      onClick={handleReportEntry}
-                      className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 text-[9px] font-mono uppercase tracking-wider cursor-pointer border border-amber-600/20 hover:border-amber-600/40 px-1.5 py-0.5 rounded transition bg-white normal-case font-mono"
-                      title="Report this piece to the Editorial Board"
-                    >
-                      <AlertTriangle className="w-2.5 h-2.5" /> Report
-                    </button>
+                  {showActionsMenu && (
+                    <div className="absolute right-0 top-full mt-1.5 w-40 bg-white border border-stone-200 rounded shadow-md py-1 z-50 text-left normal-case tracking-normal">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = getCanonicalUrl();
+                          navigator.clipboard.writeText(url)
+                            .then(() => showToast('Entry link copied to clipboard!', 'success'))
+                            .catch(() => showToast('Could not copy the link — your browser blocked clipboard access.', 'error'));
+                          setShowActionsMenu(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
+                      >
+                        <Copy className="w-3 h-3" /> Copy Link
+                      </button>
+                      {currentUser?.id !== entry.authorId && !entry.underReview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleReportEntry();
+                            setShowActionsMenu(false);
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
+                        >
+                          <AlertTriangle className="w-3 h-3" /> Report
+                        </button>
+                      )}
+                    </div>
                   )}
                 </span>
               )}
