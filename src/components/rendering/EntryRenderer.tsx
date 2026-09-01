@@ -2918,25 +2918,25 @@ export function EntryRenderer({
     let newBlock: ContentBlock;
     
     if (type === 'paragraph') {
-      newBlock = { type: 'paragraph', text: 'Kandungan perenggan baharu.' };
-      newBlockText = 'Kandungan perenggan baharu.';
+      newBlock = { type: 'paragraph', text: 'New paragraph content.' };
+      newBlockText = 'New paragraph content.';
     } else if (type === 'heading') {
-      newBlock = { type: 'heading', text: 'Tajuk Baharu', level: 2 };
-      newBlockText = '## Tajuk Baharu';
+      newBlock = { type: 'heading', text: 'New Heading', level: 2 };
+      newBlockText = '## New Heading';
     } else if (type === 'latin-quote') {
       newBlock = { 
         type: 'latin-quote', 
         text: 'Enter LTR quote here...', 
-        translation: 'Terjemahan di sini...'
+        translation: 'Translation here...'
       };
-      newBlockText = '<quote type="latin">\n  <text>Enter LTR quote here...</text>\n  <translation>Terjemahan di sini...</translation>\n</quote>';
+      newBlockText = '<quote type="latin">\n  <text>Enter LTR quote here...</text>\n  <translation>Translation here...</translation>\n</quote>';
     } else {
       newBlock = { 
         type: 'arabic-quote', 
         arabic: 'اكتب النص العربي هنا', 
-        translation: 'Terjemahan di sini...'
+        translation: 'Translation here...'
       };
-      newBlockText = '<quote type="arabic">\n  <arabic>اكتب النص العربي هنا</arabic>\n  <translation>Terjemahan di sini...</translation>\n</quote>';
+      newBlockText = '<quote type="arabic">\n  <arabic>اكتب النص العربي هنا</arabic>\n  <translation>Translation here...</translation>\n</quote>';
     }
 
     if (contentType === 'Essay') {
