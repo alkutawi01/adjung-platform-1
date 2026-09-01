@@ -1395,7 +1395,7 @@ Source: [Author or Publication, Year]
               <ShieldAlert className="w-5 h-5 text-red-700" /> Danger Zone & Platform Resets
             </h3>
             <p className="font-sans text-xs text-stone-600 leading-relaxed">
-              This command deletes all local database entries, profiles, timeline milestones, and user settings, resetting the environment back to the clean pre-seeded academic template. This action cannot be undone.
+              This command deletes all local database entries, profiles, timeline milestones, and user settings, resetting the environment back to the clean pre-seeded default template. This action cannot be undone.
             </p>
 
             <div className="p-3.5 bg-white border border-red-200 rounded space-y-2 text-[11px] text-stone-600 leading-normal font-sans">
@@ -1413,7 +1413,7 @@ Source: [Author or Publication, Year]
                   'WARNING: Are you absolutely sure you want to reset the entire database? This deletes all custom entries and profiles.',
                   () => {
                     handleResetDatabase();
-                    showToast('Database reset to pre-seeded academic templates.', 'info');
+                    showToast('Database reset to pre-seeded default templates.', 'info');
                   },
                   { title: 'Danger Zone', confirmLabel: 'Reset Everything' }
                 );
