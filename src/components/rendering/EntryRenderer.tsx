@@ -3755,7 +3755,7 @@ export function EntryRenderer({
             <div className="flex items-center gap-2">
               <span>{formatDate(entry.publishedDate || entry.createdDate)}</span>
               {mode === 'view' && visibility === 'Public' && (
-                <>
+                <span className="print:hidden flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -3779,7 +3779,7 @@ export function EntryRenderer({
                       <AlertTriangle className="w-2.5 h-2.5" /> Report
                     </button>
                   )}
-                </>
+                </span>
               )}
             </div>
           </header>
