@@ -179,7 +179,8 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         entries,
         identity,
         currentUser.createdAt,
-        currentUser.subdomainApprovedEarly
+        currentUser.subdomainApprovedEarly,
+        currentUser.isAi
       ),
       content: text,
     };

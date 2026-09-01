@@ -268,7 +268,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                {sortedUsers.map((u) => {
                 const uMeta = getUserMetadata(u.id);
                 const identity = identities.find(i => i.accountId === u.id);
-                const unlocked = isSubdomainUnlocked(u.id, entries, identity, u.createdAt, u.subdomainApprovedEarly);
+                const unlocked = isSubdomainUnlocked(u.id, entries, identity, u.createdAt, u.subdomainApprovedEarly, u.isAi);
                 const domain = unlocked 
                   ? `${u.username}.adjung.com` 
                   : `adjung.com/ps/${u.id} (Reserved)`;

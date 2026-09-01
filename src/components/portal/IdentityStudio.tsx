@@ -304,7 +304,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
               <span className="text-xs font-sans font-bold text-stone-900">
                 {username}.adjung.com
               </span>
-              {isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) ? (
+              {isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly, currentUser.isAi) ? (
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[9px] uppercase tracking-wider rounded font-bold border border-emerald-200">
                   Unlocked
                 </span>
@@ -315,7 +315,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
               )}
             </div>
             
-            {!isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly) && (
+            {!isSubdomainUnlocked(currentUser.id, entries, identity, currentUser.createdAt, currentUser.subdomainApprovedEarly, currentUser.isAi) && (
               <p className="text-[11px] text-stone-500 font-sans leading-relaxed">
                 Your custom subdomain is reserved. Complete the conditions below to unlock and publish using your custom address.
               </p>

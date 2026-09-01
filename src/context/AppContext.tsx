@@ -554,7 +554,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         entries,
         identities.find(i => i.accountId === currentUser.id) || null,
         currentUser.createdAt,
-        currentUser.subdomainApprovedEarly
+        currentUser.subdomainApprovedEarly,
+        currentUser.isAi
       ),
       content: defaultContent,
       footnotes: type === 'Essay' ? ['Your first footnote description citation goes here.'] : undefined,

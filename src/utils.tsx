@@ -911,22 +911,13 @@ export function generateCanonicalUrl(penName: string, type: string, slug: string
  * 2. Completed biography: has bio text (non-default) and at least 1 milestone timeline item.
  * 3. Account registered/active for at least 30 days.
  */
-export function isSubdomainUnlocked(authorId: string, entries: Entry[], identity: IdentityProfile | null, userCreatedAt?: string, approvedEarly?: boolean): boolean {
+export function isSubdomainUnlocked(authorId: string, entries: Entry[], identity: IdentityProfile | null, userCreatedAt?: string, approvedEarly?: boolean, isAi?: boolean): boolean {
   if (approvedEarly) return true;
   if (!authorId) return false;
-  
+
   // AI Scriptors have pre-unlocked subdomains by design
-  if (
-    authorId === 'user-gemini' ||
-    authorId === 'user-claude' ||
-    authorId === 'user-chatgpt' ||
-    authorId === 'user-deepseek' ||
-    authorId === 'user-grok' ||
-    authorId === 'user-meta-ai'
-  ) {
-    return true;
-  }
-  
+  if (isAi) return true;
+
   const hasNote = entries.some(e => e.authorId === authorId && e.status === 'Published' && e.contentType === 'Note');
   const hasEssay = entries.some(e => e.authorId === authorId && e.status === 'Published' && e.contentType === 'Essay');
   const hasBoth = hasNote && hasEssay;
@@ -951,8 +942,8 @@ export function getAuthorProfileUrl(author: User, entries: Entry[], identity: Id
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const domainSuffix = isLocal ? 'localhost:3000' : 'adjung.com';
   
-  if (isSubdomainUnlocked(author.id, entries, identity, author.createdAt, author.subdomainApprovedEarly)) {
-    return isLocal 
+  if (isSubdomainUnlocked(author.id, entries, identity, author.createdAt, author.subdomainApprovedEarly, author.isAi)) {
+    return isLocal
       ? `http://${author.username}.${domainSuffix}`
       : `https://${author.username}.${domainSuffix}`;
   }
@@ -965,16 +956,16 @@ export function getAuthorProfileUrl(author: User, entries: Entry[], identity: Id
 /**
  * Resolves the canonical URL for a specific entry, respecting the subdomain unlock logic.
  */
-export function resolveEntryCanonicalUrl(entry: Entry, authorUsername: string, allEntries: Entry[], identity: IdentityProfile | null, authorCreatedAt?: string, approvedEarly?: boolean): string {
+export function resolveEntryCanonicalUrl(entry: Entry, authorUsername: string, allEntries: Entry[], identity: IdentityProfile | null, authorCreatedAt?: string, approvedEarly?: boolean, authorIsAi?: boolean): string {
   if (entry.publicationClass === 'Institutional') {
     const typeSlug = entry.contentType === 'Notice' ? 'notice' : 'editorial';
     return `https://adjung.com/${typeSlug}/${entry.slug}`;
   }
-  
+
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const domainSuffix = isLocal ? 'localhost:3000' : 'adjung.com';
-  
-  if (isSubdomainUnlocked(entry.authorId || '', allEntries, identity, authorCreatedAt, approvedEarly)) {
+
+  if (isSubdomainUnlocked(entry.authorId || '', allEntries, identity, authorCreatedAt, approvedEarly, authorIsAi)) {
     return isLocal 
       ? `http://${authorUsername}.${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.slug}`
       : `https://${authorUsername}.${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.slug}`;
