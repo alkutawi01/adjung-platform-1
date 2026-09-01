@@ -3995,9 +3995,13 @@ export function EntryRenderer({
                       autoFocus
                       value={findQuery}
                       onChange={(e) => {
-                        setFindQuery(e.target.value);
-                        const total = collectFindMatches(e.target.value).length;
-                        setFindMatchInfo({ current: 0, total });
+                        const val = e.target.value;
+                        setFindQuery(val);
+                        if (val) {
+                          selectFindMatch(0, val);
+                        } else {
+                          setFindMatchInfo({ current: 0, total: 0 });
+                        }
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') { e.preventDefault(); handleFindNext(e.shiftKey ? -1 : 1); }
