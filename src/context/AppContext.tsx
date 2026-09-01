@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, DigitalSignature, PolicyDocument, SystemLog } from '../types';
+import { User, Entry, WriterProfile, IdentityProfile, BiographyItem, SystemSettings, EntryType, RolePermissions, DigitalSignature, PolicyDocument, SystemLog, PublicationClass } from '../types';
 import { AuthService, SessionService, RbacService } from '../services/supabaseAuthService';
 import { BRAND } from '../config/brand';
 import { generateUUID, shouldAutoFetch, resolveEntryCanonicalUrl, getSubdomainFromHostname } from '../utils';
@@ -535,11 +535,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const slugSuffix = Date.now().toString().slice(-4);
     const entrySlug = type === 'Note' ? `note-${slugSuffix}` : `untitled-${type.toLowerCase()}-${slugSuffix}`;
+    // Notice/Editor's Note represent the Editorial Board, not whichever
+    // admin happened to click the button — publicationClass is what tells
+    // the renderer to show "Adjung Editorial Board" instead of the creator's
+    // own name/domain, and what routes the canonical URL under
+    // adjung.com/notice|editorial/ instead of the creator's personal
+    // subdomain. Left unset before, every downstream '=== Institutional'
+    // check silently treated these as ordinary personal writing.
+    const publicationClass: PublicationClass = (type === 'Notice' || type === "Editor's Note") ? 'Institutional' : 'Scholarly';
 
     const newEntry: Entry = {
       id: newId,
       authorId: currentUser.id,
       contentType: type,
+      publicationClass,
       status: 'Draft',
       visibility: 'Private',
       createdDate: new Date().toISOString(),
@@ -549,7 +558,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       slug: entrySlug,
       tags: [],
       canonicalUrl: resolveEntryCanonicalUrl(
-        { id: newId, authorId: currentUser.id, contentType: type, slug: entrySlug, status: 'Draft', visibility: 'Private', createdDate: new Date().toISOString(), updatedDate: new Date().toISOString(), publishedDate: null, title: tempTitle, tags: [], content: defaultContent } as Entry,
+        { id: newId, authorId: currentUser.id, contentType: type, publicationClass, slug: entrySlug, status: 'Draft', visibility: 'Private', createdDate: new Date().toISOString(), updatedDate: new Date().toISOString(), publishedDate: null, title: tempTitle, tags: [], content: defaultContent } as Entry,
         currentUser.username,
         entries,
         identities.find(i => i.accountId === currentUser.id) || null,
