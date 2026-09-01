@@ -13,6 +13,7 @@ interface EntryActionsMenuProps {
   setEditingEntry: (entry: Entry | null) => void;
   setSelectedEntry: (entry: Entry | null) => void;
   setActiveTab: (tab: string) => void;
+  onReport: () => void;
 }
 
 export function EntryActionsMenu({
@@ -26,7 +27,8 @@ export function EntryActionsMenu({
   currentUser,
   setEditingEntry,
   setSelectedEntry,
-  setActiveTab
+  setActiveTab,
+  onReport
 }: EntryActionsMenuProps) {
   return (
     <div 
@@ -117,13 +119,18 @@ export function EntryActionsMenu({
           >
             Revision History (Coming Soon)
           </button>
-          <button
-            type="button"
-            disabled
-            className="w-full text-left px-3 py-1.5 text-xs text-stone-300 cursor-not-allowed flex items-center gap-2 border-0 bg-transparent font-sans"
-          >
-            Report Error (Coming Soon)
-          </button>
+          {currentUser?.id !== entry.authorId && !entry.underReview && (
+            <button
+              type="button"
+              onClick={() => {
+                onReport();
+                setShowActionsMenu(false);
+              }}
+              className="w-full text-left px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition duration-150 cursor-pointer flex items-center gap-2 border-0 bg-transparent font-sans"
+            >
+              Report
+            </button>
+          )}
         </div>
       )}
     </div>

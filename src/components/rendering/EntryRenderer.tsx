@@ -3684,6 +3684,7 @@ export function EntryRenderer({
                     setEditingEntry={setEditingEntry}
                     setSelectedEntry={setSelectedEntry}
                     setActiveTab={setActiveTab}
+                    onReport={handleReportEntry}
                   />
                 </span>
               </div>
