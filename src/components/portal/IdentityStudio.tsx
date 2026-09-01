@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, IdentityProfile } from '../../types';
 import { SignatureManager } from '../desk/SignatureManager';
-import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe, Check, X } from 'lucide-react';
 import { isSubdomainUnlocked } from '../../utils';
 
 import { useAppContext } from '../../context/AppContext';
@@ -352,7 +352,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                         item.done ? 'bg-emerald-50 border-emerald-400 text-emerald-600 font-bold' : 'bg-stone-50 border-stone-200 text-stone-300'
                       }`}>
-                        {item.done ? '✓' : ''}
+                        {item.done && <Check className="w-2.5 h-2.5" />}
                       </span>
                       <span className={item.done ? 'text-stone-400 line-through' : 'text-stone-700'}>
                         {item.label}
@@ -377,7 +377,9 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
     return (
       <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
         <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-5xl w-full p-8 relative max-h-[90vh] overflow-y-auto scholarly-border animate-fade-in">
-          <button onClick={handleClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 font-mono text-xs uppercase tracking-wider cursor-pointer">✕ Close</button>
+          <button onClick={handleClose} className="absolute top-4 right-4 inline-flex items-center gap-1 text-stone-400 hover:text-stone-700 font-mono text-xs uppercase tracking-wider cursor-pointer">
+            <X className="w-3 h-3" /> Close
+          </button>
           {renderContent()}
         </div>
       </div>

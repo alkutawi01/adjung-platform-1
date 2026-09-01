@@ -3034,7 +3034,7 @@ export function EntryRenderer({
               onClick={() => setEditingBlockIndex(null)}
               className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
             >
-              ✓ Done
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
             </button>
           </div>
 
@@ -3091,7 +3091,7 @@ export function EntryRenderer({
               onClick={() => setEditingBlockIndex(null)}
               className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
             >
-              ✓ Done
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
             </button>
           </div>
 
@@ -3196,7 +3196,7 @@ export function EntryRenderer({
               onClick={() => setEditingBlockIndex(null)}
               className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
             >
-              ✓ Done
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
             </button>
           </div>
 
@@ -3259,7 +3259,7 @@ export function EntryRenderer({
               onClick={() => setEditingBlockIndex(null)}
               className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
             >
-              ✓ Done
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
             </button>
           </div>
 
@@ -3327,7 +3327,7 @@ export function EntryRenderer({
             onClick={() => setEditingBlockIndex(null)}
             className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
           >
-            ✓ Done
+            <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
           </button>
         </div>
         
@@ -4993,9 +4993,11 @@ export function EntryRenderer({
               ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/40' 
               : 'bg-[#FDFDFD] border-stone-200/90 text-stone-700 shadow-sm'
           }`}>
-            <span className={`font-semibold text-base leading-none ${toast.type === 'error' ? 'text-red-600' : 'text-adjung-maroon'}`}>
-              {toast.type === 'error' ? '⚠' : '✓'}
-            </span>
+            {toast.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            ) : (
+              <Check className="w-4 h-4 text-adjung-maroon flex-shrink-0" />
+            )}
             <span className="tracking-wide leading-snug">{toast.message}</span>
           </div>
         </div>

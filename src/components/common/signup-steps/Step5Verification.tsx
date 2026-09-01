@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -100,9 +100,10 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
           <button 
             type="button"
             onClick={handleResend}
-            className="text-stone-500 hover:text-adjung-maroon font-mono uppercase tracking-wider transition font-semibold"
+            className="inline-flex items-center gap-1 text-stone-500 hover:text-adjung-maroon font-mono uppercase tracking-wider transition font-semibold"
           >
-            {resent ? '✓ Dispatched New Code' : 'Resend Code'}
+            {resent && <Check className="w-3 h-3" />}
+            {resent ? 'Dispatched New Code' : 'Resend Code'}
           </button>
           
           <button 

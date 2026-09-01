@@ -68,7 +68,7 @@ export default function Step7PersonalSite({ formData, setFormData }: Step7Person
           {status === 'invalid' && 'Contains invalid characters'}
           {status === 'reserved' && 'This address is reserved'}
           {status === 'taken' && 'This address is already taken'}
-          {status === 'available' && '✓ This address is available'}
+          {status === 'available' && 'This address is available'}
         </p>
       </div>
 

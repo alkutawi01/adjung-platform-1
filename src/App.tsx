@@ -26,6 +26,9 @@ import {
   ListOrdered,
   PenTool,
   Info,
+  Check,
+  AlertTriangle,
+  Camera,
   Database,
   ShieldAlert,
   UserCheck,
@@ -147,8 +150,8 @@ function renderFrontpageBlock(block: any, pIdx: number) {
   if (block.type === 'image') {
     return (
       <figure key={pIdx} className="my-3 text-center bg-transparent">
-        <span className="inline-block text-[11px] text-stone-400 italic border border-stone-200/60 p-1 rounded font-sans bg-stone-50/10">
-          📷 [Image: {block.alt || 'Untitled'}]
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-stone-400 border border-stone-200/60 p-1 rounded font-sans bg-stone-50/10">
+          <Camera className="w-3 h-3" /> [Image: {block.alt || 'Untitled'}]
         </span>
       </figure>
     );
@@ -1377,11 +1380,19 @@ Editorial Board of Adjung`;
           {toast && (
             <div
               onClick={() => setToastVisible(false)}
-              className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+              className={`print:hidden fixed bottom-6 right-6 z-50 transition-all duration-300 transform cursor-pointer select-none max-w-sm w-auto ${toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
                 }`}
             >
-              <div className="bg-[#FDFDFD] border border-stone-200/90 shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-sans text-[13px] text-stone-700 hover:border-stone-300 transition-colors">
-                <span className="text-adjung-maroon font-semibold">✓</span>
+              <div className={`border shadow-sm px-4 py-2.5 rounded-sm flex items-center gap-2.5 font-sans text-[13px] transition-colors ${
+                toast.type === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-900 hover:border-red-300'
+                  : 'bg-[#FDFDFD] border-stone-200/90 text-stone-700 hover:border-stone-300'
+              }`}>
+                {toast.type === 'error' ? (
+                  <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                ) : (
+                  <Check className="w-4 h-4 text-adjung-maroon flex-shrink-0" />
+                )}
                 <span className="tracking-wide">{toast.message}</span>
               </div>
             </div>

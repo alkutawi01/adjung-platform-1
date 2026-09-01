@@ -3,7 +3,7 @@ import { BiographyItem, IdentityProfile, User } from '../../types';
 import { stripMarkdown, parseInlineFormatting } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
-import { Edit3, Sparkles, ChevronLeft } from 'lucide-react';
+import { Edit3, Sparkles, ChevronLeft, X } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { IdentityStudio } from './IdentityStudio';
 import { FieldTooltip } from '../common/FieldTooltip';
@@ -285,9 +285,9 @@ export function BiographyView({
                         onClick={() => {
                           requestConfirm('Delete this milestone permanently?', () => handleRemoveBioItem(item.id), { confirmLabel: 'Delete' });
                         }}
-                        className="text-[9px] font-mono uppercase tracking-wider text-red-700 hover:text-red-900 transition-colors font-bold cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-red-700 hover:text-red-900 transition-colors font-bold cursor-pointer"
                       >
-                        ✕ Delete Milestone
+                        <X className="w-2.5 h-2.5" /> Delete Milestone
                       </button>
                     </div>
                   )}

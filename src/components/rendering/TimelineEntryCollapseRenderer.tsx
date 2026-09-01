@@ -1,4 +1,5 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
+import { Camera } from 'lucide-react';
 import { Entry, EntryLayoutVariant } from '../../types';
 import { parseContentToBlocks, isArabicText, parseInlineFormatting, getFootnotesReadingOrderMap, getMarginNotesReadingOrderMap } from '../../utils';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
@@ -353,8 +354,8 @@ export function TimelineEntryCollapseRenderer({
     if (block.type === 'image') {
       return (
         <figure key={pIdx} className="my-3 text-center bg-transparent">
-          <span className={`inline-block text-[11px] text-stone-400 italic border border-stone-200/60 p-1 rounded ${proseFont} bg-stone-50/10`}>
-            📷 [Image: {block.alt || 'Untitled'}]
+          <span className={`inline-flex items-center gap-1.5 text-[11px] text-stone-400 border border-stone-200/60 p-1 rounded ${proseFont} bg-stone-50/10`}>
+            <Camera className="w-3 h-3" /> [Image: {block.alt || 'Untitled'}]
           </span>
         </figure>
       );

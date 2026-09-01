@@ -276,7 +276,7 @@ export function EntryImageEditor({ url, alt, idx, onUpdate, onConvertToParagraph
     <div className="border border-stone-200/60 rounded-md p-4 bg-white shadow-sm space-y-4">
       <div className="flex items-center justify-between border-b border-stone-100 pb-2">
         <span className="font-mono text-[9.5px] uppercase tracking-wider text-stone-500 font-semibold flex items-center gap-1">
-          📷 Image Block Editor
+          <ImageIcon className="w-3 h-3" /> Image Block Editor
         </span>
         {onConvertToParagraph && (
           <button

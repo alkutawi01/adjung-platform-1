@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings2, X } from 'lucide-react';
+import { Settings2, X, AlertTriangle } from 'lucide-react';
 import { EntryType, LayoutSettings } from '../../types';
 import { computeReadingLayout } from '../../utils';
 
@@ -187,8 +187,8 @@ export function LayoutInspector({ contentType, currentSettings, defaultSettings,
         <p className="text-[9px] text-stone-400 -mt-2">Padding and Card Width are two views of the same gap — edit either one, the other follows. Column Width and Margin Note Width stay put.</p>
 
         {liveLayout.warning && (
-          <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 leading-relaxed">
-            ⚠ {liveLayout.warning}
+          <p className="flex items-start gap-1.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 leading-relaxed">
+            <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> {liveLayout.warning}
           </p>
         )}
 

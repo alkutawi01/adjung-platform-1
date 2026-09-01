@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Globe, Calendar, AlertTriangle } from 'lucide-react';
+import { Layers, Globe, Calendar, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react';
 import { User, Entry } from '../../../types';
 import { parseInlineFormatting, parseInTheNews, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../../utils';
 
@@ -156,11 +156,11 @@ export function FrontpageCurationTab({
                       const val = editorialSelectionIds[idx];
                       if (!val) return <span className="text-stone-400">Empty Slot</span>;
                       const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                      if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                      if (!resolved) return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Entry not found</span>;
                       if (resolved.contentType !== 'Essay') {
-                        return <span className="text-red-500">❌ Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
+                        return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
                       }
-                      return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                      return <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" /> {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                     })()}
                   </div>
                 </div>
@@ -192,11 +192,11 @@ export function FrontpageCurationTab({
                 {(() => {
                   if (!featuredEntryId) return <span className="text-stone-400">None Selected</span>;
                   const resolved = publishedEntries.find(e => e.id === featuredEntryId || e.slug === featuredEntryId);
-                  if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                  if (!resolved) return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Entry not found</span>;
                   if (resolved.contentType !== 'Essay') {
-                    return <span className="text-red-500">❌ Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
+                    return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
                   }
-                  return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                  return <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" /> {resolved.contentType}: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                 })()}
               </div>
             </div>
@@ -234,11 +234,11 @@ export function FrontpageCurationTab({
                       const val = featuredEssayIds[idx];
                       if (!val) return <span className="text-stone-400">Empty Slot</span>;
                       const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                      if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                      if (!resolved) return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Entry not found</span>;
                       if (resolved.contentType !== 'Essay') {
-                        return <span className="text-red-500">❌ Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
+                        return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Invalid Type: Must be an Essay (resolved as {resolved.contentType})</span>;
                       }
-                      return <span className="text-emerald-600">✅ Essay: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                      return <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" /> Essay: "{resolved.title}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                     })()}
                   </div>
                 </div>
@@ -278,11 +278,11 @@ export function FrontpageCurationTab({
                       const val = featuredNoteIds[idx];
                       if (!val) return <span className="text-stone-400">Empty Slot</span>;
                       const resolved = publishedEntries.find(e => e.id === val || e.slug === val);
-                      if (!resolved) return <span className="text-red-500">❌ Entry not found</span>;
+                      if (!resolved) return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Entry not found</span>;
                       if (resolved.contentType !== 'Note' && resolved.contentType !== 'Essay') {
-                        return <span className="text-red-500">❌ Invalid Type: Must be a Note or Essay (resolved as {resolved.contentType})</span>;
+                        return <span className="inline-flex items-center gap-1 text-red-500"><XCircle className="w-3 h-3" /> Invalid Type: Must be a Note or Essay (resolved as {resolved.contentType})</span>;
                       }
-                      return <span className="text-emerald-600">✅ {resolved.contentType}: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
+                      return <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-3 h-3" /> {resolved.contentType}: "{resolved.title || 'Untitled Note'}" by {users.find(u => u.id === resolved.authorId)?.penName}</span>;
                     })()}
                   </div>
                 </div>
