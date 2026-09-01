@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Search, X } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { getInitials } from '../../utils';
 
 interface SwitchScriptorModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
           {aiScriptors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {aiScriptors.map((ai) => {
-                const initials = ai.penName.substring(0, 2).toUpperCase();
+                const authorSig = ai.signature || getInitials(ai.penName);
                 return (
                   <button
                     key={ai.id}
@@ -86,9 +87,9 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                     }}
                     className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/5 transition duration-200 cursor-pointer flex items-start gap-3 group"
                   >
-                    <div className={`w-9 h-9 rounded-full ${ai.avatarColor || 'bg-stone-800 text-stone-100'} flex items-center justify-center font-sans text-sm font-semibold tracking-wider flex-shrink-0 group-hover:scale-105 transition-transform`}>
-                      {initials}
-                    </div>
+                    <span className="sig w-9 text-xl text-adjung-maroon flex-shrink-0 leading-9 text-center" aria-hidden="true">
+                      {authorSig}
+                    </span>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-sans text-sm text-stone-900 font-semibold truncate group-hover:text-adjung-maroon transition-colors">
                         {ai.penName}
