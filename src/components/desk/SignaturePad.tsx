@@ -73,7 +73,13 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
   const dynamicFontOptions = allowedFonts.map(f => ({ name: f, value: `${f}, cursive` }));
   const [signatureMode, setSignatureMode] = useState<'draw' | 'type'>(existingSignature?.type || 'draw');
   const [typedText, setTypedText] = useState(existingSignature?.type === 'typed' ? existingSignature.typedText || existingSignature.label : (defaultName || '').slice(0, 15));
-  const [selectedFont, setSelectedFont] = useState(existingSignature?.fontFamily ? `${existingSignature.fontFamily}, cursive` : (dynamicFontOptions[0]?.value || 'cursive'));
+  // Saved fontFamily values are already suffixed with ", cursive" (this
+  // component is the only writer, via handleSaveSignature below) — appending
+  // it again unconditionally on every reopen grew the string by one
+  // ", cursive" per edit cycle until it matched no <option> in the dropdown.
+  // Strip any trailing suffix first so this stays idempotent regardless of
+  // how many times it's already been through this bug.
+  const [selectedFont, setSelectedFont] = useState(existingSignature?.fontFamily ? `${existingSignature.fontFamily.replace(/(,\s*cursive)+\s*$/i, '')}, cursive` : (dynamicFontOptions[0]?.value || 'cursive'));
   const [inkFlowWeight, setInkFlowWeight] = useState<number>(existingSignature?.penStyle?.inkFlowWeight || 7.5);
   const [nibAngle, setNibAngle] = useState<number>(existingSignature?.penStyle?.nibAngle || 45); // 0 (round), 30, 45, 60
   const [paperTexture, setPaperTexture] = useState<PaperTexture>((existingSignature?.penStyle as any)?.paperTexture || 'Laid');
