@@ -4,6 +4,7 @@ import { Entry, User } from '../../types';
 import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumber, getInitials, resolveEntryCanonicalUrl } from '../../utils';
 import { getContentEntries, getContentFacets, resolveContentAuthorName, resolveContentAuthorSig } from '../../utils/getContentEntries';
 import { useAppContext } from '../../context/AppContext';
+import { resolveSignatureText } from '../../utils/signatureResolvers';
 
 interface ContentViewProps {
   entries: Entry[];
@@ -192,7 +193,9 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
     setBaselineTimestamp(newestTimestamp([...entries, newEntry]));
   };
 
-  const currentUserSig = currentUser ? (currentUser.signature || getInitials(currentUser.penName || currentUser.username || '')) : '';
+  const currentUserSig = currentUser
+    ? (resolveSignatureText(currentUser.id, '', identities) || getInitials(currentUser.penName || currentUser.username || ''))
+    : '';
 
   let lastDayLabel = '';
 
@@ -403,7 +406,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         <div className="space-y-0">
           {results.map(entry => {
             const authorName = resolveContentAuthorName(entry, users);
-            const authorSig = resolveContentAuthorSig(entry, users);
+            const authorSig = resolveContentAuthorSig(entry, users, identities);
             const author = users.find(u => u.id === entry.authorId);
             const isNote = entry.contentType === 'Note';
             const preview = flattenBlocksForPreview(entry.content);

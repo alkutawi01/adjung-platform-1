@@ -3,6 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Search, X } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { getInitials } from '../../utils';
+import { resolveSignatureText } from '../../utils/signatureResolvers';
 
 interface SwitchScriptorModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { users, currentUser, switchActingAccount } = useAppContext();
+  const { users, currentUser, switchActingAccount, identities } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useModalA11y(isOpen, onClose);
 
@@ -76,7 +77,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
           {aiScriptors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {aiScriptors.map((ai) => {
-                const authorSig = ai.signature || getInitials(ai.penName);
+                const authorSig = resolveSignatureText(ai.id, '', identities) || getInitials(ai.penName);
                 return (
                   <button
                     key={ai.id}

@@ -1689,6 +1689,7 @@ Editorial Board of Adjung`;
               <FrontpageView
                 entries={entries}
                 users={users}
+                identities={identities}
                 systemSettings={systemSettings}
                 setSelectedEntry={setSelectedEntry}
                 setSelectedAuthorId={setSelectedAuthorId}

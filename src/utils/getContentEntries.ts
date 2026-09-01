@@ -10,8 +10,9 @@
 // the reader picks a name or a tag, nothing is picked for them. That keeps
 // it inside the same governing rule Index and Frontpage already follow.
 
-import { Entry, User } from '../types';
+import { Entry, User, IdentityProfile } from '../types';
 import { getInitials } from '../utils';
+import { resolveSignatureText } from './signatureResolvers';
 
 export interface GetContentEntriesParams {
   entries: Entry[];
@@ -121,10 +122,15 @@ export function resolveContentAuthorName(entry: Entry, users: User[]): string {
 }
 
 /** Adjung's identity mark is a signature, never a photo avatar — the
- *  author's own signature if one exists, otherwise dotted initials. */
-export function resolveContentAuthorSig(entry: Entry, users: User[]): string {
+ *  author's own signature if one exists, otherwise dotted initials.
+ *  Goes through resolveSignatureText (the real DigitalSignature record)
+ *  rather than the plain User.signature string — that field only ever
+ *  holds usable text for a typed signature; for a drawn one it's just
+ *  whatever label SignatureManager stamped on it (e.g. "Signature
+ *  8/31/2026"), which isn't fit to display here as if it were the
+ *  author's name. */
+export function resolveContentAuthorSig(entry: Entry, users: User[], identities: IdentityProfile[]): string {
   const name = resolveContentAuthorName(entry, users);
   if (entry.publicationClass === 'Institutional') return getInitials(name);
-  const author = users.find(u => u.id === entry.authorId);
-  return author?.signature || getInitials(name);
+  return resolveSignatureText(entry.authorId, '', identities) || getInitials(name);
 }
