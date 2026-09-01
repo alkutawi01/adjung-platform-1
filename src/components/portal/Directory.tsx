@@ -354,7 +354,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                           onClick={() => onSelectMember(u.id, 'bio')}
                           className="flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-adjung-maroon hover:bg-adjung-maroon/5 text-stone-700 hover:text-adjung-maroon font-mono text-[9px] uppercase tracking-wider rounded transition cursor-pointer font-semibold"
                         >
-                          <FileText className="w-3 h-3" /> Bio
+                          <FileText className="w-3 h-3" /> Biography
                         </button>
                       </div>
                     </td>
