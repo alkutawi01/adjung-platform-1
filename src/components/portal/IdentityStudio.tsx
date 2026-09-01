@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, IdentityProfile } from '../../types';
 import { SignatureManager } from '../desk/SignatureManager';
 import { ShieldCheck, User as UserIcon, BookOpen, Key, Fingerprint, Globe, Check, X } from 'lucide-react';
-import { isSubdomainUnlocked } from '../../utils';
+import { isSubdomainUnlocked, generateUUID } from '../../utils';
 
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -50,11 +50,11 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
         publicVisibility: 'Public',
         lifeTimeline: [],
         signatures: currentUser.signature ? [{
-          id: `sig-${Date.now()}`,
+          id: generateUUID(),
           label: currentUser.signature,
           type: 'typed',
           typedText: currentUser.signature,
-          fontFamily: 'Outfit',
+          fontFamily: 'Mrs Saint Delafield',
           status: 'Default',
           strokes: [],
           createdAt: new Date().toISOString()

@@ -4,6 +4,7 @@ import { SignaturePad } from './SignaturePad';
 import { SignatureRenderer } from './SignatureRenderer';
 import { Edit3, CheckCircle, Trash2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { generateUUID } from '../../utils';
 
 interface SignatureManagerProps {
   identity: IdentityProfile;
@@ -19,7 +20,7 @@ export function SignatureManager({ identity, onIdentityUpdate }: SignatureManage
 
   const handleSaveNewSignature = (data: Partial<DigitalSignature>) => {
     const newSig: DigitalSignature = {
-      id: `sig-${Date.now()}`,
+      id: generateUUID(),
       label: data.type === 'typed' ? (data.typedText || 'Signature') : `Signature ${new Date().toLocaleDateString()}`,
       status: 'Default',
       strokes: data.strokes || [],

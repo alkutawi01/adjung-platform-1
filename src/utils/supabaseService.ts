@@ -368,8 +368,14 @@ export const supabaseService = {
 
     await supabase.from('digital_signatures').delete().eq('identity_id', identityId);
     if (identity.signatures.length > 0) {
+      // Carry each signature's own id/createdAt through the delete+reinsert —
+      // without them, every identity save (even an unrelated one, like
+      // editing a biography milestone) silently rotated the signature's id
+      // and reset its created-at to now, corrupting "Created on" display and
+      // any future reference to a specific signature version.
       const { error: sigError } = await supabase.from('digital_signatures').insert(
         identity.signatures.map(s => ({
+          id: s.id,
           identity_id: identityId,
           label: s.label,
           status: s.status,
@@ -379,6 +385,7 @@ export const supabaseService = {
           strokes: s.strokes,
           pen_style: s.penStyle,
           typography_style: s.typographyStyle,
+          created_at: s.createdAt,
         }))
       );
       if (sigError) throw sigError;
