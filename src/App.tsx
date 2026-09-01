@@ -566,12 +566,10 @@ export default function App() {
     // Main Portal routing synchronization
     if (parts.length === 0 || parts[0] === 'landing') {
       if (currentUser) {
-        if (activeTab === 'landing' || activeTab === 'frontpage') {
-          setActiveTab('frontpage');
-          setSelectedAuthorId('');
-          setSelectedEntry(null);
-          setEditingEntry(null);
-        }
+        setActiveTab('frontpage');
+        setSelectedAuthorId('');
+        setSelectedEntry(null);
+        setEditingEntry(null);
       } else {
         setActiveTab('landing');
         setSelectedAuthorId('');
