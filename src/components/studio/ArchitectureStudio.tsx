@@ -286,9 +286,9 @@ export const ArchitectureStudio: React.FC = () => {
       <div className="flex-1 h-[70vh] relative min-w-0">
         <div className="absolute top-4 left-4 z-10 p-4 bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm rounded max-w-xs font-sans text-xs text-stone-600 space-y-1 select-none pointer-events-none">
           <h2 className="font-serif text-sm font-semibold text-stone-900 uppercase tracking-wide">Adjung Digital Twin</h2>
-          <p className="font-sans text-stone-500 italic">Conceptual Knowledge Graph</p>
+          <p className="font-sans text-stone-500">Conceptual Knowledge Graph</p>
           <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">
-            Click on any platform concept node to run an interactive **Impact Analysis** and view active development routes.
+            Click on any platform concept node to run an interactive <strong>Impact Analysis</strong> and view active development routes.
           </p>
         </div>
         

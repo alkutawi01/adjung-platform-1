@@ -1335,7 +1335,7 @@ export function EntryRenderer({
     // `footnotes: string[]` array is unrelated and must not be used, or the
     // citation text silently never reaches anyone reading the entry.
     const id = `fn-${generateUUID()}`;
-    const footnoteText = text ? `Rujukan untuk "${text}": ` : "Rujukan nota kaki baharu.";
+    const footnoteText = text ? `Reference for "${text}": ` : "New footnote reference.";
     const updatedFootnotesData = [...footnotesData, { id, content: footnoteText }];
     setFootnotesData(updatedFootnotesData);
 

@@ -441,7 +441,7 @@ export function FrontpageCurationTab({
                     </div>
                     
                     <div>
-                      <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Jadual Refresh Google Doc (Format 24j, cth: 12:10, 00:10)</label>
+                      <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold mb-1">Google Doc Refresh Schedule (24h format, e.g. 12:10, 00:10)</label>
                       <input
                         type="text"
                         value={googleDocSyncTimes}

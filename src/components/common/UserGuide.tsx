@@ -200,7 +200,7 @@ export function UserGuide() {
             <div className="bg-amber-50/40 border border-amber-200 rounded p-4 flex gap-3 text-xs leading-normal font-sans text-stone-700 mb-6">
               <Info className="w-5 h-5 text-amber-700 flex-shrink-0" />
               <div>
-                <strong>Notice:</strong> These Alt-key bindings will be natively enabled in the Writing Desk starting in **Fasa 2**. Use them as a reference sheet during composition.
+                <strong>Notice:</strong> These Alt-key bindings will be natively enabled in the Writing Desk starting in <strong>Phase 2</strong>. Use them as a reference sheet during composition.
               </div>
             </div>
 
