@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
 import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, VectorStroke, Footnote, DigitalSignature, LayoutSettings } from '../../types';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { SignatureLayout } from '../desk/SignatureLayout';
@@ -87,9 +86,7 @@ export function EntryRenderer({
   const [showXmlView, setShowXmlView] = useState(false);
   const activeSpec = presentationSpec || getPresentationSpec(contentType);
   // Tracks Tailwind's md: breakpoint (768px) specifically, for the Layout
-  // Inspector's dynamic padding — separate from the unrelated `isMobile`
-  // state declared further below (that one's threshold is 1280px, for the
-  // drag/swipe UI).
+  // Inspector's dynamic padding.
   const [isDesktopWidth, setIsDesktopWidth] = useState(true);
   useEffect(() => {
     const check = () => setIsDesktopWidth(window.innerWidth >= 768);
@@ -235,7 +232,6 @@ export function EntryRenderer({
   const [glossText, setGlossText] = useState('');
   const [glossTargetRange, setGlossTargetRange] = useState<Range | null>(null);
   const [glossTargetText, setGlossTargetText] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
 
   const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
   const [marginOffsets, setMarginOffsets] = useState<Record<string, number>>({});
@@ -244,15 +240,6 @@ export function EntryRenderer({
   const [toolbarCoords, setToolbarCoords] = useState<{ x: number; y: number } | null>(null);
   const [contextCoords, setContextCoords] = useState<{ x: number; y: number } | null>(null);
   const [contextRange, setContextRange] = useState<Range | null>(null);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1280);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const [showQuoteTypes, setShowQuoteTypes] = useState(false);
 
@@ -3599,7 +3586,6 @@ export function EntryRenderer({
    * This is used for BOTH reading/viewing and the Writing Desk's live preview.
    */
   const renderPublishedContent = () => {
-    const isArticle = contentType === 'Essay';
     const isNote = contentType === 'Note';
 
     // serial_no / current_version / reading_time_minutes are authoritative,
@@ -3625,16 +3611,10 @@ export function EntryRenderer({
       isArContent ? 'text-right' : 'text-left'
     } ${
       contentType === 'Note' ? 'bg-[#FAF8F5] text-[#3D2E2B]' : 'text-[#111111]'
-    } ${
-      isArticle ? 'select-none cursor-grab active:cursor-grabbing touch-pan-y' : 'select-text'
-    }`;
+    } select-text`;
 
     return (
-      <motion.article
-        drag={isMobile && isArticle ? "x" : false}
-        dragConstraints={isMobile && isArticle ? { left: -240, right: 0 } : undefined}
-        dragElastic={isMobile && isArticle ? 0.15 : 0}
-        dragSnapToOrigin={true}
+      <article
         className={containerClass}
         style={cardStyleOverride}
       >
@@ -4472,7 +4452,7 @@ export function EntryRenderer({
         )}
 
         {mode === 'edit' && renderFloatingToolbar()}
-      </motion.article>
+      </article>
     );
   };
 
