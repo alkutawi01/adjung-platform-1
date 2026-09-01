@@ -145,6 +145,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pendingOAuthProfile, setPendingOAuthProfile] = useState<PendingOAuthProfile | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
+  // Supabase's auth listener re-fires on routine events (token refresh, tab
+  // visibility/focus changes) for an already-active session, not just on a
+  // genuine sign-in. The listener below needs to tell those apart so it
+  // doesn't reset selectedAuthorId — and bounce the navbar/URL to the
+  // user's own Folio — every time the tab regains focus while they're
+  // browsing Content/Directory/Index or someone else's Folio.
+  const currentUserIdRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTabType>('landing');
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -312,6 +319,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeConfirm = () => setConfirmState(null);
 
   useEffect(() => {
+    currentUserIdRef.current = currentUser?.id || null;
+  }, [currentUser]);
+
+  useEffect(() => {
     if (toastVisible) {
       const timer = setTimeout(() => {
         setToastVisible(false);
@@ -330,13 +341,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (resolvedUser && !resolvedUser.suspended) {
           const actingUserId = localStorage.getItem('Adjung_acting_user_id');
           const actingUser = actingUserId ? data.users.find(u => u.id === actingUserId) : null;
+          const effectiveUser = actingUser || resolvedUser;
+          const isNewIdentity = currentUserIdRef.current !== effectiveUser.id;
           if (actingUser) {
             setCurrentUser(actingUser);
-            setSelectedAuthorId(actingUser.id);
+            if (isNewIdentity) setSelectedAuthorId(actingUser.id);
             setOriginalUser(resolvedUser);
           } else {
             setCurrentUser(resolvedUser);
-            setSelectedAuthorId(resolvedUser.id);
+            if (isNewIdentity) setSelectedAuthorId(resolvedUser.id);
             setOriginalUser(null);
           }
           SessionService.createSession(resolvedUser, true);
@@ -369,13 +382,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (activeSessionUser) {
           const actingUserId = localStorage.getItem('Adjung_acting_user_id');
           const actingUser = actingUserId ? users.find(u => u.id === actingUserId) : null;
+          const effectiveUser = actingUser || activeSessionUser;
+          const isNewIdentity = currentUserIdRef.current !== effectiveUser.id;
           if (actingUser) {
             setCurrentUser(actingUser);
-            setSelectedAuthorId(actingUser.id);
+            if (isNewIdentity) setSelectedAuthorId(actingUser.id);
             setOriginalUser(activeSessionUser);
           } else {
             setCurrentUser(activeSessionUser);
-            setSelectedAuthorId(activeSessionUser.id);
+            if (isNewIdentity) setSelectedAuthorId(activeSessionUser.id);
             setOriginalUser(null);
           }
         } else {
