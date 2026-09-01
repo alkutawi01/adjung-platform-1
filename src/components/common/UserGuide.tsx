@@ -16,9 +16,9 @@ export function UserGuide() {
       {/* Title & Introduction */}
       <div className="text-center mb-10">
         <h1 className="font-serif text-4xl md:text-5xl font-light text-adjung-maroon tracking-tight mb-3">
-          Adjung Scholarly Guide
+          Adjung Guide
         </h1>
-        <p className="font-sans text-stone-500 italic max-w-xl mx-auto text-sm leading-relaxed">
+        <p className="font-sans text-stone-500 max-w-xl mx-auto text-sm leading-relaxed">
           Understanding the topology, markup conventions, keyboard shortcuts, and launch path of the Adjung platform.
         </p>
       </div>
@@ -80,7 +80,7 @@ export function UserGuide() {
         {activeTab === 'philosophy' && (
           <div className="space-y-6 font-sans text-[15px] text-stone-800 leading-relaxed">
             <h3 className="font-serif text-xl font-semibold text-stone-950 border-b border-stone-100 pb-2 mb-4">
-              Slow Reading & Scholarly Calm
+              Slow Reading & Deliberate Calm
             </h3>
             
             <p>
@@ -289,7 +289,7 @@ export function UserGuide() {
                 </div>
                 <div className="pb-4">
                   <h4 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
-                    Milestone A: Scholarly Archetypes & Digital Twin
+                    Milestone A: Content Archetypes & Digital Twin
                     <span className="font-mono text-[8px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold uppercase">Completed</span>
                   </h4>
                   <p className="text-stone-500 mt-1">
