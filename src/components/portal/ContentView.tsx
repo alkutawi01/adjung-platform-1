@@ -361,7 +361,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         {currentUser && (
           <div className="border border-stone-200/70 rounded-lg bg-white p-4">
             <div className="flex items-start gap-3">
-              <span className="sig italic text-lg text-adjung-maroon shrink-0" aria-hidden="true">{currentUserSig}</span>
+              <span className="sig text-lg text-adjung-maroon shrink-0 !opacity-90" aria-hidden="true">{currentUserSig}</span>
               <div className="flex-1 min-w-0">
                 <textarea
                   value={noteDraft}
@@ -452,7 +452,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   <div className={`p-5 ${isNote ? 'bg-[#FDFBF7]' : 'bg-white'}`}>
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="sig italic text-[15px] text-adjung-maroon shrink-0" aria-hidden="true">
+                        <span className="sig text-[15px] text-adjung-maroon shrink-0 !opacity-90" aria-hidden="true">
                           {authorSig}
                         </span>
                         <div className="min-w-0">
