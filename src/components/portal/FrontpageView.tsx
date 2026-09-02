@@ -866,7 +866,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
         <section className="py-10">
           <div className="flex items-center justify-between mb-8">
             <span className="font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold">
-              FEATURED ESSAYS
+              EDITOR'S SELECTION
             </span>
             {canCurate && (
               <button

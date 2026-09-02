@@ -127,10 +127,10 @@ export function FrontpageCurationTab({
         </div>
 
         <div className="space-y-4 text-xs font-sans">
-          {/* 3 Slots for Featured Articles */}
+          {/* 3 Slots for the Editor's Selection grid */}
           <div className="pt-4 border-t border-stone-200 space-y-3">
             <label className="block font-mono text-[9px] uppercase tracking-wider text-stone-500 font-semibold text-left">
-              Featured Articles (3 Slots)
+              Editor's Selection (3 Slots)
             </label>
             <div className="space-y-3">
               {[0, 1, 2].map((idx) => (
@@ -167,7 +167,7 @@ export function FrontpageCurationTab({
               ))}
             </div>
             <span className="text-stone-400 text-[9px] font-mono mt-1 block text-left">
-              Curated entries displayed on the Frontpage under "Featured Articles".
+              Curated entries displayed on the Frontpage under "Editor's Selection".
             </span>
           </div>
 
