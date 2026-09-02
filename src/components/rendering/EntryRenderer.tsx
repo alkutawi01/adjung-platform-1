@@ -3588,6 +3588,20 @@ export function EntryRenderer({
   const renderPublishedContent = () => {
     const isNote = contentType === 'Note';
 
+    // The signature closure used to branch on entry.isInstitutional alone.
+    // Nothing ever sets that flag true — createNewEntry stamps
+    // publicationClass ('Institutional' for Notice / Editor's Note) and
+    // leaves isInstitutional undefined, which then saves as false. Every
+    // other institutional check in the app (App.tsx, getContentEntries,
+    // Directory) already reads publicationClass, so a published Notice
+    // would have fallen through to the personal-signature branch — and
+    // since App.tsx deliberately passes an empty signature for
+    // institutional entries, it would have rendered "No signature" where
+    // the "Adjung Editorial Board" closure belongs. No institutional entry
+    // exists yet, so this was latent rather than visible. Reads both flags
+    // so nothing relying on the old one can change behaviour.
+    const isInstitutionalEntry = entry.publicationClass === 'Institutional' || !!entry.isInstitutional;
+
     // serial_no / current_version / reading_time_minutes are authoritative,
     // DB-trigger-computed columns (SPEC-028 §14.1) — Folio's card and this
     // canonical view both just read them now, instead of each independently
@@ -4328,7 +4342,7 @@ export function EntryRenderer({
         
         {/* Signature Closure */}
         {/* Signature Closure */}
-        {status === 'Published' && entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
+        {status === 'Published' && isInstitutionalEntry && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 border-t border-stone-300 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
              <span className="w-2 h-2 bg-adjung-maroon rotate-45 mb-4"></span>
              <div className={`${proseFont} text-stone-900 tracking-wide text-lg`}>Adjung Editorial Board</div>
@@ -4337,7 +4351,7 @@ export function EntryRenderer({
              </div>
           </div>
         )}
-        {status === 'Published' && !entry.isInstitutional && activeSpec.visibility.showSignatureClosure && (
+        {status === 'Published' && !isInstitutionalEntry && activeSpec.visibility.showSignatureClosure && (
           <div className="mt-16 pt-12 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
             <div className="w-24 h-[1px] bg-stone-400 absolute top-0 mt-[-1px] mb-8"></div>
             
