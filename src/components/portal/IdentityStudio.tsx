@@ -6,6 +6,7 @@ import { isSubdomainUnlocked, generateUUID } from '../../utils';
 import { COUNTRIES } from '../../constants/countries';
 
 import { useAppContext } from '../../context/AppContext';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
 
 interface IdentityStudioProps {
@@ -23,6 +24,10 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       setActiveTab('desk');
     }
   };
+
+  // Same Escape-to-close + focus trap the other modals use. Only armed in
+  // modal mode — the full-page variant is a normal route, not a dialog.
+  const modalRef = useModalA11y(isModal, handleClose);
 
   const [identity, setIdentity] = useState<IdentityProfile | null>(null);
   
@@ -178,7 +183,7 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div className="space-y-1">
-          <h2 className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
+          <h2 id="identity-studio-title" className="font-serif text-2xl font-light text-stone-900 flex items-center gap-2">
             <Fingerprint className="w-6 h-6 text-adjung-maroon" />
             Identity
           </h2>
@@ -395,8 +400,15 @@ export function IdentityStudio({ isModal = false, onClose }: IdentityStudioProps
   if (isModal) {
     return (
       <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-5xl w-full p-8 relative max-h-[90vh] overflow-y-auto scholarly-border animate-fade-in">
-          <button onClick={handleClose} className="absolute top-4 right-4 inline-flex items-center gap-1 text-stone-400 hover:text-stone-700 font-mono text-xs uppercase tracking-wider cursor-pointer">
+        <div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="identity-studio-title"
+          tabIndex={-1}
+          className="bg-[#FDFDFD] border border-adjung-maroon/20 rounded shadow-2xl max-w-5xl w-full p-8 relative max-h-[90vh] overflow-y-auto scholarly-border animate-fade-in outline-none"
+        >
+          <button onClick={handleClose} data-modal-close className="absolute top-4 right-4 inline-flex items-center gap-1 text-stone-400 hover:text-stone-700 font-mono text-xs uppercase tracking-wider cursor-pointer">
             <X className="w-3 h-3" /> Close
           </button>
           {renderContent()}
