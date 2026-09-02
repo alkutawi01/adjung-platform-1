@@ -6,6 +6,9 @@ import { useAppContext } from '../../context/AppContext';
 import { FieldTooltip } from '../common/FieldTooltip';
 import { useHorizontalOverflow } from '../../hooks/useHorizontalOverflow';
 
+// Matches the cap ContentView already applies to an entry's own tag row.
+const DIRECTORY_TAG_LIMIT = 4;
+
 interface DirectoryProps {
   users: User[];
   entries: Entry[];
@@ -312,15 +315,33 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                       {uMeta.languages.join(', ') || '-'}
                     </td>
 
-                    {/* Tags */}
+                    {/* Tags — capped. Rendering every tag let a single
+                        prolific writer stretch their row to any height and
+                        push the rest of the table off the screen; the count
+                        here is unbounded (it grows with every distinct tag
+                        across all their published entries). The overflow
+                        chip keeps the hidden ones reachable rather than
+                        silently dropping them. */}
                     <td className="p-3 font-sans">
                       <div className="flex flex-wrap gap-1">
                         {uMeta.tags.length > 0 ? (
-                          uMeta.tags.map(tag => (
-                            <span key={tag} className="px-1.5 py-0.5 bg-stone-100 rounded text-[9px] text-stone-500 font-mono uppercase tracking-wide">
-                              {tag}
-                            </span>
-                          ))
+                          <>
+                            {uMeta.tags.slice(0, DIRECTORY_TAG_LIMIT).map(tag => (
+                              <span key={tag} className="px-1.5 py-0.5 bg-stone-100 rounded text-[9px] text-stone-500 font-mono uppercase tracking-wide">
+                                {tag}
+                              </span>
+                            ))}
+                            {uMeta.tags.length > DIRECTORY_TAG_LIMIT && (
+                              <FieldTooltip
+                                text={uMeta.tags.slice(DIRECTORY_TAG_LIMIT).join(', ')}
+                                bubbleClassName="w-48 px-2.5 py-1.5 text-[9px] font-mono uppercase tracking-wide normal-case leading-relaxed"
+                              >
+                                <span className="px-1.5 py-0.5 bg-stone-200/70 rounded text-[9px] text-stone-600 font-mono uppercase tracking-wide cursor-help">
+                                  +{uMeta.tags.length - DIRECTORY_TAG_LIMIT}
+                                </span>
+                              </FieldTooltip>
+                            )}
+                          </>
                         ) : (
                           <span className="text-stone-300">-</span>
                         )}
