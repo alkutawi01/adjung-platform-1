@@ -88,7 +88,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                     }}
                     className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/5 transition duration-200 cursor-pointer flex items-start gap-3 group"
                   >
-                    <span className="sig w-9 text-xl text-adjung-maroon flex-shrink-0 leading-9 text-center" aria-hidden="true">
+                    <span className="sig min-w-[2.25rem] text-xl text-adjung-maroon flex-shrink-0 leading-9 text-center" aria-hidden="true">
                       {authorSig}
                     </span>
                     <div className="min-w-0 flex-1">
