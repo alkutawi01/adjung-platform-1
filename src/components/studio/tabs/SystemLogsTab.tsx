@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, FileText, Search } from 'lucide-react';
 import { User, SystemLog } from '../../../types';
+import { useHorizontalOverflow } from '../../../hooks/useHorizontalOverflow';
 
 interface SystemLogsTabProps {
   currentUser: User;
@@ -18,6 +19,9 @@ export function SystemLogsTab({
   hasPermission
 }: SystemLogsTabProps) {
   const [logsSearchQuery, setLogsSearchQuery] = useState('');
+  // Declared before the permission early-return below, so the hook order
+  // stays stable regardless of which branch renders.
+  const logsOverflow = useHorizontalOverflow<HTMLDivElement>();
 
   if (!hasPermission('manageLogs')) {
     return (
@@ -69,7 +73,15 @@ export function SystemLogsTab({
         </div>
 
         {/* Logs Table */}
-        <div className="overflow-x-auto border border-stone-200 rounded">
+        {/* On a phone this table needs roughly twice the width available, and
+            the column that scrolls out of reach is "Action Executed" — the
+            one the log exists to show. */}
+        {logsOverflow.isOverflowing && (
+          <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+            Swipe left to see more →
+          </p>
+        )}
+        <div className="overflow-x-auto border border-stone-200 rounded" ref={logsOverflow.ref}>
           <table className="w-full text-left border-collapse font-sans text-xs">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500 select-none">

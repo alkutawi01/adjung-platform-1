@@ -2,6 +2,7 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 import { User, SystemSettings } from '../../../types';
 import { supabaseService as firestoreService } from '../../../utils/supabaseService';
+import { useHorizontalOverflow } from '../../../hooks/useHorizontalOverflow';
 
 interface RolesPoliciesTabProps {
   currentUser: User;
@@ -20,7 +21,10 @@ export function RolesPoliciesTab({
   refreshDbState,
   hasPermission
 }: RolesPoliciesTabProps) {
-  
+  // Declared before the permission early-return below, so the hook order
+  // stays stable regardless of which branch renders.
+  const permissionsOverflow = useHorizontalOverflow<HTMLDivElement>();
+
   if (!hasPermission('manageRbac')) {
     return (
       <div className="bg-white border border-stone-200 rounded p-12 text-center shadow-sm select-none">
@@ -52,7 +56,17 @@ export function RolesPoliciesTab({
         </div>
 
         {/* Configurable Permissions Grid */}
-        <div className="overflow-x-auto border border-stone-200 rounded">
+        {/* Same affordance the Directory and Index tables carry. On a phone
+            this grid overflows by ~115px, and the column that falls off the
+            right edge is Chief Editor — so the person most likely to be
+            editing these toggles could not see the column they were looking
+            for, with nothing indicating it was there. */}
+        {permissionsOverflow.isOverflowing && (
+          <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+            Swipe left to see more →
+          </p>
+        )}
+        <div className="overflow-x-auto border border-stone-200 rounded" ref={permissionsOverflow.ref}>
           <table className="w-full text-left border-collapse font-sans text-xs">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200 font-mono text-[9px] uppercase tracking-wider text-stone-500 select-none">
