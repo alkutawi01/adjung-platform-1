@@ -181,7 +181,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshDbState = async () => {
+  const refreshDbState = async (attempt = 0) => {
     try {
       const data = await firestoreService.fetchDbState();
 
@@ -309,7 +309,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     } catch (err) {
+      // A failed sync used to be swallowed with just a console line, which
+      // left the app silently degraded: systemSettings never loads, so every
+      // hasPermission() check returns false and the Directory/Index/Editorium
+      // nav links, curation controls and news strip all quietly disappear —
+      // an ordinary-looking page that is simply missing half the platform,
+      // with nothing telling the user why or that a reload would fix it.
+      // Transient causes are real (a brief network drop, or PostgREST
+      // rejecting a token whose `iat` is a second ahead of its own clock
+      // right after a refresh), so retry briefly before giving up, and say
+      // so plainly if it still fails.
+      if (attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        return refreshDbState(attempt + 1);
+      }
       console.error('Failed to sync state from Supabase:', err);
+      showToast('Could not load the latest platform data. Please reload the page.', 'error');
     }
   };
 
