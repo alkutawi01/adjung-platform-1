@@ -778,7 +778,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
                   {typedText.length}/15
                 </span>
               </div>
-              <span className="font-mono text-[8px] text-stone-500 italic pl-1">
+              <span className="font-mono text-[8px] text-stone-500 pl-1">
                 A-Z, a-z & spaces only (max. 15 characters)
               </span>
             </div>

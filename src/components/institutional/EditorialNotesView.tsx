@@ -59,7 +59,7 @@ export const EditorialNotesView: React.FC<EditorialNotesViewProps> = ({
                 <h3 className="font-sans text-2xl md:text-3xl text-stone-900 group-hover:text-adjung-maroon transition mb-3">
                   {parseInlineFormatting(note.title)}
                 </h3>
-                <p className="font-sans text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-4">
+                <p className="font-sans text-stone-600 text-[14px] leading-relaxed line-clamp-3 mb-4">
                   {note.excerpt || truncateAtWord(flattenBlocksForPreview(note.content), 32)}
                 </p>
                 <span className="text-adjung-maroon hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">

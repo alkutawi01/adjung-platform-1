@@ -335,7 +335,7 @@ export function TimelineEntryCollapseRenderer({
             {listItems}
           </ul>
           {remainingCount > 0 && (
-            <span className="text-[10px] text-stone-400 italic block mt-1">
+            <span className="text-[10px] text-stone-400 block mt-1">
               ... and {remainingCount} more item{remainingCount > 1 ? 's' : ''}
             </span>
           )}

@@ -137,7 +137,7 @@ export function UserGuide() {
                 <div className="bg-stone-50 p-2 border border-stone-200 font-mono text-[11px] text-stone-700 rounded select-all mb-2">
                   [kalimat](gloss:sentence)
                 </div>
-                <div className="text-[10px] text-stone-500 italic font-sans">
+                <div className="text-[10px] text-stone-500 font-sans">
                   Renders as: <span className="inline-block border-b border-adjung-maroon/30 pb-0.5 relative group">kalimat<span className="absolute left-1/2 -translate-x-1/2 -top-3.5 text-[9px] font-mono text-adjung-maroon whitespace-nowrap bg-white px-0.5 leading-none">sentence</span></span>
                 </div>
               </div>

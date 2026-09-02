@@ -127,7 +127,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
           <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-stone-900 leading-tight mb-6 group-hover:text-adjung-maroon transition-colors px-4">
             {parseInlineFormatting(featuredEntry.title, undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </h2>
-          <p className="font-serif text-stone-500 italic max-w-2xl mx-auto leading-relaxed">
+          <p className="font-serif text-stone-500 max-w-2xl mx-auto leading-relaxed">
             {parseInlineFormatting(featuredEntry.excerpt || truncateAtWord(flattenBlocksForPreview(featuredEntry.content), 32), undefined, undefined, undefined, undefined, undefined, undefined, undefined, resolveTypographyContext(featuredEntry))}
           </p>
         </div>

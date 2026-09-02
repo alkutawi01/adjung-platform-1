@@ -341,7 +341,7 @@ export function ReferenceLibrary({ entries, users }: ReferenceLibraryProps) {
                   </h2>
                 )}
                 {showHeroTitle && tempEntry.subtitle && (
-                  <p className="text-stone-400 text-sm font-sans italic">{tempEntry.subtitle}</p>
+                  <p className="text-stone-400 text-sm font-sans">{tempEntry.subtitle}</p>
                 )}
                 <div className={`text-stone-700 leading-relaxed font-sans ${isNote ? 'text-[15.5px] md:text-[16.5px]' : 'text-sm'} line-clamp-4`}>
                   {parseInlineFormatting(tempEntry.excerpt || tempEntry.content)}

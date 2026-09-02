@@ -134,7 +134,7 @@ export function UserManagementTab({
 
               <div className="pt-2 border-t border-stone-100 flex justify-end">
                 {foundSuspendUser.id === currentUser.id ? (
-                  <span className="font-mono text-[9px] text-stone-400 italic">Self Account</span>
+                  <span className="font-mono text-[9px] text-stone-400">Self Account</span>
                 ) : (
                   <button
                     type="button"

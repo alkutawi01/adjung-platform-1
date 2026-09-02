@@ -89,7 +89,7 @@ export function FootnotesCitationsSection({
              const fMap = footnotesReadingOrder.map;
              if (occurrences.length === 0) {
                return (
-                 <div className="text-stone-400 font-sans italic text-sm py-4 text-left">
+                 <div className="text-stone-400 font-sans text-sm py-4 text-left">
                    No margin notes registered yet. Right-click inside text editor to insert margin notes.
                  </div>
                );

@@ -3468,7 +3468,7 @@ export function EntryRenderer({
               {(() => {
                 const { occurrences, map: mMap } = getMarginNotesReadingOrderMap();
                 if (occurrences.length === 0) {
-                  return <p className="text-xs text-stone-400 italic select-none">No margin notes registered yet. Insert [^mn-1], [^mn-2], etc. inside the source text.</p>;
+                  return <p className="text-xs text-stone-400 select-none">No margin notes registered yet. Insert [^mn-1], [^mn-2], etc. inside the source text.</p>;
                 }
                 return (
                   <div className="space-y-4">
@@ -3510,7 +3510,7 @@ export function EntryRenderer({
               {(() => {
                 const { occurrences } = getFootnotesReadingOrderMap();
                 if (occurrences.length === 0) {
-                  return <p className="text-xs text-stone-400 italic select-none">No footnotes registered yet. Insert [^fn-1], [^fn-2], etc. inside the source text.</p>;
+                  return <p className="text-xs text-stone-400 select-none">No footnotes registered yet. Insert [^fn-1], [^fn-2], etc. inside the source text.</p>;
                 }
                 return (
                   <div className="space-y-3">
@@ -4663,7 +4663,7 @@ export function EntryRenderer({
                         <button type="button" onClick={() => handleRemoveTag(t)} className="text-stone-400 hover:text-red-700 font-bold ml-0.5 font-sans">×</button>
                       </span>
                     ))}
-                    {tags.length === 0 && <span className="text-stone-400 italic text-[11px]">No tags associated yet.</span>}
+                    {tags.length === 0 && <span className="text-stone-400 text-[11px]">No tags associated yet.</span>}
                   </div>
                   <div className="flex gap-2 max-w-sm">
                     <input
@@ -4719,7 +4719,7 @@ export function EntryRenderer({
                   </div>
 
                   {revisions.length === 0 ? (
-                    <p className="text-xs text-stone-400 italic">No revisions cataloged. Revisions are created on manual update/publish or taking a snapshot.</p>
+                    <p className="text-xs text-stone-400">No revisions cataloged. Revisions are created on manual update/publish or taking a snapshot.</p>
                   ) : (
                     <div className="space-y-1.5 max-h-40 overflow-y-auto border border-stone-200/60 rounded-md p-2 bg-stone-50/40">
                       {revisions.slice().reverse().map((rev, index) => {
@@ -4787,7 +4787,7 @@ export function EntryRenderer({
                   {hasValidated && (
                     <div className="p-3 bg-stone-50 border border-stone-200/60 rounded text-[11px] space-y-2">
                       {isValidationRunning && (
-                        <p className="text-stone-500 italic font-mono text-[10px] animate-pulse">Running checks on external image assets in the manuscript...</p>
+                        <p className="text-stone-500 font-mono text-[10px] animate-pulse">Running checks on external image assets in the manuscript...</p>
                       )}
 
                       {!isValidationRunning && validationSuccess && (
@@ -4808,7 +4808,7 @@ export function EntryRenderer({
                               <li key={i}>{err}</li>
                             ))}
                           </ul>
-                          <p className="text-[10.5px] text-stone-400 italic pt-1 font-sans leading-relaxed">
+                          <p className="text-[10.5px] text-stone-400 pt-1 font-sans leading-relaxed">
                             Note: This check is completely optional and will not block publication. Any failed image will simply be omitted from the reader's folio view, ensuring a seamless experience.
                           </p>
                         </div>

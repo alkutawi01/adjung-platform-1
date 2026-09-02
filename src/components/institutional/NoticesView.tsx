@@ -52,7 +52,7 @@ export const NoticesView: React.FC<NoticesViewProps> = ({ entries, setSelectedEn
                 <h3 className="font-sans text-2xl md:text-3xl text-stone-900 group-hover:text-adjung-maroon transition mb-3">
                   {parseInlineFormatting(notice.title)}
                 </h3>
-                <p className="font-sans text-stone-600 italic text-[14px] leading-relaxed line-clamp-3 mb-3">
+                <p className="font-sans text-stone-600 text-[14px] leading-relaxed line-clamp-3 mb-3">
                   {parseInlineFormatting(notice.excerpt || truncateAtWord(flattenBlocksForPreview(notice.content), 32))}
                 </p>
                 <span className="text-adjung-maroon hover:underline font-mono text-[10px] uppercase tracking-wider font-semibold">

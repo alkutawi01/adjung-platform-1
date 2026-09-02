@@ -396,7 +396,7 @@ export const ArchitectureStudio: React.FC = () => {
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-stone-400 space-y-3">
             <FileText className="w-8 h-8 text-stone-300 font-light" />
-            <div className="font-sans italic text-sm">
+            <div className="font-sans text-sm">
               No platform concept selected.
             </div>
             <p className="text-[10px] leading-relaxed max-w-[220px]">

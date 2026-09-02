@@ -247,7 +247,7 @@ export function BiographyView({
         </div>
 
         {authorProfile.lifeTimeline.length === 0 ? (
-          <p className="text-xs text-[#111111]/40 italic">No timeline milestones cataloged yet.</p>
+          <p className="text-xs text-[#111111]/40">No timeline milestones cataloged yet.</p>
         ) : (
           <div className="relative border-l border-stone-300 ml-4 md:ml-32 pl-6 space-y-8 py-2">
             {authorProfile.lifeTimeline.map(item => (
