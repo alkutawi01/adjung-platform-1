@@ -30,7 +30,16 @@ export function useHorizontalOverflow<T extends HTMLElement = HTMLDivElement>() 
     // resizes children without necessarily resizing the container itself.
     Array.from(el.children).forEach(child => observer.observe(child as Element));
 
-    return () => observer.disconnect();
+    // ResizeObserver alone proved unreliable here: verified live that widening
+    // the viewport left the hint showing over a table that no longer
+    // overflowed, until some unrelated re-render happened to correct it. A
+    // plain resize listener closes that gap.
+    window.addEventListener('resize', check);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', check);
+    };
   });
 
   return { ref, isOverflowing };
