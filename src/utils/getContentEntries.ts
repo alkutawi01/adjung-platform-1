@@ -130,7 +130,6 @@ export function resolveContentAuthorName(entry: Entry, users: User[]): string {
  *  8/31/2026"), which isn't fit to display here as if it were the
  *  author's name. */
 export function resolveContentAuthorSig(entry: Entry, users: User[], identities: IdentityProfile[]): string {
-  const name = resolveContentAuthorName(entry, users);
-  if (entry.publicationClass === 'Institutional') return getInitials(name);
-  return resolveSignatureText(entry.authorId, '', identities) || getInitials(name);
+  if (entry.publicationClass === 'Institutional') return getInitials(resolveContentAuthorName(entry, users));
+  return resolveSignatureText(entry.authorId, '', identities);
 }

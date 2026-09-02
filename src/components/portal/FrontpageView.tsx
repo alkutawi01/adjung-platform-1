@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Entry, SystemSettings, IdentityProfile } from '../../types';
 import { BRAND } from '../../config/brand';
-import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord, getInitials } from '../../utils';
+import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -427,7 +427,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     ? users.find(u => u.id === activeFeatured.authorId)
     : null;
   const featuredAuthorName = featuredAuthor?.penName || activeFeatured.publisher || 'Elena Vasquez';
-  const featuredAuthorSig = (featuredAuthor && resolveSignatureText(featuredAuthor.id, '', identities)) || getInitials(featuredAuthorName);
+  const featuredAuthorSig = featuredAuthor ? resolveSignatureText(featuredAuthor.id, '', identities) : '';
   const isFeaturedAr = isArabicText(activeFeatured.title || activeFeatured.content);
   // A stored excerpt is trusted as already plain text; the content fallback
   // must be cleaned first — raw content can open with a heading marker or
@@ -497,7 +497,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       excerpt: e.excerpt || truncateAtWord(flattenBlocksForPreview(e.content), 25),
       discipline: e.discipline || e.tags[0] || e.contentType,
       authorName: authName,
-      authorSig: (auth && resolveSignatureText(auth.id, '', identities)) || getInitials(authName),
+      authorSig: auth ? resolveSignatureText(auth.id, '', identities) : '',
       entryObj: e
     };
   });
@@ -520,7 +520,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const displayEssays: any[] = essaySelections.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
     const name = auth?.penName || e.publisher || 'Anonymous';
-    return { id: e.id, title: e.title, author: name, sig: (auth && resolveSignatureText(auth.id, '', identities)) || getInitials(name), entryObj: e };
+    return { id: e.id, title: e.title, author: name, sig: auth ? resolveSignatureText(auth.id, '', identities) : '', entryObj: e };
   });
 
   // Featured Notes (3 entries) — same backfill principle, restricted to
@@ -544,7 +544,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     // practice, so it must go through flattenBlocksForPreview like every
     // other Note excerpt on the platform (raw content.substring() would
     // leak "## ..."/"<quote>..." markup, same bug fixed for the splash).
-    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: (auth && resolveSignatureText(auth.id, '', identities)) || getInitials(name), entryObj: n };
+    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: auth ? resolveSignatureText(auth.id, '', identities) : '', entryObj: n };
   });
 
   // Still pad to exactly 3 with true empty slots — only reachable now

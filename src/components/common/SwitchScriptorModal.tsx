@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Search, X } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
-import { getInitials } from '../../utils';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
 
 interface SwitchScriptorModalProps {
@@ -77,7 +76,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
           {aiScriptors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {aiScriptors.map((ai) => {
-                const authorSig = resolveSignatureText(ai.id, '', identities) || getInitials(ai.penName);
+                const authorSig = resolveSignatureText(ai.id, '', identities);
                 return (
                   <button
                     key={ai.id}

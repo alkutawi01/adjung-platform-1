@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Rss, SlidersHorizontal, X, Search, ArrowRight } from 'lucide-react';
 import { Entry, User } from '../../types';
-import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumber, getInitials, resolveEntryCanonicalUrl } from '../../utils';
+import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumber, resolveEntryCanonicalUrl } from '../../utils';
 import { getContentEntries, getContentFacets, resolveContentAuthorName, resolveContentAuthorSig } from '../../utils/getContentEntries';
 import { useAppContext } from '../../context/AppContext';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
@@ -194,7 +194,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   };
 
   const currentUserSig = currentUser
-    ? (resolveSignatureText(currentUser.id, '', identities) || getInitials(currentUser.penName || currentUser.username || ''))
+    ? resolveSignatureText(currentUser.id, '', identities)
     : '';
 
   let lastDayLabel = '';
