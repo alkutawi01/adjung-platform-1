@@ -52,8 +52,8 @@ const initialNodes: Node[] = [
     position: { x: 380, y: 160 }, 
     data: { 
       label: 'Publication', 
-      desc: 'Core document entity (Note, Essay, Article, Notice, Editor\'s Note).', 
-      purpose: 'Represents the primary scholarly record containing text layers, footnotes, and signatures.', 
+      desc: 'Core document entity (Note, Essay, Notice, Editor\'s Note).',
+      purpose: 'Represents the primary published record containing text layers, footnotes, and signatures.',
       spec: 'SPEC-007', 
       dbEntity: 'entries', 
       files: ['src/types.ts', 'src/components/EntryRenderer.tsx'] 
@@ -65,7 +65,7 @@ const initialNodes: Node[] = [
     position: { x: 120, y: 50 }, 
     data: { 
       label: 'Author', 
-      desc: 'Scholarly contributor profile and key owner.', 
+      desc: 'Writer profile and key owner.',
       purpose: 'Identifies the creator of publications, holds public profile details and handwritten signature strokes.', 
       spec: 'SPEC-006', 
       dbEntity: 'users, profiles', 
@@ -144,7 +144,7 @@ const initialNodes: Node[] = [
     data: { 
       label: 'Biography', 
       desc: 'Author biographical narrative and timeline.', 
-      purpose: 'Stores educational background, academic affiliations, and scholarship statements.', 
+      purpose: 'Stores the writer\'s biography text, affiliation, and timeline milestones.',
       spec: 'SPEC-010', 
       dbEntity: 'profiles', 
       files: ['src/components/BiographyView.tsx'] 
@@ -156,7 +156,7 @@ const initialNodes: Node[] = [
     position: { x: 620, y: 450 }, 
     data: { 
       label: 'Search Index', 
-      desc: 'Cross-document scholarly directory index.', 
+      desc: 'Cross-document directory index.',
       purpose: 'Allows searching publications by keywords, tags, or cross-referenced authors.', 
       spec: 'SPEC-012', 
       dbEntity: 'entries', 
@@ -169,7 +169,7 @@ const initialNodes: Node[] = [
     position: { x: 380, y: -60 }, 
     data: { 
       label: 'Metadata Schema', 
-      desc: 'Scholarly cataloging schema standards.', 
+      desc: 'Cataloging schema standards.',
       purpose: 'Governs tags, citation styles (Harvard, APA, MLA), reading times, and XML export formats.', 
       spec: 'SPEC-017', 
       dbEntity: 'citations', 
