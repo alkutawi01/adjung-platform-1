@@ -237,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }`}
                       title="Your private workspace"
                     >
-                      desk
+                      Desk
                     </button>
                   </>
                 )}
