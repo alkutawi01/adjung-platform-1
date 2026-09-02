@@ -236,7 +236,11 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
       </div>
 
       {/* Directory Table */}
-      <p className="md:hidden font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+      {/* Shown exactly while the table actually overflows. This used to be
+          md:hidden, which switched off at 768px even though the table below
+          needs 900px — so at tablet widths the Country/Joined/Tags columns
+          scrolled out of sight with nothing saying they were there. */}
+      <p className="min-[900px]:hidden font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
         Swipe left to see more →
       </p>
       <div className="bg-white border border-[#111111]/10 rounded overflow-hidden shadow-sm font-sans text-xs">
