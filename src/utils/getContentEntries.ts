@@ -131,5 +131,6 @@ export function resolveContentAuthorName(entry: Entry, users: User[]): string {
  *  author's name. */
 export function resolveContentAuthorSig(entry: Entry, users: User[], identities: IdentityProfile[]): string {
   if (entry.publicationClass === 'Institutional') return getInitials(resolveContentAuthorName(entry, users));
-  return resolveSignatureText(entry.authorId, '', identities);
+  const author = users.find(u => u.id === entry.authorId);
+  return resolveSignatureText(entry.authorId, author?.signature || '', identities);
 }

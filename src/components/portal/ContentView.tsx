@@ -194,7 +194,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   };
 
   const currentUserSig = currentUser
-    ? resolveSignatureText(currentUser.id, '', identities)
+    ? resolveSignatureText(currentUser.id, currentUser.signature || '', identities)
     : '';
 
   let lastDayLabel = '';

@@ -155,7 +155,7 @@ export function BiographyView({
               const sig = authorProfile.signatures.find(s => s.status === 'Default');
               const type = sig?.type || 'drawn';
               const strokes = sig?.strokes || [];
-              const typedText = sig?.typedText || '';
+              const typedText = sig?.typedText || currentAuthor.signature || '';
 
               return (
                 <SignatureRenderer

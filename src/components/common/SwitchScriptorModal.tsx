@@ -76,7 +76,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
           {aiScriptors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {aiScriptors.map((ai) => {
-                const authorSig = resolveSignatureText(ai.id, '', identities);
+                const authorSig = resolveSignatureText(ai.id, ai.signature || '', identities);
                 return (
                   <button
                     key={ai.id}

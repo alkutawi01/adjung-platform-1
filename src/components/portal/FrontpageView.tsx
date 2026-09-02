@@ -427,7 +427,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     ? users.find(u => u.id === activeFeatured.authorId)
     : null;
   const featuredAuthorName = featuredAuthor?.penName || activeFeatured.publisher || 'Elena Vasquez';
-  const featuredAuthorSig = featuredAuthor ? resolveSignatureText(featuredAuthor.id, '', identities) : '';
+  const featuredAuthorSig = featuredAuthor ? resolveSignatureText(featuredAuthor.id, featuredAuthor.signature || '', identities) : '';
   const isFeaturedAr = isArabicText(activeFeatured.title || activeFeatured.content);
   // A stored excerpt is trusted as already plain text; the content fallback
   // must be cleaned first — raw content can open with a heading marker or
@@ -497,7 +497,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
       excerpt: e.excerpt || truncateAtWord(flattenBlocksForPreview(e.content), 25),
       discipline: e.discipline || e.tags[0] || e.contentType,
       authorName: authName,
-      authorSig: auth ? resolveSignatureText(auth.id, '', identities) : '',
+      authorSig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '',
       entryObj: e
     };
   });
@@ -520,7 +520,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const displayEssays: any[] = essaySelections.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
     const name = auth?.penName || e.publisher || 'Anonymous';
-    return { id: e.id, title: e.title, author: name, sig: auth ? resolveSignatureText(auth.id, '', identities) : '', entryObj: e };
+    return { id: e.id, title: e.title, author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: e };
   });
 
   // Featured Notes (3 entries) — same backfill principle, restricted to
@@ -544,7 +544,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     // practice, so it must go through flattenBlocksForPreview like every
     // other Note excerpt on the platform (raw content.substring() would
     // leak "## ..."/"<quote>..." markup, same bug fixed for the splash).
-    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: auth ? resolveSignatureText(auth.id, '', identities) : '', entryObj: n };
+    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: n };
   });
 
   // Still pad to exactly 3 with true empty slots — only reachable now
@@ -780,6 +780,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               >
                 {featuredAuthorName}
               </span>
+              {featuredAuthorSig && (
+                <span className="sig text-[18px] md:text-[20px] text-[#1F1F1F] !opacity-90 select-none leading-none">
+                  {featuredAuthorSig.replace(/\./g, '')}
+                </span>
+              )}
               <span className="text-[#E0DDD8]">·</span>
               <span className="font-sans">
                 {activeFeatured.publishedDate 
@@ -794,13 +799,6 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               <span className="font-sans">
                 {activeFeatured.tags[0] || activeFeatured.contentType}
               </span>
-            </div>
-
-            {/* Author Script Signature stamp */}
-            <div className="pt-2">
-              <p className="sig font-sans text-[16px] md:text-[18px] text-[#1F1F1F] opacity-95 select-none">
-                {featuredAuthorSig.replace(/\./g, '')}
-              </p>
             </div>
 
             <div className="pt-4">
@@ -915,7 +913,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                         <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                           {item.authorName.toUpperCase()}
                         </span>
-                        <span className="sig italic text-[9px] text-[#555555] opacity-50">
+                        <span className="sig text-[14px] text-[#555555] !opacity-90">
                           {item.authorSig}
                         </span>
                       </div>
@@ -935,7 +933,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                         {item.authorName.toUpperCase()}
                       </span>
-                      <span className="sig italic text-[9px] text-[#555555] opacity-50">
+                      <span className="sig text-[14px] text-[#555555] !opacity-90">
                         {item.authorSig}
                       </span>
                     </div>
@@ -987,7 +985,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       </h3>
                       <div className={`flex items-center gap-2 text-[10px] md:text-xs text-[#555555] ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans font-light">{essay.author}</span>
-                        <span className="sig italic font-sans text-[9px] opacity-50">{essay.sig}</span>
+                        <span className="sig text-[14px] !opacity-90">{essay.sig}</span>
                       </div>
                     </>
                   ) : (
@@ -1036,7 +1034,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       </p>
                       <div className={`flex items-center gap-2 text-[10px] text-[#555555] pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans font-light">{note.author}</span>
-                        <span className="sig italic text-[9px] opacity-50">{note.sig}</span>
+                        <span className="sig text-[14px] !opacity-90">{note.sig}</span>
                       </div>
                     </>
                   ) : (

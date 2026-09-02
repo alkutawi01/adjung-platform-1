@@ -1028,8 +1028,8 @@ Source: [Author or Publication, Year]
                             <SignatureRenderer
                               representation={editorSig?.representation}
                               strokes={editorSig?.strokes || []}
-                              type={editorSig?.type}
-                              typedText={editorSig?.typedText || ''}
+                              type={editorSig?.type || 'typed'}
+                              typedText={editorSig?.typedText || editor.signature}
                               fontFamily={editorSig?.fontFamily}
                               typographyStyle={editorSig?.typographyStyle}
                               penStyle={editorSig?.penStyle}
