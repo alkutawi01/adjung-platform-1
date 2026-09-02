@@ -1494,7 +1494,7 @@ Editorial Board of Adjung`;
                     : (users.find(u => u.id === selectedEntry.authorId)?.penName || 'Anonymous')}
                   authorSignature={selectedEntry.publicationClass === 'Institutional'
                     ? ''
-                    : resolveSignatureText(selectedEntry.authorId || '', 'Anonymous', identities)}
+                    : resolveSignatureText(selectedEntry.authorId || '', '', identities)}
                   authorSignatureStrokes={selectedEntry.publicationClass === 'Institutional'
                     ? []
                     : resolveSignatureStrokes(selectedEntry, selectedEntry.authorId || '', identities)}
