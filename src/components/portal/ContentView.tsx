@@ -5,6 +5,7 @@ import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumb
 import { getContentEntries, getContentFacets, resolveContentAuthorName, resolveContentAuthorSig } from '../../utils/getContentEntries';
 import { useAppContext } from '../../context/AppContext';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 interface ContentViewProps {
   entries: Entry[];
@@ -50,6 +51,8 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   const [selectedWriters, setSelectedWriters] = useState<Set<string>>(new Set());
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  // Same Escape-to-close + focus trap the other modals already use.
+  const filterModalRef = useModalA11y(showFilterPanel, () => setShowFilterPanel(false));
   const [query, setQuery] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [noteFocused, setNoteFocused] = useState(false);
@@ -313,10 +316,17 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
       {showFilterPanel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/20" onClick={() => setShowFilterPanel(false)} aria-hidden="true" />
-          <div className="relative w-full max-w-sm bg-white border border-stone-200 rounded-lg shadow-xl p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+          <div
+            ref={filterModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="content-filter-title"
+            tabIndex={-1}
+            className="relative w-full max-w-sm bg-white border border-stone-200 rounded-lg shadow-xl p-4 space-y-4 max-h-[80vh] overflow-y-auto outline-none"
+          >
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#111111]/40">Filter by writer or topic</span>
-              <button type="button" onClick={() => setShowFilterPanel(false)} aria-label="Close filters">
+              <span id="content-filter-title" className="font-mono text-[10px] uppercase tracking-widest text-[#111111]/40">Filter by writer or topic</span>
+              <button type="button" onClick={() => setShowFilterPanel(false)} aria-label="Close filters" data-modal-close>
                 <X className="w-4 h-4 text-stone-400 hover:text-stone-600" />
               </button>
             </div>
