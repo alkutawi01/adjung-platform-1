@@ -315,12 +315,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // nav links, curation controls and news strip all quietly disappear —
       // an ordinary-looking page that is simply missing half the platform,
       // with nothing telling the user why or that a reload would fix it.
-      // Transient causes are real (a brief network drop, or PostgREST
-      // rejecting a token whose `iat` is a second ahead of its own clock
-      // right after a refresh), so retry briefly before giving up, and say
-      // so plainly if it still fails.
-      if (attempt < 2) {
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      // Transient causes are real, so retry before giving up, and say so
+      // plainly if it still fails.
+      //
+      // The window has to cover PGRST303 ("JWT issued at future"): right
+      // after Supabase mints a fresh token, PostgREST can reject it for a
+      // few seconds because the token's `iat` sits marginally ahead of
+      // PostgREST's own clock. Observed live once per refresh cycle. The
+      // first version of this retry spanned only ~1.5s, which ran out
+      // mid-skew and fired the failure toast at a user whose app then
+      // healed by itself moments later — a false alarm. Back off further so
+      // the skew is absorbed rather than reported.
+      if (attempt < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         return refreshDbState(attempt + 1);
       }
       console.error('Failed to sync state from Supabase:', err);
