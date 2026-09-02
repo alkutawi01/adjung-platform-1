@@ -837,7 +837,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 <h4 className="font-serif text-lg md:text-xl text-[#1F1F1F] leading-snug group-hover:text-[#7B2737] group-hover:font-medium transition-all duration-200">
                   <HoverWords text={dbEditorNote.title} />
                 </h4>
-                <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-sans text-sm leading-relaxed text-[#2D2D2D] italic">
+                <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-sans text-sm leading-relaxed text-[#2D2D2D]">
                   <HoverWords text={dbEditorNote.excerpt || truncateAtWord(flattenBlocksForPreview(dbEditorNote.content), 36)} />
                 </p>
                 <span className="inline-block font-sans text-[9px] uppercase tracking-wider text-[#7B2737] hover:underline hover:font-bold transition-all duration-200">
