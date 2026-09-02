@@ -83,7 +83,13 @@ export function SignatureRenderer({
     const calculatedWidth = Math.max(activeText.length * 28 * textScale + 40, 400);
     const canvasHeight = 200;
     const viewBox = `0 0 ${calculatedWidth} ${canvasHeight}`;
-    const yPos = canvasHeight / 2;
+    // A cursive signature's ink sits mostly above its baseline (ascenders,
+    // looping capitals) with only descenders below — a mid-canvas baseline
+    // left roughly equal empty space on both sides, reading as the
+    // signature floating with an oversized gap under it. Weighting the
+    // baseline toward the lower third gives ascenders room without leaving
+    // the bottom half of the canvas empty.
+    const yPos = canvasHeight * 0.7;
 
     return (
       <svg 

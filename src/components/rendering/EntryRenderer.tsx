@@ -4379,7 +4379,7 @@ export function EntryRenderer({
                       color="#802334"
                     />
                   </div>
-                  <div className={`${proseFont} italic font-semibold text-stone-900 tracking-wide mt-2 text-center`}>
+                  <div className={`${proseFont} font-semibold text-stone-900 tracking-wide mt-2 text-center`}>
                     <div>{authorName}</div>
                     {authorAffiliation && (
                       <div className="font-sans font-normal not-italic text-[10px] text-stone-400 mt-0.5 select-all">
