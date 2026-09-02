@@ -501,7 +501,7 @@ Source: [Author or Publication, Year]
             : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-900'
         }`}
       >
-        {icon}
+        <span className="flex-shrink-0">{icon}</span>
         <span>{label}</span>
       </button>
     );
