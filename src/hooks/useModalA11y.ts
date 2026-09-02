@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -9,7 +9,14 @@ const FOCUSABLE_SELECTOR =
  * (none of these had keyboard support before — mouse-only close).
  */
 export function useModalA11y(isOpen: boolean, onClose: () => void) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // A callback ref backed by state, not useRef: IdentityStudio renders a
+  // "Loading Identity..." placeholder on its first pass, so the dialog element
+  // (and this ref) does not exist yet when the effect below first runs. With a
+  // plain ref the effect never re-ran once the real markup mounted, leaving
+  // that modal with no focus move and no Tab trap. Storing the node in state
+  // re-runs the effect the moment it attaches.
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const containerRef = useCallback((node: HTMLDivElement | null) => setContainer(node), []);
 
   // onClose is re-created every render (it's an inline arrow function at every
   // call site) — reading it through a ref, instead of putting it in the effect's
@@ -22,7 +29,6 @@ export function useModalA11y(isOpen: boolean, onClose: () => void) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const container = containerRef.current;
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     const getFocusable = (): HTMLElement[] =>
@@ -67,7 +73,7 @@ export function useModalA11y(isOpen: boolean, onClose: () => void) {
       previouslyFocused?.focus?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, container]);
 
   return containerRef;
 }
