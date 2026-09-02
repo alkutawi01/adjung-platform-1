@@ -1254,7 +1254,7 @@ Source: [Author or Publication, Year]
             {entries.filter(e => e.underReview).length === 0 ? (
               <div className="py-12 text-center select-none">
                 <EyeOff className="w-12 h-12 text-adjung-maroon mx-auto mb-3" />
-                <span className="font-sans italic text-stone-700 block text-base font-semibold">Clean Compliance / Safe</span>
+                <span className="font-sans text-stone-700 block text-base font-semibold">Clean Compliance / Safe</span>
                 <p className="text-stone-500 text-xs font-sans max-w-lg mx-auto leading-relaxed mt-2">
                   There are currently no active content infractions, reports, or entries under review.
                 </p>
