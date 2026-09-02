@@ -24,14 +24,14 @@ export const EditorialNotesView: React.FC<EditorialNotesViewProps> = ({
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
           Editor's Notes
         </h1>
-        <p className="font-sans italic text-stone-500 text-sm mt-2">
+        <p className="font-sans text-stone-500 text-sm mt-2">
           Formal opinions, statements, and policy directives from Adjung.
         </p>
       </header>
       {/* Keep this in sync with NoticesView.tsx — same template, see Design System §03 */}
       <div className="space-y-12">
         {editorialNotes.length === 0 ? (
-          <p className="text-center italic text-stone-400 font-sans py-12">
+          <p className="text-center text-stone-400 font-sans py-12">
             No editor's notes have been published.
           </p>
         ) : (

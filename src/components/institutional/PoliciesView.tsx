@@ -17,7 +17,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">
           Publishing & Platform Policies
         </h1>
-        <p className="font-sans italic text-stone-500 text-sm mt-2">
+        <p className="font-sans text-stone-500 text-sm mt-2">
           Constitution, editorial covenants, and guidelines governing the Adjung repository.
         </p>
       </header>
@@ -73,7 +73,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ policies }) => {
               </div>
             </div>
           ) : (
-            <p className="italic text-stone-400 font-sans">
+            <p className="text-stone-400 font-sans">
               Select a policy document from the sidebar to read.
             </p>
           )}

@@ -353,7 +353,7 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
               })}
               {sortedUsers.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center italic text-stone-400 font-sans">
+                  <td colSpan={8} className="p-8 text-center text-stone-400 font-sans">
                     No matching writers are listed in the directory.
                   </td>
                 </tr>

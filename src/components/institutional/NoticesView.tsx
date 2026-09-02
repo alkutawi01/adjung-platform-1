@@ -17,14 +17,14 @@ export const NoticesView: React.FC<NoticesViewProps> = ({ entries, setSelectedEn
           Institutional Announcements
         </span>
         <h1 className="font-serif text-4xl font-light text-stone-900 leading-tight">Notices</h1>
-        <p className="font-sans italic text-stone-500 text-sm mt-2">
+        <p className="font-sans text-stone-500 text-sm mt-2">
           Operational and time-sensitive announcements from the editorial board.
         </p>
       </header>
       {/* Keep this in sync with EditorialNotesView.tsx — same template, see Design System §03 */}
       <div className="space-y-12">
         {notices.length === 0 ? (
-          <p className="text-center italic text-stone-400 font-sans py-12">
+          <p className="text-center text-stone-400 font-sans py-12">
             No institutional notices have been published.
           </p>
         ) : (

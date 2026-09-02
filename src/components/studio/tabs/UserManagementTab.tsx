@@ -189,7 +189,7 @@ export function UserManagementTab({
                 </div>
               ))
             ) : (
-              <p className="italic text-stone-400 py-6 text-center font-sans">No writers are currently suspended.</p>
+              <p className="text-stone-400 py-6 text-center font-sans">No writers are currently suspended.</p>
             )}
           </div>
         </div>

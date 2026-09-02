@@ -1542,7 +1542,7 @@ Editorial Board of Adjung`;
                       Biographies
                     </h2>
                     <div className="h-px w-24 bg-adjung-maroon/30 mx-auto my-4" />
-                    <p className="font-sans italic text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
+                    <p className="font-sans text-stone-600 text-sm leading-relaxed max-w-md mx-auto">
                       Explore life journeys, publications, and achievements of our resident writers.
                     </p>
                   </div>

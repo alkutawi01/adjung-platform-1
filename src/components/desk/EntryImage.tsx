@@ -226,7 +226,7 @@ export function EntryImage({ url, alt, figNum, isAuthor, onUpdateImage }: EntryI
                   <p className="text-xs leading-relaxed text-stone-600 font-sans">
                     The external image asset at URL: <code className="font-mono bg-amber-100/60 px-1 py-0.5 rounded text-[10.5px] select-all break-all">{url}</code> is inaccessible or offline.
                   </p>
-                  <p className="text-[10px] italic text-stone-400 font-sans">
+                  <p className="text-[10px] text-stone-400 font-sans">
                     Note: Readers will see the surrounding layout reflow naturally; they won't see broken placeholders or browser error icons.
                   </p>
                 </div>

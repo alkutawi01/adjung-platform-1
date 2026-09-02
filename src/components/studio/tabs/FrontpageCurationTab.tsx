@@ -479,7 +479,7 @@ export function FrontpageCurationTab({
                   <div className="border border-stone-200 rounded p-4 bg-stone-50/60 space-y-3 max-h-[300px] overflow-y-auto text-left">
                     <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Parsed Items ({newsParsedItems.length})</span>
                     {newsParsedItems.length === 0 ? (
-                      <p className="font-sans italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                      <p className="font-sans text-stone-400 text-xs">No valid items parsed. Add items above.</p>
                     ) : (
                       <div className="space-y-3">
                         {newsParsedItems.map((item, i) => (
@@ -588,7 +588,7 @@ export function FrontpageCurationTab({
                   <div className="border border-stone-200 rounded p-4 bg-stone-50/60 space-y-3 max-h-[300px] overflow-y-auto text-left">
                     <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">Valid Items ({holidayParsedItems.length})</span>
                     {holidayParsedItems.length === 0 ? (
-                      <p className="font-sans italic text-stone-400 text-xs">No valid items parsed. Add items above.</p>
+                      <p className="font-sans text-stone-400 text-xs">No valid items parsed. Add items above.</p>
                     ) : (
                       <div className="space-y-3">
                         {holidayParsedItems.map((item, i) => (

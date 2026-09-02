@@ -711,7 +711,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            <p className="font-sans italic text-stone-400 text-xs py-2 select-none">No curated news items available.</p>
+            <p className="font-sans text-stone-400 text-xs py-2 select-none">No curated news items available.</p>
           )}
         </div>
 
