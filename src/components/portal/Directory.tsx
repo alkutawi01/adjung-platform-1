@@ -4,6 +4,7 @@ import { User, Entry } from '../../types';
 import { isArabicText, isSubdomainUnlocked } from '../../utils';
 import { useAppContext } from '../../context/AppContext';
 import { FieldTooltip } from '../common/FieldTooltip';
+import { useHorizontalOverflow } from '../../hooks/useHorizontalOverflow';
 
 interface DirectoryProps {
   users: User[];
@@ -13,6 +14,7 @@ interface DirectoryProps {
 
 export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
   const { identities } = useAppContext();
+  const tableOverflow = useHorizontalOverflow<HTMLDivElement>();
   const [searchQuery, setSearchQuery] = useState('');
   const [countryFilter, setCountryFilter] = useState<string>('All');
   const [languageFilter, setLanguageFilter] = useState<string>('All');
@@ -237,14 +239,16 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
 
       {/* Directory Table */}
       {/* Shown exactly while the table actually overflows. This used to be
-          md:hidden, which switched off at 768px even though the table below
-          needs 900px — so at tablet widths the Country/Joined/Tags columns
-          scrolled out of sight with nothing saying they were there. */}
-      <p className="min-[900px]:hidden font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
-        Swipe left to see more →
-      </p>
+          md:hidden, which switched off at 768px even though the table needs
+          more — so at tablet widths the Country/Joined/Tags columns scrolled
+          out of sight with nothing saying they were there. */}
+      {tableOverflow.isOverflowing && (
+        <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+          Swipe left to see more →
+        </p>
+      )}
       <div className="bg-white border border-[#111111]/10 rounded overflow-hidden shadow-sm font-sans text-xs">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={tableOverflow.ref}>
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">

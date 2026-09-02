@@ -4,6 +4,7 @@ import { Entry, User, SystemSettings } from '../../types';
 import { isArabicText, parseInlineFormatting, flattenBlocksForPreview } from '../../utils';
 import { getIndexEntries, getIndexFacets, IndexSortOrder } from '../../utils/getIndexEntries';
 import { WordSafeEllipsis } from '../common/WordSafeEllipsis';
+import { useHorizontalOverflow } from '../../hooks/useHorizontalOverflow';
 
 interface EditorialIndexProps {
   entries: Entry[];
@@ -62,6 +63,7 @@ export function EditorialIndex({
   onSearchQueryChange,
   initialTag = '',
 }: EditorialIndexProps) {
+  const tableOverflow = useHorizontalOverflow<HTMLDivElement>();
   const initial = React.useMemo(readParamsFromUrl, []);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || initial.query);
   const [typeFilter, setTypeFilter] = useState<'All' | 'Essay' | 'Note'>(initial.type);
@@ -215,14 +217,15 @@ export function EditorialIndex({
       </div>
 
       {/* Database Table */}
-      {/* Same affordance Directory carries — the table scrolls sideways below
-          its 700px minimum, and without this the Type/Published/Slug columns
-          just vanish off the edge with no sign they exist. */}
-      <p className="min-[700px]:hidden font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
-        Swipe left to see more →
-      </p>
+      {/* Same affordance Directory carries — without it the Type/Published/Slug
+          columns just leave the screen with no sign they exist. */}
+      {tableOverflow.isOverflowing && (
+        <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mb-1.5 text-right select-none">
+          Swipe left to see more →
+        </p>
+      )}
       <div className="bg-white border border-[#111111]/10 rounded overflow-hidden shadow-sm font-sans text-xs">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={tableOverflow.ref}>
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="bg-adjung-maroon/90 backdrop-blur-md border-b border-adjung-maroon/20 font-sans text-[9px] uppercase tracking-widest text-white/90 font-semibold">
