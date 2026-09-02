@@ -264,6 +264,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const activeSessionUser = SessionService.validateAndRetrieveSession();
       if (activeSessionUser) {
+        // The cached session object alone isn't proof of a live login — it
+        // survives regardless of whether the real Supabase Auth token
+        // behind it is still valid. Without this check, an expired/missing
+        // token left the whole app silently running as an unauthenticated
+        // request under the hood (RLS then quietly drops every write that
+        // needs a real role — appoint editor, save settings, layout
+        // changes, ...) while the UI kept showing the user as fully signed
+        // in, with no indication anything was wrong.
+        const { data: { session: liveSession } } = await supabase.auth.getSession();
+        if (!liveSession) {
+          setCurrentUser(null);
+          setOriginalUser(null);
+          setSelectedAuthorId('');
+          localStorage.removeItem('Adjung_acting_user_id');
+          SessionService.destroySession();
+          showToast('Your session has expired. Please sign in again.', 'error');
+          return;
+        }
+
         const found = data.users.find(u => u.id === activeSessionUser.id);
         if (found) {
           if (found.suspended) {
@@ -377,29 +396,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           SessionService.destroySession();
         }
       } else {
-        // Fallback to local session check if not logged in to Firebase yet (lazy session validation)
-        const activeSessionUser = SessionService.validateAndRetrieveSession();
-        if (activeSessionUser) {
-          const actingUserId = localStorage.getItem('Adjung_acting_user_id');
-          const actingUser = actingUserId ? users.find(u => u.id === actingUserId) : null;
-          const effectiveUser = actingUser || activeSessionUser;
-          const isNewIdentity = currentUserIdRef.current !== effectiveUser.id;
-          if (actingUser) {
-            setCurrentUser(actingUser);
-            if (isNewIdentity) setSelectedAuthorId(actingUser.id);
-            setOriginalUser(activeSessionUser);
-          } else {
-            setCurrentUser(activeSessionUser);
-            if (isNewIdentity) setSelectedAuthorId(activeSessionUser.id);
-            setOriginalUser(null);
-          }
-        } else {
-          setCurrentUser(null);
-          setOriginalUser(null);
-          setSelectedAuthorId('');
-          localStorage.removeItem('Adjung_acting_user_id');
-          SessionService.destroySession();
-        }
+        // Supabase itself is reporting no live session here — this used to
+        // fall back to trusting the cached local session object anyway
+        // ("lazy validation"), which meant an expired/missing auth token
+        // left the whole app silently running unauthenticated under the
+        // hood (every RLS-gated write — appoint editor, save settings,
+        // layout changes — quietly failed) while the UI kept showing the
+        // cached user as fully signed in. Treat Supabase's null session as
+        // authoritative: clear the stale cache instead of papering over it.
+        setCurrentUser(null);
+        setOriginalUser(null);
+        setSelectedAuthorId('');
+        localStorage.removeItem('Adjung_acting_user_id');
+        SessionService.destroySession();
       }
     });
     return () => subscription.unsubscribe();
