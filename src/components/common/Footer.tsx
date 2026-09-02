@@ -76,9 +76,9 @@ export const Footer: React.FC<FooterProps> = ({
           <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Network</h4>
           <ul className="space-y-2 font-sans text-xs text-stone-600">
             <li>
-              <button 
+              <button
                 type="button"
-                onClick={() => navigateTo('policies')} 
+                onClick={() => navigateTo('frontpage')}
                 className="hover:text-adjung-maroon transition cursor-pointer"
               >
                 About Adjung
