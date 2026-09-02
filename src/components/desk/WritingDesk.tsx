@@ -197,7 +197,7 @@ export function WritingDesk({
           onSave={handleSave}
           onDelete={handleDelete}
           authorName={authorName || currentUser.penName}
-          authorSignature={authorSignature || currentUser.signature}
+          authorSignature={authorSignature || ''}
           authorSignatureFont={authorSignatureFont || undefined}
           authorDigitalSignature={(() => {
             if (mode === 'laboratory' && authorName) {

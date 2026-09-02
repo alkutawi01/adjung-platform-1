@@ -67,7 +67,7 @@ export function SignatureRenderer({
     const activeText = typedText || '';
     if (!activeText) {
       return (
-        <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
+        <div className={`flex items-center justify-center text-stone-300 font-sans select-none ${className}`}>
           No signature
         </div>
       );
@@ -144,7 +144,7 @@ export function SignatureRenderer({
 
   if (!hasStrokes) {
     return (
-      <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
+      <div className={`flex items-center justify-center text-stone-300 font-sans select-none ${className}`}>
         No signature
       </div>
     );
@@ -166,7 +166,7 @@ export function SignatureRenderer({
 
   if (!hasValidPoints) {
     return (
-      <div className={`flex items-center justify-center text-stone-300 italic font-sans select-none ${className}`}>
+      <div className={`flex items-center justify-center text-stone-300 font-sans select-none ${className}`}>
         Empty signature
       </div>
     );
