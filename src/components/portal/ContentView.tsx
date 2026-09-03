@@ -78,6 +78,14 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   // back. No inferred personalization either way — just a plain count.
   const [baselineTimestamp, setBaselineTimestamp] = useState(() => newestTimestamp(entries));
 
+  // A Note has no canonical URL of its own, so it never navigates: a long one
+  // opens in place, right where it sits in the feed. An Essay does have one
+  // and opens there. Local to this list — Folio keeps its own equivalent in
+  // App-level state because its notes persist across a tab switch.
+  const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
+  const toggleNote = (id: string) =>
+    setExpandedNoteIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+
   const authorIds = React.useMemo(() => Array.from(selectedWriters), [selectedWriters]);
   const tags = React.useMemo(() => Array.from(selectedTopics), [selectedTopics]);
   const hasActiveFilters = authorIds.length > 0 || tags.length > 0;
@@ -449,17 +457,118 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
 
                 <button
                   type="button"
-                  onClick={() => openEntry(entry)}
-                  className={`w-full text-left border rounded-lg overflow-hidden hover:shadow-sm transition-all mb-3 ${
-                    isNote ? 'border-adjung-maroon/30 hover:border-adjung-maroon/35' : 'border-stone-300 hover:border-adjung-maroon/40'
+                  onClick={() => (isNote ? toggleNote(entry.id) : openEntry(entry))}
+                  // Both types carry the canonical reading width (782px) so a
+                  // Note and an Essay sit on the same left and right edges
+                  // down the list. The card itself is constrained, not just
+                  // its contents — a 782px block inside a 896px border reads
+                  // as a stretched card.
+                  // Frame matches the canonical reading card exactly:
+                  // border-stone-300, rounded-md, shadow-sm. It was rounded-lg
+                  // with a hover-only shadow here, so the same entry sat in a
+                  // slightly different box depending on whether you were
+                  // looking at the list or the entry itself.
+                  className={`w-full text-left border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all mb-3 block max-w-[782px] mx-auto ${
+                    isNote
+                      ? 'border-adjung-maroon/30 hover:border-adjung-maroon/35'
+                      : 'border-stone-300 hover:border-adjung-maroon/40'
                   }`}
                 >
-                  {/* Type accent — a visual cue before a reader even parses
-                      the pill text. Note fades out (it's the shorter,
-                      lighter-weight form); Essay stays a solid bar. */}
-                  <div className={`h-[3px] ${isNote ? 'bg-gradient-to-r from-adjung-maroon to-adjung-maroon/10' : 'bg-adjung-maroon'}`} />
+                  {/* No type accent bar on either card. The gradient version
+                      Note carried (solid maroon fading to transparent) was
+                      the odd gradient in an otherwise flat interface, and
+                      canonical has no bar above its meta row at all. */}
 
-                  <div className={`p-5 ${isNote ? 'bg-[#FDFBF7]' : 'bg-white'}`}>
+                  {/* Essay renders the canonical full-view header and stops
+                      there: meta bar over a maroon rule, centred title, "by"
+                      byline, closing rule. No preview text, no separate
+                      footer — opening the essay is what shows its content.
+                      Note keeps its own layout below (byline block, then the
+                      handwritten preview, which is all a Note has: it has no
+                      title by design). */}
+                  {!isNote ? (
+                    // Width note: 782px mirrors the canonical reading card as
+                    // it measures today. That number is really COMPUTED by
+                    // computeReadingLayout() from the Essay layout settings
+                    // (column + margin-note column + gap + padding × 2), so
+                    // if those settings change, this card will not follow on
+                    // its own. Wiring the real computed width in here needs
+                    // the layout settings fetched once at list level — worth
+                    // doing, not done yet.
+                    <div className="p-5 bg-white">
+                      <div className="flex items-center justify-between gap-3 pb-2.5 mb-4 border-b border-adjung-maroon font-mono text-[9px] uppercase tracking-widest text-[#111111]/40">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="font-bold border border-stone-300 text-stone-500 rounded px-1.5 py-0.5 mr-0.5">
+                            {entry.contentType}
+                          </span>
+                          {entry.serialNo !== undefined && <span>{formatSerialNumber(entry.serialNo)}</span>}
+                          {entry.serialNo !== undefined && <span className="text-stone-300 font-bold">·</span>}
+                          <span>{entry.currentVersion || 'v1.0'}</span>
+                          {entry.publishedDate && <span className="text-stone-300 font-bold">·</span>}
+                          {entry.publishedDate && (
+                            <span>
+                              {new Date(entry.publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
+                            </span>
+                          )}
+                          {readingTimeLabel && <span className="text-stone-300 font-bold">·</span>}
+                          {readingTimeLabel && <span>{readingTimeLabel}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 normal-case tracking-normal">
+                          <span className="text-[#111111]/40 truncate">
+                            {author?.username ? `${author.username}.adjung.com` : 'adjung.com'}
+                          </span>
+                          <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
+                        </div>
+                      </div>
+
+                      <h3
+                        dir={isAr ? 'rtl' : 'ltr'}
+                        title={entry.title}
+                        className="font-serif text-xl md:text-2xl font-normal text-[#111111] leading-snug tracking-tight text-center text-balance line-clamp-2 px-6"
+                      >
+                        {entry.title}
+                      </h3>
+
+                      {/* Byline matches canonical: "BY <name>", no signature
+                          glyph. The glyph rendered the author's name in the
+                          signature font right next to the byline name, so the
+                          card read "Izzat Anas by Izzat Anas". The signature
+                          is not removed from the platform — canonical places
+                          it in the closure block at the end of the entry,
+                          which is where it still is. */}
+                      <div className="flex items-center justify-center gap-2 mt-2 mb-4">
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-[#111111]/40">by</span>
+                        <span className="font-serif font-medium text-stone-700 text-[11px] border-b border-stone-200 pb-0.5">
+                          {authorName}
+                        </span>
+                        {roleBadge && (
+                          <span className="font-mono text-[8px] uppercase tracking-wider text-adjung-maroon border border-adjung-maroon/25 rounded px-1 py-0.5">
+                            {roleBadge}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="h-px bg-adjung-maroon" />
+
+                      {entry.tags && entry.tags.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                          {entry.tags.slice(0, 4).map(tag => (
+                            <span key={tag} className="font-mono text-[9px] uppercase tracking-wide text-[#111111]/50 bg-adjung-maroon/[0.06] rounded px-1.5 py-0.5">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* No footer row here. Reading time and the published
+                          date already sit in the meta bar above, which is
+                          where the canonical reading view puts them — running
+                          a second copy underneath printed the same date twice
+                          on one card. Canonical is the single source of
+                          truth for this card. */}
+                    </div>
+                  ) : (
+                  <div className="p-5 bg-[#FDFBF7]">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="sig text-[15px] text-adjung-maroon shrink-0 !opacity-90" aria-hidden="true">
@@ -480,13 +589,12 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                           </div>
                         </div>
                       </div>
+                      {/* No type label. A Note already announces itself:
+                          handwritten face, cream card, no title, author block
+                          on top. The pill repeated what the design had said.
+                          The glyph below is still decorative — not wired to a
+                          menu of its own, same as Folio and Frontpage. */}
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-adjung-maroon border border-adjung-maroon/25 rounded px-1.5 py-0.5">
-                          {entry.contentType}
-                        </span>
-                        {/* Visual echo of Folio/Frontpage's own entry-actions
-                            glyph — decorative here too, same as those, not
-                            wired to a menu of its own. */}
                         <span className="text-stone-300 tracking-widest select-none pt-0.5" aria-hidden="true">⋯</span>
                       </div>
                     </div>
@@ -499,19 +607,28 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                       // reading order of whichever script lost the vote.
                       // dir="auto" hands each embedded run to the browser's
                       // own Unicode Bidi Algorithm instead of one blanket guess.
-                      <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-handwritten text-[19px] text-black leading-relaxed text-left">
-                        {truncateAtWord(preview, 46)}
-                      </p>
-                    ) : (
-                      <>
-                        <h3 dir={isAr ? 'rtl' : 'ltr'} title={entry.title} className={`font-serif text-lg font-medium text-[#111111] mb-1.5 line-clamp-2 ${isAr ? 'text-right' : 'text-left'}`}>
-                          {entry.title}
-                        </h3>
-                        <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-serif text-sm text-stone-500 leading-relaxed text-left">
-                          {truncateAtWord(preview, 32)}
+                      // 448px is the canonical Note reading measure, taken
+                      // from noteSpec: an 840px canvas with px-[196px] on
+                      // each side leaves exactly that. Centred in the card
+                      // with room above and below, instead of running the
+                      // full width edge to edge.
+                      <div className="max-w-[448px] mx-auto my-6">
+                        <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className="font-handwritten text-[19px] text-black leading-relaxed text-left whitespace-pre-line">
+                          {expandedNoteIds.includes(entry.id) ? preview : truncateAtWord(preview, 46)}
                         </p>
-                      </>
-                    )}
+                        {/* Only offered when there is actually more to read —
+                            a Note that already fits gets no toggle. */}
+                        {preview.trim().split(/\s+/).length > 46 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleNote(entry.id); }}
+                            className="text-[10px] font-mono tracking-wider uppercase text-adjung-maroon hover:underline mt-2 bg-stone-100 hover:bg-stone-200/90 px-2 py-0.5 rounded transition cursor-pointer"
+                          >
+                            {expandedNoteIds.includes(entry.id) ? 'Show Less' : 'Read More ↓'}
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
 
                     {entry.tags && entry.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
@@ -532,6 +649,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                       <span>{entry.publishedDate ? new Date(entry.publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
                     </div>
                   </div>
+                  )}
                 </button>
               </React.Fragment>
             );

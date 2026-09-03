@@ -5,10 +5,10 @@ import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, formatSeri
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { EntryRenderer } from '../rendering/EntryRenderer';
-import { FileText, ArrowRight, Sparkles, Edit3 } from 'lucide-react';
+import { FileText, Sparkles, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
-import { resolveDigitalSignature } from '../../utils/signatureResolvers';
+import { resolveDigitalSignature, resolveSignatureText } from '../../utils/signatureResolvers';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -337,129 +337,145 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       const displayTitle = truncateTitle(item.title || '', 55);
 
                       return (
-                        <div
+                        <button
                           key={item.id}
-                          className={`group border rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between select-text cursor-default relative overflow-hidden min-h-[180px] w-full ${
+                          type="button"
+                          // The card is the click target, same as the Content
+                          // list: an Essay opens at its canonical URL, a Note
+                          // expands in place because it has no URL of its own.
+                          onClick={() =>
+                            isNote
+                              ? handleRestrictedAction(() => toggleNote(item.id), 'expand')
+                              : handleRestrictedAction(() => setSelectedEntry(item))
+                          }
+                          // Same frame as the Content list: same radius, same
+                          // padding, same border colours, same width, same
+                          // hover shadow. Folio previously used rounded-md,
+                          // p-8, a permanent double shadow and a 180px floor,
+                          // so an identical entry sat in a visibly different
+                          // box depending on which page you found it on.
+                          className={`group border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all p-5 select-text cursor-pointer relative w-full block max-w-[782px] mx-auto ${
                             isNote ? 'bg-[#FDFBF7] border-adjung-maroon/30 text-left' : 'bg-white border-stone-300 text-center'
                           }`}
                         >
-                          {/* Content Area — Essay centers around its title;
-                              Note (no title) reads left-aligned instead, so
-                              the card doesn't visually collapse around an
-                              empty center. */}
-                          <div className={`flex-1 flex flex-col justify-center select-text ${isNote ? 'items-start' : 'items-center'}`}>
-                            {/* Metadata bar — mirrors the full-view header bar */}
+                          {/* Note follows the Content list's Note card
+                              exactly — signature and author block top-left,
+                              type badge top-right, handwritten body, tags,
+                              then the reading-time/date footer. Same design
+                              in both places, which is the point: a Note looks
+                              like a Note wherever it appears. Essay keeps the
+                              canonical reading header below. */}
+                          {isNote ? (
+                            <div className="w-full text-left">
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="sig text-[15px] text-adjung-maroon shrink-0 !opacity-90" aria-hidden="true">
+                                    {resolveSignatureText(item.authorId || '', currentAuthor?.signature || '', identities)}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <div className="font-serif text-[13px] font-semibold text-[#111111] truncate">
+                                      {currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'}
+                                    </div>
+                                    <div className="font-mono text-[9.5px] text-[#111111]/40 truncate">
+                                      {authorDomain} · {serialNum}
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* No type label. A Note already announces
+                                    itself: handwritten face, cream card, no
+                                    title, author block on top. The pill
+                                    repeated what the design had already said. */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-stone-300 tracking-widest select-none pt-0.5" aria-hidden="true">⋯</span>
+                                </div>
+                              </div>
+
+                              {/* A Note has no canonical URL of its own, so a
+                                  long one opens in place: the renderer's own
+                                  "Read More" toggle expands it right here.
+                                  expandedNoteIds/toggleNote were already
+                                  passed into this component from App.tsx and
+                                  simply never used — isExpanded was pinned to
+                                  false, both handlers were empty, and the
+                                  toggle was switched off, so no Note could
+                                  ever be opened from a Folio. No clamp class
+                                  here either: the renderer does its own
+                                  truncation and needs to be able to grow. */}
+                              {/* 448px is the canonical Note reading measure,
+                                  taken from noteSpec: an 840px canvas with
+                                  px-[196px] each side leaves exactly that.
+                                  Centred with room above and below, same as
+                                  the Content list. */}
+                              <div className="font-handwritten text-[19px] text-black leading-relaxed text-left max-w-[448px] mx-auto my-6">
+                                <TimelineEntryCollapseRenderer
+                                  item={item}
+                                  isExpanded={expandedNoteIds.includes(item.id)}
+                                  onToggle={() => handleRestrictedAction(() => toggleNote(item.id), 'expand')}
+                                  accentFirstWord
+                                  maxWordsOverride={45}
+                                  maxCharsOverride={240}
+                                  showInlineToggle
+                                />
+                              </div>
+
+                              {item.tags && item.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                  {item.tags.slice(0, 4).map(tag => (
+                                    <span key={tag} className="font-mono text-[9px] uppercase tracking-wide text-[#111111]/50 bg-adjung-maroon/[0.06] rounded px-1.5 py-0.5">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[#111111]/[0.06] font-mono text-[10px] text-[#111111]/40">
+                                <span>{readingTimeStr.toLowerCase()}</span>
+                                <span>{formatDate(dateObj)}</span>
+                              </div>
+                            </div>
+                          ) : (
+                          <div className="flex-1 flex flex-col justify-center select-text items-center">
                             <div className="w-full flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-400 mb-4 border-b border-adjung-maroon pb-3 select-text">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                {isNote && (
-                                  <span className="text-adjung-maroon font-bold border border-adjung-maroon/30 rounded px-1.5 py-0.5 mr-1">NOTE</span>
-                                )}
+                                <span className="font-bold border border-stone-300 text-stone-500 rounded px-1.5 py-0.5 mr-1">
+                                  {item.contentType.toUpperCase()}
+                                </span>
                                 <span>{serialNum}</span>
                                 <span className="text-stone-300 font-bold">·</span>
                                 <span>{versionStr}</span>
                                 <span className="text-stone-300 font-bold">·</span>
                                 <span>{formatDate(dateObj)}</span>
-                                {!isNote && (
-                                  <>
-                                    <span className="text-stone-300 font-bold">·</span>
-                                    <span>{readingTimeStr}</span>
-                                  </>
-                                )}
+                                <span className="text-stone-300 font-bold">·</span>
+                                <span>{readingTimeStr}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="normal-case text-stone-400">{authorDomain}</span>
-                                {/* Visual echo of the full view's actions-menu
-                                    glyph — decorative here, not wired to
-                                    EntryActionsMenu (that lives on the
-                                    destination page, not the preview page). */}
                                 <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
                               </div>
                             </div>
 
-                            {/* Title — serif to match the full-view h1, capped
-                                to one line so the card never grows past its
-                                fixed slot height. Note skips this entirely —
-                                it has no title by design (a NOTE pill above
-                                already marks the type). */}
-                            {!isNote && (
-                              <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text px-9 ${isAr ? 'font-arabic' : ''}`}>
-                                {parseInlineFormatting(displayTitle)}
-                              </h3>
-                            )}
+                            <h3 className={`text-xl md:text-2xl font-serif text-stone-900 leading-snug tracking-tight font-medium select-text px-9 ${isAr ? 'font-arabic' : ''}`}>
+                              {parseInlineFormatting(displayTitle)}
+                            </h3>
 
-                            {/* Byline — "by" stays mono/UI, the name itself
-                                is serif with the same underline treatment as
-                                full view's author stamp. */}
-                            <div className={`flex items-baseline gap-1.5 mt-1.5 mb-3.5 select-text ${isNote ? '' : ''}`}>
+                            <div className="flex items-baseline justify-center gap-1.5 mt-1.5 mb-3.5 select-text">
                               <span className="font-mono text-[9px] uppercase tracking-widest text-stone-400">by</span>
                               <span className="font-serif font-medium text-stone-700 text-[11px] border-b border-stone-200 pb-0.5">
                                 {currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'}
                               </span>
                             </div>
 
-                            {/* Short Excerpt. Essay: 2 lines, justified,
-                                centered, with a floating drop cap on its
-                                first letter (::first-letter, text-4xl serif)
-                                — a long-form-narrative convention. Note gets
-                                none of that: no drop cap (research backs this
-                                cut specifically — drop caps read as
-                                "trying too hard" on short/transactional
-                                posts; they're meant for ~1200+ word prose
-                                with a deliberate opening), left-aligned
-                                rather than justified (justify reads as
-                                "formatted document," not "quick post"), and
-                                the full handwritten-font body text is the
-                                whole point — nothing else needs to compete
-                                with it. Arabic also skips the drop cap (not
-                                a script convention) but keeps Essay's
-                                justified/centered treatment.
-
-                                Truncation: maxWordsOverride/maxCharsOverride
-                                keep the component's OWN word-safe cut (it
-                                never splits mid-word — see
-                                truncatePreviewContent) inside a budget that
-                                actually fits 2 lines at this font size, so
-                                its "..." is what readers see. line-clamp-3
-                                below is a generous safety net only, not the
-                                primary cut mechanism — CSS line-clamp has no
-                                notion of word boundaries and was the actual
-                                cause of the mid-word "menja..." cutoff. */}
-                            <div className={`text-stone-500 leading-relaxed select-text w-full line-clamp-3 ${
-                              isNote
-                                ? 'text-sm text-left'
-                                : `text-xs max-w-xl mx-auto px-9 [&_p]:!text-justify ${isAr ? '' : '[&::first-letter]:text-4xl [&::first-letter]:font-serif [&::first-letter]:font-normal [&::first-letter]:text-adjung-maroon [&::first-letter]:float-left [&::first-letter]:leading-none [&::first-letter]:mr-1 [&::first-letter]:mt-0.5'}`
-                            }`}>
-                              <TimelineEntryCollapseRenderer
-                                item={item}
-                                isExpanded={false}
-                                onToggle={() => {}}
-                                accentFirstWord
-                                maxWordsOverride={isNote ? 45 : 22}
-                                maxCharsOverride={isNote ? 240 : 115}
-                                onOpenText={() => {}}
-                                showInlineToggle={false}
-                              />
-                            </div>
+                            <div className="w-full h-px bg-adjung-maroon" />
                           </div>
+                          )}
 
-                          {/* Circular Action Button -> on the right. Maroon
-                              by default (not just on hover) and the ONLY
-                              click target on the card — the box itself is
-                              cursor-default, not a click surface. */}
-                          <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRestrictedAction(() => setSelectedEntry(item));
-                              }}
-                              className="w-8 h-8 rounded-full border border-adjung-maroon bg-white flex items-center justify-center text-adjung-maroon hover:text-white hover:bg-adjung-maroon transition-all duration-200 cursor-pointer shadow-sm"
-                              title="Read full essay"
-                            >
-                              <ArrowRight className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
+                          {/* No circular action button. It was the only click
+                              target on the card, it sat absolutely positioned
+                              over the text (clipping the last words of a
+                              Note), and it duplicated what clicking the card
+                              already does in the Content list. The whole card
+                              is the target now, on both surfaces. */}
+                        </button>
                       );
                     })}
                   </div>
