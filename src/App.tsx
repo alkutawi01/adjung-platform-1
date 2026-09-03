@@ -420,6 +420,28 @@ export default function App() {
           setMaxScroll(currentMaxScroll);
           setIsFloating(currentScrollY > 15);
           setNavVisible(true); // Always keep navbar visibility state true, opacity is handled via style
+
+          // Direction-based reveal: showNavbar/lastScrollY were declared for
+          // this and never wired up, so the navbar had no way back once
+          // Navbar.tsx's opacity formula (distance from top, capped at
+          // 100-400px) hit zero — on any page taller than that it stayed
+          // invisible AND unclickable (pointerEvents:none) until scrolled
+          // all the way back near the top. Near the top it always shows;
+          // otherwise scrolling up brings it back immediately and scrolling
+          // down hides it, regardless of how far down the page is. The
+          // small delta deadzone avoids flicker on sub-pixel/momentum
+          // scroll jitter. Works identically for touch, since it only
+          // reads scrollY, not hover.
+          const delta = currentScrollY - lastScrollY.current;
+          if (currentScrollY < 80) {
+            setShowNavbar(true);
+          } else if (delta > 5) {
+            setShowNavbar(false);
+          } else if (delta < -5) {
+            setShowNavbar(true);
+          }
+          lastScrollY.current = currentScrollY;
+
           ticking = false;
         });
         ticking = true;

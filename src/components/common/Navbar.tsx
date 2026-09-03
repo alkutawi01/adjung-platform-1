@@ -105,12 +105,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           : 'border-white/5 shadow-none'
       } bg-adjung-maroon/90`}
       style={{
-        opacity: showNavbar 
-          ? (isHeaderHovered 
-              ? 1.0 
-              : Math.max(0, 1.0 - scrollY / Math.max(100, Math.min(400, maxScroll)))) 
-          : 0,
-        pointerEvents: showNavbar ? 'auto' : 'none',
+        // showNavbar now tracks scroll direction (App.tsx), not just
+        // distance from top, so it is the single source of truth here:
+        // once true, show at full opacity immediately, regardless of how
+        // far down the page scrollY is. The old formula
+        // (1 - scrollY/threshold) faded to 0 for any scroll past 100-400px
+        // and had no way back except scrolling all the way back up to that
+        // same range, which made the whole navbar invisible AND
+        // pointer-events:none — unreachable — for the rest of a long page.
+        opacity: (showNavbar || isHeaderHovered) ? 1.0 : 0,
+        pointerEvents: (showNavbar || isHeaderHovered) ? 'auto' : 'none',
       }}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
