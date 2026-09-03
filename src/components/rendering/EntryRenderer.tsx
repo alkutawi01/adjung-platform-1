@@ -3705,6 +3705,18 @@ export function EntryRenderer({
             {/* Metadata Bar */}
             <div className="flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-500 mb-6 border-b border-adjung-maroon pb-3 select-none">
               <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+                {/* Type badge — the same pill Folio's list cards already use
+                    for Note, applied here too. Without it the reading view's
+                    header carried no type indicator at all: open a Note and
+                    every visual cue that distinguished it in the list (no
+                    title, cream card, pill) was gone. */}
+                <span className={`font-bold border rounded px-1.5 py-0.5 mr-0.5 ${
+                  contentType === 'Note'
+                    ? 'text-adjung-maroon border-adjung-maroon/30'
+                    : 'text-stone-500 border-stone-300'
+                }`}>
+                  {contentType.toUpperCase()}
+                </span>
                 <span>{serialNum}</span>
                 <span className="text-stone-300 font-bold">·</span>
                 <span>{versionStr}</span>
