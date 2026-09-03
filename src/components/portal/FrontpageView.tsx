@@ -588,7 +588,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     : "Adjung will begin accepting applications for the 2027 Fellowship Programme in September. Details will be published in the Directory.";
 
   return (
-    <div className="bg-transparent text-[#1F1F1F] font-sans w-full min-h-screen px-4 md:px-8 py-12 select-none animate-fade-in">
+    <div className="bg-transparent text-[#1F1F1F] font-sans w-full min-h-screen py-12 select-none animate-fade-in">
       <div className="max-w-5xl mx-auto">
         
         {/* Wordmark Hero */}

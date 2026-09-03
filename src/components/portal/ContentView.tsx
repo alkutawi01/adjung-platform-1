@@ -335,7 +335,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto space-y-8 text-left">
+      <div className="max-w-4xl mx-auto space-y-8 text-left">
         <div className="border-b border-[#111111]/10 pb-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="font-serif text-2xl font-light text-[#111111] flex items-center gap-2 text-left">
