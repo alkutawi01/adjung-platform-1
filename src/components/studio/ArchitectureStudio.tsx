@@ -170,7 +170,7 @@ const initialNodes: Node[] = [
     data: { 
       label: 'Metadata Schema', 
       desc: 'Cataloging schema standards.',
-      purpose: 'Governs tags, citation styles (Harvard, APA, MLA), reading times, and XML export formats.', 
+      purpose: 'Governs tags, citation styles (Harvard, Vancouver), reading times, and XML export formats.', 
       spec: 'SPEC-017', 
       dbEntity: 'citations', 
       files: ['src/utils.tsx'] 
@@ -244,7 +244,7 @@ const IMPACT_MAP: Record<string, { affected: string[]; level: 'Low' | 'Medium' |
   metadata: {
     affected: ['Publication Catalogs', 'Citation references', 'XML/PDF Export'],
     level: 'High',
-    warning: 'CRITICAL: Changing the Metadata Schema structure will break existing XML exports and Harvard/APA citation referencing rules.'
+    warning: 'CRITICAL: Changing the Metadata Schema structure will break existing XML exports and Harvard/Vancouver citation referencing rules.'
   }
 };
 
