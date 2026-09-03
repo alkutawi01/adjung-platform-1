@@ -340,7 +340,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                         <div
                           key={item.id}
                           className={`group border rounded-md shadow-[0_1.5px_4px_rgba(0,0,0,0.015),0_1px_2px_rgba(0,0,0,0.008)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.035)] transition-all duration-300 p-8 flex flex-col justify-between select-text cursor-default relative overflow-hidden min-h-[180px] w-full ${
-                            isNote ? 'bg-[#FDFBF7] border-adjung-maroon/15 text-left' : 'bg-white border-stone-200/90 text-center'
+                            isNote ? 'bg-[#FDFBF7] border-adjung-maroon/30 text-left' : 'bg-white border-stone-300 text-center'
                           }`}
                         >
                           {/* Content Area — Essay centers around its title;

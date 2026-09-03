@@ -891,7 +891,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   }
                 }}
                 dir={isAr ? 'rtl' : 'ltr'}
-                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'} ${isNote ? 'bg-[#FDFBF7] rounded-md p-4 -m-4 border border-adjung-maroon/15 hover:border-adjung-maroon/35 transition-colors' : ''}`}
+                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'} ${isNote ? 'bg-[#FDFBF7] rounded-md p-4 -m-4 border border-adjung-maroon/30 hover:border-adjung-maroon/35 transition-colors' : ''}`}
               >
                 {item.entryObj ? (
                   isNote ? (
@@ -1018,7 +1018,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     }
                   }}
                   dir={isAr ? 'rtl' : 'ltr'}
-                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group rounded-md bg-[#FDFBF7] border border-adjung-maroon/15 hover:border-adjung-maroon/35 p-3 -m-3 transition-colors' : ''} ${isAr ? 'text-right' : ''}`}
+                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group rounded-md bg-[#FDFBF7] border border-adjung-maroon/30 hover:border-adjung-maroon/35 p-3 -m-3 transition-colors' : ''} ${isAr ? 'text-right' : ''}`}
                 >
                   {note.entryObj ? (
                     <>

@@ -451,7 +451,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   type="button"
                   onClick={() => openEntry(entry)}
                   className={`w-full text-left border rounded-lg overflow-hidden hover:shadow-sm transition-all mb-3 ${
-                    isNote ? 'border-adjung-maroon/15 hover:border-adjung-maroon/35' : 'border-stone-200/70 hover:border-adjung-maroon/40'
+                    isNote ? 'border-adjung-maroon/30 hover:border-adjung-maroon/35' : 'border-stone-300 hover:border-adjung-maroon/40'
                   }`}
                 >
                   {/* Type accent — a visual cue before a reader even parses
