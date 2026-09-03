@@ -517,6 +517,15 @@ export default function App() {
     // from that state and fighting this one.
     isSyncingFromUrlRef.current = true;
 
+    // Armed here, before any branching, rather than at the end of this effect.
+    // Several branches below (the subdomain root, the subdomain fallthrough and
+    // the portal root) return early, and the portal always loads on "/", so
+    // setting this at the bottom meant it never ran at all: the state->URL
+    // adapter stayed disabled for the whole session, and no in-app navigation
+    // ever reached the address bar. Arming it here keeps it correct no matter
+    // which branch returns.
+    setIsRouteSynced(true);
+
     // If subdomain is active, we enforce selectedAuthorId
     if (authorFromSubdomain) {
       setSelectedAuthorId(authorFromSubdomain.id);
@@ -690,7 +699,6 @@ export default function App() {
         setEditingEntry(null);
       }
     }
-    setIsRouteSynced(true);
   }, [location.pathname, currentUser, entries, initializing, authorFromSubdomain]);
 
 
