@@ -291,19 +291,12 @@ export default function App() {
   // Tag / Category filter in Folio
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('All');
   const [isRouteSynced, setIsRouteSynced] = useState(false);
-  // Set while the URL->state effect below is applying a route (e.g. after
-  // Revert to Original Account leaves selectedAuthorId pointed at someone
-  // else's folio while the URL still reads /folio/<self>). Without this,
-  // that effect's setSelectedAuthorId(...) triggers the state->URL effect,
-  // which pushes the URL back to match the *old* selectedAuthorId, which
-  // re-triggers this effect again — an infinite navigate() ping-pong.
-  const isSyncingFromUrlRef = useRef(false);
   // The URL->state effect below also depends on `entries`/`currentUser`/etc
   // (needed to resolve lookups like /desk/edit/:id -> an actual Entry) —
   // but re-running just because entries got a new array reference (which
-  // happens on nearly every autosave/refresh) unconditionally re-armed
-  // isSyncingFromUrlRef, which then made the state->URL effect below skip
-  // its next push even though nothing about the URL had actually changed.
+  // happens on nearly every autosave/refresh) used to re-arm the old
+  // skip-the-next-push flag, which then made the state->URL effect below
+  // skip a push even though nothing about the URL had actually changed.
   // Net effect: clicking a draft set editingEntry, but the URL never
   // advanced to /desk/edit/:id, so this same effect's own "desk" branch
   // saw no ?edit segment on its next run and reset editingEntry straight
@@ -436,13 +429,14 @@ export default function App() {
   // Synchronize state-to-URL (pushState adapter)
   useEffect(() => {
     if (initializing || !isRouteSynced) return;
-    if (isSyncingFromUrlRef.current) {
-      // This state change came from the URL->state effect below reacting to
-      // a route change, not from an in-app action — don't push it back to
-      // the URL, or the two effects fight forever.
-      isSyncingFromUrlRef.current = false;
-      return;
-    }
+    // No "skip the next push" flag here any more. That flag was armed on every
+    // URL->state run, but consumed only when a re-render actually followed; when
+    // the derived state already matched, nothing re-rendered, so it stayed armed
+    // and swallowed the *next* genuine click instead. That dropped every second
+    // navigation, which is why opening an entry never reached the address bar.
+    // The ping-pong it originally guarded is already prevented by
+    // lastSyncedPathnameRef, which makes the URL->state effect process any given
+    // pathname once, plus the location.pathname !== newPath check below.
 
     // Handle subdomain override logic
     if (authorFromSubdomain) {
@@ -502,20 +496,16 @@ export default function App() {
     // changed since the last time this ran — this effect's dependency
     // array also includes entries/currentUser/authorFromSubdomain (needed
     // to resolve /desk/edit/:id etc into real objects), which change far
-    // more often than the pathname does. Re-running the full sync (and
-    // re-arming isSyncingFromUrlRef) on those alone was clobbering state
-    // that a click had just set, before the state->URL effect got a
-    // chance to push the URL forward. See lastSyncedPathnameRef above.
+    // more often than the pathname does. Re-running the full sync on those
+    // alone was clobbering state that a click had just set, before the
+    // state->URL effect got a chance to push the URL forward. This guard is
+    // now also what stops the two effects ping-ponging, since it makes any
+    // given pathname get derived exactly once.
     if (lastSyncedPathnameRef.current === location.pathname) return;
     lastSyncedPathnameRef.current = location.pathname;
 
     const path = location.pathname;
     const parts = path.split('/').filter(Boolean);
-
-    // Every state update below is derived FROM this URL — tell the
-    // state->URL effect to skip its next run instead of re-deriving a URL
-    // from that state and fighting this one.
-    isSyncingFromUrlRef.current = true;
 
     // Armed here, before any branching, rather than at the end of this effect.
     // Several branches below (the subdomain root, the subdomain fallthrough and
