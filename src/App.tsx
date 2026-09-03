@@ -1363,11 +1363,11 @@ Editorial Board of Adjung`;
   // elsewhere) degrades gracefully instead: worst case under throttling is
   // a missed fade, never a stuck screen.
   return initializing ? (
-    <div className="fixed inset-0 z-[100] bg-[#FDFDFD]">
+    <div className="fixed inset-0 z-[100] bg-[#EFEFEF]">
       <LoadingScreen />
     </div>
   ) : (
-    <div className="min-h-screen flex flex-col bg-[#FDFDFD] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 animate-fade-in">
+    <div className="min-h-screen flex flex-col bg-[#EFEFEF] selection:bg-adjung-maroon/10 selection:text-adjung-maroon text-stone-900 animate-fade-in">
           {/* Top Thin Reading Progress Bar */}
           <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-adjung-maroon/5 z-50 pointer-events-none">
             <div
@@ -1432,7 +1432,7 @@ Editorial Board of Adjung`;
           />
           {/* ==================== 2. PERSONAL SCHOLARLY MASTHEAD ==================== */}
           {(activeTab === 'folio' || activeTab === 'bio') && currentAuthor && (
-            <header className="print:hidden w-full pt-8 pb-3 px-4 md:px-8 bg-[#FDFDFD] z-10 select-none">
+            <header className="print:hidden w-full pt-8 pb-3 px-4 md:px-8 bg-[#EFEFEF] z-10 select-none">
               <div className="max-w-6xl mx-auto text-center relative">
                 {/* Main classical visual focus: The Author's Identity with refined lines */}
                 <div className="border-t border-b border-stone-300 py-5 my-1 max-w-4xl mx-auto">

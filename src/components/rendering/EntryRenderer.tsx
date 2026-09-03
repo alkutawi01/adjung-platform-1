@@ -3674,7 +3674,7 @@ export function EntryRenderer({
     const readingTimeStr = `${entry.readingTimeMinutes || 1} MIN READ`;
 
     const isArContent = isArabicText(entry.content);
-    const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-200/60 rounded-md shadow-sm print:shadow-none print:border-0 print:rounded-none print:p-0 relative overflow-visible ${
+    const containerClass = `${effectiveLayoutSettings ? 'py-10 px-4' : `${activeSpec.spacing.canvasMaxWidth} ${activeSpec.spacing.canvasPadding}`} mx-auto bg-white border border-stone-300 rounded-md shadow-sm print:shadow-none print:border-0 print:rounded-none print:p-0 relative overflow-visible ${
       layoutEditMode ? 'outline outline-2 outline-dashed outline-sky-400 outline-offset-8' : ''
     } ${
       isArContent ? 'text-right' : 'text-left'
