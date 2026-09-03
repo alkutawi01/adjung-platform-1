@@ -134,7 +134,7 @@ export function BiographyView({
                 {currentUser?.id === selectedAuthorId && (
                   <button
                     onClick={() => setIsEditingBio(true)}
-                    className="absolute -top-6 right-0 opacity-0 group-hover/bio:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider cursor-pointer"
+                    className="absolute -top-6 right-0 opacity-0 group-hover/bio:opacity-100 pointer-coarse:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider cursor-pointer"
                     title="Edit Biography"
                   >
                     <Edit3 className="w-3.5 h-3.5" /> Edit Biography
@@ -279,7 +279,7 @@ export function BiographyView({
                   
                   {/* Remove milestone for owner */}
                   {currentUser && currentUser.id === selectedAuthorId && (
-                    <div className="pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="pt-1 opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 transition-opacity duration-200">
                       <button
                         type="button"
                         onClick={() => {

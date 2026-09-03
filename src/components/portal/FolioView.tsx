@@ -5,7 +5,7 @@ import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, formatSeri
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { EntryRenderer } from '../rendering/EntryRenderer';
-import { FileText, ArrowRight, Sparkles } from 'lucide-react';
+import { FileText, ArrowRight, Sparkles, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
 import { resolveDigitalSignature } from '../../utils/signatureResolvers';
@@ -226,12 +226,10 @@ export const FolioView: React.FC<FolioViewProps> = ({
                   {currentUser?.id === currentAuthor.id && (
                     <button
                       onClick={() => setIsEditingHeader(true)}
-                      className="inline-block align-middle ml-2 opacity-0 group-hover/title:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon cursor-pointer"
+                      className="inline-block align-middle ml-2 opacity-0 group-hover/title:opacity-100 pointer-coarse:opacity-100 transition-opacity p-1 text-stone-400 hover:text-adjung-maroon cursor-pointer"
                       title="Edit Banner Title & Subtitle"
                     >
-                      <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
+                      <Edit3 className="w-4 h-4 inline" />
                     </button>
                   )}
                 </h2>
