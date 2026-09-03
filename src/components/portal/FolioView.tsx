@@ -355,7 +355,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                           // so an identical entry sat in a visibly different
                           // box depending on which page you found it on.
                           className={`group border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all p-5 select-text cursor-pointer relative w-full block max-w-[782px] mx-auto ${
-                            isNote ? 'bg-[#FDFBF7] border-adjung-maroon/30 text-left' : 'bg-white border-stone-300 text-center'
+                            isNote ? 'bg-adjung-amber-tint border-adjung-amber/40 text-left' : 'bg-white border-stone-300 text-center'
                           }`}
                         >
                           {/* Note follows the Content list's Note card

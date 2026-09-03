@@ -21,6 +21,14 @@
   --color-Adjung-cream: #FDFDFD;
   --color-Adjung-dark: #111111;
   --color-Adjung-gray-light: #EAE8E3;
+
+  /* Note's own accent. Deliberately analogous to the maroon rather than a
+     contrasting hue: both are warm and low-chroma, so a Note reads as a
+     different kind of thing in the same publication, not as a different
+     brand. Maroon stays the platform accent and the signature colour —
+     amber only ever marks a Note. */
+  --color-adjung-amber: #9C6A24;
+  --color-adjung-amber-tint: #FBF6EC;
 }
 
 /* Base resets & styles for Adjung scholarly magazine */

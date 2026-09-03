@@ -470,7 +470,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   // looking at the list or the entry itself.
                   className={`w-full text-left border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all mb-3 block max-w-[782px] mx-auto ${
                     isNote
-                      ? 'border-adjung-maroon/30 hover:border-adjung-maroon/35'
+                      ? 'border-adjung-amber/40 hover:border-adjung-amber/60'
                       : 'border-stone-300 hover:border-adjung-maroon/40'
                   }`}
                 >
@@ -568,7 +568,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                           truth for this card. */}
                     </div>
                   ) : (
-                  <div className="p-5 bg-[#FDFBF7]">
+                  <div className="p-5 bg-adjung-amber-tint">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="sig text-[15px] text-adjung-maroon shrink-0 !opacity-90" aria-hidden="true">
