@@ -3388,6 +3388,13 @@ export function EntryRenderer({
   };
 
   // Visual Mode Hover/Click Wrapper
+  //
+  // NOTE: nothing calls this. It is the only caller of renderInlineBlockEditor,
+  // which in turn is the only route to handleMoveBlockUp/Down, so the whole
+  // click-a-block-to-edit feature below is currently unreachable in the running
+  // app. Verified by searching all of src/ for this identifier: one hit, this
+  // declaration. Wire this into the entry view before treating any of it as
+  // live, and do not assume a fix inside it changes anything a reader can see.
   const renderVisualBlockWrapper = (
     block: ContentBlock,
     idx: number,
