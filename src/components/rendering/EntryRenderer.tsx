@@ -2946,6 +2946,39 @@ export function EntryRenderer({
   };
 
   // Inline Block Editor in Visual Mode
+  // Reordering is otherwise only reachable through the hover strip on the
+  // resting block, which touch devices can never reveal. Repeating the two
+  // controls inside the open editor keeps the resting block uncluttered while
+  // giving phones and tablets a real path to move a block.
+  const renderBlockMoveControls = (idx: number) => {
+    const total = contentType === 'Essay'
+      ? paragraphs.length
+      : parseContentToBlocks(content).length;
+    const btn = "p-1 text-stone-400 hover:text-adjung-maroon hover:bg-stone-50 rounded transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-stone-400 cursor-pointer disabled:cursor-default";
+    return (
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => handleMoveBlockUp(idx)}
+          disabled={idx === 0}
+          className={btn}
+          title="Move block up"
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleMoveBlockDown(idx)}
+          disabled={idx >= total - 1}
+          className={btn}
+          title="Move block down"
+        >
+          <ArrowDown className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  };
+
   const renderInlineBlockEditor = (
     block: ContentBlock,
     idx: number,
@@ -3016,13 +3049,16 @@ export function EntryRenderer({
               </select>
             </div>
             
-            <button
-              type="button"
-              onClick={() => setEditingBlockIndex(null)}
-              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
-            >
-              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
-            </button>
+            <div className="flex items-center gap-1">
+              {renderBlockMoveControls(idx)}
+              <button
+                type="button"
+                onClick={() => setEditingBlockIndex(null)}
+                className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+              >
+                <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
+              </button>
+            </div>
           </div>
 
           <div className="relative">
@@ -3073,13 +3109,16 @@ export function EntryRenderer({
             <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
               Quote ({block.type === 'latin-quote' ? 'Latin' : 'Arabic'}) Block
             </span>
-            <button
-              type="button"
-              onClick={() => setEditingBlockIndex(null)}
-              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
-            >
-              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
-            </button>
+            <div className="flex items-center gap-1">
+              {renderBlockMoveControls(idx)}
+              <button
+                type="button"
+                onClick={() => setEditingBlockIndex(null)}
+                className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+              >
+                <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
+              </button>
+            </div>
           </div>
 
           {block.type === 'latin-quote' ? (
@@ -3178,13 +3217,16 @@ export function EntryRenderer({
                 <option value="definition">Definition</option>
               </select>
             </div>
-            <button
-              type="button"
-              onClick={() => setEditingBlockIndex(null)}
-              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
-            >
-              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
-            </button>
+            <div className="flex items-center gap-1">
+              {renderBlockMoveControls(idx)}
+              <button
+                type="button"
+                onClick={() => setEditingBlockIndex(null)}
+                className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+              >
+                <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -3241,13 +3283,16 @@ export function EntryRenderer({
             <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
               Figure Image Block
             </span>
-            <button
-              type="button"
-              onClick={() => setEditingBlockIndex(null)}
-              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
-            >
-              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
-            </button>
+            <div className="flex items-center gap-1">
+              {renderBlockMoveControls(idx)}
+              <button
+                type="button"
+                onClick={() => setEditingBlockIndex(null)}
+                className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+              >
+                <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -3309,13 +3354,16 @@ export function EntryRenderer({
           <span className="font-mono text-[9px] font-bold text-adjung-maroon uppercase tracking-wider bg-adjung-maroon/10 px-2 py-0.5 rounded">
             {block.type.toUpperCase()} Block
           </span>
-          <button
-            type="button"
-            onClick={() => setEditingBlockIndex(null)}
-            className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
-          >
-            <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
-          </button>
+          <div className="flex items-center gap-1">
+            {renderBlockMoveControls(idx)}
+            <button
+              type="button"
+              onClick={() => setEditingBlockIndex(null)}
+              className="px-2.5 py-1 bg-stone-900 hover:bg-adjung-maroon text-white rounded transition font-sans text-[10px] uppercase font-bold cursor-pointer"
+            >
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" />Done
+            </button>
+          </div>
         </div>
         
         <div className="space-y-2">
