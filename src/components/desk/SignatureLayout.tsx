@@ -2,6 +2,12 @@ import React from 'react';
 import { VectorStroke, DigitalSignature } from '../../types';
 import { SignatureRenderer } from './SignatureRenderer';
 import { ShieldCheck } from 'lucide-react';
+import {
+  DEFAULT_BASELINE_Y,
+  DEFAULT_CANVAS_HEIGHT,
+  SIG_BOX,
+  signatureNameOffset,
+} from './signatureMetrics';
 
 interface SignatureLayoutProps {
   strokes?: VectorStroke[][];
@@ -27,8 +33,8 @@ export function SignatureLayout({
   affiliation
 }: SignatureLayoutProps) {
   // Get baseline and canvasHeight from signature penStyle
-  const baselineY = signature?.penStyle?.baselineY !== undefined ? signature.penStyle.baselineY : 136;
-  const canvasHeight = signature?.penStyle?.canvasHeight !== undefined ? signature.penStyle.canvasHeight : 200;
+  const baselineY = signature?.penStyle?.baselineY !== undefined ? signature.penStyle.baselineY : DEFAULT_BASELINE_Y;
+  const canvasHeight = signature?.penStyle?.canvasHeight !== undefined ? signature.penStyle.canvasHeight : DEFAULT_CANVAS_HEIGHT;
   
   // Calculate relative top percentage for the architectural baseline
   const baselinePercent = (baselineY / canvasHeight) * 100;
@@ -65,9 +71,9 @@ export function SignatureLayout({
       </div>
 
       {/* Author details */}
-      <div 
+      <div
         className="flex flex-col items-center"
-        style={{ marginTop: `-${96 - (96 * (baselineY / canvasHeight)) - 8}px` }}
+        style={{ marginTop: `${signatureNameOffset(baselineY, canvasHeight, SIG_BOX.h)}px` }}
       >
         <div className="font-sans font-semibold text-stone-900 tracking-wide text-sm">
           {penName}

@@ -12,7 +12,7 @@ export const essaySpec: PresentationSpec = {
     canvasPadding: 'py-10 px-4 md:px-8',
     headerBottomMargin: 'mb-8 border-b border-adjung-maroon pb-6',
     paragraphSpacing: 'mb-6',
-    signatureMarginTop: 'mt-16 pt-12 border-t border-stone-200'
+    signatureMarginTop: 'mt-16 pt-12'
   },
   visibility: {
     showTitle: true,

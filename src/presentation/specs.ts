@@ -10,7 +10,7 @@ export interface SpacingSpec {
   canvasPadding: string;  // CSS padding class (e.g. 'py-8 px-4')
   headerBottomMargin: string; // CSS margin class (e.g. 'mb-10')
   paragraphSpacing: string;  // CSS spacing class between blocks
-  signatureMarginTop: string; // Top spacing for signature block
+  signatureMarginTop: string; // Spacing above the signature closure. Spacing only — each closure branch draws its own rule, so a border here would double it.
 }
 
 export interface VisibilityRules {

@@ -17,7 +17,7 @@ export const noticeSpec: PresentationSpec = {
     canvasPadding: 'py-8 px-4 md:px-[228px]',
     headerBottomMargin: 'mb-6 border-b border-stone-300 pb-4',
     paragraphSpacing: 'mb-4',
-    signatureMarginTop: 'mt-12 pt-8 border-t border-stone-200'
+    signatureMarginTop: 'mt-12 pt-8'
   },
   visibility: {
     showTitle: true,
@@ -42,7 +42,7 @@ export const editorsNoteSpec: PresentationSpec = {
     canvasPadding: 'py-10 px-4 md:px-[196px]',
     headerBottomMargin: 'mb-8 border-b border-stone-300 pb-6',
     paragraphSpacing: 'mb-6',
-    signatureMarginTop: 'mt-16 pt-12 border-t border-stone-200'
+    signatureMarginTop: 'mt-16 pt-12'
   },
   visibility: {
     showTitle: true,

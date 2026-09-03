@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { VectorStroke, PublishedRepresentation } from '../../types';
+import { BASELINE_FACTOR, DEFAULT_CANVAS_HEIGHT } from './signatureMetrics';
 
 interface SignatureRendererProps {
   strokes: VectorStroke[][];
@@ -89,7 +90,7 @@ export function SignatureRenderer({
     // signature floating with an oversized gap under it. Weighting the
     // baseline toward the lower third gives ascenders room without leaving
     // the bottom half of the canvas empty.
-    const yPos = canvasHeight * 0.7;
+    const yPos = canvasHeight * BASELINE_FACTOR;
 
     return (
       <svg 

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { VectorStroke } from '../../types';
 import { PenTool, RotateCcw, Send, CheckCircle, AlertTriangle } from 'lucide-react';
+import { BASELINE_INSET_MOBILE } from './signatureMetrics';
 
 type InkColor = 'Maroon' | 'Charcoal' | 'Midnight' | 'Spruce';
 
@@ -214,7 +215,7 @@ export function MobileSignCanvas() {
 
     try {
       const canvasHeight = dimensions?.height || 220;
-      const baselineY = canvasHeight - 48;
+      const baselineY = canvasHeight - BASELINE_INSET_MOBILE;
 
       const channel = supabase.channel(`signature_sync:${sessionId}`);
       await new Promise<void>((resolve, reject) => {

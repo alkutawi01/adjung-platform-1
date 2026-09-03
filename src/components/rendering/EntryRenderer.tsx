@@ -4407,10 +4407,13 @@ export function EntryRenderer({
         </div>
 
         
-        {/* Signature Closure */}
-        {/* Signature Closure */}
+        {/* Signature Closure — the gap above it comes from the content type's
+            own spec (activeSpec.spacing.signatureMarginTop), which already
+            carried a different value per type and was never read by anything:
+            both branches hardcoded Essay's mt-16 pt-12, so a Note got an
+            essay-sized gap above its signature and a Notice did too. */}
         {status === 'Published' && isInstitutionalEntry && activeSpec.visibility.showSignatureClosure && (
-          <div className="mt-16 pt-12 border-t border-stone-300 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
+          <div className={`${activeSpec.spacing.signatureMarginTop} border-t border-stone-300 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in`}>
              <span className="w-2 h-2 bg-adjung-maroon rotate-45 mb-4"></span>
              <div className={`${proseFont} text-stone-900 tracking-wide text-lg`}>Adjung Editorial Board</div>
              <div className="font-mono text-[9px] uppercase tracking-widest text-stone-400 mt-2">
@@ -4419,8 +4422,11 @@ export function EntryRenderer({
           </div>
         )}
         {status === 'Published' && !isInstitutionalEntry && activeSpec.visibility.showSignatureClosure && (
-          <div className="mt-16 pt-12 flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in">
-            <div className="w-24 h-[1px] bg-stone-400 absolute top-0 mt-[-1px] mb-8"></div>
+          <div className={`${activeSpec.spacing.signatureMarginTop} flex flex-col items-center justify-center relative pb-8 text-center animate-fade-in`}>
+            {/* mb-8 removed: margin-bottom does nothing on an absolutely
+                positioned element, so it had never affected this rule's
+                spacing. The gap below the rule is the wrapper's own padding. */}
+            <div className="w-24 h-[1px] bg-stone-400 absolute top-0 mt-[-1px]"></div>
             
             {(() => {
               const authorIdentity = entry.authorId ? identities.find(i => i.accountId === entry.authorId) : undefined;

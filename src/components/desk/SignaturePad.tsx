@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { DigitalSignature, VectorStroke } from '../../types';
 import { Settings, Trash2, Sliders, Sparkles, Paintbrush, FileText, Info, Type, PenTool } from 'lucide-react';
+import { DEFAULT_CANVAS_HEIGHT, BASELINE_INSET_DESKTOP } from './signatureMetrics';
 
 interface SignaturePadProps {
   onSave: (data: Partial<DigitalSignature>) => void;
@@ -365,8 +366,8 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
   const currentPaperStyle = PAPER_STYLES[paperTexture];
 
   const handleSaveSignature = () => {
-    const containerHeight = containerRef.current?.clientHeight || 200;
-    const baselineY = containerHeight - 64; // bottom-16 is 64px
+    const containerHeight = containerRef.current?.clientHeight || DEFAULT_CANVAS_HEIGHT;
+    const baselineY = containerHeight - BASELINE_INSET_DESKTOP;
 
     if (signatureMode === 'draw') {
       onSave({ 
