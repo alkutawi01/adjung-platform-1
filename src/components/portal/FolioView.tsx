@@ -345,6 +345,8 @@ export const FolioView: React.FC<FolioViewProps> = ({
                           // button is invalid HTML.
                           role="button"
                           tabIndex={0}
+                          // Anchor for CardActionsMenu's "Save as Image".
+                          data-export-card="true"
                           // The card is the click target, same as the Content
                           // list: an Essay opens at its canonical URL, a Note
                           // expands in place because it has no URL of its own.

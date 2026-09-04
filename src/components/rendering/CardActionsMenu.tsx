@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Entry } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService } from '../../utils/supabaseService';
@@ -23,12 +23,49 @@ interface CardActionsMenuProps {
 export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActionsMenuProps) {
   const { currentUser, showToast, setEditingEntry, setSelectedEntry, setActiveTab, requestConfirm, refreshDbState } = useAppContext();
   const [open, setOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const isOwner = !!currentUser && currentUser.id === entry.authorId;
   const hasUrl = entry.contentType !== 'Note' && !!entry.canonicalUrl;
   const title = entry.title || 'Untitled';
 
   const stop = (e: React.SyntheticEvent) => { e.stopPropagation(); };
+
+  // The card itself carries data-export-card so this can find its own
+  // container regardless of which surface rendered it (Content, Folio).
+  // Everything marked data-card-menu (this component's own root) is
+  // excluded from the capture — otherwise a screenshot of a Note would
+  // include its own open dropdown.
+  const saveAsImage = async () => {
+    setOpen(false);
+    const cardEl = rootRef.current?.closest('[data-export-card]') as HTMLElement | null;
+    if (!cardEl) {
+      showToast('Could not find the card to export.', 'error');
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const { toPng } = await import('html-to-image');
+      const dataUrl = await toPng(cardEl, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-card-menu')),
+      });
+      const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '') || 'adjung-entry';
+      const link = document.createElement('a');
+      link.download = `${safeTitle}.png`;
+      link.href = dataUrl;
+      link.click();
+      showToast('Image saved — check your downloads.', 'success');
+    } catch (err) {
+      console.error('Failed to export card image:', err);
+      showToast('Could not generate the image. Please try again.', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const copyLink = () => {
     navigator.clipboard.writeText(entry.canonicalUrl)
@@ -79,7 +116,14 @@ export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActio
 
   const itemClass = 'w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer border-0 bg-transparent font-sans';
 
-  const items: React.ReactNode[] = [];
+  const items: React.ReactNode[] = [
+    // Works for both Essay and Note — an image doesn't need a canonical
+    // URL, which is the constraint that keeps Copy Link and Citation off
+    // a Note's menu. First item: it's the one every card can offer.
+    <button key="image" type="button" disabled={isExporting} onClick={(e) => { stop(e); saveAsImage(); }} className={`${itemClass} disabled:opacity-50 disabled:cursor-wait`}>
+      {isExporting ? 'Generating…' : 'Save as Image'}
+    </button>
+  ];
   if (hasUrl) {
     items.push(<button key="link" type="button" onClick={(e) => { stop(e); copyLink(); }} className={itemClass}>Copy Link</button>);
     items.push(<button key="cite" type="button" onClick={(e) => { stop(e); copyCitation(); }} className={itemClass}>Citation</button>);
@@ -91,15 +135,8 @@ export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActio
     items.push(<button key="report" type="button" onClick={(e) => { stop(e); report(); }} className={`${itemClass} text-amber-700 hover:bg-amber-50`}>Report</button>);
   }
 
-  // A visitor looking at a Note under review has nothing to pick; keep the
-  // glyph so the card's meta row lines up with its neighbours, but make it
-  // inert rather than opening an empty menu.
-  if (items.length === 0) {
-    return <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>;
-  }
-
   return (
-    <div className="relative normal-case tracking-normal" onMouseLeave={() => setOpen(false)} onClick={stop}>
+    <div ref={rootRef} data-card-menu="true" className="relative normal-case tracking-normal" onMouseLeave={() => setOpen(false)} onClick={stop}>
       <button
         type="button"
         onClick={(e) => { stop(e); setOpen(!open); }}

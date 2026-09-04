@@ -462,6 +462,10 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   // nested in a button is invalid HTML (browsers split it).
                   role="button"
                   tabIndex={0}
+                  // Anchor for CardActionsMenu's "Save as Image" — it walks
+                  // up from itself to the nearest data-export-card ancestor
+                  // rather than needing a ref threaded down from here.
+                  data-export-card="true"
                   onClick={() => (isNote ? toggleNote(entry.id) : openEntry(entry))}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return;
