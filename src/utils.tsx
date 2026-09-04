@@ -121,15 +121,44 @@ export function getInitials(name: string): string {
 
 export function stripMarkdown(text: string): string {
   if (!text) return '';
-  return text
+  const withoutInlineMarks = text
     .replace(/(\*\*\*|___)(.*?)\1/g, '$2')
     .replace(/(\*\*|__)(.*?)\1/g, '$2')
     .replace(/(\*|_)(.*?)\1/g, '$2')
     .replace(/`(.*?)`/g, '$1')
     .replace(/\+\+(.*?)\+\+/g, '$1')
     .replace(/<u>(.*?)<\/u>/g, '$1')
-    .replace(/<ruby>([\s\S]*?)<rt>[\s\S]*?<\/rt><\/ruby>/gi, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    .replace(/<ruby>([\s\S]*?)<rt>[\s\S]*?<\/rt><\/ruby>/gi, '$1');
+
+  // Same fix as replaceGlossAndLinks/tokenize: a gloss or url value can
+  // contain parentheses at arbitrary depth, so [^)]+ stops at the first
+  // ')' inside the value and leaks the rest as literal text in excerpts.
+  // Walk paren depth to find the real closing ')' instead.
+  let result = '';
+  let i = 0;
+  while (i < withoutInlineMarks.length) {
+    if (withoutInlineMarks[i] === '[') {
+      const closeBracket = withoutInlineMarks.indexOf('](', i);
+      if (closeBracket !== -1) {
+        let depth = 1;
+        let j = closeBracket + 2;
+        while (j < withoutInlineMarks.length && depth > 0) {
+          if (withoutInlineMarks[j] === '(') depth++;
+          else if (withoutInlineMarks[j] === ')') depth--;
+          if (depth === 0) break;
+          j++;
+        }
+        if (depth === 0) {
+          result += withoutInlineMarks.substring(i + 1, closeBracket);
+          i = j + 1;
+          continue;
+        }
+      }
+    }
+    result += withoutInlineMarks[i];
+    i += 1;
+  }
+  return result;
 }
 
 export function handleMarkdownShortcut(
