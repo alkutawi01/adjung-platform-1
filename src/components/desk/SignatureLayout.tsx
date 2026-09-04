@@ -32,9 +32,20 @@ export function SignatureLayout({
   role,
   affiliation
 }: SignatureLayoutProps) {
-  // Get baseline and canvasHeight from signature penStyle
-  const baselineY = signature?.penStyle?.baselineY !== undefined ? signature.penStyle.baselineY : DEFAULT_BASELINE_Y;
-  const canvasHeight = signature?.penStyle?.canvasHeight !== undefined ? signature.penStyle.canvasHeight : DEFAULT_CANVAS_HEIGHT;
+  // SignatureRenderer's typed-text branch deliberately ignores a typed
+  // signature's stored penStyle and always draws the ink at the fixed
+  // DEFAULT_BASELINE_Y/DEFAULT_CANVAS_HEIGHT position (see its own comment:
+  // consistent placement across contexts matters more than the capture-time
+  // value for typed text). This layout has to agree, or it draws the
+  // guideline and computes the name offset against a baseline the ink was
+  // never actually placed on — for a typed signature carrying a real captured
+  // penStyle (e.g. from a mobile QR sync session before the account switched
+  // to typed), that showed as the name and guideline sitting well below
+  // where the cursive ink actually rendered. Only a 'drawn' signature's own
+  // stroke placement depends on its captured baseline; typed ink does not.
+  const useStoredBaseline = signature?.type === 'drawn';
+  const baselineY = useStoredBaseline && signature?.penStyle?.baselineY !== undefined ? signature.penStyle.baselineY : DEFAULT_BASELINE_Y;
+  const canvasHeight = useStoredBaseline && signature?.penStyle?.canvasHeight !== undefined ? signature.penStyle.canvasHeight : DEFAULT_CANVAS_HEIGHT;
   
   // Calculate relative top percentage for the architectural baseline
   const baselinePercent = (baselineY / canvasHeight) * 100;
