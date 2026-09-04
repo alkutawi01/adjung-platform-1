@@ -145,7 +145,12 @@ function rowToEntry(row: any, footnotes: any[] = [], marginNotes: any[] = []): E
     isInstitutional: !!row.is_institutional,
     discipline: row.discipline,
     underReview: !!row.under_review,
-    footnotesData: footnotes.map(f => ({ id: f.id, content: f.content, label: f.label })),
+    // block_key carries the fn-xxx marker id the entry's content actually
+    // references (via [^fn-xxx]) — the row's own primary key (f.id) is an
+    // unrelated Supabase-generated uuid. Rows saved before block_key
+    // existed have no marker id recorded at all (fall back to f.id so old
+    // rows don't crash, though they were already unrecoverable).
+    footnotesData: footnotes.map(f => ({ id: f.block_key || f.id, content: f.content, label: f.label })),
     footnotes: footnotes.map(f => f.content),
     marginNotesData: marginNotes.reduce((acc, m) => ({ ...acc, [m.block_key]: m.content }), {}),
   };
@@ -447,6 +452,11 @@ export const supabaseService = {
         const { error: fnInsertError } = await supabase.from('footnotes').insert(
           entry.footnotesData.map((f, idx) => ({
             entry_id: entry.id,
+            // f.id is the fn-xxx marker id the content's [^fn-xxx] actually
+            // references — same role margin_notes' block_key already plays.
+            // Without this, the marker id was never persisted anywhere, so
+            // every footnote's text reverted to empty on the next reload.
+            block_key: f.id,
             label: f.label,
             content: f.content,
             sort_order: idx,
