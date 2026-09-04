@@ -434,6 +434,23 @@ export function EntryRenderer({
     triggerEditorChange();
   };
 
+  // Checking only range.startContainer misses a selection that starts and
+  // ends in plain text but straddles an existing annotation badge in the
+  // middle (e.g. "plain text [footnote badge] more text" selected as one
+  // span) — deleteContents()/insertNode() would then silently destroy or
+  // orphan that badge even though the selection didn't "start" inside it.
+  // cloneContents() clones the actual selected fragment, badge nodes and
+  // all, so checking it for annotation elements catches overlap anywhere
+  // in the range, not just at its start.
+  const ANNOTATION_SELECTOR = '.interlinear-word, .footnote-badge, .margin-note-badge';
+  const rangeOverlapsAnnotation = (range: Range): boolean => {
+    const startEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const endEl = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+    if (startEl?.closest(ANNOTATION_SELECTOR) || endEl?.closest(ANNOTATION_SELECTOR)) return true;
+    const fragment = range.cloneContents();
+    return !!fragment.querySelector(ANNOTATION_SELECTOR);
+  };
+
   const insertNote = (type: 'footnote' | 'margin-note') => {
     const sel = window.getSelection();
     const range = contextRange || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
@@ -444,16 +461,13 @@ export function EntryRenderer({
       return;
     }
 
-    // A badge inserted inside an existing interlinear gloss's <bdi> (or
-    // inside another footnote/margin-note badge) lands inside that span's
-    // own markup once serialized back to markdown \u2014 it corrupts the
-    // gloss's `[label](gloss:...)` syntax by splitting it around the new
-    // badge, which then renders as raw unparsed text. Attaching an
-    // annotation to text that already carries one isn't a supported
-    // combination, so reject it here instead of silently producing a
-    // broken document.
-    const anchorEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
-    if (anchorEl?.closest('.interlinear-word, .footnote-badge, .margin-note-badge')) {
+    // A badge inserted inside \u2014 or wrapping over \u2014 an existing
+    // interlinear gloss/footnote/margin-note lands inside (or straddles)
+    // that span's own markup once serialized back to markdown, corrupting
+    // it into unparseable syntax. Attaching an annotation to a selection
+    // that already carries one isn't a supported combination, so reject it
+    // here instead of silently producing a broken document.
+    if (rangeOverlapsAnnotation(range)) {
       showToast('This text already has an annotation attached. Remove it first, or select different text.', 'error');
       setContextRange(null);
       return;
@@ -518,11 +532,10 @@ export function EntryRenderer({
     }
 
     // Same corruption risk as insertNote's guard, in reverse: wrapping a
-    // selection that already contains a footnote/margin-note badge (or
-    // another gloss) discards or nests that marker inside this gloss's own
-    // markup once serialized back to markdown.
-    const anchorEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
-    if (anchorEl?.closest('.interlinear-word, .footnote-badge, .margin-note-badge')) {
+    // selection that already contains — or straddles — a footnote/
+    // margin-note badge or another gloss discards or nests that marker
+    // inside this gloss's own markup once serialized back to markdown.
+    if (rangeOverlapsAnnotation(range)) {
       showToast('This text already has an annotation attached. Remove it first, or select different text.', 'error');
       setContextRange(null);
       return;

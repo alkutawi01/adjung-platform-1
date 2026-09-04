@@ -248,7 +248,7 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
   
   const html = htmlBlocks.filter(Boolean).join('');
 
-  return preserveMultipleSpaces(html)
+  const withInlineMarks = preserveMultipleSpaces(html)
     .replace(/\[\^(fn-[a-zA-Z0-9-]+)\]/g, '<span class="footnote-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(mn-[a-zA-Z0-9-]+)\]/g, '<span class="margin-note-badge" data-id="$1" contenteditable="false"></span>')
     .replace(/\[\^(\d+)\]/g, '<span class="footnote-badge" data-id="fn-legacy-$1" contenteditable="false"></span>')
@@ -258,23 +258,53 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
     .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/==(.*?)==/g, '<mark>$1</mark>')
-    // The url/gloss value can itself contain one level of parentheses
-    // (e.g. a gloss like "trust (belief)"), so the closing ')' can't be
-    // found with a plain [^)]+ — that stops at the first ')' inside the
-    // value and leaks the real closing paren as literal text. Allow one
-    // level of balanced nested parens in the url/gloss instead.
-    .replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))*)\)/g, (match, label, url) => {
-      if (url.startsWith('gloss:')) {
-        const glossVal = url.substring(6);
-        if (typography?.annotationEngine === 'ruby') {
-          return `<bdi class="script-rtl-ruby"><ruby class="script-rtl-word">${label}<rt class="script-rtl-gloss">${glossVal}</rt></ruby></bdi>`;
-        } else {
-          return `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span><bdi>${label}</bdi></span>`;
+    .replace(/==(.*?)==/g, '<mark>$1</mark>');
+
+  return replaceGlossAndLinks(withInlineMarks, typography);
+}
+
+// The url/gloss value can itself contain parentheses at arbitrary depth
+// (e.g. a gloss like "trust (belief)", or one nested further), so a regex
+// with [^)]+ or even one level of allowed nesting can't reliably find the
+// real closing ')' — it leaks part of the value as literal text instead.
+// This mirrors tokenize()'s depth-walk exactly, so the reader (which uses
+// tokenize()) and this HTML path resolve the same markdown identically
+// instead of silently diverging on anything past one level of nesting.
+function replaceGlossAndLinks(text: string, typography?: TypographyContext): string {
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '[') {
+      const closeBracket = text.indexOf('](', i);
+      if (closeBracket !== -1) {
+        let depth = 1;
+        let j = closeBracket + 2;
+        while (j < text.length && depth > 0) {
+          if (text[j] === '(') depth++;
+          else if (text[j] === ')') depth--;
+          if (depth === 0) break;
+          j++;
+        }
+        if (depth === 0) {
+          const label = text.substring(i + 1, closeBracket);
+          const url = text.substring(closeBracket + 2, j);
+          if (url.startsWith('gloss:')) {
+            const glossVal = url.substring(6);
+            result += typography?.annotationEngine === 'ruby'
+              ? `<bdi class="script-rtl-ruby"><ruby class="script-rtl-word">${label}<rt class="script-rtl-gloss">${glossVal}</rt></ruby></bdi>`
+              : `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span><bdi>${label}</bdi></span>`;
+          } else {
+            result += `<a href="${url}">${label}</a>`;
+          }
+          i = j + 1;
+          continue;
         }
       }
-      return `<a href="${url}">${label}</a>`;
-    });
+    }
+    result += text[i];
+    i += 1;
+  }
+  return result;
 }
 
 export function htmlToMarkdown(html: string): string {
