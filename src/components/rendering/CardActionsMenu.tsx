@@ -46,13 +46,42 @@ export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActio
     }
     setIsExporting(true);
     try {
-      const { toPng } = await import('html-to-image');
-      const dataUrl = await toPng(cardEl, {
+      // html-to-image's own toPng()/toCanvas() hung indefinitely on this
+      // card — no error, no timeout, confirmed by isolating each of its
+      // internal steps by hand: its toSvg() resolves in a few seconds, and
+      // loading that same SVG into a plain <img> resolves immediately too,
+      // but toPng() combining the two never settled, with or without
+      // skipFonts. Rather than depend on whatever toCanvas() does
+      // differently internally, this does the two proven-working steps
+      // itself: get the SVG, load it into an Image, draw that to a canvas.
+      const { toSvg } = await import('html-to-image');
+      const svgDataUrl = await toSvg(cardEl, {
         cacheBust: true,
-        pixelRatio: 2,
         backgroundColor: '#ffffff',
+        skipFonts: true,
         filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-card-menu')),
       });
+
+      const pixelRatio = 2;
+      const rect = cardEl.getBoundingClientRect();
+      const img = new Image();
+      const loaded = new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Could not load the rendered card image.'));
+      });
+      img.src = svgDataUrl;
+      await loaded;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = rect.width * pixelRatio;
+      canvas.height = rect.height * pixelRatio;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not create a drawing surface for the image.');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/png');
+
       const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '') || 'adjung-entry';
       const link = document.createElement('a');
       link.download = `${safeTitle}.png`;
