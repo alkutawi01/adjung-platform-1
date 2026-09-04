@@ -259,7 +259,12 @@ export function markdownToHtml(md: string, typography?: TypographyContext): stri
     .replace(/\+\+(.*?)\+\+/g, '<u>$1</u>')
     .replace(/~~(.*?)~~/g, '<s>$1</s>')
     .replace(/==(.*?)==/g, '<mark>$1</mark>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+    // The url/gloss value can itself contain one level of parentheses
+    // (e.g. a gloss like "trust (belief)"), so the closing ')' can't be
+    // found with a plain [^)]+ — that stops at the first ')' inside the
+    // value and leaks the real closing paren as literal text. Allow one
+    // level of balanced nested parens in the url/gloss instead.
+    .replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))*)\)/g, (match, label, url) => {
       if (url.startsWith('gloss:')) {
         const glossVal = url.substring(6);
         if (typography?.annotationEngine === 'ruby') {
@@ -454,7 +459,20 @@ function tokenize(text: string): Token[] {
     } else if (text.startsWith('[', i)) {
       const closeBracket = text.indexOf('](', i);
       if (closeBracket !== -1) {
-        const closeParen = text.indexOf(')', closeBracket);
+        // The url/gloss value can itself contain parentheses (e.g. a gloss
+        // like "trust (belief)"), so the closing ')' isn't necessarily the
+        // first one after '](' — walk paren depth to find the one that
+        // actually balances the opening '(', instead of stopping early and
+        // leaving the real closing ')' as leaked literal text.
+        let depth = 1;
+        let j = closeBracket + 2;
+        while (j < text.length && depth > 0) {
+          if (text[j] === '(') depth++;
+          else if (text[j] === ')') depth--;
+          if (depth === 0) break;
+          j++;
+        }
+        const closeParen = depth === 0 ? j : -1;
         if (closeParen !== -1) {
           flushText();
           const label = text.substring(i + 1, closeBracket);
