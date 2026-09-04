@@ -1501,7 +1501,11 @@ Editorial Board of Adjung`;
 
 
           {/* ==================== 3. MAIN DYNAMIC WORKSPACE ==================== */}
-          <main className="flex-grow max-w-6xl w-full mx-auto px-4 md:px-8 mt-6">
+          {/* px-6 on narrow screens: at 16px a bordered, shadowed card sat
+              visibly pinned to the phone's edge. 24px is the usual mobile
+              gutter and gives every page's content the same breathing room.
+              Desktop keeps md:px-8. */}
+          <main className="flex-grow max-w-6xl w-full mx-auto px-6 md:px-8 mt-6">
 
             {/* VIEW AN INDIVIDUAL PUBLISHED MANUAL FROM FOLIO OR INDEX */}
             {selectedEntry && !editingEntry && (
