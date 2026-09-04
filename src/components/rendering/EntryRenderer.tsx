@@ -444,6 +444,21 @@ export function EntryRenderer({
       return;
     }
 
+    // A badge inserted inside an existing interlinear gloss's <bdi> (or
+    // inside another footnote/margin-note badge) lands inside that span's
+    // own markup once serialized back to markdown \u2014 it corrupts the
+    // gloss's `[label](gloss:...)` syntax by splitting it around the new
+    // badge, which then renders as raw unparsed text. Attaching an
+    // annotation to text that already carries one isn't a supported
+    // combination, so reject it here instead of silently producing a
+    // broken document.
+    const anchorEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    if (anchorEl?.closest('.interlinear-word, .footnote-badge, .margin-note-badge')) {
+      showToast('This text already has an annotation attached. Remove it first, or select different text.', 'error');
+      setContextRange(null);
+      return;
+    }
+
     const id = `${type === 'footnote' ? 'fn' : 'mn'}-${generateUUID()}`;
     const span = document.createElement('span');
     span.className = type === 'footnote' ? 'footnote-badge' : 'margin-note-badge';
@@ -498,6 +513,17 @@ export function EntryRenderer({
 
     if (!range || !isInterlinearSpanValid(selectedText)) {
       showToast(`Interlinear gloss can only be attached to ${INTERLINEAR_MAX_WORDS} words or fewer (max ${INTERLINEAR_MAX_CHARS} characters). Select a shorter span, or use a margin note / footnote instead.`, 'error');
+      setContextRange(null);
+      return;
+    }
+
+    // Same corruption risk as insertNote's guard, in reverse: wrapping a
+    // selection that already contains a footnote/margin-note badge (or
+    // another gloss) discards or nests that marker inside this gloss's own
+    // markup once serialized back to markdown.
+    const anchorEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    if (anchorEl?.closest('.interlinear-word, .footnote-badge, .margin-note-badge')) {
+      showToast('This text already has an annotation attached. Remove it first, or select different text.', 'error');
       setContextRange(null);
       return;
     }
