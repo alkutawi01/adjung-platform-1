@@ -1,0 +1,121 @@
+import React, { useState } from 'react';
+import { Entry } from '../../types';
+import { useAppContext } from '../../context/AppContext';
+import { supabaseService } from '../../utils/supabaseService';
+
+interface CardActionsMenuProps {
+  entry: Entry;
+  authorName: string;
+  /** Called when the reader picks an action that leaves the list. */
+  onNavigateAway?: () => void;
+}
+
+/**
+ * The (...) menu on a list card (Content, Folio). A trimmed copy of the
+ * canonical EntryActionsMenu: the card sits inside a list, so Print and
+ * Export PDF (which act on the whole window) are left out, and a Note has
+ * no URL of its own, so Copy Link and Citation only appear on an Essay.
+ *
+ * The card itself is a click target (open / expand), so every click in
+ * here stops propagation — otherwise picking "Copy Link" would also open
+ * the essay underneath.
+ */
+export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActionsMenuProps) {
+  const { currentUser, showToast, setEditingEntry, setSelectedEntry, setActiveTab, requestConfirm, refreshDbState } = useAppContext();
+  const [open, setOpen] = useState(false);
+
+  const isOwner = !!currentUser && currentUser.id === entry.authorId;
+  const hasUrl = entry.contentType !== 'Note' && !!entry.canonicalUrl;
+  const title = entry.title || 'Untitled';
+
+  const stop = (e: React.SyntheticEvent) => { e.stopPropagation(); };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(entry.canonicalUrl)
+      .then(() => showToast('Canonical link copied to clipboard!', 'success'))
+      .catch(() => showToast('Could not copy the link — your browser blocked clipboard access.', 'error'));
+    setOpen(false);
+  };
+
+  const copyCitation = () => {
+    const year = new Date(entry.publishedDate || entry.createdDate).getFullYear();
+    const cite = `${authorName}. (${year}). ${title}. Adjung. Retrieved from ${entry.canonicalUrl}`;
+    navigator.clipboard.writeText(cite)
+      .then(() => showToast('Citation copied to clipboard (APA Format)!', 'success'))
+      .catch(() => showToast('Could not copy the citation — your browser blocked clipboard access.', 'error'));
+    setOpen(false);
+  };
+
+  const edit = () => {
+    setEditingEntry(entry);
+    setSelectedEntry(null);
+    setActiveTab('desk');
+    setOpen(false);
+    onNavigateAway?.();
+  };
+
+  const report = () => {
+    setOpen(false);
+    requestConfirm(
+      'Are you sure you want to report this writing for review by the Editorial Board?',
+      () => {
+        supabaseService.saveEntry({ ...entry, underReview: true })
+          .then(() => {
+            if (currentUser) {
+              supabaseService.logAction(`Reported entry "${entry.title}" (ID: ${entry.id}) for moderation.`, currentUser).then(() => refreshDbState());
+            } else {
+              refreshDbState();
+            }
+            showToast('Report sent. The article is now under review by the Editorial Board.', 'info');
+          })
+          .catch(err => {
+            console.error('Failed to report entry:', err);
+            showToast('Could not send the report. Please try again.', 'error');
+          });
+      },
+      { confirmLabel: 'Report', danger: false }
+    );
+  };
+
+  const itemClass = 'w-full text-left px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 transition duration-150 cursor-pointer border-0 bg-transparent font-sans';
+
+  const items: React.ReactNode[] = [];
+  if (hasUrl) {
+    items.push(<button key="link" type="button" onClick={(e) => { stop(e); copyLink(); }} className={itemClass}>Copy Link</button>);
+    items.push(<button key="cite" type="button" onClick={(e) => { stop(e); copyCitation(); }} className={itemClass}>Citation</button>);
+  }
+  if (isOwner) {
+    items.push(<button key="edit" type="button" onClick={(e) => { stop(e); edit(); }} className={`${itemClass} font-medium text-adjung-maroon`}>Edit</button>);
+  }
+  if (!isOwner && !entry.underReview) {
+    items.push(<button key="report" type="button" onClick={(e) => { stop(e); report(); }} className={`${itemClass} text-amber-700 hover:bg-amber-50`}>Report</button>);
+  }
+
+  // A visitor looking at a Note under review has nothing to pick; keep the
+  // glyph so the card's meta row lines up with its neighbours, but make it
+  // inert rather than opening an empty menu.
+  if (items.length === 0) {
+    return <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>;
+  }
+
+  return (
+    <div className="relative normal-case tracking-normal" onMouseLeave={() => setOpen(false)} onClick={stop}>
+      <button
+        type="button"
+        onClick={(e) => { stop(e); setOpen(!open); }}
+        className="text-stone-400 hover:text-adjung-maroon font-bold text-sm tracking-widest px-1.5 py-0.5 -my-0.5 transition-colors cursor-pointer select-none bg-transparent border-0 font-sans leading-none"
+        title="Actions Menu"
+        aria-label="Entry actions menu"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        ⋯
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-40 bg-white border border-stone-200 rounded shadow-md py-1 z-50 text-left">
+          {items}
+        </div>
+      )}
+    </div>
+  );
+}

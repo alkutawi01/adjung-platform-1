@@ -6,6 +6,7 @@ import { getContentEntries, getContentFacets, resolveContentAuthorName, resolveC
 import { useAppContext } from '../../context/AppContext';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { CardActionsMenu } from '../rendering/CardActionsMenu';
 
 interface ContentViewProps {
   entries: Entry[];
@@ -455,9 +456,20 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   </div>
                 )}
 
-                <button
-                  type="button"
+                <div
+                  // div[role=button], not <button>: the (...) menu inside
+                  // the card has real buttons of its own, and a button
+                  // nested in a button is invalid HTML (browsers split it).
+                  role="button"
+                  tabIndex={0}
                   onClick={() => (isNote ? toggleNote(entry.id) : openEntry(entry))}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      isNote ? toggleNote(entry.id) : openEntry(entry);
+                    }
+                  }}
                   // Both types carry the canonical reading width (782px) so a
                   // Note and an Essay sit on the same left and right edges
                   // down the list. The card itself is constrained, not just
@@ -468,7 +480,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   // with a hover-only shadow here, so the same entry sat in a
                   // slightly different box depending on whether you were
                   // looking at the list or the entry itself.
-                  className={`w-full text-left border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all mb-3 block max-w-[782px] mx-auto ${
+                  className={`w-full text-left border rounded-md shadow-sm hover:shadow-md transition-all mb-3 block max-w-[782px] mx-auto cursor-pointer focus-visible:outline-2 focus-visible:outline-adjung-maroon ${
                     isNote
                       ? 'border-adjung-amber/40 hover:border-adjung-amber/60'
                       : 'border-stone-300 hover:border-adjung-maroon/40'
@@ -517,7 +529,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                           <span className="text-[#111111]/40 truncate">
                             {author?.username ? `${author.username}.adjung.com` : 'adjung.com'}
                           </span>
-                          <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
+                          <CardActionsMenu entry={entry} authorName={authorName} />
                         </div>
                       </div>
 
@@ -583,9 +595,13 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                               </span>
                             )}
                           </div>
+                          {/* Serial number lives in the footer row now, not
+                              here: signature + name + domain + serial on one
+                              line read as four unrelated facts jammed
+                              together. The footer is already the card's
+                              record line (reading time, date). */}
                           <div className="font-mono text-[9.5px] text-[#111111]/40 truncate">
                             {author?.username ? `${author.username}.adjung.com` : 'adjung.com'}
-                            {entry.serialNo !== undefined && ` · ${formatSerialNumber(entry.serialNo)}`}
                           </div>
                         </div>
                       </div>
@@ -595,7 +611,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                           The glyph below is still decorative — not wired to a
                           menu of its own, same as Folio and Frontpage. */}
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-stone-300 tracking-widest select-none pt-0.5" aria-hidden="true">⋯</span>
+                        <CardActionsMenu entry={entry} authorName={authorName} />
                       </div>
                     </div>
 
@@ -642,15 +658,19 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
 
                     <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[#111111]/[0.06] font-mono text-[10px] text-[#111111]/40">
                       <div className="flex items-center gap-2.5">
-                        {readingTimeLabel && <span>{readingTimeLabel}</span>}
-                        {readingTimeLabel && entry.language && <span aria-hidden="true">·</span>}
+                        {/* No reading time here: a Note this short reading
+                            "1 min read" states the obvious. Essay's meta bar
+                            keeps it — that card is judging whether to commit
+                            to a longer read, which is the point of the label. */}
+                        {entry.serialNo !== undefined && <span>{formatSerialNumber(entry.serialNo)}</span>}
+                        {entry.serialNo !== undefined && entry.language && <span aria-hidden="true">·</span>}
                         {entry.language && <span>{entry.language}</span>}
                       </div>
                       <span>{entry.publishedDate ? new Date(entry.publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
                     </div>
                   </div>
                   )}
-                </button>
+                </div>
               </React.Fragment>
             );
           })}

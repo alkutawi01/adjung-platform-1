@@ -9,6 +9,7 @@ import { FileText, Sparkles, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
 import { resolveDigitalSignature, resolveSignatureText } from '../../utils/signatureResolvers';
+import { CardActionsMenu } from '../rendering/CardActionsMenu';
 
 interface FolioViewProps {
   currentAuthor: User | null;
@@ -337,9 +338,13 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       const displayTitle = truncateTitle(item.title || '', 55);
 
                       return (
-                        <button
+                        <div
                           key={item.id}
-                          type="button"
+                          // div[role=button], not <button>: the (...) menu
+                          // inside has real buttons, and a button nested in a
+                          // button is invalid HTML.
+                          role="button"
+                          tabIndex={0}
                           // The card is the click target, same as the Content
                           // list: an Essay opens at its canonical URL, a Note
                           // expands in place because it has no URL of its own.
@@ -348,13 +353,22 @@ export const FolioView: React.FC<FolioViewProps> = ({
                               ? handleRestrictedAction(() => toggleNote(item.id), 'expand')
                               : handleRestrictedAction(() => setSelectedEntry(item))
                           }
+                          onKeyDown={(e) => {
+                            if (e.target !== e.currentTarget) return;
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              isNote
+                                ? handleRestrictedAction(() => toggleNote(item.id), 'expand')
+                                : handleRestrictedAction(() => setSelectedEntry(item));
+                            }
+                          }}
                           // Same frame as the Content list: same radius, same
                           // padding, same border colours, same width, same
                           // hover shadow. Folio previously used rounded-md,
                           // p-8, a permanent double shadow and a 180px floor,
                           // so an identical entry sat in a visibly different
                           // box depending on which page you found it on.
-                          className={`group border rounded-md shadow-sm overflow-hidden hover:shadow-md transition-all p-5 select-text cursor-pointer relative w-full block max-w-[782px] mx-auto ${
+                          className={`group border rounded-md shadow-sm hover:shadow-md transition-all p-5 select-text cursor-pointer relative w-full block max-w-[782px] mx-auto focus-visible:outline-2 focus-visible:outline-adjung-maroon ${
                             isNote ? 'bg-adjung-amber-tint border-adjung-amber/40 text-left' : 'bg-white border-stone-300 text-center'
                           }`}
                         >
@@ -376,8 +390,10 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                     <div className="font-serif text-[13px] font-semibold text-[#111111] truncate">
                                       {currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'}
                                     </div>
+                                    {/* Serial moved to the footer row; see
+                                        the Content list's Note card. */}
                                     <div className="font-mono text-[9.5px] text-[#111111]/40 truncate">
-                                      {authorDomain} · {serialNum}
+                                      {authorDomain}
                                     </div>
                                   </div>
                                 </div>
@@ -386,7 +402,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                     title, author block on top. The pill
                                     repeated what the design had already said. */}
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <span className="text-stone-300 tracking-widest select-none pt-0.5" aria-hidden="true">⋯</span>
+                                  <CardActionsMenu entry={item} authorName={currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'} />
                                 </div>
                               </div>
 
@@ -429,7 +445,11 @@ export const FolioView: React.FC<FolioViewProps> = ({
                               )}
 
                               <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[#111111]/[0.06] font-mono text-[10px] text-[#111111]/40">
-                                <span>{readingTimeStr.toLowerCase()}</span>
+                                {/* No reading time on a Note: a card this
+                                    short reading "1 min read" states the
+                                    obvious. Essay keeps it in its meta bar,
+                                    where it's judging a longer commitment. */}
+                                <span>{serialNum}</span>
                                 <span>{formatDate(dateObj)}</span>
                               </div>
                             </div>
@@ -450,7 +470,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="normal-case text-stone-400">{authorDomain}</span>
-                                <span className="text-stone-300 tracking-widest select-none" aria-hidden="true">⋯</span>
+                                <CardActionsMenu entry={item} authorName={currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'} />
                               </div>
                             </div>
 
@@ -475,7 +495,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                               Note), and it duplicated what clicking the card
                               already does in the Content list. The whole card
                               is the target now, on both surfaces. */}
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
