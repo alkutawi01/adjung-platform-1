@@ -891,12 +891,20 @@ export function EntryRenderer({
     }
   }, [mode]);
 
-  // Close context menu on any global click
+  // Close context menu on any global click — but not the exact click that
+  // just opened the Gloss input. insertInterlinearVisual() (fired from this
+  // same context menu, via onMouseDown) sets showGlossInput before this
+  // click's own bubble-phase 'click' event reaches document; without this
+  // guard, that click immediately zeroed contextCoords right back out, and
+  // since the gloss panel only renders while showGlossInput is true AND
+  // (contextCoords || toolbarCoords) is set, it silently never appeared —
+  // canGloss was true, the click landed, nothing visible ever happened.
   useEffect(() => {
+    if (showGlossInput) return;
     const closeContext = () => setContextCoords(null);
     document.addEventListener('click', closeContext);
     return () => document.removeEventListener('click', closeContext);
-  }, []);
+  }, [showGlossInput]);
 
   // Update visual badge contents whenever content loads
   useEffect(() => {
