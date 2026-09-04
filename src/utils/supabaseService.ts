@@ -1,11 +1,22 @@
 import { supabase } from '../config/supabase';
 import { User, WriterProfile, IdentityProfile, Entry, SystemSettings, PolicyDocument, SystemLog, LayoutSettings, EntryType } from '../types';
 
-// Postgres error 42703 ("undefined_column") — lets a save fall back to
-// omitting a brand-new field instead of failing outright when its schema
-// migration hasn't been applied to this database yet.
+// Lets a save fall back to omitting a brand-new field instead of failing
+// outright when its schema migration hasn't been applied to this database
+// yet. Checks both error shapes actually seen in this codebase: raw
+// Postgres 42703 ("undefined_column"), and PostgREST's own PGRST204
+// ("Could not find the '<column>' column ... in the schema cache") — a
+// request through Supabase's REST layer (which is all a browser client
+// ever talks to) surfaces the latter, not 42703, so a check for 42703 alone
+// silently never matches and the fallback it guards never runs. Caught live
+// during Simulation 2: the footnotes insert threw PGRST204 for block_key,
+// this check didn't recognize it, and the row had already been deleted by
+// the unconditional delete-then-reinsert above it — the exact write-then-
+// lose-it sequence this function exists to prevent.
 function isMissingColumnError(error: { code?: string; message?: string }, column: string): boolean {
-  return error?.code === '42703' && !!error.message?.includes(column);
+  if (!error) return false;
+  if (error.code === 'PGRST204') return !!error.message?.includes(`'${column}'`);
+  return error.code === '42703' && !!error.message?.includes(column);
 }
 
 // ==========================================
@@ -449,19 +460,30 @@ export const supabaseService = {
       const { error: fnDeleteError } = await supabase.from('footnotes').delete().eq('entry_id', entry.id);
       if (fnDeleteError) throw fnDeleteError;
       if (entry.footnotesData.length > 0) {
-        const { error: fnInsertError } = await supabase.from('footnotes').insert(
-          entry.footnotesData.map((f, idx) => ({
-            entry_id: entry.id,
-            // f.id is the fn-xxx marker id the content's [^fn-xxx] actually
-            // references — same role margin_notes' block_key already plays.
-            // Without this, the marker id was never persisted anywhere, so
-            // every footnote's text reverted to empty on the next reload.
-            block_key: f.id,
-            label: f.label,
-            content: f.content,
-            sort_order: idx,
-          }))
-        );
+        const rows = entry.footnotesData.map((f, idx) => ({
+          entry_id: entry.id,
+          // f.id is the fn-xxx marker id the content's [^fn-xxx] actually
+          // references — same role margin_notes' block_key already plays.
+          // Without this, the marker id was never persisted anywhere, so
+          // every footnote's text reverted to empty on the next reload.
+          block_key: f.id,
+          label: f.label,
+          content: f.content,
+          sort_order: idx,
+        }));
+        let { error: fnInsertError } = await supabase.from('footnotes').insert(rows);
+        // The delete above already committed by the time this runs — if
+        // migrate_add_footnote_block_key.sql hasn't been applied yet and
+        // this insert is simply left to fail, the delete's effect stands
+        // with nothing re-inserted, permanently losing every footnote on
+        // this entry's very next save. Same graceful-degradation pattern
+        // as saveUser/saveIdentity's `country` column: omit the field
+        // this database doesn't have yet rather than losing the row.
+        if (fnInsertError && isMissingColumnError(fnInsertError, 'block_key')) {
+          ({ error: fnInsertError } = await supabase.from('footnotes').insert(
+            rows.map(({ block_key, ...rest }) => rest)
+          ));
+        }
         if (fnInsertError) throw fnInsertError;
       }
     }

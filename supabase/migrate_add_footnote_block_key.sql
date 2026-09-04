@@ -10,10 +10,16 @@
 -- block_key column ("corresponds to marginNotesData key") — this mirrors
 -- that exact pattern for footnotes.
 --
--- Existing footnote rows have no way to recover their original marker id
--- (it was never stored), so this cannot be backfilled — any footnote text
--- entered before this migration is already gone from the DB. New/edited
--- footnotes are fixed going forward once this migration runs and the
--- matching code (supabaseService.ts) deploys.
+-- Existing footnote rows never had their marker id stored, so block_key
+-- can't be backfilled directly from this table alone — but the content
+-- itself is NOT lost: label/content/sort_order were saved correctly, and
+-- sort_order was assigned in the same order the [^fn-xxx] markers appear
+-- in the entry's own content. A row's marker id is recoverable by matching
+-- its sort_order position against the Nth [^fn-...] occurrence in that
+-- entry's content — worth doing deliberately as a follow-up script, not
+-- assumed lost and not attempted inline in this migration.
+--
+-- IF NOT EXISTS: safe to run more than once, and safe to run against a
+-- database this has already reached by another path.
 
-alter table footnotes add column block_key text;
+alter table footnotes add column if not exists block_key text;
