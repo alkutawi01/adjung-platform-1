@@ -232,6 +232,9 @@ export function EntryRenderer({
   const [glossText, setGlossText] = useState('');
   const [glossTargetRange, setGlossTargetRange] = useState<Range | null>(null);
   const [glossTargetText, setGlossTargetText] = useState('');
+  // Captured once when the gloss panel opens; does not track the live
+  // selection afterward. See insertInterlinearVisual().
+  const [glossCoords, setGlossCoords] = useState<{ x: number; y: number } | null>(null);
 
   const [marginNotesData, setMarginNotesData] = useState<Record<string, string>>(entry.marginNotesData || {});
   const [marginOffsets, setMarginOffsets] = useState<Record<string, number>>({});
@@ -499,6 +502,21 @@ export function EntryRenderer({
       return;
     }
 
+    // Capture the panel's position once, right now, from the range that's
+    // already been validated — instead of rendering off contextCoords/
+    // toolbarCoords, which keep tracking the live browser selection and can
+    // (and did) get zeroed by unrelated listeners (global click, or
+    // selectionchange collapsing on the click that opens this very panel)
+    // between this call and the next paint. Once a valid range and its text
+    // are captured, the panel's visibility has no reason to still depend on
+    // the browser continuing to hold that exact selection.
+    const editorEl = document.getElementById('editorial-canvas-editor');
+    const rect = range.getBoundingClientRect();
+    const parentRect = editorEl ? editorEl.getBoundingClientRect() : { left: 0, top: 0 };
+    setGlossCoords({
+      x: rect.left + rect.width / 2 - parentRect.left,
+      y: rect.top - parentRect.top - 45,
+    });
     setGlossTargetRange(range.cloneRange());
     setGlossTargetText(selectedText);
     setGlossText('');
@@ -533,6 +551,7 @@ export function EntryRenderer({
     setGlossText('');
     setGlossTargetRange(null);
     setGlossTargetText('');
+    setGlossCoords(null);
     setContextRange(null);
     setContextCoords(null);
   };
@@ -3940,9 +3959,12 @@ export function EntryRenderer({
               </div>
             )}
 
-            {/* Shared inline gloss input — replaces both entry points' old window.prompt() calls */}
-            {mode === 'edit' && showGlossInput && (contextCoords || toolbarCoords) && (() => {
-              const coords = (contextCoords || toolbarCoords)!;
+            {/* Shared inline gloss input — replaces both entry points' old window.prompt() calls.
+                Positioned from glossCoords, captured once when the panel opened — not from
+                contextCoords/toolbarCoords, which keep tracking the live selection and were
+                found to get zeroed by unrelated listeners between open and paint. */}
+            {mode === 'edit' && showGlossInput && glossCoords && (() => {
+              const coords = glossCoords;
               const maxGlossChars = Math.floor(glossTargetText.length * INTERLINEAR_GLOSS_MAX_RATIO);
               const overLimit = glossText.trim().length > maxGlossChars;
               return (
@@ -3958,7 +3980,7 @@ export function EntryRenderer({
                     onChange={(e) => setGlossText(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') applyInterlinearVisual(glossText);
-                      if (e.key === 'Escape') { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); }
+                      if (e.key === 'Escape') { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); setGlossCoords(null); }
                     }}
                     placeholder="translation / definition..."
                     className="w-full bg-stone-800 border border-stone-700 focus:border-adjung-maroon px-2 py-1 rounded text-[11px] text-stone-100 focus:outline-none"
@@ -3968,7 +3990,7 @@ export function EntryRenderer({
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); }}
+                        onClick={() => { setShowGlossInput(false); setGlossText(''); setGlossTargetRange(null); setGlossTargetText(''); setGlossCoords(null); }}
                         className="text-stone-400 hover:text-stone-200 text-xs px-1"
                       >
                         Cancel
