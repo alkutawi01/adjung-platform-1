@@ -283,7 +283,15 @@ export const ArchitectureStudio: React.FC = () => {
   return (
     <div className="w-full flex flex-col lg:flex-row border border-stone-200 rounded-md shadow-inner bg-stone-50 overflow-hidden relative min-h-[70vh] text-left">
       {/* 1. KNOWLEDGE GRAPH VIEW (Left Side) */}
-      <div className="flex-1 h-[70vh] relative min-w-0">
+      {/* flex-1 sets flex-basis:0, which wins over this div's own h-[70vh]
+          for sizing along the flex main axis. That's harmless at the lg:
+          breakpoint where the axis is horizontal (row) and flex-1 only
+          affects width, but below lg — where the parent is flex-col and
+          the main axis is vertical — it collapsed this div (and the
+          ReactFlow graph inside it, which measures its own container) to
+          0 height. Scope flex-1 to lg: so it only competes with height on
+          the axis it's actually meant to affect. */}
+      <div className="h-[70vh] lg:flex-1 relative min-w-0">
         <div className="absolute top-4 left-4 z-10 p-4 bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm rounded max-w-xs font-sans text-xs text-stone-600 space-y-1 select-none pointer-events-none">
           <h2 className="font-serif text-sm font-semibold text-stone-900 uppercase tracking-wide">Adjung Digital Twin</h2>
           <p className="font-sans text-stone-500">Conceptual Knowledge Graph</p>
