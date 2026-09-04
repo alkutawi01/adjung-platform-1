@@ -50,17 +50,33 @@ export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActio
       // card — no error, no timeout, confirmed by isolating each of its
       // internal steps by hand: its toSvg() resolves in a few seconds, and
       // loading that same SVG into a plain <img> resolves immediately too,
-      // but toPng() combining the two never settled, with or without
-      // skipFonts. Rather than depend on whatever toCanvas() does
-      // differently internally, this does the two proven-working steps
-      // itself: get the SVG, load it into an Image, draw that to a canvas.
+      // but toPng() combining the two never settled. Rather than depend on
+      // whatever toCanvas() does differently internally, this does the two
+      // proven-working steps itself: get the SVG, load it into an Image,
+      // draw that to a canvas.
+      //
+      // skipFonts is deliberately NOT used here: it was tried first as a
+      // fix for the hang (692 registered @font-face rules from the
+      // signature font picker looked like the obvious cause), and it
+      // measurably breaks output quality — checked side by side, the
+      // signature's cursive font silently falls back to a generic serif
+      // in the exported image when fonts are skipped, on a platform whose
+      // whole identity system is the signature. It also turned out not to
+      // be the actual cause of the hang (removing it alone didn't fix
+      // anything, isolating the two library calls did), so there's no
+      // longer a reason to keep the trade-off.
       const { toSvg } = await import('html-to-image');
-      const svgDataUrl = await toSvg(cardEl, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        skipFonts: true,
-        filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-card-menu')),
-      });
+      const exportTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timed out generating the image.')), 20000)
+      );
+      const svgDataUrl = await Promise.race([
+        toSvg(cardEl, {
+          cacheBust: true,
+          backgroundColor: '#ffffff',
+          filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-card-menu')),
+        }),
+        exportTimeout,
+      ]);
 
       const pixelRatio = 2;
       const rect = cardEl.getBoundingClientRect();
@@ -70,7 +86,7 @@ export function CardActionsMenu({ entry, authorName, onNavigateAway }: CardActio
         img.onerror = () => reject(new Error('Could not load the rendered card image.'));
       });
       img.src = svgDataUrl;
-      await loaded;
+      await Promise.race([loaded, exportTimeout]);
 
       const canvas = document.createElement('canvas');
       canvas.width = rect.width * pixelRatio;
