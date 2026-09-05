@@ -399,7 +399,7 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                       type="button"
                       onClick={publishNote}
                       disabled={!noteDraft.trim() || isPublishing}
-                      className="px-4 py-1.5 rounded-full bg-adjung-maroon text-white text-xs font-sans font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-adjung-maroon/90 transition-colors"
+                      className="px-4 py-1.5 rounded-full bg-adjung-maroon text-white text-xs font-sans font-medium disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed hover:bg-adjung-maroon/90 transition-colors"
                     >
                       Publish
                     </button>
