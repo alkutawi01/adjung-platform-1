@@ -3613,7 +3613,7 @@ export function EntryRenderer({
                   return <p className="text-xs text-stone-400 select-none">No margin notes registered yet. Insert [^mn-1], [^mn-2], etc. inside the source text.</p>;
                 }
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {occurrences.map((id) => {
                       return (
                         <div key={id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-stone-50/60 p-3 rounded border border-stone-200/40 animate-fade-in">
@@ -3630,9 +3630,17 @@ export function EntryRenderer({
                                 setMarginNotesData(updated);
                                 triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, updated);
                               }}
+                              onInput={(e) => {
+                                const el = e.currentTarget;
+                                el.style.height = 'auto';
+                                el.style.height = `${el.scrollHeight}px`;
+                              }}
+                              ref={(el) => {
+                                if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
+                              }}
                               placeholder="Side note description text..."
                               rows={2}
-                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} text-stone-700`}
+                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} text-stone-700 resize-y overflow-hidden`}
                             />
                           </div>
                         </div>
@@ -3673,9 +3681,17 @@ export function EntryRenderer({
                                 setFootnotesData(updatedFootnotesData);
                                 triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, updatedFootnotesData);
                               }}
+                              onInput={(e) => {
+                                const el = e.currentTarget;
+                                el.style.height = 'auto';
+                                el.style.height = `${el.scrollHeight}px`;
+                              }}
+                              ref={(el) => {
+                                if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
+                              }}
                               placeholder="Footnote reference text..."
                               rows={1}
-                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont}`}
+                              className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} resize-y overflow-hidden`}
                             />
                           </div>
                           <button
