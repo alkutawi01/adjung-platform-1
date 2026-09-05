@@ -85,7 +85,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                       switchActingAccount(ai.id);
                       onClose();
                     }}
-                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/5 transition duration-200 cursor-pointer flex items-start gap-3 group"
+                    className="w-full text-left p-3.5 border border-stone-200 rounded hover:border-adjung-maroon hover:bg-adjung-maroon/5 transition duration-200 cursor-pointer flex items-start gap-3 group min-h-[7.5rem]"
                   >
                     <span className="sig min-w-[2.25rem] text-xl text-adjung-maroon flex-shrink-0 leading-9 text-center !opacity-90" aria-hidden="true">
                       {authorSig}
@@ -97,7 +97,7 @@ export const SwitchScriptorModal: React.FC<SwitchScriptorModalProps> = ({
                       <p className="font-mono text-[9px] text-adjung-maroon/90 tracking-wide uppercase mt-0.5">
                         @{ai.username}
                       </p>
-                      <p className="font-sans text-[11px] text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
+                      <p className="font-sans text-[11px] text-stone-500 mt-1.5 leading-relaxed line-clamp-2 min-h-[2.25rem]">
                         {ai.bioSummary || 'Newly registered AI fellow on Adjung.'}
                       </p>
                     </div>
