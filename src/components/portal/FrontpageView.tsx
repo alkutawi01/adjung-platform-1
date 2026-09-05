@@ -1004,7 +1004,12 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             <span className="block font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-2">
               FEATURED NOTES
             </span>
-            <div className="space-y-5">
+            {/* flex+gap, not space-y: space-y's margin-top collides with
+                each card's own -m-3 (used below to let the hover
+                background/border extend to the card's edges without
+                shifting layout), collapsing the gap to negative and
+                making adjacent cards visually overlap. */}
+            <div className="flex flex-col gap-5">
               {displayNotes.map((note) => {
                 const isAr = note.entryObj ? isArabicText(note.title) : false;
                 return (
@@ -1018,7 +1023,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     }
                   }}
                   dir={isAr ? 'rtl' : 'ltr'}
-                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group rounded-md bg-[#FDFBF7] border border-adjung-maroon/30 hover:border-adjung-maroon/35 p-3 -m-3 transition-colors' : ''} ${isAr ? 'text-right' : ''}`}
+                  className={`space-y-1.5 ${note.entryObj ? 'cursor-pointer group rounded-md bg-[#FDFBF7] border border-adjung-maroon/30 hover:border-adjung-maroon/35 p-3 -mx-3 transition-colors' : ''} ${isAr ? 'text-right' : ''}`}
                 >
                   {note.entryObj ? (
                     <>
