@@ -201,6 +201,11 @@ export interface Entry {
   referenceStyle?: string;
   signatureVersionId?: string;
   language?: string;
+  // Optional, author-filled English rendition of title/content. Independent of
+  // `language` — stays blank unless the author fills it in, and the composer
+  // UI must always show the field (never conditional on entry.language).
+  englishTranslation?: string;
+  englishTranslationTitle?: string;
   primaryScript?: string;
   direction?: string;
   layoutVariant?: EntryLayoutVariant;

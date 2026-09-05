@@ -5,7 +5,7 @@ import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
 import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
-import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter, Search } from 'lucide-react';
+import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter, Search, ChevronDown, ChevronRight, Languages } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PresentationSpec, getPresentationSpec } from '../../presentation';
 import { supabaseService as firestoreService } from '../../utils/supabaseService';
@@ -81,6 +81,9 @@ export function EntryRenderer({
   const [activeQuoteInsert, setActiveQuoteInsert] = useState<'latin' | 'arabic' | null>(null);
   const [quoteInsertDir, setQuoteInsertDir] = useState<'ltr' | 'rtl'>('ltr');
   const [excerpt, setExcerpt] = useState(entry.excerpt || '');
+  const [englishTranslationTitle, setEnglishTranslationTitle] = useState(entry.englishTranslationTitle || '');
+  const [englishTranslation, setEnglishTranslation] = useState(entry.englishTranslation || '');
+  const [showEnglishTranslation, setShowEnglishTranslation] = useState(false);
   const [featuredImage, setFeaturedImage] = useState(entry.featuredImage || '');
   const [revisions, setRevisions] = useState<Revision[]>(entry.revisions || []);
   const [showXmlView, setShowXmlView] = useState(false);
@@ -356,11 +359,11 @@ export function EntryRenderer({
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData });
+  const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData, englishTranslation, englishTranslationTitle });
 
   useEffect(() => {
-    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData };
-  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData]);
+    stateRef.current = { content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData, englishTranslation, englishTranslationTitle };
+  }, [content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData, englishTranslation, englishTranslationTitle]);
 
   // Unified editor helpers
   const updateCanvasBadges = (el: HTMLElement) => {
@@ -1439,6 +1442,8 @@ export function EntryRenderer({
     setCitations(entry.citations || []);
     setReferenceSortOrder(entry.referenceSortOrder || 'alphabetical');
     setMarginNotesData(entry.marginNotesData || {});
+    setEnglishTranslationTitle(entry.englishTranslationTitle || '');
+    setEnglishTranslation(entry.englishTranslation || '');
 
     // Only re-split content if a completely different entry was loaded!
     if (entry.id !== prevEntryId) {
@@ -1723,6 +1728,8 @@ export function EntryRenderer({
           revisions: updatedRevisions,
           citations: updatedCitations,
           referenceSortOrder: updatedReferenceSortOrder,
+          englishTranslation: stateRef.current.englishTranslation,
+          englishTranslationTitle: stateRef.current.englishTranslationTitle,
           publishedDate: updatedStatus === 'Published' ? (entry.publishedDate || new Date().toISOString()) : null,
           updatedDate: new Date().toISOString(),
           canonicalUrl: entry.publicationClass === 'Institutional' ? `https://adjung.com/${updatedType === 'Notice' ? 'notice' : 'editorial'}/${updatedSlug}` : `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${updatedType.toLowerCase()}/${updatedSlug}`
@@ -1787,6 +1794,8 @@ export function EntryRenderer({
         revisions: nextRevisions,
         citations: stateRef.current.citations,
         referenceSortOrder: stateRef.current.referenceSortOrder,
+        englishTranslation: stateRef.current.englishTranslation,
+        englishTranslationTitle: stateRef.current.englishTranslationTitle,
         publishedDate: updatedStatus === 'Published' ? (entry.publishedDate || new Date().toISOString()) : null,
         updatedDate: new Date().toISOString(),
         canonicalUrl: entry.publicationClass === 'Institutional' ? `https://adjung.com/${stateRef.current.contentType === 'Notice' ? 'notice' : 'editorial'}/${stateRef.current.slug}` : `https://${authorName.toLowerCase().replace(/\s+/g, '')}.Adjung.com/${stateRef.current.contentType.toLowerCase()}/${stateRef.current.slug}`
@@ -1871,6 +1880,18 @@ export function EntryRenderer({
     const val = e.target.value;
     setExcerpt(val);
     triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, val, featuredImage);
+  };
+
+  const handleEnglishTranslationTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEnglishTranslationTitle(val);
+    triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage);
+  };
+
+  const handleEnglishTranslationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setEnglishTranslation(val);
+    triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage);
   };
 
   const handleFeaturedImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4857,6 +4878,50 @@ export function EntryRenderer({
                       Add
                     </button>
                   </div>
+                </div>
+
+                {/* English Translation — always present in the composer (per product decision),
+                    never conditionally rendered, and entirely optional to fill in. Used by the
+                    Frontpage's "100% English" display mode: when present, the featured card shows
+                    this instead of the original title/content; when blank, the original is shown
+                    with no indication a translation is missing. */}
+                <div className="border-t border-stone-200/60 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowEnglishTranslation(!showEnglishTranslation)}
+                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-500 hover:text-adjung-maroon transition cursor-pointer"
+                  >
+                    {showEnglishTranslation ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    <Languages className="w-3.5 h-3.5" />
+                    English Translation (Optional)
+                  </button>
+                  {showEnglishTranslation && (
+                    <div className="mt-3 space-y-3">
+                      <p className="text-[11px] text-stone-400">
+                        Leave this blank if you do not want to provide an English translation. When filled in, readers who choose the "100% English" view on the Frontpage will see this version instead of the original.
+                      </p>
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1">Translated Title</label>
+                        <input
+                          type="text"
+                          value={englishTranslationTitle}
+                          onChange={handleEnglishTranslationTitleChange}
+                          placeholder="English version of the title (optional)"
+                          className="w-full border border-stone-200 bg-white p-1.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1">Translated Content</label>
+                        <textarea
+                          value={englishTranslation}
+                          onChange={handleEnglishTranslationChange}
+                          placeholder="English version of the content (optional)"
+                          rows={6}
+                          className="w-full border border-stone-200 bg-white p-1.5 rounded focus:outline-none focus:border-adjung-maroon font-sans text-sm resize-y"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Revision History Logs */}

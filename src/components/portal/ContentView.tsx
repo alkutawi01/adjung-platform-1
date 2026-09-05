@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Rss, SlidersHorizontal, X, Search, ArrowRight } from 'lucide-react';
+import { Rss, SlidersHorizontal, X, Search, ArrowRight, ChevronDown, ChevronRight as ChevronRightIcon, Languages } from 'lucide-react';
 import { Entry, User } from '../../types';
 import { isArabicText, flattenBlocksForPreview, truncateAtWord, formatSerialNumber, resolveEntryCanonicalUrl } from '../../utils';
 import { getContentEntries, getContentFacets, resolveContentAuthorName, resolveContentAuthorSig } from '../../utils/getContentEntries';
@@ -56,6 +56,8 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
   const filterModalRef = useModalA11y(showFilterPanel, () => setShowFilterPanel(false));
   const [query, setQuery] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
+  const [noteEnglishTranslation, setNoteEnglishTranslation] = useState('');
+  const [showNoteEnglishTranslation, setShowNoteEnglishTranslation] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -196,10 +198,13 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
         currentUser.isAi
       ),
       content: text,
+      englishTranslation: noteEnglishTranslation.trim() || undefined,
     };
 
     saveEntry(newEntry);
     setNoteDraft('');
+    setNoteEnglishTranslation('');
+    setShowNoteEnglishTranslation(false);
     setNoteFocused(false);
     setIsPublishing(false);
     setBaselineTimestamp(newestTimestamp([...entries, newEntry]));
@@ -390,6 +395,29 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                   rows={noteFocused || noteDraft ? 3 : 1}
                   className="w-full font-handwritten text-lg text-black leading-snug resize-none focus:outline-none placeholder:font-sans placeholder:text-sm placeholder:text-stone-400"
                 />
+                {/* Always present, regardless of focus state — filling it in is
+                    entirely optional and never required to publish a Note. */}
+                <div className="mt-2 pt-2 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowNoteEnglishTranslation(!showNoteEnglishTranslation)}
+                    className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-stone-400 hover:text-adjung-maroon transition-colors"
+                  >
+                    {showNoteEnglishTranslation ? <ChevronDown className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
+                    <Languages className="w-3 h-3" />
+                    English Translation (Optional)
+                  </button>
+                  {showNoteEnglishTranslation && (
+                    <textarea
+                      value={noteEnglishTranslation}
+                      onChange={e => setNoteEnglishTranslation(e.target.value)}
+                      placeholder="English version of this note (optional)"
+                      rows={2}
+                      className="w-full mt-2 border border-stone-200 rounded-md p-2 font-sans text-sm text-black leading-snug resize-none focus:outline-none focus:border-adjung-maroon placeholder:text-stone-400"
+                    />
+                  )}
+                </div>
+
                 {(noteFocused || noteDraft) && (
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-100">
                     <button type="button" onClick={goWriteEssay} className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-stone-400 hover:text-adjung-maroon transition-colors">

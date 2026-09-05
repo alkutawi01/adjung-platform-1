@@ -4,7 +4,46 @@ import { BRAND } from '../../config/brand';
 import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Info, ChevronLeft, ChevronRight, Languages } from 'lucide-react';
+
+// Display-language toggle for the Featured Essays & Notes sections. Plain
+// English labels only (no flags/emoji) per the platform's UI text rules.
+// One shared control governs both sections since they sit side by side.
+function FeaturedDisplayModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: 'original' | 'english';
+  onChange: (mode: 'original' | 'english') => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 font-sans text-[9px] md:text-[10px] uppercase tracking-wider">
+      <Languages className="w-3 h-3 text-stone-400 mr-0.5" />
+      <button
+        type="button"
+        onClick={() => onChange('original')}
+        className={`px-2 py-0.5 rounded-full border transition-colors ${
+          mode === 'original'
+            ? 'bg-[#7B2737] border-[#7B2737] text-white'
+            : 'border-stone-300 text-stone-500 hover:text-[#7B2737] hover:border-[#7B2737]/50'
+        }`}
+      >
+        Original
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('english')}
+        className={`px-2 py-0.5 rounded-full border transition-colors ${
+          mode === 'english'
+            ? 'bg-[#7B2737] border-[#7B2737] text-white'
+            : 'border-stone-300 text-stone-500 hover:text-[#7B2737] hover:border-[#7B2737]/50'
+        }`}
+      >
+        100% English
+      </button>
+    </div>
+  );
+}
 
 interface ClockTime {
   timeStr: string;
@@ -447,6 +486,12 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 
   // News Ticker State & Logic
   const [tickerIndex, setTickerIndex] = useState(0);
+  // Display-language toggle for the Featured Essays & Notes sections only.
+  // "Original" shows the entry as authored; "100% English" swaps in
+  // englishTranslation/englishTranslationTitle where the author filled them
+  // in, silently falling back to the original when they didn't. Session-only
+  // for now — could persist to localStorage later if readers want it to stick.
+  const [featuredDisplayMode, setFeaturedDisplayMode] = useState<'original' | 'english'>('original');
   const notices = entries.filter((e) => e.contentType === 'Notice' && e.status === 'Published');
   const fallbackTicker = [
     "New archaeological findings reveal previously unknown trade routes across Central Asia during the 8th century.",
@@ -520,7 +565,9 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const displayEssays: any[] = essaySelections.slice(0, 3).map(e => {
     const auth = users.find(u => u.id === e.authorId);
     const name = auth?.penName || e.publisher || 'Anonymous';
-    return { id: e.id, title: e.title, author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: e };
+    const useEnglish = featuredDisplayMode === 'english' && !!(e.englishTranslationTitle || e.englishTranslation);
+    const title = useEnglish && e.englishTranslationTitle ? e.englishTranslationTitle : e.title;
+    return { id: e.id, title, author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: e };
   });
 
   // Featured Notes (3 entries) — same backfill principle, restricted to
@@ -544,7 +591,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
     // practice, so it must go through flattenBlocksForPreview like every
     // other Note excerpt on the platform (raw content.substring() would
     // leak "## ..."/"<quote>..." markup, same bug fixed for the splash).
-    return { id: n.id, title: n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20), author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: n };
+    const useEnglish = featuredDisplayMode === 'english' && !!(n.englishTranslationTitle || n.englishTranslation);
+    const title = useEnglish
+      ? (n.englishTranslationTitle || truncateAtWord(n.englishTranslation || '', 20))
+      : (n.title || truncateAtWord(flattenBlocksForPreview(n.content), 20));
+    return { id: n.id, title, author: name, sig: auth ? resolveSignatureText(auth.id, auth.signature || '', identities) : '', entryObj: n };
   });
 
   // Still pad to exactly 3 with true empty slots — only reachable now
@@ -957,9 +1008,12 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           
           {/* Column 1 & 2: Featured Essays */}
           <div className="md:col-span-2 space-y-6">
-            <span className="block font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold mb-2">
-              FEATURED ESSAYS
-            </span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="block font-sans text-[10px] md:text-xs tracking-editorial uppercase text-[#7B2737] font-semibold">
+                FEATURED ESSAYS
+              </span>
+              <FeaturedDisplayModeToggle mode={featuredDisplayMode} onChange={setFeaturedDisplayMode} />
+            </div>
             <div className="space-y-4">
               {displayEssays.map((essay) => {
                 const isAr = essay.entryObj ? isArabicText(essay.title) : false;
