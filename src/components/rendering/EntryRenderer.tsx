@@ -4174,7 +4174,7 @@ export function EntryRenderer({
                     <button type="button" onClick={() => handleFindNext(-1)} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Previous</button>
                     <button type="button" onClick={() => handleFindNext(1)} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Next</button>
                     <button type="button" onClick={handleReplaceCurrent} disabled={!findMatchInfo.total} className="px-2 py-1 border border-stone-200 text-stone-600 rounded text-[10px] uppercase font-mono tracking-wider hover:bg-stone-100 disabled:opacity-40 cursor-pointer">Replace</button>
-                    <button type="button" onClick={handleReplaceAll} disabled={!findMatchInfo.total} className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 disabled:opacity-40 cursor-pointer">All</button>
+                    <button type="button" onClick={handleReplaceAll} disabled={!findMatchInfo.total} className="px-2.5 py-1 bg-adjung-maroon text-white rounded text-[10px] uppercase font-mono tracking-wider hover:opacity-95 disabled:bg-stone-200 disabled:text-stone-400 cursor-pointer">All</button>
                     <button type="button" onClick={() => setShowFindReplace(false)} className="px-2 py-1 text-stone-400 hover:text-stone-600 text-[10px] uppercase font-mono tracking-wider cursor-pointer">Close</button>
                   </div>
                 )}

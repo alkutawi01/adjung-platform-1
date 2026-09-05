@@ -909,7 +909,7 @@ export function SignaturePad({ onSave, onCancel, defaultName, existingSignature 
               type="button"
               onClick={handleSaveSignature}
               disabled={signatureMode === 'draw' ? strokes.length === 0 : typedText.length === 0}
-              className="px-4 py-2 bg-adjung-maroon text-[#FDFDFD] rounded text-xs font-mono uppercase tracking-wider hover:bg-opacity-95 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              className="px-4 py-2 bg-adjung-maroon text-[#FDFDFD] rounded text-xs font-mono uppercase tracking-wider hover:bg-opacity-95 transition disabled:bg-stone-200 disabled:text-stone-400 disabled:shadow-none disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               Save Signature
             </button>
