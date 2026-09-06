@@ -64,13 +64,23 @@ export function ElasticMarginRow({
             {children}
           </div>
 
-          {/* Margin note column — always rendered + outlined in edit mode, even when empty, so the reserved space is visible */}
-          <div className={`relative select-text ${gridStyle ? '' : 'col-span-4'} ${isRtl ? 'pr-6 text-right' : 'pl-6 text-left'} ${editMode ? 'outline outline-2 outline-dashed outline-amber-400 outline-offset-4 min-h-[2em]' : ''}`}>
+          {/* Margin note column. A CSS grid row always sizes to its tallest
+              cell, so a margin note longer than its paragraph used to
+              stretch this entire row and leave a dead gap under the (short)
+              paragraph text before the next one began. Zero-height this
+              cell and absolutely-position its content instead: the note
+              still anchors visually at the top of its row, but it no
+              longer participates in row-height sizing, however long it
+              runs — it just overlaps downward over subsequent rows, which
+              is the correct tradeoff (the reading column must never be
+              held hostage by an oversized note). Outlined in edit mode,
+              even when empty, so the reserved column is visible. */}
+          <div className={`relative select-text h-0 overflow-visible ${gridStyle ? '' : 'col-span-4'} ${isRtl ? 'pr-6 text-right' : 'pl-6 text-left'} ${editMode ? 'outline outline-2 outline-dashed outline-amber-400 outline-offset-4 min-h-[2em]' : ''}`}>
             {editMode && showEditLabels && (
               <span className="absolute -top-5 left-0 font-mono text-[8px] uppercase tracking-wider text-amber-500 bg-white px-1 select-none">Margin Note</span>
             )}
             {noteContent ? (
-              <div className={isRtl ? "border-r-2 border-adjung-maroon/30 py-0.5 pr-4" : "border-l-2 border-adjung-maroon/30 py-0.5 pl-4"}>
+              <div className={`absolute top-0 ${isRtl ? 'right-0 left-0' : 'left-0 right-0'} ${isRtl ? "border-r-2 border-adjung-maroon/30 py-0.5 pr-4" : "border-l-2 border-adjung-maroon/30 py-0.5 pl-4"}`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {noteIndexRoman && (
                     <span className="font-mono text-[10px] font-semibold text-adjung-maroon">
@@ -110,9 +120,12 @@ export function ElasticMarginRow({
           {children}
         </div>
 
-        {/* Margin note column — always visible, right-hand third */}
-        <div className={`relative select-text ${isRtl ? 'pr-3 text-right' : 'pl-3 text-left'}`}>
-          <div className={isRtl ? "border-r-2 border-adjung-maroon/30 py-0.5 pr-3" : "border-l-2 border-adjung-maroon/30 py-0.5 pl-3"}>
+        {/* Margin note column — always visible, right-hand third. Zero-height
+            and absolutely positioned for the same reason as the desktop
+            branch: a long note must never stretch this row and gap the
+            main column underneath a short paragraph. */}
+        <div className={`relative select-text h-0 overflow-visible ${isRtl ? 'pr-3 text-right' : 'pl-3 text-left'}`}>
+          <div className={`absolute top-0 ${isRtl ? 'right-0 left-0' : 'left-0 right-0'} ${isRtl ? "border-r-2 border-adjung-maroon/30 py-0.5 pr-3" : "border-l-2 border-adjung-maroon/30 py-0.5 pl-3"}`}>
             <div className="flex items-center gap-1.5 mb-1">
               {noteIndexRoman && (
                 <span className="font-mono text-[9px] font-semibold text-adjung-maroon">
