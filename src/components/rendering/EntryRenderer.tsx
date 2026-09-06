@@ -4671,7 +4671,83 @@ export function EntryRenderer({
   const isEditingWorkspace = mode === 'edit';
   const effectiveViewMode = isEditingWorkspace ? (viewMode || 'preview') : 'preview';
 
+  // Transliteration diacritics (macrons/underdots) used for Arabic romanisation
+  // — e.g. jilbāb, ʿiddah's ḥ/ṣ/ṭ/ẓ underdots. Two-key Alt chord: Alt+<letter>
+  // arms it, then Alt+> gives the lowercase macron/underdot form and
+  // Alt+<same letter again> gives the uppercase form (h also takes Alt+H+?
+  // for ḧ). Alt is held down through both presses, same as a standard
+  // international-keyboard dead-key sequence.
+  const altDiacriticMap: Record<string, { lower: string; upper: string }> = {
+    a: { lower: 'ā', upper: 'Ā' },
+    u: { lower: 'ū', upper: 'Ū' },
+    i: { lower: 'ī', upper: 'Ī' },
+    h: { lower: 'ḥ', upper: 'Ḥ' },
+    s: { lower: 'ṣ', upper: 'Ṣ' },
+    t: { lower: 'ṭ', upper: 'Ṭ' },
+    z: { lower: 'ẓ', upper: 'Ẓ' },
+  };
+  const pendingAltDiacriticRef = useRef<string | null>(null);
+
+  const insertCharAtCursor = (target: HTMLInputElement | HTMLTextAreaElement, char: string) => {
+    const start = target.selectionStart ?? target.value.length;
+    const end = target.selectionEnd ?? target.value.length;
+    const value = target.value;
+    const newVal = value.slice(0, start) + char + value.slice(end);
+
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+
+    if (target instanceof HTMLInputElement && nativeInputValueSetter) {
+      nativeInputValueSetter.call(target, newVal);
+    } else if (target instanceof HTMLTextAreaElement && nativeTextAreaValueSetter) {
+      nativeTextAreaValueSetter.call(target, newVal);
+    } else {
+      target.value = newVal;
+    }
+
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+
+    setTimeout(() => {
+      target.focus();
+      target.setSelectionRange(start + char.length, start + char.length);
+    }, 0);
+  };
+
+  const handleGlobalKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Alt') pendingAltDiacriticRef.current = null;
+  };
+
   const handleGlobalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      const key = e.key.toLowerCase();
+      const target = e.target as HTMLElement;
+      const insertable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+
+      if (pendingAltDiacriticRef.current) {
+        const pending = pendingAltDiacriticRef.current;
+        pendingAltDiacriticRef.current = null;
+        let charToInsert: string | null = null;
+        if (e.key === '>') {
+          charToInsert = altDiacriticMap[pending]?.lower ?? null;
+        } else if (pending === 'h' && e.key === '?') {
+          charToInsert = 'ḧ';
+        } else if (key === pending) {
+          charToInsert = altDiacriticMap[pending]?.upper ?? null;
+        }
+        if (charToInsert && insertable) {
+          e.preventDefault();
+          insertCharAtCursor(target as HTMLInputElement | HTMLTextAreaElement, charToInsert);
+        }
+        return;
+      }
+
+      if (altDiacriticMap[key] && insertable) {
+        e.preventDefault();
+        pendingAltDiacriticRef.current = key;
+        return;
+      }
+    }
+
     if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'b')) {
       const target = e.target as HTMLElement;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
@@ -4710,7 +4786,7 @@ export function EntryRenderer({
   };
 
   return (
-    <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`} onKeyDown={handleGlobalKeyDown}>
+    <div className={`w-full relative ${isEditingWorkspace ? 'pb-28' : ''}`} onKeyDown={handleGlobalKeyDown} onKeyUp={handleGlobalKeyUp}>
       {isTrueChiefEditor && mode === 'view' && contentType === 'Essay' && (
         <LayoutInspector
           contentType={contentType}
