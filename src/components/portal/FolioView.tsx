@@ -457,7 +457,13 @@ export const FolioView: React.FC<FolioViewProps> = ({
                             </div>
                           ) : (
                           <div className="flex-1 flex flex-col justify-center select-text items-center">
-                            <div className="w-full flex items-center justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-400 mb-4 border-b border-adjung-maroon pb-3 select-text">
+                            {/* items-start, not items-center: on narrow widths the
+                                left meta group (type/serial/version/date/read-time)
+                                wraps onto a second line, and items-center then
+                                vertically centered the domain/menu against that
+                                whole wrapped block — sitting oddly between the
+                                two lines instead of anchored to the first. */}
+                            <div className="w-full flex items-start justify-between gap-3 text-[9px] font-mono uppercase tracking-widest text-stone-400 mb-4 border-b border-adjung-maroon pb-3 select-text">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="font-bold border border-stone-300 text-stone-500 rounded px-1.5 py-0.5 mr-1">
                                   {item.contentType.toUpperCase()}
@@ -470,7 +476,7 @@ export const FolioView: React.FC<FolioViewProps> = ({
                                 <span className="text-stone-300 font-bold">·</span>
                                 <span>{readingTimeStr}</span>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0">
                                 <span className="normal-case text-stone-400">{authorDomain}</span>
                                 <CardActionsMenu entry={item} authorName={currentAuthor?.penName || currentAuthor?.displayName || 'Anonymous'} />
                               </div>

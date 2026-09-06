@@ -540,7 +540,12 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                     // the layout settings fetched once at list level — worth
                     // doing, not done yet.
                     <div className="p-5 bg-white">
-                      <div className="flex items-center justify-between gap-3 pb-2.5 mb-4 border-b border-adjung-maroon font-mono text-[9px] uppercase tracking-widest text-[#111111]/40">
+                      {/* items-start, not items-center: the left meta group
+                          wraps to a second line on narrow widths, and
+                          items-center vertically centered the domain/menu
+                          against that wrapped block instead of anchoring it
+                          to the first line. */}
+                      <div className="flex items-start justify-between gap-3 pb-2.5 mb-4 border-b border-adjung-maroon font-mono text-[9px] uppercase tracking-widest text-[#111111]/40">
                         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                           <span className="font-bold border border-stone-300 text-stone-500 rounded px-1.5 py-0.5 mr-0.5">
                             {entry.contentType}
