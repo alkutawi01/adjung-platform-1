@@ -3638,6 +3638,7 @@ export function EntryRenderer({
                               ref={(el) => {
                                 if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
                               }}
+                              dir="auto"
                               placeholder="Side note description text..."
                               rows={2}
                               className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} text-stone-700 resize-y overflow-hidden`}
@@ -3689,6 +3690,7 @@ export function EntryRenderer({
                               ref={(el) => {
                                 if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
                               }}
+                              dir="auto"
                               placeholder="Footnote reference text..."
                               rows={1}
                               className={`w-full bg-white border border-stone-200 focus:border-adjung-maroon rounded p-1.5 focus:outline-none text-xs ${proseFont} resize-y overflow-hidden`}
