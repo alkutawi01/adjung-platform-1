@@ -259,9 +259,12 @@ export interface SystemSettings {
   allowSelfRegistration: boolean;
   featuredScholarId?: string;
   featuredEntryId?: string;
-  featuredEssayIds?: string[];
-  featuredNoteIds?: string[];
-  editorialSelectionIds?: string[]; // Max 10 entries for Frontpage curation
+  // (string | null)[] rather than string[]: an empty slot is stored as
+  // null so the position survives the round trip through a uuid[] column
+  // (an empty string "" is not a valid uuid and the write is rejected).
+  featuredEssayIds?: (string | null)[];
+  featuredNoteIds?: (string | null)[];
+  editorialSelectionIds?: (string | null)[]; // Max 10 entries for Frontpage curation
   announcementBanner?: string;
   enableArabicAccent?: boolean;
   layoutDensity?: 'Standard' | 'Compact' | 'Classical';

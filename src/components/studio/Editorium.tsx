@@ -332,13 +332,22 @@ export function Editorium() {
       }
     }
 
+    // Empty slots live in the array as '' (what the text input naturally
+    // holds when cleared), but the DB column backing these ids is a
+    // uuid[] — "" is not a valid uuid and the save was silently rejected
+    // (visible only as a console error, "invalid input syntax for type
+    // uuid") every time an admin cleared a previously-filled slot rather
+    // than leaving it untouched. null is the empty-slot value the column
+    // actually accepts.
+    const nullifyEmpty = (ids: (string | null)[]) => ids.map(id => id || null);
+
     const updatedSettings: SystemSettings = {
       ...systemSettings,
       featuredScholarId,
       featuredEntryId,
-      editorialSelectionIds,
-      featuredEssayIds,
-      featuredNoteIds,
+      editorialSelectionIds: nullifyEmpty(editorialSelectionIds),
+      featuredEssayIds: nullifyEmpty(featuredEssayIds),
+      featuredNoteIds: nullifyEmpty(featuredNoteIds),
       announcementBanner,
       enableArabicAccent,
       layoutDensity
