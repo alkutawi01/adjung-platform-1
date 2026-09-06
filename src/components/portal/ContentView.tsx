@@ -565,10 +565,14 @@ export function ContentView({ entries, users, setSelectedEntry, setSelectedAutho
                         </div>
                       </div>
 
+                      {/* No line-clamp: this card has no fixed height (the
+                          wrapping p-5 div grows to fit its content), so
+                          clamping to 2 lines only risked silently eating
+                          the end of any title past ~150 characters — the
+                          ellipsis gives no indication anything was cut. */}
                       <h3
                         dir={isAr ? 'rtl' : 'ltr'}
-                        title={entry.title}
-                        className="font-serif text-xl md:text-2xl font-normal text-[#111111] leading-snug tracking-tight text-center text-balance line-clamp-2 px-6"
+                        className="font-serif text-xl md:text-2xl font-normal text-[#111111] leading-snug tracking-tight text-center text-balance px-6"
                       >
                         {entry.title}
                       </h3>
