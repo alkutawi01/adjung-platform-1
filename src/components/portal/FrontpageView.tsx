@@ -942,7 +942,14 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                   }
                 }}
                 dir={isAr ? 'rtl' : 'ltr'}
-                className={`space-y-2.5 ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'} ${isNote ? 'bg-[#FDFBF7] rounded-md p-4 -m-4 border border-adjung-maroon/30 hover:border-adjung-maroon/35 transition-colors' : ''}`}
+                // flex flex-col h-full + mt-auto on the byline: the grid row
+                // already stretches every card to the tallest sibling's
+                // height, but without this the byline just sat wherever the
+                // excerpt text happened to end, so two cards side by side
+                // with different excerpt lengths showed the name/signature
+                // at two different heights. Now it always sits flush at the
+                // card's bottom edge.
+                className={`flex flex-col gap-2.5 h-full ${idx > 0 ? 'md:border-l md:border-stone-300 md:pl-8' : ''} ${item.entryObj ? 'cursor-pointer group' : ''} ${isAr ? 'text-right' : 'text-left'} ${isNote ? 'bg-[#FDFBF7] rounded-md p-4 -m-4 border border-adjung-maroon/30 hover:border-adjung-maroon/35 transition-colors' : ''}`}
               >
                 {item.entryObj ? (
                   isNote ? (
@@ -960,7 +967,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-black leading-relaxed text-left ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>
                         {item.excerpt}
                       </p>
-                      <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2 pt-1 mt-auto ${isAr ? 'flex-row-reverse' : ''}`}>
                         <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                           {item.authorName.toUpperCase()}
                         </span>
@@ -980,7 +987,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                     <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-sm leading-relaxed text-[#2D2D2D] text-left ${isAr ? 'font-arabic leading-loose' : 'font-serif'}`}>
                       <HoverWords text={item.excerpt} />
                     </p>
-                    <div className={`flex items-center gap-2 pt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-2 pt-1 mt-auto ${isAr ? 'flex-row-reverse' : ''}`}>
                       <span className="font-sans text-[9px] md:text-[10px] text-[#555555]">
                         {item.authorName.toUpperCase()}
                       </span>
