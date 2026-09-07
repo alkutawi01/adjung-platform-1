@@ -282,7 +282,16 @@ export function WritingDesk({
                   {draftEntries.map(draft => (
                     <div
                       key={draft.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => contextSetEditingEntry(draft)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          contextSetEditingEntry(draft);
+                        }
+                      }}
                       className="grid grid-cols-[52px_1fr_68px_28px] md:grid-cols-[80px_1fr_100px_28px] items-center gap-2 md:gap-4 px-4 py-2.5 border-b border-stone-100 last:border-0 hover:bg-[#FDFDFD] cursor-pointer group transition-colors"
                     >
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
@@ -321,7 +330,16 @@ export function WritingDesk({
                   {publishedEntries.map(pub => (
                     <div
                       key={pub.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => contextSetEditingEntry(pub)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          contextSetEditingEntry(pub);
+                        }
+                      }}
                       className="grid grid-cols-[52px_1fr_68px_50px] md:grid-cols-[80px_1fr_100px_50px] items-center gap-2 md:gap-4 px-4 py-2.5 border-b border-stone-100 last:border-0 hover:bg-[#FDFDFD] cursor-pointer group transition-colors"
                     >
                       <span className="font-mono text-[10px] uppercase tracking-wider font-semibold text-adjung-maroon">
