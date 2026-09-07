@@ -359,6 +359,9 @@ export function EntryRenderer({
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Tracks whether the author has hand-edited the Slug field directly, so a
+  // later Title edit doesn't silently clobber their chosen URL.
+  const slugManuallyEditedRef = useRef(false);
   const stateRef = useRef({ content, footnotes, marginNotes, contentType, status, visibility, tags, slug, title, excerpt, featuredImage, revisions, citations, referenceSortOrder, marginNotesData, footnotesData, englishTranslation, englishTranslationTitle });
 
   useEffect(() => {
@@ -1432,6 +1435,7 @@ export function EntryRenderer({
     setVisibility(entry.visibility);
     setTags(entry.tags);
     setSlug(entry.slug);
+    slugManuallyEditedRef.current = false;
     setFootnotes(entry.footnotes || []);
     setFootnotesData(entry.footnotesData || []);
     setContent(entry.content);
@@ -1866,13 +1870,15 @@ export function EntryRenderer({
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setTitle(val);
-    if (mode === 'edit') {
+    if (mode === 'edit' && !slugManuallyEditedRef.current) {
       const generatedSlug = val
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-');
       setSlug(generatedSlug);
       triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, generatedSlug, val, excerpt, featuredImage);
+    } else {
+      triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, slug, val, excerpt, featuredImage);
     }
   };
 
@@ -4915,6 +4921,7 @@ export function EntryRenderer({
                       value={slug}
                       onChange={(e) => {
                         const val = e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                        slugManuallyEditedRef.current = true;
                         setSlug(val);
                         triggerSave(content, footnotes, marginNotes, contentType, status, visibility, tags, val);
                       }}
