@@ -3,7 +3,7 @@ import { Entry, EntryType, EntryStatus, EntryVisibility, Citation, Revision, Vec
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { SignatureLayout } from '../desk/SignatureLayout';
 import { ElasticMarginRow } from './ElasticMarginRow';
-import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber } from '../../utils';
+import { isArabicText, parseInlineFormatting, ContentBlock, parseContentToBlocks, DocumentExporter, HeadingBlock, serializeBlocks, ImageBlock, stripMarkdown, markdownToHtml, htmlToMarkdown, getReadingTime, getWordCount, generateUUID, INTERLINEAR_MAX_WORDS, INTERLINEAR_MAX_CHARS, INTERLINEAR_GLOSS_MAX_RATIO, isInterlinearSpanValid, isInterlinearGlossValid, computeReadingLayout, formatSerialNumber, truncateAtWord } from '../../utils';
 import { EntryImage, EntryImageEditor } from '../desk/EntryImage';
 import { Tag, Calendar, Globe, Lock, Trash2, Plus, Info, Settings, BookOpen, ArrowUp, ArrowDown, Copy, Check, Loader2, AlertTriangle, RefreshCw, Edit3, List, ListOrdered, Link as LinkIcon, Highlighter, Search, ChevronDown, ChevronRight, Languages } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -5194,7 +5194,12 @@ export function EntryRenderer({
               <div className="flex flex-col text-left">
                 <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400">Editing Entry</span>
                 <span className="font-sans text-sm font-medium text-stone-200">
-                  {contentType === 'Note' ? 'Philosophical Fragment (Note)' : (title || 'Untitled Entry')}
+                  {/* A Note has no title, so — same as every other place Notes
+                      show up (Content, Folio, Frontpage) — this labels it
+                      with its own opening words, not a made-up generic
+                      title. "Philosophical Fragment (Note)" used to stand in
+                      here regardless of what the note actually said. */}
+                  {contentType === 'Note' ? (truncateAtWord(stripMarkdown(content), 8) || 'Untitled Note') : (title || 'Untitled Entry')}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 bg-stone-800/90 px-2 py-1 rounded border border-stone-700/60">
