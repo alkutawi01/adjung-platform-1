@@ -4600,6 +4600,7 @@ export function EntryRenderer({
 
         <FootnotesCitationsSection
           contentType={contentType}
+          isRtl={isArContent}
           mode={mode}
           marginNotesData={marginNotesData}
           setMarginNotesData={setMarginNotesData}

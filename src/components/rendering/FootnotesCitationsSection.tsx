@@ -9,6 +9,10 @@ import { Footnote } from '../../types';
 
 interface FootnotesCitationsSectionProps {
   contentType: string;
+  // Whether the entry's own content is Arabic — the footnote/citation
+  // apparatus (markers, margin notes, references) has to mirror to match,
+  // not stay pinned LTR while the prose above it reads right-to-left.
+  isRtl: boolean;
   mode: 'view' | 'edit';
   marginNotesData: Record<string, string>;
   setMarginNotesData: (val: Record<string, string>) => void;
@@ -43,6 +47,7 @@ interface FootnotesCitationsSectionProps {
 
 export function FootnotesCitationsSection({
   contentType,
+  isRtl,
   mode,
   marginNotesData,
   setMarginNotesData,
@@ -89,7 +94,7 @@ export function FootnotesCitationsSection({
              const fMap = footnotesReadingOrder.map;
              if (occurrences.length === 0) {
                return (
-                 <div className="text-stone-400 font-sans text-sm py-4 text-left">
+                 <div className={`text-stone-400 font-sans text-sm py-4 ${isRtl ? 'text-right' : 'text-left'}`}>
                    No margin notes registered yet. Right-click inside text editor to insert margin notes.
                  </div>
                );
@@ -97,13 +102,13 @@ export function FootnotesCitationsSection({
              return (
                <div className="space-y-4">
                  {occurrences.map(id => (
-                   <div key={id} className="bg-white border border-stone-100 p-4 rounded-md shadow-sm relative text-left">
-                     <div className="absolute top-4 left-4 select-none">
+                   <div key={id} dir={isRtl ? 'rtl' : 'ltr'} className={`bg-white border border-stone-100 p-4 rounded-md shadow-sm relative ${isRtl ? 'text-right' : 'text-left'}`}>
+                     <div className={`absolute top-4 select-none ${isRtl ? 'right-4' : 'left-4'}`}>
                         <span className="font-sans text-[10px] font-medium align-super text-adjung-maroon">
                           ({toRoman(mMap[id]).toLowerCase()})
                         </span>
                       </div>
-                     <div className="pl-14">
+                     <div className={isRtl ? 'pr-14' : 'pl-14'}>
                        {mode === 'edit' ? (
                          <div>
                            <textarea
@@ -192,18 +197,18 @@ export function FootnotesCitationsSection({
               })}
             </div>
           ) : (
-            <ol className={`space-y-3 ${proseFont} text-[12.5px] leading-relaxed list-none pl-0 text-left`}>
+            <ol dir={isRtl ? 'rtl' : 'ltr'} className={`space-y-3 ${proseFont} text-[12.5px] leading-relaxed list-none pl-0 ${isRtl ? 'pr-0 text-right' : 'text-left'}`}>
               {orderedFootnotes.map((item, idx) => {
                 const fMap = footnotesReadingOrder.map;
                 const citeMap = citationsMap;
                 return (
-                  <li 
-                    key={idx} 
-                    id={item.originalId.startsWith('fn-') ? `footnote-dest-${item.originalId}` : `footnote-dest-legacy-${item.originalId}`} 
-                    className="group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700"
+                  <li
+                    key={idx}
+                    id={item.originalId.startsWith('fn-') ? `footnote-dest-${item.originalId}` : `footnote-dest-legacy-${item.originalId}`}
+                    className={`group flex gap-3 hover:bg-stone-50 p-1.5 rounded transition scroll-mt-24 duration-700 ${isRtl ? 'flex-row-reverse' : ''}`}
                   >
-                    <span 
-                      className="font-mono text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-adjung-maroon/90 text-left"
+                    <span
+                      className={`font-mono text-[10px] font-medium align-super text-adjung-maroon w-4 flex-shrink-0 select-none cursor-pointer hover:underline hover:text-adjung-maroon/90 ${isRtl ? 'text-right' : 'text-left'}`}
                       title="Go back to citation"
                       onClick={() => {
                         const refId = item.originalId.startsWith('fn-') ? `fnref-${item.originalId}` : `fnref-legacy-${item.originalId}`;
@@ -219,8 +224,8 @@ export function FootnotesCitationsSection({
                     >
                       ({item.displayNum})
                     </span>
-                    
-                    <div className="flex-grow text-left text-stone-700">
+
+                    <div className={`flex-grow text-stone-700 ${isRtl ? 'text-right' : 'text-left'}`}>
                       {parseInlineFormatting(item.text, citations, referenceSortOrder, citeMap, fMap)}
                     </div>
                   </li>
