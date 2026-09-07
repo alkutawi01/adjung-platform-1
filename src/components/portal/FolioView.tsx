@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Entry, WriterProfile, SystemSettings } from '../../types';
 import { BRAND } from '../../config/brand';
-import { isArabicText, parseInlineFormatting, toRoman, truncateTitle, formatSerialNumber } from '../../utils';
+import { isArabicText, parseInlineFormatting, toRoman, formatSerialNumber } from '../../utils';
 import { SignatureRenderer } from '../desk/SignatureRenderer';
 import { TimelineEntryCollapseRenderer } from '../rendering/TimelineEntryCollapseRenderer';
 import { EntryRenderer } from '../rendering/EntryRenderer';
@@ -335,7 +335,10 @@ export const FolioView: React.FC<FolioViewProps> = ({
                       const versionStr = item.currentVersion || 'v1.0';
                       const readingTimeStr = `${item.readingTimeMinutes || 1} MIN READ`;
                       const authorDomain = `${currentAuthor?.username || 'writer'}.adjung.com`;
-                      const displayTitle = truncateTitle(item.title || '', 55);
+                      // Full title, left to wrap — same as the Content list's essay
+                      // cards. A fixed-length cut here silently clipped titles past
+                      // 55 chars with no visual sign anything was missing.
+                      const displayTitle = item.title || '';
 
                       return (
                         <div
