@@ -48,7 +48,7 @@ export const FloatingFormatToolbar: React.FC<FloatingFormatToolbarProps> = ({
   return (
     <div 
       style={{ left: `${selectionState.x}px`, top: `${selectionState.y}px` }}
-      className="absolute z-50 transform -translate-x-1/2 flex items-center gap-1 bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/40 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
+      className="absolute z-50 transform -translate-x-1/2 flex flex-wrap items-center gap-1 gap-y-1.5 max-w-[calc(100vw-2rem)] bg-[#1e1c18]/90 backdrop-blur-sm border border-stone-800/40 px-2.5 py-1.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] text-stone-100 animate-fade-in text-[11px] transition-all font-sans"
     >
       {!showLinkInput && !showGlossInput ? (
         <>

@@ -4102,7 +4102,7 @@ export function EntryRenderer({
                   left: `${toolbarCoords.x}px`,
                   transform: 'translateX(-50%)'
                 }}
-                className="bg-stone-900 text-white rounded shadow-lg p-1 flex items-center gap-1 z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-800 animate-fade-in"
+                className="bg-stone-900 text-white rounded shadow-lg p-1 flex flex-wrap items-center gap-1 gap-y-1.5 max-w-[calc(100vw-2rem)] z-50 text-[10px] uppercase tracking-wider font-semibold select-none animate-fade-in border border-stone-800 animate-fade-in"
               >
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-800 rounded font-bold transition">B</button>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-800 rounded italic transition">I</button>
