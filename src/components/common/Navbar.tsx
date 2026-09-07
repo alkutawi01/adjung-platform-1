@@ -135,7 +135,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {hasMobileNavLinks && (
             <button
               type="button"
-              onClick={() => setShowMobileMenu(prev => !prev)}
+              onClick={() => {
+                setShowUserMenu(false);
+                setShowMobileMenu(prev => !prev);
+              }}
               className="md:hidden flex items-center justify-center w-10 h-10 text-white/90 hover:text-white transition cursor-pointer"
               aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
             >
@@ -256,7 +259,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                onClick={() => {
+                  // On mobile both menus are reachable from the collapsed
+                  // header at once — opening this one while the hamburger
+                  // drawer was already open otherwise left the drawer
+                  // stuck open (and this dropdown's own items don't close
+                  // it either), overlapping whatever page a click inside
+                  // this menu navigated to.
+                  setShowMobileMenu(false);
+                  setShowUserMenu(!showUserMenu);
+                }}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs font-mono tracking-wider text-white/90 hover:text-white transition uppercase cursor-pointer"
               >
                 <span>{currentUser.penName}</span>
