@@ -155,7 +155,10 @@ export class AuthService {
     // otherwise interrupt this mid-flight, landing on the new page still
     // carrying the old session.
     try {
-      await supabase.auth.signOut();
+      // scope: 'local' — the default ('global') revokes the refresh token
+      // for every session of this account, so clicking Sign Out in one tab
+      // silently logged the user out of every other device/tab too.
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (err) {
       console.error('Supabase signout failed:', err);
     }

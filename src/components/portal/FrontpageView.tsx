@@ -968,7 +968,11 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                           this session removed. Reads in the same
                           handwritten voice as Folio/Content/Featured
                           Notes instead. */}
-                      <span className="inline-block font-sans text-[8px] font-bold text-adjung-maroon border border-adjung-maroon/30 rounded px-1.5 py-0.5 uppercase tracking-wider">
+                      {/* self-start: this span is a flex item of the card's
+                          `flex flex-col` column, so without it the default
+                          cross-axis stretch blows the badge out to the
+                          card's full width instead of hugging "Note". */}
+                      <span className="self-start inline-block font-sans text-[8px] font-bold text-adjung-maroon border border-adjung-maroon/30 rounded px-1.5 py-0.5 uppercase tracking-wider">
                         Note
                       </span>
                       <p dir="auto" style={{ unicodeBidi: 'plain-text' }} className={`text-black leading-relaxed text-left ${isAr ? 'font-arabic text-[17px] leading-loose' : 'font-handwritten text-[19px]'}`}>

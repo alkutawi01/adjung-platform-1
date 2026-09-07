@@ -504,9 +504,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    if (activeTab === 'directory' && !hasPermission('viewDirectory')) {
-      setActiveTab('landing');
-    }
+    // No forced redirect for 'directory' when logged out: App.tsx's own
+    // render branch (activeTab === 'directory' && !currentUser) already
+    // shows a proper "Sign In to view Directory" RestrictedAccessView —
+    // this guard used to fire first on every render and bounce straight to
+    // the landing gate before that view ever painted, making it dead code.
 
     if (activeTab === 'editorium' && !hasPermission('curateFrontpage')) {
       setActiveTab('frontpage');
