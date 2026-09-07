@@ -3,6 +3,7 @@ import { User, Entry, SystemSettings, IdentityProfile } from '../../types';
 import { BRAND } from '../../config/brand';
 import { parseInlineFormatting, isArabicText, parseInTheNews, getDeskAccentColor, parseWorldClockHolidays, flattenBlocksForPreview, truncateAtWord } from '../../utils';
 import { resolveSignatureText } from '../../utils/signatureResolvers';
+import { useHorizontalOverflow } from '../../hooks/useHorizontalOverflow';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, Info, ChevronLeft, ChevronRight, Languages } from 'lucide-react';
 
@@ -179,6 +180,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
 }) => {
   // 1. World Clock State
   const [times, setTimes] = useState<(ClockTime | null)[]>([null, null, null, null, null]);
+  const worldClockOverflow = useHorizontalOverflow<HTMLDivElement>();
 
   // In The News digest overlay state
   const [showNewsOverlay, setShowNewsOverlay] = useState(false);
@@ -671,7 +673,12 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             content that's overflowing a scroll container crops the first
             city with no way to scroll left back into view (scrollLeft
             can't go negative). Left-aligned avoids the bug entirely. */}
-        <div className="py-2.5 flex justify-start items-center overflow-x-auto snap-x snap-mandatory gap-10 px-4 text-center" id="world-clock">
+        {worldClockOverflow.isOverflowing && (
+          <p className="font-mono text-[9px] uppercase tracking-widest text-stone-400 px-4 text-right select-none">
+            Swipe left to see more →
+          </p>
+        )}
+        <div ref={worldClockOverflow.ref} className="py-2.5 flex justify-start items-center overflow-x-auto snap-x snap-mandatory gap-10 px-4 text-center" id="world-clock">
           {[
             { city: 'New York', tz: 'America/New_York' },
             { city: 'London', tz: 'Europe/London' },
