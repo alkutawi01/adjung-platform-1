@@ -243,7 +243,16 @@ export function EditorialIndex({
                 return (
                   <tr
                     key={item.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedEntry(item)}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedEntry(item);
+                      }
+                    }}
                     className="hover:bg-stone-50 cursor-pointer transition-colors"
                   >
                     <td className="p-3 pl-4 font-sans font-medium text-[#111111]">
