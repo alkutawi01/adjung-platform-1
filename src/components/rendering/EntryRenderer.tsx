@@ -4139,7 +4139,7 @@ export function EntryRenderer({
                   );
                 })()}
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => openLinkEditor()} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert or edit link (Ctrl+K)">Link</button>
-                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Auto Number)">FN</button>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('footnote')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Footnote (Automatic Numbering)">FN</button>
                 {(contentType === 'Essay') && (
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insertNote('margin-note')} className="px-2 py-1 hover:bg-stone-800 rounded font-sans text-[9px] uppercase tracking-wider font-semibold transition cursor-pointer" title="Insert Margin Note">MN</button>
                 )}
@@ -5189,7 +5189,7 @@ export function EntryRenderer({
                   <Info className="w-3.5 h-3.5 text-adjung-maroon flex-shrink-0 mt-0.5" />
                   <div>
                     {contentType === 'Note' && (
-                      <span><strong>Note writing mode:</strong> Write your text freely. Notes are succinct, rapid reflections (max 100 words). Arabic/Jawi scripts are auto-formatted with dominant-language right-to-left layout alignment.</span>
+                      <span><strong>Note writing mode:</strong> Write your text freely. Notes are succinct, rapid reflections (max 100 words). Arabic/Jawi scripts are automatically formatted with dominant-language right-to-left layout alignment.</span>
                     )}
                     {contentType === 'Essay' && (
                       <span><strong>Essay writing mode:</strong> Structured multi-paragraph publication (max 10,000 words). Write paragraph blocks with corresponding margin commentary notes that align horizontally on desktop screens, or register bottom citations and footnotes.</span>
