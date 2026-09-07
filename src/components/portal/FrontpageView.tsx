@@ -136,6 +136,7 @@ interface FrontpageViewProps {
   setSelectedEntry: (entry: Entry | null) => void;
   setSelectedAuthorId: (id: string | null) => void;
   setActiveTab: (tab: string) => void;
+  setEditoriumActiveTab?: (tab: string) => void;
   currentUser?: User | null;
   inTheNewsGoogleDocText?: string;
   worldClockHolidaysGoogleDocText?: string;
@@ -172,6 +173,7 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   setSelectedEntry,
   setSelectedAuthorId,
   setActiveTab,
+  setEditoriumActiveTab,
   currentUser,
   inTheNewsGoogleDocText = '',
   worldClockHolidaysGoogleDocText = '',
@@ -783,7 +785,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             </span>
             {canCurate && (
               <button
-                onClick={() => setActiveTab('editorium')}
+                onClick={() => {
+                  setEditoriumActiveTab?.('frontpage');
+                  setActiveTab('editorium');
+                }}
                 className="ml-3 flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/60 px-1.5 py-0.5 rounded border border-[#7B2737]/30 transition cursor-pointer"
                 title="Manage Frontpage Curation"
               >
@@ -959,7 +964,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             </span>
             {canCurate && (
               <button
-                onClick={() => setActiveTab('editorium')}
+                onClick={() => {
+                  setEditoriumActiveTab?.('frontpage');
+                  setActiveTab('editorium');
+                }}
                 className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#7B2737] hover:bg-stone-200/60 px-1.5 py-0.5 rounded border border-[#7B2737]/30 transition-all duration-200 hover:font-bold cursor-pointer"
               >
                 Curate Selection

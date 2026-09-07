@@ -1728,6 +1728,7 @@ Editorial Board of Adjung`;
                 setSelectedEntry={setSelectedEntry}
                 setSelectedAuthorId={setSelectedAuthorId}
                 setActiveTab={setActiveTab}
+                setEditoriumActiveTab={setEditoriumActiveTab}
                 currentUser={currentUser}
                 inTheNewsGoogleDocText={inTheNewsGoogleDocText}
                 worldClockHolidaysGoogleDocText={worldClockHolidaysGoogleDocText}
