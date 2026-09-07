@@ -120,8 +120,17 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-6xl mx-auto flex items-center justify-between py-2">
         
         {/* Left: Beautiful brand wordmark logo linking back to Frontpage */}
-        <div 
+        <div
+          role="button"
+          tabIndex={0}
           onClick={handleBrandClick}
+          onKeyDown={(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleBrandClick();
+            }
+          }}
           className="flex items-center cursor-pointer group text-white hover:opacity-95 transition-opacity"
         >
           <span className="font-serif text-lg font-semibold tracking-wider">

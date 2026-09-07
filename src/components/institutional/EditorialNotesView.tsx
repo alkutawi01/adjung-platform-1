@@ -44,8 +44,17 @@ export const EditorialNotesView: React.FC<EditorialNotesViewProps> = ({
             .map((note) => (
               <article
                 key={note.id}
+                role="button"
+                tabIndex={0}
                 className="group border-b border-stone-200/60 pb-10 text-left cursor-pointer"
                 onClick={() => setSelectedEntry(note)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedEntry(note);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-mono text-[9px] uppercase text-adjung-maroon bg-adjung-maroon/5 px-2 py-0.5 font-semibold">
