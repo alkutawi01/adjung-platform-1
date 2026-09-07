@@ -799,8 +799,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
           {/* Left: Main Featured Article */}
           <div className={`md:col-span-2 space-y-4 ${isFeaturedAr ? 'text-right' : ''}`} dir={isFeaturedAr ? 'rtl' : 'ltr'}>
             <h2
+              role={activeFeatured.id !== 'fallback-featured' ? 'button' : undefined}
+              tabIndex={activeFeatured.id !== 'fallback-featured' ? 0 : undefined}
               onClick={() => {
                 if (activeFeatured.id !== 'fallback-featured') {
+                  setSelectedEntry(activeFeatured);
+                  setSelectedAuthorId(activeFeatured.authorId);
+                  setActiveTab('folio');
+                }
+              }}
+              onKeyDown={(e) => {
+                if (activeFeatured.id === 'fallback-featured') return;
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
                   setSelectedEntry(activeFeatured);
                   setSelectedAuthorId(activeFeatured.authorId);
                   setActiveTab('folio');
@@ -825,9 +837,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] md:text-xs text-[#555555]">
-              <span 
+              <span
+                role={activeFeatured.authorId ? 'button' : undefined}
+                tabIndex={activeFeatured.authorId ? 0 : undefined}
                 onClick={() => {
                   if (activeFeatured.authorId) {
+                    setSelectedAuthorId(activeFeatured.authorId);
+                    setActiveTab('bio');
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (!activeFeatured.authorId) return;
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     setSelectedAuthorId(activeFeatured.authorId);
                     setActiveTab('bio');
                   }
@@ -885,10 +908,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
             </span>
             
             {dbEditorNote ? (
-              <div 
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   setSelectedEntry(dbEditorNote);
                   setActiveTab('editorial');
+                }}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedEntry(dbEditorNote);
+                    setActiveTab('editorial');
+                  }
                 }}
                 className="cursor-pointer group space-y-3"
               >
@@ -941,8 +974,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               return (
               <div
                 key={item.id}
+                role={item.entryObj ? 'button' : undefined}
+                tabIndex={item.entryObj ? 0 : undefined}
                 onClick={() => {
                   if (item.entryObj) {
+                    setSelectedEntry(item.entryObj);
+                    setSelectedAuthorId(item.entryObj.authorId);
+                    setActiveTab('folio');
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (!item.entryObj) return;
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     setSelectedEntry(item.entryObj);
                     setSelectedAuthorId(item.entryObj.authorId);
                     setActiveTab('folio');
@@ -1038,8 +1083,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 return (
                 <div
                   key={essay.id}
+                  role={essay.entryObj ? 'button' : undefined}
+                  tabIndex={essay.entryObj ? 0 : undefined}
                   onClick={() => {
                     if (essay.entryObj) {
+                      setSelectedEntry(essay.entryObj);
+                      setSelectedAuthorId(essay.entryObj.authorId);
+                      setActiveTab('folio');
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (!essay.entryObj) return;
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       setSelectedEntry(essay.entryObj);
                       setSelectedAuthorId(essay.entryObj.authorId);
                       setActiveTab('folio');
@@ -1087,8 +1144,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 return (
                 <div
                   key={note.id}
+                  role={note.entryObj ? 'button' : undefined}
+                  tabIndex={note.entryObj ? 0 : undefined}
                   onClick={() => {
                     if (note.entryObj) {
+                      setSelectedEntry(note.entryObj);
+                      setSelectedAuthorId(note.entryObj.authorId);
+                      setActiveTab('folio');
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (!note.entryObj) return;
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       setSelectedEntry(note.entryObj);
                       setSelectedAuthorId(note.entryObj.authorId);
                       setActiveTab('folio');
@@ -1177,8 +1246,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                 NEWEST ESSAYS
               </p>
               {newestEssays.map(coll => (
-                <p 
+                <p
                   key={coll.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     if (coll.fallback) {
                       setActiveTab('index');
@@ -1187,7 +1258,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                       setSelectedAuthorId(coll.authorId);
                       setActiveTab('folio');
                     }
-                  }} 
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (coll.fallback) {
+                        setActiveTab('index');
+                      } else {
+                        setSelectedEntry(coll);
+                        setSelectedAuthorId(coll.authorId);
+                        setActiveTab('folio');
+                      }
+                    }
+                  }}
                   className="font-sans text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 mb-2.5 cursor-pointer inline-block w-full"
                 >
                   {coll.title}
@@ -1201,8 +1285,10 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {featuredTopics.map(topic => (
-                  <p 
+                  <p
                     key={topic}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       // An exact tag filter, not a free-text search — this
                       // list is already frequency-counted straight from
@@ -1213,6 +1299,16 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
                         setIndexSelectedTag(topic);
                       }
                       setActiveTab('index');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (setIndexSelectedTag) {
+                          setIndexSelectedTag(topic);
+                        }
+                        setActiveTab('index');
+                      }
                     }}
                     className="font-sans text-[16px] text-[#1F1F1F] hover:text-[#7B2737] transition duration-150 cursor-pointer"
                   >
