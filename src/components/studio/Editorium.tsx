@@ -1008,7 +1008,16 @@ Source: [Author or Publication, Year]
                   .map(u => (
                     <div
                       key={u.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedBoardMemberId(u.id)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedBoardMemberId(u.id);
+                        }
+                      }}
                       className={`p-3 border rounded transition cursor-pointer flex items-center justify-between hover:bg-stone-50 hover:border-adjung-maroon ${
                         selectedBoardMemberId === u.id
                           ? 'bg-adjung-maroon/[0.03] border-adjung-maroon shadow-sm ring-1 ring-adjung-maroon/20'

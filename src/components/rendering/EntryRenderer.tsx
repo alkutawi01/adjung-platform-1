@@ -3502,9 +3502,18 @@ export function EntryRenderer({
     }
 
     return (
-      <div 
+      <div
         key={idx}
+        role="button"
+        tabIndex={0}
         onClick={() => setEditingBlockIndex(idx)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setEditingBlockIndex(idx);
+          }
+        }}
         className="group relative cursor-pointer hover:bg-stone-50/60 p-3 -m-3 rounded-md transition-all duration-200 text-left"
         title="Click to edit block"
       >
@@ -4443,11 +4452,20 @@ export function EntryRenderer({
                     
                     if (!isExpanded) {
                       return (
-                        <div 
+                        <div
                           id={`mn-note-card-${id}`}
                           key={id}
+                          role="button"
+                          tabIndex={0}
                           style={{ position: 'absolute', top: `${top}px`, left: 0 }}
                           onClick={() => setActiveMarginNoteId(id)}
+                          onKeyDown={(e) => {
+                            if (e.target !== e.currentTarget) return;
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setActiveMarginNoteId(id);
+                            }
+                          }}
                           className="border-l-2 border-stone-200 hover:border-adjung-maroon/60 pl-4 py-1 text-left w-full hover:bg-stone-50/60 rounded-r transition-all duration-200 cursor-pointer select-none"
                         >
                           <div className="flex items-center justify-between text-[8px] font-mono text-stone-400">
