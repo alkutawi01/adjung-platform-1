@@ -275,9 +275,18 @@ export function Directory({ users, entries, onSelectMember }: DirectoryProps) {
                   : `adjung.com/ps/${u.id} (Reserved)`;
 
                 return (
-                  <tr 
-                    key={u.id} 
+                  <tr
+                    key={u.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onSelectMember(u.id, 'folio')}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectMember(u.id, 'folio');
+                      }
+                    }}
                     className="hover:bg-stone-50 cursor-pointer transition-colors"
                   >
                     {/* Scholar (Pen Name) */}

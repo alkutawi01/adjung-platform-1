@@ -110,11 +110,22 @@ export const LandingView: React.FC<LandingViewProps> = ({
       {/* FASA 1.5: FEATURED ENTRY HERO */}
       {featuredEntry && (
         <div
+          role="button"
+          tabIndex={0}
           className="py-12 text-center group cursor-pointer max-w-3xl mx-auto"
           onClick={() => {
             setSelectedEntry(featuredEntry);
             setSelectedAuthorId(featuredEntry.authorId);
             setActiveTab('folio');
+          }}
+          onKeyDown={(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setSelectedEntry(featuredEntry);
+              setSelectedAuthorId(featuredEntry.authorId);
+              setActiveTab('folio');
+            }
           }}
         >
           <div className="flex items-center justify-center gap-4 mb-6">

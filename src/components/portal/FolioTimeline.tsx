@@ -108,10 +108,19 @@ export function FolioTimeline({
                   const isAr = isArabicText(item.title);
 
                   return (
-                    <article 
-                      key={item.id} 
-                      className="group cursor-pointer" 
+                    <article
+                      key={item.id}
+                      role="button"
+                      tabIndex={0}
+                      className="group cursor-pointer"
                       onClick={() => setSelectedEntry(item)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedEntry(item);
+                        }
+                      }}
                     >
                       <div className="flex gap-4 md:gap-8 items-start">
                         <div className="text-[11px] font-mono text-[#111111]/40 pt-1.5 w-16 flex-shrink-0">
@@ -134,11 +143,21 @@ export function FolioTimeline({
                               {parseInlineFormatting(item.title, [], 'alphabetical', {}, getFootnotesReadingOrderMap(item.content).map, undefined, undefined, getMarginNotesReadingOrderMap(item.content).map)}
                             </h3>
                           )}
-                          <div 
+                          <div
+                            role="button"
+                            tabIndex={0}
                             className="cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleExpand(item.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.target !== e.currentTarget) return;
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleExpand(item.id);
+                              }
                             }}
                           >
                             <TimelineEntryCollapseRenderer
