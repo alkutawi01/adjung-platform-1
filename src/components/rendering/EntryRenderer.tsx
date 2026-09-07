@@ -4144,7 +4144,7 @@ export function EntryRenderer({
                     text is selected, which means there's no way to turn on Bold before
                     typing new text, unlike a real word processor. This one is always
                     visible while editing. */}
-                <div className="flex items-center gap-1 mb-3 pb-2 border-b border-stone-100 select-none">
+                <div className="flex flex-wrap items-center gap-1 gap-y-2 mb-3 pb-2 border-b border-stone-100 select-none">
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('bold')} className="px-2 py-1 hover:bg-stone-100 rounded font-bold text-xs text-stone-600 transition" title="Bold (Ctrl+B)">B</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('italic')} className="px-2 py-1 hover:bg-stone-100 rounded italic text-xs text-stone-600 transition" title="Italic (Ctrl+I)">I</button>
                   <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormat('underline')} className="px-2 py-1 hover:bg-stone-100 rounded underline text-xs text-stone-600 transition" title="Underline (Ctrl+U)">U</button>
