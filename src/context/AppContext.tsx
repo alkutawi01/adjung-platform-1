@@ -202,8 +202,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updatedSettings = { ...settings };
 
         // 1. In The News Doc Caching
-        let newsText = settings.inTheNewsCachedText || '';
-        let newsStatus = (settings.inTheNewsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        // Cached text/lastFetched are only meaningful while a URL is set —
+        // clearing the URL used to leave the old cached text (and its
+        // parser errors) displayed as if it were still live.
+        let newsText = settings.inTheNewsGoogleDocUrl ? (settings.inTheNewsCachedText || '') : '';
+        let newsStatus = (settings.inTheNewsGoogleDocUrl && settings.inTheNewsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
         if (settings.inTheNewsGoogleDocUrl) {
           if (shouldAutoFetch(settings.inTheNewsLastFetched, syncTimes)) {
             const res = await fetchGoogleDocContent(settings.inTheNewsGoogleDocUrl);
@@ -218,8 +221,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setInTheNewsGoogleDocStatus(newsStatus);
 
         // 2. World Clock Holidays Doc Caching
-        let holidaysText = settings.worldClockCachedText || '';
-        let holidaysStatus = (settings.worldClockLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        let holidaysText = settings.worldClockHolidaysGoogleDocUrl ? (settings.worldClockCachedText || '') : '';
+        let holidaysStatus = (settings.worldClockHolidaysGoogleDocUrl && settings.worldClockLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
         if (settings.worldClockHolidaysGoogleDocUrl) {
           if (shouldAutoFetch(settings.worldClockLastFetched, syncTimes)) {
             const res = await fetchGoogleDocContent(settings.worldClockHolidaysGoogleDocUrl);
@@ -234,8 +237,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setWorldClockHolidaysGoogleDocStatus(holidaysStatus);
 
         // 3. Research Findings Doc Caching
-        let findingsText = settings.researchFindingsCachedText || '';
-        let findingsStatus = (settings.researchFindingsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
+        let findingsText = settings.researchFindingsGoogleDocUrl ? (settings.researchFindingsCachedText || '') : '';
+        let findingsStatus = (settings.researchFindingsGoogleDocUrl && settings.researchFindingsLastFetched ? 'success' : 'empty') as 'success' | 'failed' | 'empty';
         if (settings.researchFindingsGoogleDocUrl) {
           if (shouldAutoFetch(settings.researchFindingsLastFetched, syncTimes)) {
             const res = await fetchGoogleDocContent(settings.researchFindingsGoogleDocUrl);
