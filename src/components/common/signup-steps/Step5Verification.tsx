@@ -111,7 +111,7 @@ export default function Step5Verification({ formData, onNext, goBack }: Step5Ver
             onClick={() => setCode(generatedCode)}
             className="text-adjung-maroon/90 hover:text-adjung-maroon font-mono uppercase tracking-wider transition font-semibold"
           >
-            Auto-fill
+            Fill In Automatically
           </button>
         </div>
 
