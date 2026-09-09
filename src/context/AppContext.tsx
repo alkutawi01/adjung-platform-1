@@ -344,7 +344,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshDbState();
         showToast('System settings saved', 'success');
       })
-      .catch(err => console.error('Failed to save system settings:', err));
+      .catch(err => {
+        console.error('Failed to save system settings:', err);
+        showToast('Could not save — your changes were not stored.', 'error');
+      });
   };
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {

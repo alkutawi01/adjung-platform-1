@@ -368,7 +368,6 @@ export function Editorium() {
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated In The News digest and Google Doc URL.`, currentUser);
-    showToast('In The News digest saved and synchronized.', 'success');
   };
 
   const handleDownloadTemplate = () => {
@@ -406,7 +405,6 @@ url: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festiv
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated World Clock Calendars & Holidays digest and Google Doc URL.`, currentUser);
-    showToast('World Clock Calendars & Holidays digest saved and synchronized.', 'success');
   };
 
   const handleDownloadHolidaysTemplate = () => {
@@ -454,7 +452,6 @@ Status: Working
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated Research Findings digest and Google Doc URL.`, currentUser);
-    showToast('Research Findings digest saved and synchronized.', 'success');
   };
 
   const handleDownloadFindingsTemplate = () => {
