@@ -283,11 +283,11 @@ export interface SystemSettings {
   researchFindingsGoogleDocUrl?: string;
   googleDocSyncTimes?: string;
   inTheNewsCachedText?: string;
-  inTheNewsLastFetched?: string;
+  inTheNewsLastFetched?: string | null;
   worldClockCachedText?: string;
-  worldClockLastFetched?: string;
+  worldClockLastFetched?: string | null;
   researchFindingsCachedText?: string;
-  researchFindingsLastFetched?: string;
+  researchFindingsLastFetched?: string | null;
 }
 
 export interface LayoutSettings {

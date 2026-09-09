@@ -364,7 +364,7 @@ export function Editorium() {
       inTheNewsText: inTheNewsRawText,
       inTheNewsGoogleDocUrl: inTheNewsGoogleDocUrl,
       googleDocSyncTimes: googleDocSyncTimes,
-      inTheNewsLastFetched: ''
+      inTheNewsLastFetched: null
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated In The News digest and Google Doc URL.`, currentUser);
@@ -402,7 +402,7 @@ url: https://newsroom.loc.gov/news/2026-library-of-congress-national-book-festiv
       worldClockHolidaysText: worldClockHolidaysRawText,
       worldClockHolidaysGoogleDocUrl: worldClockHolidaysGoogleDocUrl,
       googleDocSyncTimes: googleDocSyncTimes,
-      worldClockLastFetched: ''
+      worldClockLastFetched: null
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated World Clock Calendars & Holidays digest and Google Doc URL.`, currentUser);
@@ -450,7 +450,7 @@ Status: Working
       researchFindingsText: researchFindingsRawText,
       researchFindingsGoogleDocUrl: researchFindingsGoogleDocUrl,
       googleDocSyncTimes: googleDocSyncTimes,
-      researchFindingsLastFetched: ''
+      researchFindingsLastFetched: null
     };
     setSystemSettings(updatedSettings);
     firestoreService.logAction(`Updated Research Findings digest and Google Doc URL.`, currentUser);
