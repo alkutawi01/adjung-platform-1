@@ -47,7 +47,7 @@ export function PhilosophyCarousel({
   const activeFinding = findingsList[index] || { finding: '', source: '' };
 
   return (
-    <div className="w-full flex items-center justify-center h-[140px] md:h-[110px] overflow-hidden select-none">
+    <div className="w-full flex items-center justify-center min-h-[140px] md:min-h-[110px] select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
