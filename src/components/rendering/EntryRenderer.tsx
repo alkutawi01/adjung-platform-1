@@ -2814,18 +2814,13 @@ export function EntryRenderer({
     if (contentType === 'Essay' && idx === 0 && !isAr) {
       const plainText = block.text;
       if (plainText.length > 0) {
-        const firstLetter = plainText.charAt(0);
-        const restText = plainText.substring(1);
         return (
           <p
             key={idx}
-            className={`flow-root leading-relaxed whitespace-pre-wrap relative overflow-visible ${activeSpec.typography.bodyFont}`}
+            className={`dropcap flow-root leading-relaxed whitespace-pre-wrap relative overflow-visible ${activeSpec.typography.bodyFont}`}
             style={contentType === 'Essay' ? paragraphStyleOverride : undefined}
           >
-            <span className={`float-left text-4xl md:text-5xl font-normal text-adjung-maroon mr-1 mt-0.5 leading-none ${proseFont} select-none`}>
-              {firstLetter}
-            </span>
-            {parseInlineFormatting(restText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
+            {parseInlineFormatting(plainText, citations, referenceSortOrder, citeMap, fMap, undefined, undefined, mOrderMap)}
             {marginNoteNum !== undefined && renderSuperscriptWithNote(marginNoteNum, marginNoteText)}
           </p>
         );
@@ -4376,8 +4371,8 @@ export function EntryRenderer({
                         <ElasticMarginRow
                           key={index}
                           proseFont={proseFont}
-                          spacingBefore={effectiveLayoutSettings?.spacingBefore}
-                          spacingAfter={effectiveLayoutSettings?.spacingAfter}
+                          spacingBefore={effectiveLayoutSettings?.spacingBefore ?? 11}
+                          spacingAfter={effectiveLayoutSettings?.spacingAfter ?? 11}
                           columnWidthPx={effectiveLayoutSettings?.columnWidth}
                           marginWidthPx={readingLayout?.marginNoteWidthPx ?? undefined}
                           editMode={layoutEditMode}
@@ -4413,8 +4408,8 @@ export function EntryRenderer({
                         <ElasticMarginRow
                           key={index}
                           proseFont={proseFont}
-                          spacingBefore={effectiveLayoutSettings?.spacingBefore}
-                          spacingAfter={effectiveLayoutSettings?.spacingAfter}
+                          spacingBefore={effectiveLayoutSettings?.spacingBefore ?? 11}
+                          spacingAfter={effectiveLayoutSettings?.spacingAfter ?? 11}
                           columnWidthPx={effectiveLayoutSettings?.columnWidth}
                           marginWidthPx={readingLayout?.marginNoteWidthPx ?? undefined}
                           editMode={layoutEditMode}

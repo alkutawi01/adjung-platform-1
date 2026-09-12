@@ -432,6 +432,26 @@ select:focus-visible,
   border-radius: 2px;
 }
 
+/* Essay opening drop cap. Was a manually JS-split first character sized
+   with fixed Tailwind classes (text-4xl/5xl + leading-none) — independent
+   of the paragraph's own font-size, so it stopped scaling correctly the
+   moment body text size changed, and didn't cleanly span two body lines.
+   `::first-letter` lets the browser handle the float/reflow itself, and
+   every measurement here is in em (relative to the paragraph's own
+   font-size) so it tracks any future body-text size change automatically.
+   line-height 0.72 is tuned for Source Serif 4's cap-height to land its
+   baseline on the second body line, not the first or third. */
+p.dropcap::first-letter {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.72;
+  padding-top: 0.08em;
+  padding-right: 0.06em;
+  margin-bottom: -0.08em;
+  color: #802334;
+  font-weight: 400;
+}
+
 /* Design System v2.0 §08 — Reduced Motion. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -3,7 +3,7 @@ import { PresentationSpec } from './specs';
 export const essaySpec: PresentationSpec = {
   contentType: 'Essay',
   typography: {
-    bodyFont: 'font-serif text-[#111111] leading-relaxed text-justify text-[15px]',
+    bodyFont: 'font-serif text-[#111111] leading-relaxed text-justify text-[17px] [hyphens:auto]',
     signatureFont: 'font-signature text-5xl',
     interlinearFont: 'font-signature text-adjung-maroon'
   },
