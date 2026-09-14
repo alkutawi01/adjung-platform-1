@@ -36,7 +36,7 @@ export function UserManagementTab({
     e.preventDefault();
     if (!inviteName.trim() || !inviteEmail.trim()) return;
 
-    const signupUrl = `https://adjung.com/invite/register?name=${encodeURIComponent(inviteName.trim())}&email=${encodeURIComponent(inviteEmail.trim())}`;
+    const signupUrl = `https://platform.adjung.com/invite/register?name=${encodeURIComponent(inviteName.trim())}&email=${encodeURIComponent(inviteEmail.trim())}`;
     const emailBody = `Salutations ${inviteName.trim()},\n\nYou are cordially invited by the Chief Editor of Adjung to join our publishing platform as an independent Writer.\n\nName: ${inviteName.trim()}\nEmail: ${inviteEmail.trim()}\n${inviteMessage.trim() ? `\nMessage from the Chief Editor:\n"${inviteMessage.trim()}"\n` : ''}\nTo accept this invitation and initialize your personal Folio, please click the link below to choose your Username and signature:\n${signupUrl}\n\nRespectfully,\nEditorial Board of Adjung`;
 
     setGeneratedInvitation({

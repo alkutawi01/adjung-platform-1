@@ -5,7 +5,7 @@ import { useAppContext } from './context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EntryRenderer } from './components/rendering/EntryRenderer';
 import { TimelineEntryCollapseRenderer } from './components/rendering/TimelineEntryCollapseRenderer';
-import { isArabicText, generateUUID, generateFallbackSubdomain, getSubdomainFromHostname, getRootDomainFromHostname, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
+import { isArabicText, generateUUID, generateFallbackSubdomain, getSubdomainFromHostname, getRootDomainFromHostname, PLATFORM_HOST, parseInlineFormatting, parseContentToBlocks, toRoman } from './utils';
 import { resolveSignatureStrokes, resolveSignatureText, resolveDigitalSignature, resolveSignatureFont } from './utils/signatureResolvers';
 import { buildDigitalSignature } from './utils/signatureBuilder';
 import { RESERVED_PATHS } from './config/reservedPaths';
@@ -947,7 +947,9 @@ export default function App() {
     // path, not window.location.hostname, so the subdomain-routing effect
     // just forces activeTab back based on the still-subdomain URL).
     if (subdomain) {
-      const rootDomain = getRootDomainFromHostname(window.location.hostname);
+      const rootDomain = getRootDomainFromHostname(window.location.hostname) === 'adjung.com'
+        ? PLATFORM_HOST
+        : getRootDomainFromHostname(window.location.hostname);
       const port = window.location.port ? `:${window.location.port}` : '';
       window.location.href = `${window.location.protocol}//${rootDomain}${port}`;
       return;
@@ -1103,7 +1105,7 @@ export default function App() {
     e.preventDefault();
     if (!inviteName.trim() || !inviteEmail.trim()) return;
 
-    const signupUrl = `https://adjung.com/invite/register?name=${encodeURIComponent(inviteName.trim())}&email=${encodeURIComponent(inviteEmail.trim())}`;
+    const signupUrl = `https://platform.adjung.com/invite/register?name=${encodeURIComponent(inviteName.trim())}&email=${encodeURIComponent(inviteEmail.trim())}`;
     const emailBody = `Salutations ${inviteName.trim()},
 
 You are cordially invited by the Chief Editor of Adjung to join our publishing platform as an independent Writer.

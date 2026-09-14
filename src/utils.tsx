@@ -1,6 +1,7 @@
 import React from 'react';
 import { Citation, EditorBlock, NewsItem, ParseError, User, Entry, IdentityProfile, TypographyContext } from './types';
 import { citationStyleRegistry, HarvardStylePlugin } from './services/citationStyles';
+import { RESERVED_PATHS } from './config/reservedPaths';
 
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
 
@@ -1027,7 +1028,7 @@ export function getAuthorProfileUrl(author: User, entries: Entry[], identity: Id
   
   return isLocal
     ? `http://${domainSuffix}/ps/${author.id}`
-    : `https://${domainSuffix}/ps/${author.id}`;
+    : `https://${PLATFORM_HOST}/ps/${author.id}`;
 }
 
 /**
@@ -1036,7 +1037,7 @@ export function getAuthorProfileUrl(author: User, entries: Entry[], identity: Id
 export function resolveEntryCanonicalUrl(entry: Entry, authorUsername: string, allEntries: Entry[], identity: IdentityProfile | null, authorCreatedAt?: string, approvedEarly?: boolean, authorIsAi?: boolean): string {
   if (entry.publicationClass === 'Institutional') {
     const typeSlug = entry.contentType === 'Notice' ? 'notice' : 'editorial';
-    return `https://adjung.com/${typeSlug}/${entry.slug}`;
+    return `https://${PLATFORM_HOST}/${typeSlug}/${entry.slug}`;
   }
 
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -1050,7 +1051,7 @@ export function resolveEntryCanonicalUrl(entry: Entry, authorUsername: string, a
   
   return isLocal
     ? `http://${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.authorId}/${entry.slug}`
-    : `https://${domainSuffix}/${entry.contentType.toLowerCase()}/${entry.authorId}/${entry.slug}`;
+    : `https://${PLATFORM_HOST}/${entry.contentType.toLowerCase()}/${entry.authorId}/${entry.slug}`;
 }
 
 
@@ -1733,6 +1734,10 @@ export function generateFallbackSubdomain(): string {
  * redirect a logged-out subdomain visitor away from a writer's public
  * Folio/Biography back to the generic landing screen.
  */
+export const PLATFORM_HOST = 'platform.adjung.com';
+
+const RESERVED_SUBDOMAINS = new Set([...RESERVED_PATHS, 'localhost']);
+
 export function getSubdomainFromHostname(hostname: string): string | null {
   // Local dev: "scholarsix.localhost" is 2 parts, not 3 — *.localhost all
   // resolve to 127.0.0.1, which is what makes local subdomain testing
@@ -1740,12 +1745,13 @@ export function getSubdomainFromHostname(hostname: string): string | null {
   // unhandled, so a personal-site subdomain could never be tested locally.
   if (hostname.endsWith('.localhost')) {
     const sub = hostname.slice(0, -'.localhost'.length);
-    return sub && sub !== 'www' && sub !== 'adjung' ? sub : null;
+    return sub && !RESERVED_SUBDOMAINS.has(sub) ? sub : null;
   }
   const parts = hostname.split('.');
   if (parts.length > 2) {
+    if (PUBLIC_SUFFIX_HOSTS.has(parts.slice(-2).join('.'))) return null;
     const sub = parts[0];
-    if (sub !== 'www' && sub !== 'adjung' && sub !== 'localhost') {
+    if (!RESERVED_SUBDOMAINS.has(sub)) {
       return sub;
     }
   }

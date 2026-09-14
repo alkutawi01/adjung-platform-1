@@ -5,4 +5,5 @@ export const RESERVED_PATHS = [
   'directory', 'index', 'editorium', 'desk', 'folio', 'bio', 'notices',
   'notice', 'editorial', 'changelog', 'policies', 'identity', 'adjung',
   'support', 'help', 'www', 'blog',
+  'platform', 'quick', 'niqab', 'foolscap', 'mail', 'send', 'ps',
 ];
