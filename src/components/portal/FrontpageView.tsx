@@ -189,8 +189,20 @@ export const FrontpageView: React.FC<FrontpageViewProps> = ({
   const [activeOverlayIndex, setActiveOverlayIndex] = useState(0);
   const [activeFrontpageIndex, setActiveFrontpageIndex] = useState(0);
 
+  const [rssNewsText, setRssNewsText] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/news')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (!cancelled && data?.text) setRssNewsText(data.text); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const { items: parsedNewsItemsA } = parseInTheNews(systemSettings.inTheNewsText || '');
-  const { items: parsedNewsItemsB } = parseInTheNews(inTheNewsGoogleDocText || '');
+  const { items: rssNewsItems } = parseInTheNews(rssNewsText);
+  const { items: googleDocNewsItems } = parseInTheNews(inTheNewsGoogleDocText || '');
+  const parsedNewsItemsB = rssNewsItems.length > 0 ? rssNewsItems : googleDocNewsItems;
 
   const parsedNewsItems = React.useMemo(() => {
     let merged: any[] = [];

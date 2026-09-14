@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchDocText } from './api/_fetchDoc.js';
+import newsHandler from './api/news.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -15,6 +16,8 @@ app.get('/api/fetch-doc', async (req, res) => {
   const { status, body } = await fetchDocText(req.query.url);
   return res.status(status).json(body);
 });
+
+app.get('/api/news', newsHandler);
 
 // In production, this same process also serves the built frontend
 // (npm run build → dist/), so one deployed service handles everything —
