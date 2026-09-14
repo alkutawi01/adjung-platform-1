@@ -580,7 +580,12 @@ export function EntryRenderer({
 
     const span = document.createElement('span');
     span.className = 'interlinear-word';
-    span.innerHTML = `<span class="interlinear-gloss">${glossValue.trim().toLowerCase()}</span><bdi>${wordText}</bdi>`;
+    const glossEl = document.createElement('span');
+    glossEl.className = 'interlinear-gloss';
+    glossEl.textContent = glossValue.trim().toLowerCase();
+    const wordEl = document.createElement('bdi');
+    wordEl.textContent = wordText;
+    span.append(glossEl, wordEl);
 
     range.deleteContents();
     range.insertNode(span);

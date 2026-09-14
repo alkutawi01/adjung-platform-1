@@ -229,9 +229,24 @@ function preserveMultipleSpaces(html: string): string {
   );
 }
 
+// Only these inline tags are stored as literal HTML in entry content; every
+// other '<' is author text and must not reach innerHTML as markup.
+const ALLOWED_INLINE_TAG = /&lt;(\/?)(sup|sub|u)>/gi;
+
+export function safeHref(url: string): string {
+  const trimmed = url.trim();
+  if (/^(https?:|mailto:|\/|#)/i.test(trimmed)) return trimmed;
+  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? '#' : `https://${trimmed}`;
+}
+
 export function markdownToHtml(md: string, typography?: TypographyContext): string {
   if (!md) return '';
-  let content = md.replace(/\r\n/g, '\n');
+  let content = md
+    .replace(/\r\n/g, '\n')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;')
+    .replace(ALLOWED_INLINE_TAG, '<$1$2>');
   
   // Split by double newline to separate blocks
   const blocks = content.split('\n\n');
@@ -324,7 +339,7 @@ function replaceGlossAndLinks(text: string, typography?: TypographyContext): str
               ? `<bdi class="script-rtl-ruby"><ruby class="script-rtl-word">${label}<rt class="script-rtl-gloss">${glossVal}</rt></ruby></bdi>`
               : `<span class="interlinear-word"><span class="interlinear-gloss">${glossVal}</span><bdi>${label}</bdi></span>`;
           } else {
-            result += `<a href="${url}">${label}</a>`;
+            result += `<a href="${safeHref(url)}">${label}</a>`;
           }
           i = j + 1;
           continue;
@@ -587,7 +602,7 @@ function parseTokens(tokens: Token[], keyPrefix: string = 'token', typography?: 
     if (token.type === 'LINK') {
       const elementKey = `${keyPrefix}-${keyIdx++}`;
       result.push(
-        <a key={elementKey} href={token.url} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline cursor-pointer">
+        <a key={elementKey} href={safeHref(token.url || '')} target="_blank" rel="noopener noreferrer" className="text-adjung-maroon hover:underline cursor-pointer">
           {token.text}
         </a>
       );
