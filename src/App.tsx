@@ -916,22 +916,6 @@ export default function App() {
     }
   };
 
-  // Fast direct simulation switcher (helps evaluators easily test different roles)
-  const handleFastLogin = async (username: string) => {
-    try {
-      const authenticatedUser = await AuthService.signInWithPreset(username);
-      setCurrentUser(authenticatedUser);
-      setSelectedAuthorId('');
-      setActiveTab('frontpage');
-      setEditingEntry(null);
-      setSelectedEntry(null);
-      setShowLoginModal(false);
-      showToast(`Logged in as ${authenticatedUser.penName} (${authenticatedUser.role})`, 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Fast Login failed.', 'error');
-    }
-  };
-
   // Logout handler
   const handleLogout = async () => {
     // Awaited: the session cookie is cleared inside signOut(), and the

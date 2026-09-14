@@ -6,23 +6,13 @@ import { clearAllSupabaseCookies } from '../utils/cookieStorage';
 // 1. User Repository
 // ==========================================
 export class UserRepository {
-  static async getUserByUsernameOrEmail(identifier: string): Promise<User | undefined> {
-    const normalized = identifier.trim().toLowerCase();
-
-    let { data, error } = await supabase
+  // Only callable after sign-in: email is not readable by anonymous visitors.
+  static async getUserByAuthId(authUserId: string): Promise<User | undefined> {
+    const { data } = await supabase
       .from('users')
       .select('*')
-      .eq('email', normalized)
+      .eq('auth_user_id', authUserId)
       .maybeSingle();
-
-    if (!data && !error) {
-      const byUsername = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', normalized)
-        .maybeSingle();
-      data = byUsername.data;
-    }
 
     if (!data) return undefined;
 
@@ -104,23 +94,28 @@ export class AuthError extends Error {
 }
 
 export class AuthService {
-  static async signIn(usernameOrEmailInput: string, passwordInput: string, rememberMe: boolean = true): Promise<User> {
-    const userDoc = await UserRepository.getUserByUsernameOrEmail(usernameOrEmailInput);
-    if (!userDoc) {
-      throw new AuthError('UserNotFound', 'Username or email not registered on Adjung.');
+  static async signIn(emailInput: string, passwordInput: string, rememberMe: boolean = true): Promise<User> {
+    const email = emailInput.trim().toLowerCase();
+    if (!email.includes('@')) {
+      throw new AuthError('UserNotFound', 'Please sign in with your email address.');
     }
 
-    if (userDoc.suspended) {
-      throw new AuthError('AccountSuspended', 'This account has been suspended by the Editorial Board.');
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: userDoc.email,
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email,
       password: passwordInput,
     });
 
-    if (error) {
-      throw new AuthError('IncorrectPassword', 'The password entered is incorrect.');
+    if (error || !authData.user) {
+      throw new AuthError('IncorrectPassword', 'Incorrect email or password.');
+    }
+
+    const userDoc = await UserRepository.getUserByAuthId(authData.user.id);
+    if (!userDoc || userDoc.suspended) {
+      await supabase.auth.signOut({ scope: 'local' });
+      clearAllSupabaseCookies();
+      throw userDoc
+        ? new AuthError('AccountSuspended', 'This account has been suspended by the Editorial Board.')
+        : new AuthError('UserNotFound', 'No Adjung profile is linked to this account.');
     }
 
     SessionService.createSession(userDoc, rememberMe);
@@ -135,16 +130,7 @@ export class AuthService {
     // Redirect flow: session resolution happens via onAuthStateChange after redirect.
   }
 
-  static async signInWithPreset(username: string): Promise<User> {
-    return this.signIn(username, 'password', true);
-  }
-
   static async resetPassword(email: string): Promise<void> {
-    const userDoc = await UserRepository.getUserByUsernameOrEmail(email);
-    if (!userDoc) {
-      throw new Error('No account found with this email.');
-    }
-
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) throw error;
   }

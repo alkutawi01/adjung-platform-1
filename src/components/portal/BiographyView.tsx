@@ -202,15 +202,17 @@ export function BiographyView({
                 <span className="font-serif font-semibold text-[#111111] text-sm">{authorProfile.affiliation}</span>
               </div>
             )}
-            <div className="pt-2 border-t border-stone-300/60">
-              <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold mb-0.5">Email / Contact</span>
-              <a
-                href={`mailto:${currentAuthor.email}`}
-                className="font-mono text-xs text-adjung-maroon hover:underline block"
-              >
-                {currentAuthor.email}
-              </a>
-            </div>
+            {currentAuthor.email && (
+              <div className="pt-2 border-t border-stone-300/60">
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-adjung-maroon/60 font-bold mb-0.5">Email / Contact</span>
+                <a
+                  href={`mailto:${currentAuthor.email}`}
+                  className="font-mono text-xs text-adjung-maroon hover:underline block"
+                >
+                  {currentAuthor.email}
+                </a>
+              </div>
+            )}
             {currentUser?.id === selectedAuthorId && (
               <div className="pt-3 border-t border-stone-300/60 mt-2">
                 <button

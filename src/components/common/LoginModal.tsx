@@ -35,7 +35,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   setRememberMe,
   setShowSignUpWizard,
 }) => {
-  const { users, showToast } = useAppContext();
+  const { showToast } = useAppContext();
 
   // Forgot password flow state
   const [showForgotPassword, setShowForgotPassword] = React.useState(false);
@@ -68,12 +68,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setForgotError('');
 
     const trimmedEmail = forgotEmail.trim().toLowerCase();
-    const userExists = users.some(u => (u.email || '').toLowerCase() === trimmedEmail);
-
-    if (!userExists) {
-      setForgotError('No account with this email was found.');
-      return;
-    }
 
     try {
       await AuthService.resetPassword(trimmedEmail);
@@ -123,7 +117,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {forgotStep === 'request' && (
                 <>
                   <div>
-                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Username (Email)</label>
+                    <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Email</label>
                     <input
                       type="text"
                       placeholder="e.g. writer@adjung.com"
@@ -206,7 +200,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               )}
 
               <div>
-                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Username (Email)</label>
+                <label className="block font-mono uppercase text-[9px] text-stone-500 tracking-wider mb-1 font-semibold">Email</label>
                 <input
                   type="text"
                   placeholder="e.g. writer@adjung.com"

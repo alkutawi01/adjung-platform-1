@@ -27,7 +27,7 @@ function rowToUser(row: any): User {
     id: row.id,
     authUserId: row.auth_user_id || undefined,
     username: row.username,
-    email: row.email,
+    email: row.email || '',
     role: row.role,
     penName: row.pen_name,
     signature: row.signature || '',
@@ -339,8 +339,13 @@ function rowToLog(row: any, users: User[]): SystemLog {
 // ==========================================
 export const supabaseService = {
   async fetchDbState() {
+    // Anonymous visitors have no column grant on users.email.
+    const { data: { session } } = await supabase.auth.getSession();
+    const userColumns = session
+      ? '*'
+      : 'id,auth_user_id,username,role,pen_name,signature,avatar_color,bio_summary,suspended,affiliation,is_ai,subdomain_approved_early,created_at,country';
     const [usersRes, profilesRes, identitiesRes, entriesRes, settingsRes, policiesRes, logsRes] = await Promise.all([
-      supabase.from('users').select('*'),
+      supabase.from('users').select(userColumns),
       supabase.from('profiles').select('*'),
       supabase.from('identities').select('*, biography_items(*), digital_signatures(*)'),
       supabase.from('entries').select('*, footnotes(*), margin_notes(*)'),
